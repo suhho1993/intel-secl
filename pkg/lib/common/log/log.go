@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"intel/isecl/lib/common/v2/log/setup"
+	"intel-secl/v3/pkg/lib/common/log/setup"
 
 	log "github.com/sirupsen/logrus"
 )

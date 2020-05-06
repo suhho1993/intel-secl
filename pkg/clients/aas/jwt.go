@@ -12,8 +12,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"intel/isecl/lib/clients/v2"
-	types "intel/isecl/lib/common/v2/types/aas"
+	"intel-secl/v3/pkg/clients"
+	types "intel-secl/v3/pkg/lib/common/types/aas"
 )
 
 type JWTClientErr struct {

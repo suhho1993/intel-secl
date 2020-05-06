@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
-	// "github.com/stretchr/testify/assert"
 )
 
 func TestCMS(t *testing.T) {
