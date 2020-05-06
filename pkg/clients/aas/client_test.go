@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	types "intel/isecl/lib/common/v2/types/aas"
+	types "intel-secl/v3/pkg/lib/common/types/aas"
 )
 
 // Run with command: go test -count=1 -v <filenames>
@@ -37,8 +37,12 @@ func TestAASClient(t *testing.T) {
 		JWTToken: token,
 	}
 	role := types.RoleCreate{
-		Service: "test_service",
-		Name:    "test_name",
+		RoleInfo: types.RoleInfo{
+			Service: "test_service",
+			Name:    "test_name",
+			Context: "test_context",
+		},
+		Permissions:    []string{"*:*:*"},
 	}
 	resp, err := aasClient.CreateRole(role)
 	if err == nil {
