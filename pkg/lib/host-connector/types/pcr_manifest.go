@@ -12,7 +12,7 @@ type Info struct {
 type Pcr struct {
 	Index      string `json:"index"`
 	Value      string `json:"value"`
-	PcrBank    string `json:"pcrBank"`
+	PcrBank    string `json:"pcr_bank"`
 }
 
 type EventLog struct {
@@ -23,9 +23,9 @@ type EventLog struct {
 }
 
 type EventLogEntry struct {
-	PcrIndex   string     `json:"pcrIndex"`
-	EventLogs  []EventLog `json:"eventLog"`
-	PcrBank    string     `json:"pcrBank"`
+	PcrIndex   string     `json:"pcr_index"`
+	EventLogs  []EventLog `json:"event_log"`
+	PcrBank    string     `json:"pcr_bank"`
 }
 
 type PcrSha1 Pcr
@@ -41,5 +41,5 @@ type PcrEventLogMap struct {
 type PcrManifest struct {
 	Sha1Pcrs       []PcrSha1      `json:"sha1pcrs"`
 	Sha256Pcrs     []PcrSha256    `json:"sha2pcrs"`
-	PcrEventLogMap PcrEventLogMap `json:"pcrEventLogMap"`
+	PcrEventLogMap PcrEventLogMap `json:"pcr_event_log_map"`
 }

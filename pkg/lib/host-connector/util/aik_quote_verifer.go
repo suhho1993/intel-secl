@@ -44,8 +44,8 @@ const (
 	SHA1                      = "SHA1"
 	SHA256                    = "SHA256"
 	PCR_INDEX_PREFIX          = "pcr_"
-	EVENT_LOG_DIGEST_SHA1     = "com.intel.mtwilson.core.common.types.MeasurementSha1"
-	EVENT_LOG_DIGEST_SHA256   = "com.intel.mtwilson.core.common.types.MeasurementSha256"
+	EVENT_LOG_DIGEST_SHA1     = "com.intel.mtwilson.core.common.model.MeasurementSha1"
+	EVENT_LOG_DIGEST_SHA256   = "com.intel.mtwilson.core.common.model.MeasurementSha256"
 	EVENT_NAME                = "OpenSource.EventName"
 )
 

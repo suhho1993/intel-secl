@@ -7,10 +7,10 @@ package types
 import taModel "intel-secl/v3/pkg/model/ta"
 
 type HostManifest struct {
-	AIKCertificate        string           `json:"aikCertificate"`
-	AssetTagDigest        string           `json:"assetTagDigest"`
-	HostInfo              taModel.HostInfo `json:"hostInfo"`
-	PcrManifest           PcrManifest      `json:"pcrManifest"`
-	BindingKeyCertificate string           `json:"bindingKeyCertificate"`
-	MeasurementXmls       []string         `json:"measurementXmls"`
+	AIKCertificate        string           `json:"aik_certificate"`
+	AssetTagDigest        string           `json:"asset_tag_digest"`
+	HostInfo              taModel.HostInfo `json:"host_info"`
+	PcrManifest           PcrManifest      `json:"pcr_manifest"`
+	BindingKeyCertificate string           `json:"binding_key_certificate"`
+	MeasurementXmls       []string         `json:"measurement_xmls"`
 }
