@@ -187,7 +187,7 @@ type IsecLFormatter struct {
         - Example (Default format): `"$lv$[$pid$] $t$ $pkg$: $msg$; $flds$"`
         - Gets:
     ```log
-    INFO[27628] 2019-10-14T14:32:22-07:00 intel/isecl/lib/common/log_test: Hello; field1=test field2=test
+    INFO[27628] 2019-10-14T14:32:22-07:00 intel-secl/v3/pkg/lib/common/log_test: Hello; field1=test field2=test
     ````
     - Token can be missing, but the total number of delimiters should equal to 10
         - Good: `"$lv$[$pid$] $t$: $msg$; $$$$"`, this will not show `pkg` and `flds`
