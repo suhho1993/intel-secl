@@ -196,7 +196,7 @@ func VerifyQuoteAndGetPCRManifest(decodedEventLog string, verificationNonce []by
 		*/
 		for pcr := 0; pcr < 8*pcrSelection[j].size; pcr++ {
 			pcrSelected := pcrSelection[j].pcrSelected
-			selected := pcrSelected[pcr/8] & (1 << (pcr % 8))
+			selected := pcrSelected[pcr/8] & (1 << (uint16(pcr) % 8))
 			if selected > 0 {
 				if (pcrPos + pcrSize) < pcrConcatLen {
 					pcrConcat = append(pcrConcat, pcrs[pcrPos:pcrPos+pcrSize]...)
