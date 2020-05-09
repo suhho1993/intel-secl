@@ -29,13 +29,16 @@ func (icf *IntelConnectorFactory) GetHostConnector(vendorConnector types.VendorC
 		return nil, errors.New("intel_host_connector_factory:GetHostConnector() error retrieving TA API URL")
 	}
 
-	taClient := client.TAClient{
-		AasURL:          aasApiUrl,
-		BaseURL:         taApiURL,
-		ServiceUsername: vendorConnector.Configuration.Username,
-		ServicePassword: vendorConnector.Configuration.Password,
-		TrustedCaCerts:  trustedCaCerts,
+	taClient, err := client.NewTAClient(aasApiUrl, 
+										taApiURL,
+										vendorConnector.Configuration.Username,
+										vendorConnector.Configuration.Password,
+										trustedCaCerts)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "intel_host_connector_factory:GetHostConnector() Could not create Trust Agent client")
 	}
+
 	log.Debug("intel_host_connector_factory:GetHostConnector() TA client created")
-	return &IntelConnector{&taClient}, nil
+	return &IntelConnector{taClient}, nil
 }

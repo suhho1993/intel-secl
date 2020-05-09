@@ -2,6 +2,8 @@ module intel-secl/v3
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/golang/mock v1.4.3 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
 	github.com/pkg/errors v0.9.1

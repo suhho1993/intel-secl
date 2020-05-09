@@ -8,10 +8,10 @@ package types
 import "encoding/xml"
 
 type Module struct {
-	PcrBank   string `xml:"pcrBank"`
-	PcrNumber string `xml:"pcrNumber"`
-	Name      string `xml:"name"`
-	Value     string `xml:"value"`
+	PcrBank   string   `xml:"pcrBank"`
+	PcrNumber PcrIndex `xml:"pcrNumber"`
+	Name      string   `xml:"name"`
+	Value     string   `xml:"value"`
 }
 
 type MeasureLog struct {
