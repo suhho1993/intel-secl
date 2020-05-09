@@ -17,7 +17,33 @@ import (
 	"net/url"
 )
 
-type TAClient struct {
+type TAClient interface {
+	GetHostInfo() (taModel.HostInfo, error)
+	GetTPMQuote(nonce string, pcrList []int, pcrBankList []string) (taModel.TpmQuoteResponse, error) 
+	GetAIK() ([]byte, error)
+	GetBindingKeyCertificate() ([]byte, error)
+	DeployAssetTag(hardwareUUID, tag string) error
+	DeploySoftwareManifest(manifest taModel.Manifest) error
+	GetMeasurementFromManifest(manifest taModel.Manifest) (taModel.Measurement, error)
+	GetBaseURL() (*url.URL)
+}
+
+func NewTAClient(aasApiUrl string, taApiUrl *url.URL, serviceUserName string, serviceUserPassword string,
+				 trustedCaCerts string) (TAClient, error) {
+
+	taClient := taClient {
+		AasURL:          aasApiUrl,
+		BaseURL:         taApiUrl,
+		ServiceUsername: serviceUserName,
+		ServicePassword: serviceUserPassword,
+		TrustedCaCerts:  trustedCaCerts,
+	}
+
+	return &taClient, nil
+}
+
+
+type taClient struct {
 	AasURL          string
 	BaseURL         *url.URL
 	ServiceUsername string
@@ -28,7 +54,7 @@ type TAClient struct {
 var log = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
-func (tc *TAClient) GetHostInfo() (taModel.HostInfo, error) {
+func (tc *taClient) GetHostInfo() (taModel.HostInfo, error) {
 	log.Trace("clients/trust_agent_client:GetHostInfo() Entering")
 	defer log.Trace("clients/trust_agent_client:GetHostInfo() Leaving")
 
@@ -61,7 +87,7 @@ func (tc *TAClient) GetHostInfo() (taModel.HostInfo, error) {
 	return hostInfo, nil
 }
 
-func (tc *TAClient) GetTPMQuote(nonce string, pcrList []int, pcrBankList []string) (taModel.TpmQuoteResponse, error) {
+func (tc *taClient) GetTPMQuote(nonce string, pcrList []int, pcrBankList []string) (taModel.TpmQuoteResponse, error) {
 	log.Trace("clients/trust_agent_client:GetTPMQuote() Entering")
 	defer log.Trace("clients/trust_agent_client:GetTPMQuote() Leaving")
 
@@ -106,7 +132,7 @@ func (tc *TAClient) GetTPMQuote(nonce string, pcrList []int, pcrBankList []strin
 	return quoteResponse, nil
 }
 
-func (tc *TAClient) GetAIK() ([]byte, error) {
+func (tc *taClient) GetAIK() ([]byte, error) {
 	log.Trace("clients/trust_agent_client:GetAIK() Entering")
 	defer log.Trace("clients/trust_agent_client:GetAIK() Leaving")
 
@@ -132,7 +158,7 @@ func (tc *TAClient) GetAIK() ([]byte, error) {
 	return httpResponse, nil
 }
 
-func (tc *TAClient) GetBindingKeyCertificate() ([]byte, error) {
+func (tc *taClient) GetBindingKeyCertificate() ([]byte, error) {
 	log.Trace("clients/trust_agent_client:GetBindingKeyCertificate() Entering")
 	defer log.Trace("clients/trust_agent_client:GetBindingKeyCertificate() Leaving")
 
@@ -160,7 +186,7 @@ func (tc *TAClient) GetBindingKeyCertificate() ([]byte, error) {
 	return httpResponse, nil
 }
 
-func (tc *TAClient) DeployAssetTag(hardwareUUID, tag string) error {
+func (tc *taClient) DeployAssetTag(hardwareUUID, tag string) error {
 	log.Trace("clients/trust_agent_client:DeployAssetTag() Entering")
 	defer log.Trace("clients/trust_agent_client:DeployAssetTag() Leaving")
 
@@ -197,7 +223,7 @@ func (tc *TAClient) DeployAssetTag(hardwareUUID, tag string) error {
 	return nil
 }
 
-func (tc *TAClient) DeploySoftwareManifest(manifest taModel.Manifest) error {
+func (tc *taClient) DeploySoftwareManifest(manifest taModel.Manifest) error {
 	log.Trace("clients/trust_agent_client:DeploySoftwareManifest() Entering")
 	defer log.Trace("clients/trust_agent_client:DeploySoftwareManifest() Leaving")
 
@@ -226,7 +252,7 @@ func (tc *TAClient) DeploySoftwareManifest(manifest taModel.Manifest) error {
 	return nil
 }
 
-func (tc *TAClient) GetMeasurementFromManifest(manifest taModel.Manifest) (taModel.Measurement, error) {
+func (tc *taClient) GetMeasurementFromManifest(manifest taModel.Manifest) (taModel.Measurement, error) {
 	log.Trace("clients/trust_agent_client:GetMeasurementFromManifest() Entering")
 	defer log.Trace("clients/trust_agent_client:GetMeasurementFromManifest() Leaving")
 
@@ -261,4 +287,8 @@ func (tc *TAClient) GetMeasurementFromManifest(manifest taModel.Manifest) (taMod
 	log.Info("clients/trust_agent_client:GetMeasurementFromManifest() Successfully received meaurement for the " +
 		"provided manifest")
 	return measurement, nil
+}
+
+func (ta *taClient) GetBaseURL() *url.URL {
+	return ta.BaseURL
 }

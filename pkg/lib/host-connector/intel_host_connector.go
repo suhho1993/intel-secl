@@ -17,7 +17,7 @@ import (
 )
 
 type IntelConnector struct {
-	client *client.TAClient
+	client client.TAClient
 }
 
 func (ic *IntelConnector) GetHostDetails() (taModel.HostInfo, error) {
@@ -50,7 +50,7 @@ func (ic *IntelConnector) GetHostManifest(nonce string, pcrList []int, pcrBankLi
 	}
 
 	nonceInBytes, err := base64.StdEncoding.DecodeString(nonce)
-	verificationNonce, err = util.GetVerificationNonce(nonceInBytes, ic.client.BaseURL.Host, tpmQuoteResponse)
+	verificationNonce, err = util.GetVerificationNonce(nonceInBytes, ic.client.GetBaseURL().Host, tpmQuoteResponse)
 	if err != nil {
 		return types.HostManifest{}, err
 	}
@@ -105,9 +105,15 @@ func (ic *IntelConnector) GetHostManifest(nonce string, pcrList []int, pcrBankLi
 		return types.HostManifest{}, errors.Wrap(err, "intel_host_connector:GetHostManifest() Error getting " +
 			"binding key certificate from TA")
 	}
-	bindingKeyCertificate, _ := pem.Decode(bindingKeyBytes)
-	bindingKeyCertificateBase64 := base64.StdEncoding.EncodeToString(bindingKeyCertificate.Bytes)
 
+	// The bindingkey certificate may not always be returned by the trust-agent,
+	// it will only be there if workload-agent is installed.
+	bindingKeyCertificateBase64 := ""
+	if bindingKeyBytes != nil && len(bindingKeyBytes) > 0{
+		bindingKeyCertificate, _ := pem.Decode(bindingKeyBytes)
+		bindingKeyCertificateBase64 = base64.StdEncoding.EncodeToString(bindingKeyCertificate.Bytes)
+	} 
+	
 	aikCertificateBase64 := base64.StdEncoding.EncodeToString(aikPem.Bytes)
 
 	hostManifest.HostInfo, err = ic.client.GetHostInfo()

@@ -43,7 +43,6 @@ const (
 	PCR_VALUE_UNTAINT         = "[^0-9a-fA-F]"
 	SHA1                      = "SHA1"
 	SHA256                    = "SHA256"
-	PCR_INDEX_PREFIX          = "pcr_"
 	EVENT_LOG_DIGEST_SHA1     = "com.intel.mtwilson.core.common.model.MeasurementSha1"
 	EVENT_LOG_DIGEST_SHA256   = "com.intel.mtwilson.core.common.model.MeasurementSha256"
 	EVENT_NAME                = "OpenSource.EventName"
@@ -304,17 +303,27 @@ func createPCRManifest(pcrList []string, eventLog string) (types.PcrManifest, er
 
 			if PCR_NUMBER_PATTERN.MatchString(pcrNumber) && PCR_VALUE_PATTERN.MatchString(pcrValue) {
 				secLog.Debugf("Result PCR %s : %s", pcrNumber, pcrValue)
+				shaAlgorithm, err := types.GetSHAAlgorithm(pcrBank)
+				if err != nil {
+					return pcrManifest, err
+				}
+
+				pcrIndex, err := types.GetPcrIndexFromString(pcrNumber)
+				if err != nil {
+					return pcrManifest, err
+				}
+
 				if strings.EqualFold(pcrBank, "SHA256") {
-					pcrManifest.Sha256Pcrs = append(pcrManifest.Sha256Pcrs, types.PcrSha256{
-						Index:   PCR_INDEX_PREFIX + pcrNumber,
+					pcrManifest.Sha256Pcrs = append(pcrManifest.Sha256Pcrs, types.Pcr{
+						Index:   pcrIndex,
 						Value:   pcrValue,
-						PcrBank: pcrBank,
+						PcrBank: shaAlgorithm,
 					})
 				} else if strings.EqualFold(pcrBank, "SHA1") {
-					pcrManifest.Sha1Pcrs = append(pcrManifest.Sha1Pcrs, types.PcrSha1{
-						Index:   PCR_INDEX_PREFIX + pcrNumber,
+					pcrManifest.Sha1Pcrs = append(pcrManifest.Sha1Pcrs, types.Pcr{
+						Index:   pcrIndex,
 						Value:   pcrValue,
-						PcrBank: pcrBank,
+						PcrBank: shaAlgorithm,
 					})
 				}
 			} else {
@@ -357,7 +366,7 @@ func addPcrEntry(module types.Module, eventLogMap types.PcrEventLogMap) types.Pc
 	switch module.PcrBank {
 	case SHA1:
 		for _, entry := range eventLogMap.Sha1EventLogs {
-			if strings.Contains(entry.PcrIndex, module.PcrNumber) {
+			if entry.PcrIndex == module.PcrNumber {
 				pcrFound = true
 				break
 			}
@@ -369,13 +378,13 @@ func addPcrEntry(module types.Module, eventLogMap types.PcrEventLogMap) types.Pc
 
 		if !pcrFound {
 			eventLogMap.Sha1EventLogs = append(eventLogMap.Sha1EventLogs, types.Sha1EventLogEntry{PcrIndex:
-			PCR_INDEX_PREFIX + module.PcrNumber, PcrBank: SHA1, EventLogs: []types.EventLog{eventLog}})
+			module.PcrNumber, PcrBank: SHA1, EventLogs: []types.EventLog{eventLog}})
 		} else {
 			eventLogMap.Sha1EventLogs[index].EventLogs = append(eventLogMap.Sha1EventLogs[index].EventLogs, eventLog)
 		}
 	case SHA256:
 		for _, entry := range eventLogMap.Sha256EventLogs {
-			if strings.Contains(entry.PcrIndex, module.PcrNumber) {
+			if entry.PcrIndex == module.PcrNumber {
 				pcrFound = true
 				break
 			}
@@ -387,7 +396,7 @@ func addPcrEntry(module types.Module, eventLogMap types.PcrEventLogMap) types.Pc
 
 		if !pcrFound {
 			eventLogMap.Sha256EventLogs = append(eventLogMap.Sha256EventLogs, types.Sha256EventLogEntry{PcrIndex:
-			PCR_INDEX_PREFIX + module.PcrNumber, PcrBank: SHA256, EventLogs: []types.EventLog{eventLog}})
+			module.PcrNumber, PcrBank: SHA256, EventLogs: []types.EventLog{eventLog}})
 		} else {
 			eventLogMap.Sha256EventLogs[index].EventLogs = append(eventLogMap.Sha256EventLogs[index].EventLogs, eventLog)
 		}
