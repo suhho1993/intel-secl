@@ -1,0 +1,20 @@
+# Flavor Library
+
+The Flavor library is responsible for retrieving the hardware/software measurements of the host in a pre-defined format. 
+When integrated with the Host Verification service, Flavor would be equivalent to what is known today as the Whitelist.
+
+## Key features
+- Create a flavors for VM and container
+
+### Direct dependencies
+
+| Name                  | Repo URL                        | Minimum Version Required              |
+| ----------------------| --------------------------------| :------------------------------------:|
+| logrus                | github.com/sirupsen/logrus      | v1.4.0                                |
+| testify               | github.com/stretchr/testify     | v1.3.0                                |
+| uuid                  | github.com/satori/go.uuid       | v1.2.1-0.20181028125025-b2ce2384e17b  |
+
+*Note: All dependencies are listed in go.mod*
+
+# Links
+https://01.org/intel-secl/
