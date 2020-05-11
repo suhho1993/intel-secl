@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"intel-secl/v3/pkg/lib/common/log"
-	"intel-secl/v3/pkg/lib/common/log/setup"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/setup"
 
 	"github.com/sirupsen/logrus"
 )

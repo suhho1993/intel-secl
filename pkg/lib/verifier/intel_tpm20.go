@@ -10,7 +10,7 @@ package verifier
 
 import (
 	"github.com/pkg/errors"
-	"intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 )
 
 type policyBuilderIntelTpm20 struct {

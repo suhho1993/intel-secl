@@ -5,7 +5,7 @@
 package auth
 
 import (
-	types "intel-secl/v3/pkg/lib/common/types/aas"
+	types "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	"strings"
 )
 

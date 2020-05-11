@@ -4,7 +4,7 @@
  */
 package types
 
-import taModel "intel-secl/v3/pkg/model/ta"
+import taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 
 type HostManifest struct {
 	AIKCertificate        string           `json:"aik_certificate"`

@@ -14,7 +14,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"intel-secl/v3/pkg/lib/common/crypt"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"strings"
 	"time"
 

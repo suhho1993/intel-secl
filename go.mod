@@ -1,4 +1,4 @@
-module intel-secl/v3
+module github.com/intel-secl/intel-secl/v3
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

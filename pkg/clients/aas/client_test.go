@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	types "intel-secl/v3/pkg/lib/common/types/aas"
+	types "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 )
 
 // Run with command: go test -count=1 -v <filenames>

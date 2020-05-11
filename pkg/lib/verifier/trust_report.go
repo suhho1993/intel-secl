@@ -10,7 +10,7 @@ package verifier
 
 import (
 	"github.com/google/uuid"
-	"intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 )
 
 // TODO: Structure of java TrustReport (in verifier package) is different than what is exposed
