@@ -70,9 +70,9 @@ func TestPcrMatchesConstantMismatch(t *testing.T) {
 	assert.NotNil(t, trustReport)
 	assert.False(t, trustReport.Trusted)
 
-	json, err := json.Marshal(trustReport)
-	assert.NoErrot(t, err)
-	t.Log(string(json))
+	trustReportJson, err := json.Marshal(trustReport)
+	assert.NoError(t, err)
+	t.Log(string(trustReportJson))
 }
 
 //-------------------------------------------------------------------------------------------------
