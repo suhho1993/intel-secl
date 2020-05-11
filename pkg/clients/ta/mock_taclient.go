@@ -4,18 +4,11 @@
  */
 package ta
 
-//
-// This is a temporary mock until we potentialy switch to gomock (requires a module name change to "intel-sec/v3")
-//
-// FOR MOCKGENT TO WORK WE WILL NEED TO CHANGE OUR MODULE NAME TO CONATAIN A "DOT".  Ex...
-// module intel.com/secl/v3
-// Otherwise we get: malformed module path "intel-secl/v3/pkg/lib/clients/ta": missing dot in first path element
-// From what I can tell -- a dot is required in the first section of module names
-//go:generate mockgen -destination=mock_taclient.go -package=ta intel-secl/v3/pkg/lib/clients/ta TAClient
+//go:generate mockgen -destination=mock_taclient.go -package=ta github.com/intel-secl/intel-secl/v3/pkg/lib/clients/ta TAClient
 
 import (
 	"github.com/stretchr/testify/mock"
-	taModel "intel-secl/v3/pkg/model/ta"
+	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"net/url"
 )
 

@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

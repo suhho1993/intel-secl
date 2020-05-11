@@ -6,9 +6,9 @@ package host_connector
 
 import (
 	"errors"
-	commLog"intel-secl/v3/pkg/lib/common/log"
-	"intel-secl/v3/pkg/lib/host-connector/constants"
-	"intel-secl/v3/pkg/lib/host-connector/util"
+	commLog"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 )
 
 var log = commLog.GetDefaultLogger()

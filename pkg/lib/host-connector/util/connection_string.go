@@ -5,8 +5,8 @@
 package util
 
 import (
-	"intel-secl/v3/pkg/lib/host-connector/constants"
-	"intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"strings"
 )
 

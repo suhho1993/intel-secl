@@ -6,9 +6,9 @@ package config
 
 import (
 	"errors"
-	"intel-secl/v3/pkg/hvs/constants"
-	commLog "intel-secl/v3/pkg/lib/common/log"
-	"intel-secl/v3/pkg/lib/common/setup"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"os"
 	"path"
 	"strconv"

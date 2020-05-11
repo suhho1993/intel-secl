@@ -12,7 +12,7 @@ import (
 	"flag"
 	"fmt"
 	errorLog "github.com/pkg/errors"
-	"intel-secl/v3/pkg/lib/common/crypt"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"io"
 	"io/ioutil"
 	"net/http"

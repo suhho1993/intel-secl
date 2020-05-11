@@ -6,7 +6,7 @@ package resource
 
 import (
 	"fmt"
-	"intel-secl/v3/pkg/hvs/version"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/version"
 	"net/http"
 
 	"github.com/gorilla/mux"

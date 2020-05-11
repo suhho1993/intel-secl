@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"intel-secl/v3/pkg/lib/common/log/setup"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/setup"
 
 	log "github.com/sirupsen/logrus"
 )

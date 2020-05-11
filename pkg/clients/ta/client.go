@@ -10,9 +10,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"github.com/pkg/errors"
-	"intel-secl/v3/pkg/clients/util"
-	commLog "intel-secl/v3/pkg/lib/common/log"
-	taModel "intel-secl/v3/pkg/model/ta"
+	"github.com/intel-secl/intel-secl/v3/pkg/clients/util"
+	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"net/http"
 	"net/url"
 )
