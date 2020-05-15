@@ -7,21 +7,28 @@ package hvs
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"crypto/x509/pkix"
 	"flag"
 	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/resource"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/tasks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/version"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/repository"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/repository/postgres"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	e "github.com/intel-secl/intel-secl/v3/pkg/lib/common/exec"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	commLogInt "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/setup"
+	cmw "github.com/intel-secl/intel-secl/v3/pkg/lib/common/middleware"
 	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"io"
+	"io/ioutil"
 	stdlog "log"
 	"net/http"
 	"os"
@@ -36,6 +43,9 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+
+	// Import driver for GORM
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 type App struct {
@@ -74,6 +84,27 @@ func (a *App) printUsage() {
 	fmt.Fprintln(w, "                              - get required env variables from all the setup tasks")
 	fmt.Fprintln(w, "                          Optional env variables:")
 	fmt.Fprintln(w, "                              - get optional env variables from all the setup tasks")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "    database              Setup hvs database")
+	fmt.Fprintln(w, "                          Required env variables if HVS_NOSETUP=true or variables not set in config.yml:")
+	fmt.Fprintln(w, "                              - CMS_BASE_URL=<url>                                : for CMS API url")
+	fmt.Fprintln(w, "                              - CMS_TLS_CERT_SHA384=<CMS TLS cert sha384 hash>    : to ensure that HVS is talking to the right CMS instance")
+	fmt.Fprintln(w, "                          Available arguments and Required Env variables specific to setup task are:")
+	fmt.Fprintln(w, "                              - db-host    alternatively, set environment variable HVS_DB_HOSTNAME")
+	fmt.Fprintln(w, "                              - db-port    alternatively, set environment variable HVS_DB_PORT")
+	fmt.Fprintln(w, "                              - db-user    alternatively, set environment variable HVS_DB_USERNAME")
+	fmt.Fprintln(w, "                              - db-pass    alternatively, set environment variable HVS_DB_PASSWORD")
+	fmt.Fprintln(w, "                              - db-name    alternatively, set environment variable HVS_DB_NAME")
+	fmt.Fprintln(w, "                          Available arguments and Optional env variables specific to setup task are:")
+	fmt.Fprintln(w, "                              - db-sslmode <disable|allow|prefer|require|verify-ca|verify-full>")
+	fmt.Fprintln(w, "                              alternatively, set environment variable HVS_DB_SSLMODE")
+	fmt.Fprintln(w, "                              - db-sslcert path to where the certificate file of database. Only applicable")
+	fmt.Fprintln(w, "                              for db-sslmode=<verify-ca|verify-full. If left empty, the cert")
+	fmt.Fprintln(w, "                              will be copied to /etc/hvs/hvsdbcert.pem")
+	fmt.Fprintln(w, "                              alternatively, set environment variable HVS_DB_SSLCERT")
+	fmt.Fprintln(w, "                              - db-sslcertsrc <path to where the database ssl/tls certificate file>")
+	fmt.Fprintln(w, "                              mandatory if db-sslcert does not already exist")
+	fmt.Fprintln(w, "                              alternatively, set environment variable HVS_DB_SSLCERTSRC")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "    download_ca_cert      Download CMS root CA certificate")
 	fmt.Fprintln(w, "                          - Option [--force] overwrites any existing files, and always downloads new root CA cert")
@@ -255,6 +286,7 @@ func (a *App) Run(args []string) error {
 
 		if args[2] != "download_ca_cert" &&
 			args[2] != "download_cert" &&
+			args[2] != "database" &&
 			args[2] != "server" &&
 			args[2] != "all" {
 			a.printUsage()
@@ -304,6 +336,11 @@ func (a *App) Run(args []string) error {
 					CertType:      "TLS",
 					CaCertsDir:    constants.TrustedCaCertsDir,
 					BearerToken:   "",
+					ConsoleWriter: os.Stdout,
+				},
+				tasks.Database{
+					Flags:         flags,
+					Config:        a.configuration(),
 					ConsoleWriter: os.Stdout,
 				},
 			},
@@ -357,10 +394,77 @@ func (a *App) Run(args []string) error {
 	return nil
 }
 
+var cacheTime, _ = time.ParseDuration(constants.JWTCertsCacheTime)
+
+// Fetch JWT certificate from AAS
+func (a *App) fnGetJwtCerts() error {
+	defaultLog.Trace("server:fnGetJwtCerts() Entering")
+	defer defaultLog.Trace("server:fnGetJwtCerts() Leaving")
+
+	c := a.configuration()
+	if !strings.HasSuffix(c.AASApiUrl, "/") {
+		c.AASApiUrl = c.AASApiUrl + "/"
+	}
+	url := c.AASApiUrl + "noauth/jwt-certificates"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return errors.Wrap(err, "server:fnGetJwtCerts() Could not create http request")
+	}
+	req.Header.Add("accept", "application/x-pem-file")
+	rootCaCertPems, err := cos.GetDirFileContents(constants.TrustedCaCertsDir, "*.pem")
+	if err != nil {
+		return errors.Wrap(err, "server:fnGetJwtCerts() Could not read root CA certificate")
+	}
+
+	// Get the SystemCertPool, continue with an empty pool on error
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+	for _, rootCACert := range rootCaCertPems {
+		if ok := rootCAs.AppendCertsFromPEM(rootCACert); !ok {
+			return err
+		}
+	}
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: false,
+				RootCAs:            rootCAs,
+			},
+		},
+	}
+
+	res, err := httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "server:fnGetJwtCerts() Could not retrieve jwt certificate")
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	err = crypt.SavePemCertWithShortSha1FileName(body, constants.TrustedJWTSigningCertsDir)
+	if err != nil {
+		return errors.Wrap(err, "server:fnGetJwtCerts() Could not store Certificate")
+	}
+	return nil
+}
+
 func (a *App) startServer() error {
+	defaultLog.Trace("app:startServer() Entering")
+	defer defaultLog.Trace("app:startServer() Leaving")
+
 	c := a.configuration()
 
 	defaultLog.Info("Starting server")
+	// Open database
+	hvsDB, err := postgres.Open(c.Postgres.Hostname, c.Postgres.Port, c.Postgres.DBName,
+		c.Postgres.Username, c.Postgres.Password, c.Postgres.SSLMode, c.Postgres.SSLCert)
+	if err != nil {
+		defaultLog.WithError(err).Error("failed to open Postgres database")
+		return err
+	}
+	defer hvsDB.Close()
+	defaultLog.Trace("Migrating Database")
+	hvsDB.Migrate()
 
 	// Create public routes that does not need any authentication
 	r := mux.NewRouter()
@@ -376,7 +480,17 @@ func (a *App) startServer() error {
 		}
 	}(resource.SetVersion)
 
-	tlsconfig := &tls.Config{
+	sr = r.PathPrefix("/mtwilson/v2").Subrouter()
+	sr.Use(cmw.NewTokenAuth(constants.TrustedJWTSigningCertsDir,
+		constants.TrustedCaCertsDir, a.fnGetJwtCerts,
+		cacheTime))
+	func(setters ...func(*mux.Router, repository.HVSDatabase)) {
+		for _, setter := range setters {
+			setter(sr, hvsDB)
+		}
+	}(resource.SetFlavorGroups)
+
+	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
 		CipherSuites: []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -391,7 +505,7 @@ func (a *App) startServer() error {
 		Addr:              fmt.Sprintf(":%d", c.Port),
 		Handler:           handlers.RecoveryHandler(handlers.RecoveryLogger(httpLog), handlers.PrintRecoveryStack(true))(handlers.CombinedLoggingHandler(a.httpLogWriter(), r)),
 		ErrorLog:          httpLog,
-		TLSConfig:         tlsconfig,
+		TLSConfig:         tlsConfig,
 		ReadTimeout:       c.ReadTimeout,
 		ReadHeaderTimeout: c.ReadHeaderTimeout,
 		WriteTimeout:      c.WriteTimeout,

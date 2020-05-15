@@ -7,6 +7,7 @@ package constants
 import "time"
 
 const (
+	ServiceName                   = "HVS"
 	ServiceUserName               = "hvs"
 	ServiceDir                    = "hvs/"
 	HomeDir                       = "/opt/" + ServiceDir
@@ -46,6 +47,11 @@ const (
 //Roles and permissions
 const (
 	Administrator = "*:*:*"
+
+	FlavorGroupCreate   = "flavorgroups:create"
+	FlavorGroupRetrieve = "flavorgroups:retrieve"
+	FlavorGroupSearch   = "flavorgroups:search"
+	FlavorGroupDelete   = "flavorgroups:delete"
 )
 
 // State represents whether or not a daemon is running or not
