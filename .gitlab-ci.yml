@@ -1,0 +1,24 @@
+default:
+  image: alpine/git
+
+variables:
+  http_proxy: "${HTTP_PROXY}"
+  https_proxy: "${HTTPS_PROXY}" 
+  no_proxy: "${NO_PROXY}"
+  
+stages:
+  - test
+
+test:go-unit-tests:
+  stage: test
+  tags:
+    - k8s
+  image: golang:latest
+  before_script:
+    - git config --global http."https://${GITLAB_SERVER}".proxy ""
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
+    - cd $CI_PROJECT_DIR
+  script:
+    - echo "This is the CI job that runs all unit tests"
+    - go test ./pkg/lib/saml -tags=unit_test -coverpkg=./pkg/lib/saml
+
