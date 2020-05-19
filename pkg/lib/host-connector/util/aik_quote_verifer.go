@@ -282,6 +282,9 @@ func createPCRManifest(pcrList []string, eventLog string) (types.PcrManifest, er
 	defer log.Trace("util/aik_quote_verifier:createPCRManifest() Leaving")
 	var pcrManifest types.PcrManifest
 	var err error
+	pcrManifest.Sha256Pcrs = []types.Pcr{}
+	pcrManifest.Sha1Pcrs = []types.Pcr{}
+
 	for _, pcrString := range pcrList {
 		parts := strings.Split(strings.TrimSpace(pcrString), " ")
 		if len(parts) == 2 {
@@ -373,11 +376,12 @@ func addPcrEntry(module types.Module, eventLogMap types.PcrEventLogMap) types.Pc
 			index++
 		}
 		eventLog := types.EventLog{DigestType: EVENT_LOG_DIGEST_SHA1,
-			Value: module.Value, Label: module.Name, Info: types.Info{ComponentName: module.Name,
-				EventName: EVENT_NAME}}
-
+			Value: module.Value, Label: module.Name}
+		eventLog.Info = make(map[string]string)
+		eventLog.Info["ComponentName"] = module.Name
+		eventLog.Info["EventName"] = EVENT_NAME
 		if !pcrFound {
-			eventLogMap.Sha1EventLogs = append(eventLogMap.Sha1EventLogs, types.Sha1EventLogEntry{PcrIndex:
+			eventLogMap.Sha1EventLogs = append(eventLogMap.Sha1EventLogs, types.EventLogEntry{PcrIndex:
 			module.PcrNumber, PcrBank: SHA1, EventLogs: []types.EventLog{eventLog}})
 		} else {
 			eventLogMap.Sha1EventLogs[index].EventLogs = append(eventLogMap.Sha1EventLogs[index].EventLogs, eventLog)
@@ -391,11 +395,12 @@ func addPcrEntry(module types.Module, eventLogMap types.PcrEventLogMap) types.Pc
 			index++
 		}
 		eventLog := types.EventLog{DigestType: EVENT_LOG_DIGEST_SHA256,
-			Value: module.Value, Label: module.Name,
-			Info: types.Info{ComponentName: module.Name, EventName: EVENT_NAME}}
-
+			Value: module.Value, Label: module.Name}
+		eventLog.Info = make(map[string]string)
+		eventLog.Info["ComponentName"] = module.Name
+		eventLog.Info["EventName"] = EVENT_NAME
 		if !pcrFound {
-			eventLogMap.Sha256EventLogs = append(eventLogMap.Sha256EventLogs, types.Sha256EventLogEntry{PcrIndex:
+			eventLogMap.Sha256EventLogs = append(eventLogMap.Sha256EventLogs, types.EventLogEntry{PcrIndex:
 			module.PcrNumber, PcrBank: SHA256, EventLogs: []types.EventLog{eventLog}})
 		} else {
 			eventLogMap.Sha256EventLogs[index].EventLogs = append(eventLogMap.Sha256EventLogs[index].EventLogs, eventLog)

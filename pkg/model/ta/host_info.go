@@ -28,17 +28,17 @@ type HostInfo struct {
 	HostName            string   `json:"host_name"`
 	BiosName            string   `json:"bios_name"`
 	HardwareUUID        string   `json:"hardware_uuid"`
-	ProcessorFlags      string   `json:"process_flags"`
-	NumberOfSockets     int      `json:"no_of_sockets,string"`
-	TbootInstalled      bool     `json:"tboot_installed,string"`
-	IsDockerEnvironment bool     `json:"is_docker_env,string"`
+	ProcessorFlags      string   `json:"process_flags,omitempty"`
+	NumberOfSockets     int      `json:"no_of_sockets,string,omitempty"`
+	TbootInstalled      bool     `json:"tboot_installed,string,omitempty"`
+	IsDockerEnvironment bool     `json:"is_docker_env,string,omitempty"`
 	HardwareFeatures    struct {
-		TXT *HardwareFeature `json:"TXT,omitempty"`
+		TXT *HardwareFeature `json:"TXT"`
 		TPM struct {
 			Enabled bool `json:"enabled,string"`
 			Meta struct {
-				TPMVersion string `json:"tpm_version"`
-				PCRBanks   string `json:"pcr_banks"`
+				TPMVersion string `json:"tpm_version,omitempty"`
+				PCRBanks   string `json:"pcr_banks,omitempty"`
 			} `json:"meta"`
 		} `json:"TPM,omitempty"`
 		CBNT *CBNT `json:"CBNT,omitempty"`

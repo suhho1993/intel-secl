@@ -14,6 +14,7 @@ require (
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/sirupsen/logrus v1.4.0
 	github.com/stretchr/testify v1.2.2
+	github.com/vmware/govmomi v0.22.2
 	golang.org/x/sys v0.0.0-20200511232937-7e40ca221e25 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )

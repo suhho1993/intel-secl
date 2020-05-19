@@ -4,48 +4,42 @@
  */
 
 package types
+
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"github.com/pkg/errors"
 	"strconv"
 	"strings"
-	"github.com/pkg/errors"
-	"encoding/xml"
-	"encoding/json"
 )
 
 const (
-	PCR_INDEX_PREFIX          = "pcr_"
+	PCR_INDEX_PREFIX = "pcr_"
 )
 
-type Info struct {
-	ComponentName string `json:"ComponentName"`
-	EventName     string `json:"EventName"`
-}
 type Pcr struct {
-	Index      PcrIndex     `json:"index"`
-	Value      string       `json:"value"`
-	PcrBank    SHAAlgorithm `json:"pcr_bank"`
+	Index   PcrIndex     `json:"index"`
+	Value   string       `json:"value"`
+	PcrBank SHAAlgorithm `json:"pcr_bank"`
 }
 
 type EventLog struct {
-	DigestType string `json:"digest_type"`
-	Value      string `json:"value"`
-	Label      string `json:"label"`
-	Info       Info   `json:"info"`
+	DigestType string            `json:"digest_type"`
+	Value      string            `json:"value"`
+	Label      string            `json:"label"`
+	Info       map[string]string `json:"info"`
 }
 
 type EventLogEntry struct {
-	PcrIndex   PcrIndex      `json:"pcr_index"`
-	EventLogs  []EventLog    `json:"event_log"`
-	PcrBank    SHAAlgorithm  `json:"pcr_bank"`
+	PcrIndex  PcrIndex     `json:"pcr_index"`
+	EventLogs []EventLog   `json:"event_log"`
+	PcrBank   SHAAlgorithm `json:"pcr_bank"`
 }
 
-type Sha1EventLogEntry EventLogEntry
-type Sha256EventLogEntry EventLogEntry
-
 type PcrEventLogMap struct {
-	Sha1EventLogs   []Sha1EventLogEntry   `json:"SHA1"`
-	Sha256EventLogs []Sha256EventLogEntry `json:"SHA256"`
+	Sha1EventLogs   []EventLogEntry   `json:"SHA1"`
+	Sha256EventLogs []EventLogEntry `json:"SHA256"`
 }
 
 type PcrManifest struct {
@@ -55,23 +49,24 @@ type PcrManifest struct {
 }
 
 type PcrIndex int
+
 const (
-	PCR0  PcrIndex = iota
+	PCR0 PcrIndex = iota
 	PCR1
 	PCR2
 	PCR3
 	PCR4
 	PCR5
-	PCR6 
+	PCR6
 	PCR7
-	PCR8 
+	PCR8
 	PCR9
 	PCR10
 	PCR11
 	PCR12
 	PCR13
 	PCR14
-	PCR15 
+	PCR15
 	PCR16
 	PCR17
 	PCR18
@@ -86,7 +81,7 @@ const (
 // Convert the integer value of PcrIndex into "pcr_N" string (for xml serialization)
 func (pcrIndex PcrIndex) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	xmlValue := fmt.Sprintf("pcr_%d", int(pcrIndex))
-	return e.EncodeElement(xmlValue, start)	
+	return e.EncodeElement(xmlValue, start)
 }
 
 // Convert the xml string value "pcr_N" to PcrIndex
@@ -129,20 +124,25 @@ func (pcrIndex *PcrIndex) UnmarshalJSON(b []byte) error {
 }
 
 type SHAAlgorithm string
+
 const (
-	SHA1   SHAAlgorithm = "SHA1"
-	SHA256              = "SHA256"
-	SHA384              = "SHA384"
-	SHA512              = "SHA512"
-	UNKNOWN             = "unknown"
+	SHA1    SHAAlgorithm = "SHA1"
+	SHA256               = "SHA256"
+	SHA384               = "SHA384"
+	SHA512               = "SHA512"
+	UNKNOWN              = "unknown"
 )
 
-func GetSHAAlgorithm(algorithm string) (SHAAlgorithm, error){
-	switch(algorithm) {
-	case string(SHA1): return SHA1, nil
-	case string(SHA256): return SHA256, nil
-	case string(SHA384): return SHA384, nil
-	case string(SHA512): return SHA512, nil
+func GetSHAAlgorithm(algorithm string) (SHAAlgorithm, error) {
+	switch algorithm {
+	case string(SHA1):
+		return SHA1, nil
+	case SHA256:
+		return SHA256, nil
+	case SHA384:
+		return SHA384, nil
+	case SHA512:
+		return SHA512, nil
 	}
 
 	return UNKNOWN, errors.Errorf("Could not retrieve SHA from value '%s'", algorithm)
