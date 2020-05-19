@@ -2,8 +2,9 @@
  * Copyright (C) 2019 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package aas
 
+package aas
+/*
 import (
 	"fmt"
 	"testing"
@@ -51,3 +52,4 @@ func TestAASClient(t *testing.T) {
 		fmt.Println(err)
 	}
 }
+*/

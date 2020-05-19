@@ -7,7 +7,7 @@ BUILDDATE := $(shell TZ=UTC date +%Y-%m-%dT%H:%M:%S%z)
 .PHONY: installer test all clean
 
 hvs:
-	cd cmd/hvs && GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X pkg/hvs/version.BuildDate=$(BUILDDATE) -X pkg/hvs/version.Version=$(VERSION) -X pkg/hvs/version.GitHash=$(GITCOMMIT)" -o hvs
+	cd cmd/hvs && GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.GitHash=$(GITCOMMIT)" -o hvs
 
 hvs-installer: hvs
 	mkdir -p bin/installer

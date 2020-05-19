@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package tls
-
+/*
 import (
 	"crypto/rand"
 	"crypto/rsa"
@@ -141,3 +141,4 @@ func TestGenerateSelfSignCerts(t *testing.T) {
 func TestGenRSAKeys(t *testing.T) {
 
 }
+*/

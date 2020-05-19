@@ -275,7 +275,7 @@ func (a *App) Run(args []string) error {
 		a.uninstall(purge)
 		os.Exit(0)
 	case "--version", "-v":
-		fmt.Fprintf(a.consoleWriter(), "HVS %s-%s\nBuilt %s\n", version.Version, version.GitHash, version.BuildDate)
+		fmt.Fprintf(a.consoleWriter(), "Host Verification Service %s-%s\nBuilt %s\n", version.Version, version.GitHash, version.BuildDate)
 	case "setup":
 		a.configureLogs(false, true)
 		var ctx setup.Context
@@ -473,14 +473,14 @@ func (a *App) startServer() error {
 	r.SkipClean(true)
 
 	// Create Router, set routes
-	sr := r.PathPrefix("/mtwilson/v2").Subrouter()
+	sr := r.PathPrefix("/hvs/v2").Subrouter()
 	func(setters ...func(*mux.Router)) {
 		for _, setter := range setters {
 			setter(sr)
 		}
 	}(resource.SetVersion)
 
-	sr = r.PathPrefix("/mtwilson/v2").Subrouter()
+	sr = r.PathPrefix("/hvs/v2").Subrouter()
 	sr.Use(cmw.NewTokenAuth(constants.TrustedJWTSigningCertsDir,
 		constants.TrustedCaCertsDir, a.fnGetJwtCerts,
 		cacheTime))

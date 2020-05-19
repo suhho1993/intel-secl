@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package aas
-
+/*
 import (
 	"fmt"
 	"testing"
@@ -81,3 +81,4 @@ func TestJWT(t *testing.T) {
 		fmt.Println("err: ", err.Error())
 	}
 }
+*/

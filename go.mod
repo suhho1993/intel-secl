@@ -18,3 +18,5 @@ require (
 	golang.org/x/sys v0.0.0-20200511232937-7e40ca221e25 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )
+
+replace github.com/vmware/govmomi => github.com/arijit8972/govmomi fix-tpm-attestation-output

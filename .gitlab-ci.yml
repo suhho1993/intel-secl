@@ -20,5 +20,5 @@ test:go-unit-tests:
     - cd $CI_PROJECT_DIR
   script:
     - echo "This is the CI job that runs all unit tests"
-    - go test ./pkg/lib/saml -tags=unit_test -coverpkg=./pkg/lib/saml
-
+    - go test ./... -coverprofile=cover.out
+    - go tool cover -func cover.out
