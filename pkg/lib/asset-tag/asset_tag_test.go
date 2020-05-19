@@ -26,11 +26,11 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 		PrivateKey:  privKey,
 		TagCACert:   cert,
 		TagAttributes: []TagKvAttribute{{
-			key:   "Country",
-			value: "US",
+			Key:   "Country",
+			Value: "US",
 		}, {
-			key:   "Country",
-			value: "India",
+			Key:   "Country",
+			Value: "India",
 		}},
 		ValidityInSeconds: 1000,
 	}
@@ -52,17 +52,26 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 	asn1.Unmarshal([]byte(parsedCert.Subject.CommonName), &subjectName)
 	assert.Equal(t, "803f6068-06da-e811-906e-00163566263e", subjectName)
 
+	// validate tag key-value attributes
+	for _, extensions := range parsedCert.Extensions {
+		var tagAttr TagKvAttribute
+		_, err = asn1.Unmarshal(extensions.Value, &tagAttr)
+		assert.NoError(t, err)
+		assert.Equal(t, "Country", tagAttr.Key)
+		assert.Contains(t, "US India", tagAttr.Value)
+	}
+
 	// invalid subject UUID test
 	tagConfig = TagCertConfig{
 		SubjectUUID: "",
 		PrivateKey:  privKey,
 		TagCACert:   cert,
 		TagAttributes: []TagKvAttribute{{
-			key:   "Country",
-			value: "US",
+			Key:   "Country",
+			Value: "US",
 		}, {
-			key:   "Country",
-			value: "India",
+			Key:   "Country",
+			Value: "India",
 		}},
 		ValidityInSeconds: 1000,
 	}
@@ -88,11 +97,11 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 		PrivateKey:  privKey,
 		TagCACert:   cert,
 		TagAttributes: []TagKvAttribute{{
-			key:   "Country",
-			value: "US",
+			Key:   "Country",
+			Value: "US",
 		}, {
-			key:   "Country",
-			value: "India",
+			Key:   "Country",
+			Value: "India",
 		}},
 		ValidityInSeconds: 0,
 	}
@@ -107,11 +116,11 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 		PrivateKey:  key,
 		TagCACert:   cert,
 		TagAttributes: []TagKvAttribute{{
-			key:   "Country",
-			value: "US",
+			Key:   "Country",
+			Value: "US",
 		}, {
-			key:   "Country",
-			value: "India",
+			Key:   "Country",
+			Value: "India",
 		}},
 		ValidityInSeconds: 1000,
 	}
@@ -126,11 +135,11 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 		PrivateKey:  privKey,
 		TagCACert:   &tagCaCert,
 		TagAttributes: []TagKvAttribute{{
-			key:   "Country",
-			value: "US",
+			Key:   "Country",
+			Value: "US",
 		}, {
-			key:   "Country",
-			value: "India",
+			Key:   "Country",
+			Value: "India",
 		}},
 		ValidityInSeconds: 1000,
 	}

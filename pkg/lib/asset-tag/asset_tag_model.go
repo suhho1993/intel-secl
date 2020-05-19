@@ -28,6 +28,6 @@ type TagCertBuilderConfig struct {
 
 // TagKvAttribute struct is the key-value asset-tag attributes
 type TagKvAttribute struct {
-	key   string `json:"name"`
-	value string `json:"value"`
+	Key   string `json:"name"`
+	Value string `json:"value"`
 }
