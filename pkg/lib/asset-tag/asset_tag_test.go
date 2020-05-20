@@ -7,6 +7,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"errors"
+	hc "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/stretchr/testify/assert"
 	//"github.com/stretchr/testify/mock"
 	"math/big"
@@ -40,7 +41,6 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error while creating an asset tag: %v", err)
 	}
-
 	assert.NotNil(t, tagCertificate)
 
 	// validating the created asset tag
@@ -147,6 +147,16 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 	_, err = newTag.CreateAssetTag(tagConfig)
 	assert.EqualError(t, errors.New("Tag CA-Certificate is required to be set to fetch issuer configuration information to create an asset tag certificate"), err.Error())
 
+}
+
+func TestAtag_DeployAssetTag(t *testing.T) {
+	newTag := NewAssetTag()
+	connector, err := hc.NewHostConnector("","","")
+	assert.NoError(t, err)
+	dtErr := newTag.DeployAssetTag(connector, "0966d97d182ee8fac40bee16018e762ae46a026f0bb437600e029a755f8745a9a6bb8b3da152ea37ef52f0d855b6622f\n", "803f6068-06da-e811-906e-00163566263e")
+	assert.NotNil(t, dtErr)
+	dtErrNew := newTag.DeployAssetTag(connector, "","")
+	assert.NotNil(t, dtErrNew)
 }
 
 // createX509CertAndKey() method id used to create an certificate and a RSA private key
