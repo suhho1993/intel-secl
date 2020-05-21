@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"math/big"
 	"net/url"
@@ -178,7 +179,7 @@ func GetCertHexSha384(filePath string) (string, error) {
 
 // RetrieveValidatedPeerCert retrieves the cert of a remote server and matches it against a supplied hash.
 // Optionally, if permitted via trustFirstCert accepts the certificate presented by the remote server
-func RetrieveValidatedPeerCert(baseUrl string, trustFirstCert bool, trustedThumbprint string, hashAlg crypto.Hash) ( *x509.Certificate, error) {
+func RetrieveValidatedPeerCert(baseUrl string, trustFirstCert bool, trustedThumbprint string, hashAlg crypto.Hash) (*x509.Certificate, error) {
 
 	if !trustFirstCert && trustedThumbprint == "" {
 		return nil, fmt.Errorf("trustedThumbprint not provided and trusting retrieved cert not allowed")
@@ -198,9 +199,9 @@ func RetrieveValidatedPeerCert(baseUrl string, trustFirstCert bool, trustedThumb
 	}
 	dialString = url_obj.Hostname() + dialString
 
-	conn, err := tls.Dial("tcp", dialString, &tls.Config{InsecureSkipVerify:true})
+	conn, err := tls.Dial("tcp", dialString, &tls.Config{InsecureSkipVerify: true})
 	if err != nil {
-		return nil, fmt.Errorf("could not tcp connect to %s, error: %s: ", dialString, err )
+		return nil, fmt.Errorf("could not tcp connect to %s, error: %s: ", dialString, err)
 	}
 
 	err = conn.Handshake()
@@ -225,4 +226,18 @@ func RetrieveValidatedPeerCert(baseUrl string, trustFirstCert bool, trustedThumb
 
 	return peerCert, nil
 
+}
+
+// GenUUID returns new UUID if the input ID has not been set
+func GenUUID(id string) string {
+	var newid string
+	_, err := uuid.FromString(id)
+	if err != nil {
+		// Generate new UUID
+		id, _ := uuid.NewV4()
+		newid = id.String()
+	} else {
+		newid = id
+	}
+	return newid
 }

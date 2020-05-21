@@ -55,6 +55,11 @@ type PcrManifest struct {
 
 type PcrIndex int
 
+// String returns the string representation of the PcrIndex
+func (p PcrIndex) String() string {
+	return fmt.Sprintf("pcr_%d", p)
+}
+
 const (
 	PCR0 PcrIndex = iota
 	PCR1
@@ -132,21 +137,21 @@ type SHAAlgorithm string
 
 const (
 	SHA1    SHAAlgorithm = "SHA1"
-	SHA256               = "SHA256"
-	SHA384               = "SHA384"
-	SHA512               = "SHA512"
-	UNKNOWN              = "unknown"
+	SHA256  SHAAlgorithm = "SHA256"
+	SHA384  SHAAlgorithm = "SHA384"
+	SHA512  SHAAlgorithm = "SHA512"
+	UNKNOWN SHAAlgorithm = "unknown"
 )
 
 func GetSHAAlgorithm(algorithm string) (SHAAlgorithm, error) {
 	switch algorithm {
 	case string(SHA1):
 		return SHA1, nil
-	case SHA256:
+	case string(SHA256):
 		return SHA256, nil
-	case SHA384:
+	case string(SHA384):
 		return SHA384, nil
-	case SHA512:
+	case string(SHA512):
 		return SHA512, nil
 	}
 
@@ -154,8 +159,8 @@ func GetSHAAlgorithm(algorithm string) (SHAAlgorithm, error) {
 }
 
 // Parses a string value in either integer form (i.e. "8") or "pcr_N"
-// where 'N' is the integer value between 0 and 23.  Ex. "pcr_7".  Returns 
-// an error if the string is not in the correct format or if the index 
+// where 'N' is the integer value between 0 and 23.  Ex. "pcr_7".  Returns
+// an error if the string is not in the correct format or if the index
 // value is not between 0 and 23.
 func GetPcrIndexFromString(stringValue string) (PcrIndex, error) {
 
@@ -182,7 +187,7 @@ func GetPcrIndexFromString(stringValue string) (PcrIndex, error) {
 // by intel-secl (currently supports SHA1 and SHA256).
 func (pcrManifest *PcrManifest) GetPcrValue(pcrBank SHAAlgorithm, pcrIndex PcrIndex) (*Pcr, error) {
 	// TODO: Is this the right data model for the PcrManifest?  Two things...
-	// - Flavor API returns a map[bank]map[pcrindex] 
+	// - Flavor API returns a map[bank]map[pcrindex]
 	// - Finding the PCR by bank/index is a linear search.
 	var pcrValue *Pcr
 
@@ -329,4 +334,40 @@ func (eventLogEntry *EventLogEntry) Replay() (string, error) {
 
 	cumulativeHashString := hex.EncodeToString(cumulativeHash)
 	return cumulativeHashString, nil
+}
+
+// GetPcrEventLog returns the EventLogs for a specific PcrBank/PcrIndex
+func (pcrManifest *PcrManifest) GetPcrEventLog(pcrBank SHAAlgorithm, pcrIndex PcrIndex) (*[]EventLog, error) {
+
+	pI := PcrIndex(pcrIndex)
+	if pcrBank == SHA1 {
+		for _, eventLogEntry := range pcrManifest.PcrEventLogMap.Sha1EventLogs {
+			if eventLogEntry.PcrIndex == pI {
+				return &eventLogEntry.EventLogs, nil
+			}
+		}
+	} else if pcrBank == SHA256 {
+		for _, eventLogEntry := range pcrManifest.PcrEventLogMap.Sha256EventLogs {
+			if eventLogEntry.PcrIndex == pI {
+				return &eventLogEntry.EventLogs, nil
+			}
+		}
+	} else {
+		return nil, fmt.Errorf("unsupported sha algorithm %s", pcrBank)
+	}
+	return nil, fmt.Errorf("invalid PcrIndex %d", pcrIndex)
+}
+
+// GetPcrBanks returns the list of banks currently supported by the PcrManifest
+func (pcrManifest *PcrManifest) GetPcrBanks() []SHAAlgorithm {
+	var bankList []SHAAlgorithm
+	// check if each known digest algorithm is present and return
+	if len(pcrManifest.Sha1Pcrs) > 0 {
+		bankList = append(bankList, SHA1)
+	}
+	// check if each known digest algorithm is present and return
+	if len(pcrManifest.Sha256Pcrs) > 0 {
+		bankList = append(bankList, SHA256)
+	}
+	return bankList
 }

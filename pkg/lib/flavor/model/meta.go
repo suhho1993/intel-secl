@@ -2,28 +2,29 @@
  * Copyright (C) 2019 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package flavor
+package model
 
 /**
  *
  * @author purvades
  */
 
-// Meta defines meta data of the flavor
+// Meta struct
 type Meta struct {
 	Schema      *Schema      `json:"schema,omitempty"`
 	ID          string       `json:"id"`
 	Author      *Author      `json:"author,omitempty"`
 	Realm       string       `json:"realm,omitempty"`
-	Description *Description `json:"description"`
+	Description *Description `json:"description,omitempty"`
+	Vendor      string       `json:"vendor,omitempty"`
 }
 
-// Schema defines the URI of the schema
+// Schema defines the Uri of the schema
 type Schema struct {
-	URI string `json:"uri,omitempty"`
+	Uri string `json:"uri,omitempty"`
 }
 
-// Author defines the email address of the author
+// Author contains author related metadata for the Flavor
 type Author struct {
 	Email string `json:"email,omitempty"`
 }

@@ -6,6 +6,7 @@ package flavor
 
 import (
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -18,38 +19,38 @@ import (
 // ImageFlavor is a flavor for an image with the encryption requirement information
 // and key details of an encrypted image.
 type ImageFlavor struct {
-	Image Image `json:"flavor"`
+	Image model.Image `json:"flavor"`
 }
 
 // GetImageFlavor is used to create a new image flavor with the specified label, encryption policy,
 // key url, and digest of the encrypted image
 func GetImageFlavor(label string, encryptionRequired bool, keyURL string, digest string) (*ImageFlavor, error) {
 
-	var encryption *Encryption
+	var encryption *model.Encryption
 	flavorID, err := uuid.NewV4()
 	if err != nil {
 		fmt.Println("Unable to create uuid. ", err)
 		return nil, nil
 	}
 
-	description := Description{
+	description := model.Description{
 		Label:      label,
 		FlavorPart: "IMAGE",
 	}
 
-	meta := Meta{
+	meta := model.Meta{
 		ID:          flavorID.String(),
 		Description: &description,
 	}
 
 	if encryptionRequired {
-		encryption = &Encryption{
+		encryption = &model.Encryption{
 			KeyURL: keyURL,
 			Digest: digest,
 		}
 	}
 
-	imageflavor := Image{
+	imageflavor := model.Image{
 		Meta:               meta,
 		EncryptionRequired: encryptionRequired,
 		Encryption:         encryption,
@@ -64,8 +65,8 @@ func GetImageFlavor(label string, encryptionRequired bool, keyURL string, digest
 // GetContainerImageFlavor is used to create a new container image flavor with the specified label, encryption policy,
 // Key url of the encrypted image also integrity policy and notary url for docker image signature verification
 func GetContainerImageFlavor(label string, encryptionRequired bool, keyURL string, integrityEnforced bool, notaryURL string) (*ImageFlavor, error) {
-	var encryption *Encryption
-	var integrity *Integrity
+	var encryption *model.Encryption
+	var integrity *model.Integrity
 	flavorID, err := uuid.NewV4()
 	if err != nil {
 		fmt.Println("Unable to create uuid. ", err)
@@ -76,25 +77,25 @@ func GetContainerImageFlavor(label string, encryptionRequired bool, keyURL strin
 		return nil, fmt.Errorf("label cannot be empty")
 	}
 
-	description := Description{
+	description := model.Description{
 		Label:      label,
 		FlavorPart: "CONTAINER_IMAGE",
 	}
 
-	meta := Meta{
+	meta := model.Meta{
 		ID:          flavorID.String(),
 		Description: &description,
 	}
 
-	encryption = &Encryption{
+	encryption = &model.Encryption{
 		KeyURL: keyURL,
 	}
 
-	integrity = &Integrity{
+	integrity = &model.Integrity{
 		NotaryURL: notaryURL,
 	}
 
-	containerImageFlavor := Image{
+	containerImageFlavor := model.Image{
 		Meta:               meta,
 		EncryptionRequired: encryptionRequired,
 		Encryption:         encryption,
