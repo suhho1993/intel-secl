@@ -14,7 +14,7 @@ import (
 )
 
 type verifierImpl struct {
-	certificates VerifierCertificates
+	verifierCertificates VerifierCertificates
 	overallTrust bool
 }
 
@@ -23,7 +23,7 @@ func (v *verifierImpl) Verify(hostManifest *types.HostManifest, signedFlavor *Si
 	// default overall trust to true, change to falsed during rule evaluation
 	v.overallTrust = true
 
-	builder, err := getPolicyBuilder(hostManifest, signedFlavor)
+	builder, err := getPolicyBuilder(v.verifierCertificates, hostManifest, signedFlavor)
 	if err != nil {
 		return nil, err
 	}

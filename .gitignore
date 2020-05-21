@@ -4,3 +4,4 @@ go.sum
 *.iml
 .vscode
 cover.out
+.gitmodules

@@ -4,12 +4,17 @@
  */
 package verifier
 
+//
+// Run unit tests: go test github.com/intel-secl/intel-secl/v3/pkg/lib/verifier
+//
+// coverage report...
+// go test github.com/intel-secl/intel-secl/v3/pkg/lib/verifier -v -coverpkg=github.com/intel-secl/intel-secl/v3/pkg/lib/verifier -coverprofile cover.out
+// go tool cover -func cover.out
+
 import (
 	"encoding/json"
 	"testing"
-
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,27 +41,40 @@ func TestMockExample(t *testing.T) {
 	assert.NotNil(t, report)
 }
 
-func TestPcrMatchesConstantMismatch(t *testing.T) {
+// WIP
+func TestVerifierIntegration(t *testing.T) {
 
+	// simulate host manifest...
 	hostManifest := types.HostManifest{
+		AssetTagDigest: invalidAssetTagString,
 		PcrManifest: types.PcrManifest{
 			Sha256Pcrs : []types.Pcr {
 				{
 					Index: 0,
-					Value: PCR_INVALID_256, // host pcr is invalid
+					Value: PCR_INVALID_256,
 					PcrBank:  types.SHA256,
 				},
 			},
 		},
 	}
 
+	// Simulate flavor...
 	signedFlavor := SignedFlavor{
-		PcrManifest: &types.PcrManifest{
-			Sha256Pcrs : []types.Pcr {
-				{
-					Index: 0,
-					Value: PCR_VALID_256, // flavor pcr is valid
-					PcrBank:  types.SHA256,
+		Flavor: Flavor {
+			PcrManifest: &types.PcrManifest{
+				Sha256Pcrs : []types.Pcr {
+					{
+						Index: 0,
+						Value: PCR_VALID_256,
+						PcrBank:  types.SHA256,
+					},
+				},
+			},
+			External: &External {
+				AssetTag: AssetTag {
+					TagCertificate: TagCertificate {
+						Encoded: validAssetTagBytes,
+					},
 				},
 			},
 		},
@@ -70,9 +88,9 @@ func TestPcrMatchesConstantMismatch(t *testing.T) {
 	assert.NotNil(t, trustReport)
 	assert.False(t, trustReport.Trusted)
 
-	trustReportJson, err := json.Marshal(trustReport)
+	json, err := json.Marshal(trustReport)
 	assert.NoError(t, err)
-	t.Log(string(trustReportJson))
+	t.Log(string(json))
 }
 
 //-------------------------------------------------------------------------------------------------

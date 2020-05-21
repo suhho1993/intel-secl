@@ -13,9 +13,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 )
 
-// TODO: Structure of java TrustReport (in verifier package) is different than what is exposed
-// in REST API.
-
 type TrustReport struct {
 	PolicyName string       `json:"policy_name"`
 	Results    []RuleResult `json:"rules"`
@@ -30,16 +27,17 @@ type RuleResult struct {
 }
 
 type RuleInfo struct {
-	Name        string    `json:"rule_name"`
-	Markers     []string  `json:"markers"`
+	Name        string     `json:"rule_name"`
+	Markers     []string   `json:"markers"`
 	ExpectedPcr *types.Pcr `json:"expected_pcr,omitempty"`
 }
 
 type Fault struct {
-	Name             string          `json:"fault_name"`
-	Description      string          `json:"description"`
-	PcrIndex         *types.PcrIndex `json:"pcr_index,omitempty"`
-	ExpectedPcrValue *string         `json:"expected_value,omitempty"`
-	ActualPcrValue   *string         `json:"actual_value,omitempty"`
-	// TODO: expected/unexpected event log measurements, etc.
+	Name              string           `json:"fault_name"`
+	Description       string           `json:"description"`
+	PcrIndex          *types.PcrIndex  `json:"pcr_index,omitempty"`
+	ExpectedPcrValue  *string          `json:"expected_value,omitempty"`
+	ActualPcrValue    *string          `json:"actual_value,omitempty"`
+	MissingEntries    []types.EventLog `json:"missing_entries,omitempty"`
+	UnexpectedEntries []types.EventLog `json:"unexpected_entries,omitempty"`
 }

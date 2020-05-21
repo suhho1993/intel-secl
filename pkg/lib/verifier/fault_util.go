@@ -14,33 +14,65 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 )
 
-func (result *RuleResult) addPcrValueMissingFault(bank types.SHAAlgorithm, pcrIndex types.PcrIndex) error {
+const (
+	FaultPcrValueMissing                      = "com.intel.mtwilson.core.verifier.policy.fault.PcrValueMissing"
+	FaultPcrValueMismatch                     = "com.intel.mtwilson.core.verifier.policy.fault.PcrValueMismatch"
+	FaultPcrValueMismatchSHA1                 = FaultPcrValueMismatch + "SHA1"
+	FaultPcrValueMismatchSHA256               = FaultPcrValueMismatch + "SHA256"
+	FaultPcrEventLogMissingExpectedEntries    = "com.intel.mtwilson.core.verifier.policy.fault.PcrEventLogMissingExpectedEntries"
+	FaultPcrEventLogMissing                   = "com.intel.mtwilson.core.verifier.policy.rule.PcrEventLogMissing"
+	FaultPcrEventLogContainsUnexpectedEntries =  "com.intel.mtwilson.core.verifier.policy.fault.PcrEventLogContainsUnexpectedEntries"
+)
+
+func newPcrValueMissingFault(bank types.SHAAlgorithm, pcrIndex types.PcrIndex) *Fault {
 	fault := Fault{
-		Name:        "com.intel.mtwilson.core.verifier.policy.fault.PcrValueMissing",
+		Name:        FaultPcrValueMissing,
 		Description: fmt.Sprintf("Host report does not include required PCR %d, bank %s", pcrIndex, bank),
 		PcrIndex:    &pcrIndex,
 	}
 
-	result.Faults = append(result.Faults, fault)
-	result.Trusted = false
-
-	return nil
+	return &fault
 }
 
-func (result *RuleResult) addPcrValueMismatchFault(pcrIndex types.PcrIndex, expectedPcr *types.Pcr, actualPcr *types.Pcr) error {
-	expectedValue := string(expectedPcr.Value)
-	actualValue := string(actualPcr.Value)
+func newPcrValueMismatchFault(pcrIndex types.PcrIndex, expectedPcr *types.Pcr, actualPcr *types.Pcr) *Fault {
 
 	fault := Fault{
-		Name:             "com.intel.mtwilson.core.verifier.policy.fault.PcrValueMismatch" + string(actualPcr.PcrBank),
-		Description:      fmt.Sprintf("Host PCR %d with value '%s' does not match expected value '%s'", pcrIndex, actualValue, expectedValue),
+		Name:             FaultPcrValueMismatch + string(actualPcr.PcrBank),
+		Description:      fmt.Sprintf("Host PCR %d with value '%s' does not match expected value '%s'", pcrIndex, actualPcr.Value, expectedPcr.Value),
 		PcrIndex:         &pcrIndex,
-		ExpectedPcrValue: &expectedValue,
-		ActualPcrValue:   &actualValue,
+		ExpectedPcrValue: &expectedPcr.Value,
+		ActualPcrValue:   &actualPcr.Value,
 	}
 
-	result.Faults = append(result.Faults, fault)
-	result.Trusted = false
+	return &fault
+}
 
-	return nil
+func newPcrEventLogMissingExpectedEntries(eventLogEntry *types.EventLogEntry) *Fault {
+	fault := Fault {
+		Name: FaultPcrEventLogMissingExpectedEntries,
+		Description: fmt.Sprintf("Module manifest for PCR %d missing %d expected entries", eventLogEntry.PcrIndex, len(eventLogEntry.EventLogs)),
+		PcrIndex: &eventLogEntry.PcrIndex,
+		MissingEntries: eventLogEntry.EventLogs,
+	}
+
+	return &fault
+}
+
+func newPcrEventLogMissingFault(pcrIndex types.PcrIndex) *Fault {
+	return &Fault{
+		Name:        FaultPcrEventLogMissing,
+		Description: fmt.Sprintf("Host report does not include a PCR Event Log for PCR %d", pcrIndex),
+		PcrIndex:    &pcrIndex,
+	}
+}
+
+func newPcrEventLogContainsUnexpectedEntries(eventLogEntry *types.EventLogEntry) *Fault {
+	fault := Fault {
+		Name: FaultPcrEventLogContainsUnexpectedEntries,
+		Description: fmt.Sprintf("Module manifest for PCR %d contains %d unexpected entries", eventLogEntry.PcrIndex, len(eventLogEntry.EventLogs)),
+		PcrIndex: &eventLogEntry.PcrIndex,
+		UnexpectedEntries: eventLogEntry.EventLogs,
+	}
+
+	return &fault
 }

@@ -9,7 +9,6 @@ import (
 	"errors"
 	hc "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/stretchr/testify/assert"
-	//"github.com/stretchr/testify/mock"
 	"math/big"
 	"testing"
 	"time"

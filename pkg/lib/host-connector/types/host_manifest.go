@@ -4,7 +4,12 @@
  */
 package types
 
-import taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+import (
+	"crypto/x509"
+	"encoding/base64"
+	"github.com/pkg/errors"
+	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+)
 
 type HostManifest struct {
 	AIKCertificate        string           `json:"aik_certificate,omitempty"`
@@ -13,4 +18,24 @@ type HostManifest struct {
 	PcrManifest           PcrManifest      `json:"pcr_manifest"`
 	BindingKeyCertificate string           `json:"binding_key_certificate,omitempty"`
 	MeasurementXmls       []string         `json:"measurement_xmls,omitempty"`
+}
+
+
+func (hostManifest *HostManifest) GetAIKCertificate() (*x509.Certificate, error) {
+
+	if len(hostManifest.AIKCertificate) == 0 {
+		return nil, errors.New("The AIK is not present in the HostManifest")
+	}
+
+	aikBytes, err := base64.StdEncoding.DecodeString(hostManifest.AIKCertificate)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error decoding the HostManifest's base64 value of the AIK")
+	}
+
+	aik, err := x509.ParseCertificate(aikBytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error parse x509 from the HostManifest's certificate bytes")
+	}
+
+	return aik, nil
 }

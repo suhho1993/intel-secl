@@ -14,13 +14,15 @@ import (
 )
 
 type policyBuilderIntelTpm20 struct {
-	hostManifest *types.HostManifest
-	signedFlavor *SignedFlavor
-	rules        []rule
+	verifierCertificates VerifierCertificates
+	hostManifest         *types.HostManifest
+	signedFlavor         *SignedFlavor
+	rules                []rule
 }
 
-func newPolicyBuilderIntelTpm20(hostManifest *types.HostManifest, signedFlavor *SignedFlavor) (policyBuilder, error) {
+func newPolicyBuilderIntelTpm20(verifierCertificates VerifierCertificates, hostManifest *types.HostManifest, signedFlavor *SignedFlavor) (policyBuilder, error) {
 	builder := policyBuilderIntelTpm20{
+		verifierCertificates: verifierCertificates,
 		hostManifest: hostManifest,
 		signedFlavor: signedFlavor,
 	}
@@ -29,7 +31,15 @@ func newPolicyBuilderIntelTpm20(hostManifest *types.HostManifest, signedFlavor *
 }
 
 func (builder *policyBuilderIntelTpm20) GetTrustRules() ([]rule, error) {
+
+	// TODO:  Get rules based on the flavor type
+
 	err := builder.loadPlatformRules()
+	if err != nil {
+		return nil, err
+	}
+
+	err = builder.loadAssetTagRules()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +53,15 @@ func (builder *policyBuilderIntelTpm20) GetName() string {
 
 func (builder *policyBuilderIntelTpm20) loadPlatformRules() error {
 
-	expectedPcr, err := builder.signedFlavor.PcrManifest.GetRequiredPcrValue(types.SHA256, types.PCR0)
+	aikCertificateTrusted, err := newAikCertificateTrusted(builder.verifierCertificates.PrivacyCaCertificates, "PLATFORM")
+	if err != nil {
+		return err
+	}
+
+	builder.rules = append(builder.rules, aikCertificateTrusted)
+
+
+	expectedPcr, err := builder.signedFlavor.Flavor.PcrManifest.GetRequiredPcrValue(types.SHA256, types.PCR0)
 	if err != nil {
 		return errors.Errorf("The flavor's manifest did not contain PCR bank %s, index %d", types.SHA256, types.PCR0)
 	}
@@ -54,6 +72,24 @@ func (builder *policyBuilderIntelTpm20) loadPlatformRules() error {
 	}
 
 	builder.rules = append(builder.rules, pcrMatchesConstant)
+
+	return nil
+}
+
+func (builder *policyBuilderIntelTpm20) loadAssetTagRules() error {
+	
+	// if the flavor has a valid asset tag certificate, add the AssetTagMatches rule...
+	if builder.signedFlavor.Flavor.External != nil {
+		assetTagCertificate := builder.signedFlavor.Flavor.External.AssetTag.TagCertificate.Encoded;
+		if len(assetTagCertificate) > 0 {
+			assetTagMatches, err := newAssetTagMatches(assetTagCertificate)
+			if err != nil {
+				return err
+			}
+		
+			builder.rules = append(builder.rules, assetTagMatches)
+		}
+	}
 
 	return nil
 }

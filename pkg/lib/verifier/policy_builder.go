@@ -17,11 +17,11 @@ type policyBuilder interface {
 	GetName() string
 }
 
-func getPolicyBuilder(hostManifest *types.HostManifest, signedFlavor *SignedFlavor) (policyBuilder, error) {
+func getPolicyBuilder(verifierCertificates VerifierCertificates, hostManifest *types.HostManifest, signedFlavor *SignedFlavor) (policyBuilder, error) {
 
 	// TODO: Add logic that uses the vendor/tpm version from flavor/manifest to determine the
 	// policy builder.  For now, just return intel/tpm2.
-	builder, err := newPolicyBuilderIntelTpm20(hostManifest, signedFlavor)
+	builder, err := newPolicyBuilderIntelTpm20(verifierCertificates, hostManifest, signedFlavor)
 	if err != nil {
 		return nil, err
 	}

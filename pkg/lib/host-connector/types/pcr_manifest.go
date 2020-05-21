@@ -6,9 +6,14 @@
 package types
 
 import (
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"hash"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
@@ -38,7 +43,7 @@ type EventLogEntry struct {
 }
 
 type PcrEventLogMap struct {
-	Sha1EventLogs   []EventLogEntry   `json:"SHA1"`
+	Sha1EventLogs   []EventLogEntry `json:"SHA1"`
 	Sha256EventLogs []EventLogEntry `json:"SHA256"`
 }
 
@@ -215,4 +220,113 @@ func (pcrManifest *PcrManifest) GetRequiredPcrValue(bank SHAAlgorithm, pcrIndex 
 	}
 
 	return pcrValue, nil
+}
+
+// Finds the EventLogEntry in a PcrEventLogMap provided the pcrBank and index.  Returns
+// null if not found.  Returns an error if the pcrBank is not supported
+// by intel-secl (currently supports SHA1 and SHA256).
+func (pcrEventLogMap *PcrEventLogMap) GetEventLog(pcrBank SHAAlgorithm, pcrIndex PcrIndex) (*EventLogEntry, error) {
+
+	var eventLogEntry *EventLogEntry
+
+	if pcrBank == SHA1 {
+		for _, entry := range pcrEventLogMap.Sha1EventLogs {
+			if entry.PcrIndex == pcrIndex {
+				eventLogEntry = &entry
+				break
+			}
+		}
+	} else if pcrBank == SHA256 {
+		for _, entry := range pcrEventLogMap.Sha256EventLogs {
+			if entry.PcrIndex == pcrIndex {
+				eventLogEntry = &entry
+				break
+			}
+		}
+	} else {
+		return nil, errors.Errorf("Unsupported sha algorithm %s", pcrBank)
+	}
+
+	return eventLogEntry, nil
+}
+
+
+// Provided an EventLogEntry that contains an array of EventLogs, this function
+// will return a new EventLogEntry that contains the events that existed in 
+// the original ('eventLogEntry') but not in 'eventsToSubtract'.  Returns an error
+// if the bank/index of 'eventLogEntry' and 'eventsToSubtract' do not match.
+// Note: 'eventLogEntry' and 'eventsToSubract' are not altered.
+func (eventLogEntry *EventLogEntry) Subtract(eventsToSubtract *EventLogEntry) (*EventLogEntry, error) {
+
+	if eventLogEntry.PcrBank != eventsToSubtract.PcrBank {
+		return nil, errors.Errorf("The PCR banks do not match: '%s' != '%s'", eventLogEntry.PcrBank, eventsToSubtract.PcrBank)
+	}
+
+	if eventLogEntry.PcrIndex != eventsToSubtract.PcrIndex {
+		return nil, errors.Errorf("The PCR indexes do not match: '%d' != '%d'", eventLogEntry.PcrIndex, eventsToSubtract.PcrIndex)
+	}
+
+	// build a new EventLogEntry that will be populated by the event log entries
+	// in the source less those 'eventsToSubtract'.
+	difference := EventLogEntry {
+		PcrBank: eventLogEntry.PcrBank,
+		PcrIndex: eventLogEntry.PcrIndex,
+	}
+
+	index := make(map[string]int)
+	for i, eventLog := range(eventsToSubtract.EventLogs) {
+		index[eventLog.Value] = i
+	}
+
+	for _, eventLog := range(eventLogEntry.EventLogs) {
+		if _, ok := index[eventLog.Value]; !ok {
+			difference.EventLogs = append(difference.EventLogs, eventLog)
+		}
+	}
+
+	return &difference, nil
+}
+
+// Returns the string value of the "cumulative" hash of the 
+// an event log.
+func (eventLogEntry *EventLogEntry) Replay() (string, error) {
+
+	var cumulativeHash []byte
+
+	if eventLogEntry.PcrBank == SHA1 {
+		cumulativeHash = make([]byte, sha1.Size)
+	} else if eventLogEntry.PcrBank == SHA256 {
+		cumulativeHash = make([]byte, sha256.Size)
+	} else if eventLogEntry.PcrBank == SHA384 {
+		cumulativeHash = make([]byte, sha512.Size384)
+	} else if eventLogEntry.PcrBank == SHA512 {
+		cumulativeHash = make([]byte, sha512.Size)
+	} else {
+		return "", errors.Errorf("Invalid sha algorithm '%s'", eventLogEntry.PcrBank)
+	}
+
+	for i, eventLog := range(eventLogEntry.EventLogs) {
+		var hash hash.Hash
+		if eventLogEntry.PcrBank == SHA1 {
+			hash = sha1.New()
+		} else if eventLogEntry.PcrBank == SHA256 {
+			hash = sha256.New()
+		} else if eventLogEntry.PcrBank == SHA384 {
+			hash = sha512.New384()
+		} else if eventLogEntry.PcrBank == SHA512 {
+			hash = sha512.New()
+		}
+
+		eventHash, err := hex.DecodeString(eventLog.Value)
+		if err != nil {
+			return "", errors.Wrapf(err, "Failed to decode event log %d using hex string '%s'", i, eventLog.Value)
+		}
+
+		hash.Write(cumulativeHash)
+		hash.Write(eventHash)
+		cumulativeHash = hash.Sum(nil)
+	}
+
+	cumulativeHashString := hex.EncodeToString(cumulativeHash)
+	return cumulativeHashString, nil
 }

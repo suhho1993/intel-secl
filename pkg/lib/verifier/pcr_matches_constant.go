@@ -32,15 +32,18 @@ func newPcrMatchesConstant(expectedPcr *types.Pcr) (rule, error) {
 
 func (rule *pcrMatchesConstant) Apply(hostManifest *types.HostManifest) (*RuleResult, error) {
 
-	ruleResult := RuleResult{}
-	ruleResult.Trusted = true // default to true, set to false in fault logic
-	ruleResult.Rule.Name = "PCR Matches Constant"
-	ruleResult.Rule.ExpectedPcr = rule.expectedPcr
-	ruleResult.Rule.Markers = []string{"PLATFORM"}
+	var fault *Fault
+	result := RuleResult{}
+	result.Trusted = true // default to true, set to false in fault logic
+	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.PcrMatchesConstant"
+	result.Rule.ExpectedPcr = rule.expectedPcr
+	result.Rule.Markers = []string{"PLATFORM"} // KWT???
 
-	// TODO: is the host manifest optional (what about 'missing manifest fault'?)
+	// KWT: TBD -- this is a structure in the host manifest and is always present, suggest
+	// we change it to an optional pointer in host-connector
 	// if hostManifest.PcrManifest == nil {
-	// }
+	//     fault = newPcrManifestMissing() 	
+	// } else  {
 
 	actualPcr, err := hostManifest.PcrManifest.GetPcrValue(rule.expectedPcr.PcrBank, rule.expectedPcr.Index)
 	if err != nil {
@@ -48,10 +51,15 @@ func (rule *pcrMatchesConstant) Apply(hostManifest *types.HostManifest) (*RuleRe
 	}
 
 	if actualPcr == nil {
-		ruleResult.addPcrValueMissingFault(rule.expectedPcr.PcrBank, rule.expectedPcr.Index)
+		fault = newPcrValueMissingFault(rule.expectedPcr.PcrBank, rule.expectedPcr.Index)
 	} else if rule.expectedPcr.Value != actualPcr.Value {
-		ruleResult.addPcrValueMismatchFault(rule.expectedPcr.Index, rule.expectedPcr, actualPcr)
+		fault = newPcrValueMismatchFault(rule.expectedPcr.Index, rule.expectedPcr, actualPcr)
 	}
 
-	return &ruleResult, nil
+	if fault != nil {
+		result.Faults = append(result.Faults, *fault)
+		result.Trusted = false
+	}
+
+	return &result, nil
 }

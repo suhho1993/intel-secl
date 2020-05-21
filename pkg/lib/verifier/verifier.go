@@ -15,7 +15,7 @@ import (
 )
 
 type VerifierCertificates struct {
-	PrivacyCaCertificate     *x509.Certificate
+	PrivacyCaCertificates    *x509.CertPool
 	AssetTagCaCertificate    *x509.Certificate
 	FlavorSigningCertificate *x509.Certificate
 	FlavorCaCertificate      *x509.Certificate
@@ -25,7 +25,7 @@ type Verifier interface {
 	Verify(hostManifest *types.HostManifest, signedFlavor *SignedFlavor, skipFlavorSignatureVerification bool) (*TrustReport, error)
 }
 
-func NewVerifier(certificates VerifierCertificates) (Verifier, error) {
+func NewVerifier(verifierCertificates VerifierCertificates) (Verifier, error) {
 	// TODO: validate certificates
-	return &verifierImpl{certificates: certificates}, nil
+	return &verifierImpl{verifierCertificates: verifierCertificates}, nil
 }

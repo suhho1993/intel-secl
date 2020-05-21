@@ -80,3 +80,94 @@ func TestCreateHostManifestFromSampleData(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(string(json))
 }
+
+func TestEventReplay256(t *testing.T) {
+	// this data was extracted from an existing host manifest...
+	eventLogJson := `
+	{
+		"pcr_index": "pcr_18",
+		"event_log": [
+			{
+				"digest_type": "com.intel.mtwilson.core.common.model.MeasurementSha256",
+				"value": "da256395df4046319ef0af857d377a729e5bc0693429ac827002ffafe485b2e7",
+				"label": "SINIT_PUBKEY_HASH",
+				"info": {
+					"ComponentName": "SINIT_PUBKEY_HASH",
+					"EventName": "OpenSource.EventName"
+				}
+			},
+			{
+				"digest_type": "com.intel.mtwilson.core.common.model.MeasurementSha256",
+				"value": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+				"label": "CPU_SCRTM_STAT",
+				"info": {
+					"ComponentName": "CPU_SCRTM_STAT",
+					"EventName": "OpenSource.EventName"
+				}
+			},
+			{
+				"digest_type": "com.intel.mtwilson.core.common.model.MeasurementSha256",
+				"value": "d81fe96dc500bc43e1cd5800bef9d72b3d030bdb7e860e10c522e4246b30bd93",
+				"label": "OSSINITDATA_CAP_HASH",
+				"info": {
+					"ComponentName": "OSSINITDATA_CAP_HASH",
+					"EventName": "OpenSource.EventName"
+				}
+			},
+			{
+				"digest_type": "com.intel.mtwilson.core.common.model.MeasurementSha256",
+				"value": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+				"label": "LCP_CONTROL_HASH",
+				"info": {
+					"ComponentName": "LCP_CONTROL_HASH",
+					"EventName": "OpenSource.EventName"
+				}
+			},
+			{
+				"digest_type": "com.intel.mtwilson.core.common.model.MeasurementSha256",
+				"value": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+				"label": "LCP_AUTHORITIES_HASH",
+				"info": {
+					"ComponentName": "LCP_AUTHORITIES_HASH",
+					"EventName": "OpenSource.EventName"
+				}
+			},
+			{
+				"digest_type": "com.intel.mtwilson.core.common.model.MeasurementSha256",
+				"value": "0f6e0c7a5944963d7081ea494ddff1e9afa689e148e39f684db06578869ea38b",
+				"label": "NV_INFO_HASH",
+				"info": {
+					"ComponentName": "NV_INFO_HASH",
+					"EventName": "OpenSource.EventName"
+				}
+			},
+			{
+				"digest_type": "com.intel.mtwilson.core.common.model.MeasurementSha256",
+				"value": "27808f64e6383982cd3bcc10cfcb3457c0b65f465f779d89b668839eaf263a67",
+				"label": "tb_policy",
+				"info": {
+					"ComponentName": "tb_policy",
+					"EventName": "OpenSource.EventName"
+				}
+			}
+		],
+		"pcr_bank": "SHA256"
+	}`
+
+	pcr18json := `
+	{
+		"index": "pcr_18",
+		"value": "d9e55bd1c570a6408fb1368f3663ae92747241fc4d2a3622cef0efadae284d75",
+		"pcr_bank": "SHA256"
+	}`
+
+	var eventLogEntry types.EventLogEntry
+	var pcr18 types.Pcr
+	
+	assert.NoError(t, json.Unmarshal([]byte(eventLogJson), &eventLogEntry))
+	assert.NoError(t, json.Unmarshal([]byte(pcr18json), &pcr18))
+
+	cumalativeHash, err := eventLogEntry.Replay()
+	assert.NoError(t, err)
+	assert.Equal(t, pcr18.Value, cumalativeHash)
+}
