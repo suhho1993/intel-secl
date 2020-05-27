@@ -5,15 +5,19 @@
 
 package hvs
 
+import (
+	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+)
+
 type FlavorgroupCollection struct {
-	Flavorgroups []FlavorGroup `json:"flavorgroups" xml:"flavorgroup"`
+	Flavorgroups []*FlavorGroup `json:"flavorgroups" xml:"flavorgroup"`
 }
 
 type FlavorGroup struct {
-	Id                          string                      `json:"id,omitempty"`
-	Name                        string                      `json:"name,omitempty"`
-	FlavorIds                   []string                    `json:"flavorIds,omitempty"`
-	Flavors                     []string                    `json:"flavors,omitempty"` //TODO: Update type on flavor library merge
+	ID                          string                       `json:"id,omitempty"`
+	Name                        string                       `json:"name,omitempty"`
+	FlavorIds                   []string                     `json:"flavorIds,omitempty"`
+	Flavors                     []Flavor                     `json:"flavors,omitempty"`
 	FlavorMatchPolicyCollection *FlavorMatchPolicyCollection `json:"flavor_match_policy_collection,omitempty"`
 }
 
@@ -22,30 +26,32 @@ type FlavorMatchPolicyCollection struct {
 }
 
 type FlavorMatchPolicy struct {
-	FlavorPart  FlavorPart  `json:"flavor_part,omitempty"`
+	FlavorPart  cf.FlavorPart  `json:"flavor_part,omitempty"`
 	MatchPolicy MatchPolicy `json:"match_policy,omitempty"`
 }
 
 type MatchPolicy struct {
-	MatchType MatchType `json:"match_type,omitempty"`
-	Required  Required  `json:"required,omitempty"`
+	MatchType MatchType      `json:"match_type,omitempty"`
+	Required  PolicyRequired `json:"required,omitempty"`
 }
 
 type MatchType string
+
 const (
-	ANY_OF MatchType = "ANY_OF"
-	ALL_OF           = "ALL_OF"
-	LATEST           = "LATEST"
+	AnyOf  MatchType = "ANY_OF"
+	AllOf  MatchType = "ALL_OF"
+	Latest MatchType = "LATEST"
 )
 func (mt MatchType) String() string {
 	return mt.String()
 }
 
-type Required string
+type PolicyRequired string
+
 const (
-	REQUIRED Required     = "REQUIRED"
-	REQUIRED_IF_DEFINED   = "REQUIRED_IF_DEFINED"
+	Required            PolicyRequired = "REQUIRED"
+	RequiredIfDefined   PolicyRequired = "REQUIRED_IF_DEFINED"
 )
-func (req Required) String() string {
+func (req PolicyRequired) String() string {
 	return req.String()
 }

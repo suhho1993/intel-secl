@@ -9,6 +9,6 @@ type AssetTag interface{
 }
 
 // NewAssetTag returns an instance to the AssetTag interface
-func NewAssetTag() *atag{
-	return new(atag)
+func NewAssetTag() AssetTag {
+	return &atag{}
 }

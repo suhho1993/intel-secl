@@ -8,6 +8,8 @@ import "time"
 
 const (
 	ServiceName                   = "HVS"
+	OldServiceName                = "mtwilson"
+	ApiVersion                    = "/v2"
 	ServiceUserName               = "hvs"
 	ServiceDir                    = "hvs/"
 	HomeDir                       = "/opt/" + ServiceDir
@@ -42,6 +44,8 @@ const (
 	DefaultHVSListenerPort        = 8443
 	DBTypePostgres                = "postgres"
 	DefaultLogEntryMaxlength      = 300
+	DefaultDbConnRetryAttempts    = 4
+	DefaultDbConnRetryTime        = 1
 )
 
 //Roles and permissions
@@ -52,6 +56,15 @@ const (
 	FlavorGroupRetrieve = "flavorgroups:retrieve"
 	FlavorGroupSearch   = "flavorgroups:search"
 	FlavorGroupDelete   = "flavorgroups:delete"
+)
+
+//Postgres connection SslModes
+const (
+	SslModeAllow      = "allow"
+	SslModePrefer     = "prefer"
+	SslModeVerifyCa   = "verify-ca"
+	SslModeRequire    = "require"
+	SslModeVerifyFull = "verify-full"
 )
 
 // State represents whether or not a daemon is running or not

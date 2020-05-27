@@ -30,13 +30,15 @@ type Configuration struct {
 	Port             int
 	CmsTlsCertDigest string
 	Postgres         struct {
-		DBName   string
-		Username string
-		Password string
-		Hostname string
-		Port     int
-		SSLMode  string
-		SSLCert  string
+		DBName            string
+		Username          string
+		Password          string
+		Hostname          string
+		Port              int
+		SSLMode           string
+		SSLCert           string
+		ConnRetryAttempts int
+		ConnRetryTime     int
 	}
 	LogMaxLength    int
 	LogEnableStdout bool
