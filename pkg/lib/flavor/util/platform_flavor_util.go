@@ -14,6 +14,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
@@ -25,6 +26,8 @@ import (
 	"strings"
 	"time"
 )
+
+var log = commLog.GetDefaultLogger()
 
 /**
  *
@@ -38,6 +41,9 @@ type PlatformFlavorUtil struct {
 // GetMetaSectionDetails returns the Meta instance from the HostManifest
 func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.HostInfo, tagCertificate *cm.X509AttributeCertificate,
 	xmlMeasurement string, flavorPartName common.FlavorPart, vendor string) (*cm.Meta, error) {
+	log.Trace("flavor/util/platform_flavor_util:GetMetaSectionDetails() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetMetaSectionDetails() Leaving")
+
 	var meta cm.Meta
 
 	// Set UUID
@@ -101,8 +107,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		var measurements taModel.Measurement
 		err := xml.Unmarshal([]byte(xmlMeasurement), &measurements)
 		if err != nil {
-			err = errors.Wrapf(err, "Failed to parse XML measurements in Software Flavor: %s", err.Error())
-			return nil, err
+			return nil, errors.Wrapf(err, "Failed to parse XML measurements in Software Flavor: %s", err.Error())
 		}
 		description.Label = measurements.Label
 		description.FlavorPart = flavorPartName.String()
@@ -111,8 +116,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		case crypt.SHA384().Name:
 			description.DigestAlgorithm = crypt.SHA384().Name
 		default:
-			err = fmt.Errorf("invalid Digest Algorithm in measurement XML")
-			return nil, err
+			return nil, errors.Errorf("invalid Digest Algorithm in measurement XML")
 		}
 		meta.ID = crypt.GenUUID(measurements.Uuid)
 		meta.Schema = pfutil.getSchema()
@@ -146,7 +150,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		description.FlavorPart = flavorPartName.String()
 		description.Label = pfutil.getLabelFromDetails(meta.Vendor, description.HardwareUUID, pfutil.getCurrentTimeStamp())
 	default:
-		return nil, fmt.Errorf("Error fetching Meta Section details: Invalid FlavorPart %s", flavorPartName.String())
+		return nil, errors.Errorf("Error fetching Meta Section details: Invalid FlavorPart %s", flavorPartName.String())
 	}
 	meta.Description = &description
 
@@ -155,6 +159,9 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 
 // GetBiosSectionDetails populate the BIOS field details in Flavor
 func (pfutil PlatformFlavorUtil) GetBiosSectionDetails(hostDetails *taModel.HostInfo) *cm.Bios {
+	log.Trace("flavor/util/platform_flavor_util:GetBiosSectionDetails() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetBiosSectionDetails() Leaving")
+
 	var bios cm.Bios
 	if hostDetails != nil {
 		bios.BiosName = strings.TrimSpace(hostDetails.BiosName)
@@ -166,6 +173,9 @@ func (pfutil PlatformFlavorUtil) GetBiosSectionDetails(hostDetails *taModel.Host
 
 // getSchema sets the schema for the Meta struct in the flavor
 func (pfutil PlatformFlavorUtil) getSchema() *cm.Schema {
+	log.Trace("flavor/util/platform_flavor_util:getSchema() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:getSchema() Leaving")
+
 	var schema cm.Schema
 	schema.Uri = constants.IslMeasurementSchema
 	return &schema
@@ -173,6 +183,9 @@ func (pfutil PlatformFlavorUtil) getSchema() *cm.Schema {
 
 // getHardwareSectionDetails extracts the host Hardware details from the manifest
 func (pfutil PlatformFlavorUtil) GetHardwareSectionDetails(hostInfo *taModel.HostInfo) *cm.Hardware {
+	log.Trace("flavor/util/platform_flavor_util:GetHardwareSectionDetails() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetHardwareSectionDetails() Leaving")
+
 	var hardware cm.Hardware
 	var feature cm.Feature
 
@@ -219,6 +232,9 @@ func (pfutil PlatformFlavorUtil) GetHardwareSectionDetails(hostInfo *taModel.Hos
 
 // PcrExists checks if required list of PCRs are populated in the PCRManifest
 func (pfutil PlatformFlavorUtil) PcrExists(pcrManifest hcTypes.PcrManifest, pcrList []int) bool {
+	log.Trace("flavor/util/platform_flavor_util:PcrExists() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:PcrExists() Leaving")
+
 	var pcrExists bool
 
 	// check for empty pcrList
@@ -251,6 +267,9 @@ func (pfutil PlatformFlavorUtil) PcrExists(pcrManifest hcTypes.PcrManifest, pcrL
 // GetPcrDetails extracts Pcr values and Event Logs from the HostManifest/PcrManifest and  returns
 // in a format suitable for inserting into the flavor
 func (pfutil PlatformFlavorUtil) GetPcrDetails(pcrManifest hcTypes.PcrManifest, pcrList []int, includeEventLog bool) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
+	log.Trace("flavor/util/platform_flavor_util:GetPcrDetails() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetPcrDetails() Leaving")
+
 	pcrsWithDigestAlgorithmForFlavor := make(map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx)
 
 	for _, digestBank := range pcrManifest.GetPcrBanks() {
@@ -311,13 +330,14 @@ func (pfutil PlatformFlavorUtil) GetPcrDetails(pcrManifest hcTypes.PcrManifest, 
 
 // GetExternalConfigurationDetails extracts the External field for the flavor from the HostManifest
 func (pfutil PlatformFlavorUtil) GetExternalConfigurationDetails(tagCertificate *cm.X509AttributeCertificate) (*cm.External, error) {
+	log.Trace("flavor/util/platform_flavor_util:GetExternalConfigurationDetails() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetExternalConfigurationDetails() Leaving")
+
 	var externalconfiguration cm.External
 	var assetTag cm.AssetTag
-	var err error
 
 	if tagCertificate == nil {
-		err = fmt.Errorf("Specified tagcertificate is not valid")
-		return nil, err
+		return nil, errors.Errorf("Specified tagcertificate is not valid")
 	}
 	assetTag.TagCertificate = *tagCertificate
 	externalconfiguration.AssetTag = assetTag
@@ -326,6 +346,9 @@ func (pfutil PlatformFlavorUtil) GetExternalConfigurationDetails(tagCertificate 
 
 // GetVendorName sets the vendor name for the Flavor
 func (pfutil PlatformFlavorUtil) GetVendorName(hostInfo *taModel.HostInfo) string {
+	log.Trace("flavor/util/platform_flavor_util:GetVendorName() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetVendorName() Leaving")
+
 	if hostInfo == nil {
 		return ""
 	}
@@ -343,6 +366,9 @@ func (pfutil PlatformFlavorUtil) GetVendorName(hostInfo *taModel.HostInfo) strin
 
 // copyInstanceOfPcrDetails - returns a full-clone of the PCRManifest state from the HostManifest
 func (pfutil PlatformFlavorUtil) copyInstanceOfPcrDetails(pcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
+	log.Trace("flavor/util/platform_flavor_util:copyInstanceOfPcrDetails() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:copyInstanceOfPcrDetails() Leaving")
+
 	var pcrDetailsCopy = make(map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx)
 
 	for digestAlgorithm, pcrBank := range pcrDetails {
@@ -357,6 +383,9 @@ func (pfutil PlatformFlavorUtil) copyInstanceOfPcrDetails(pcrDetails map[crypt.D
 
 // IncludeModulesToEventLog includes the event logs from HostManifest in the respective PCR event log
 func (pfutil PlatformFlavorUtil) IncludeModulesToEventLog(pcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx, modulesToInclude []string) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
+	log.Trace("flavor/util/platform_flavor_util:IncludeModulesToEventLog() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:IncludeModulesToEventLog() Leaving")
+
 	filteredPcrDetails := pfutil.copyInstanceOfPcrDetails(pcrDetails)
 	// loop across digest banks
 	for digestAlgo, pcrMap := range filteredPcrDetails {
@@ -394,6 +423,9 @@ func (pfutil PlatformFlavorUtil) IncludeModulesToEventLog(pcrDetails map[crypt.D
 
 // ExcludeModulesFromEventLog - excludes the event logs from HostManifest out of the respective PCR event log
 func (pfutil PlatformFlavorUtil) ExcludeModulesFromEventLog(pcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx, modulesToExclude []string) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
+	log.Trace("flavor/util/platform_flavor_util:ExcludeModulesFromEventLog() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:ExcludeModulesFromEventLog() Leaving")
+
 	filteredPcrDetails := pfutil.copyInstanceOfPcrDetails(pcrDetails)
 	// loop across digest banks
 	for digestAlgo, pcrMap := range filteredPcrDetails {
@@ -429,6 +461,9 @@ func (pfutil PlatformFlavorUtil) ExcludeModulesFromEventLog(pcrDetails map[crypt
 
 // getSupportedHardwareFeatures returns a list of hardware features supported by the host from its HostInfo
 func (pfutil PlatformFlavorUtil) getSupportedHardwareFeatures(hostDetails *taModel.HostInfo) []string {
+	log.Trace("flavor/util/platform_flavor_util:getSupportedHardwareFeatures() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:getSupportedHardwareFeatures() Leaving")
+
 	var features []string
 	if hostDetails.HardwareFeatures.CBNT != nil && hostDetails.HardwareFeatures.CBNT.Enabled {
 		features = append(features, constants.Cbnt)
@@ -453,6 +488,9 @@ func (pfutil PlatformFlavorUtil) getSupportedHardwareFeatures(hostDetails *taMod
 // getLabelFromDetails generates a flavor label string by combining the details
 //from separate fields into a single string separated by underscore
 func (pfutil PlatformFlavorUtil) getLabelFromDetails(names ...string) string {
+	log.Trace("flavor/util/platform_flavor_util:getLabelFromDetails() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:getLabelFromDetails() Leaving")
+
 	var labels []string
 	for _, s := range names {
 		labels = append(labels, strings.Join(strings.Fields(s), ""))
@@ -462,12 +500,18 @@ func (pfutil PlatformFlavorUtil) getLabelFromDetails(names ...string) string {
 
 // getCurrentTimeStamp generates the current time in the required format
 func (pfutil PlatformFlavorUtil) getCurrentTimeStamp() string {
+	log.Trace("flavor/util/platform_flavor_util:getCurrentTimeStamp() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:getCurrentTimeStamp() Leaving")
+
 	// Use magical reference date to specify the format
-	return time.Now().Format("01-02-2006_15-04-05")
+	return time.Now().Format(constants.FlavorWoTimestampFormat)
 }
 
 // getSignedFlavorList performs a bulk signing of a list of flavor strings and returns a list of SignedFlavors
 func (pfutil PlatformFlavorUtil) GetSignedFlavorList(flavors []string, flavorSigningPrivateKey *rsa.PrivateKey) (*[]hvs.SignedFlavor, error) {
+	log.Trace("flavor/util/platform_flavor_util:GetSignedFlavorList() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetSignedFlavorList() Leaving")
+
 	var signedFlavors []hvs.SignedFlavor
 
 	// length for flavors list
@@ -477,24 +521,25 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavorList(flavors []string, flavorSig
 			var sf *hvs.SignedFlavor
 			signedFlavor, err := pfutil.GetSignedFlavor(f, flavorSigningPrivateKey)
 			if err != nil {
-				err = fmt.Errorf("Error signing flavor collection: %s", err.Error())
-				return nil, err
+				return nil, errors.Errorf("Error signing flavor collection: %s", err.Error())
 			}
 			sf, _ = hvs.NewSignedFlavorFromJSON(signedFlavor)
 			if sf == nil {
-				err = errors.Wrapf(err, "Error signing flavor collection")
-				return nil, err
+				return nil, errors.Wrapf(err, "Error signing flavor collection")
 			}
 			signedFlavors = append(signedFlavors, *sf)
 		}
 	} else {
-		return nil, fmt.Errorf("empty flavors list provided")
+		return nil, errors.Errorf("empty flavors list provided")
 	}
 	return &signedFlavors, nil
 }
 
 //GetSignedFlavor is used to sign the flavor
 func (pfutil PlatformFlavorUtil) GetSignedFlavor(flavorString string, privateKey *rsa.PrivateKey) (string, error) {
+	log.Trace("flavor/util/platform_flavor_util:GetSignedFlavor() Entering")
+	defer log.Trace("flavor/util/platform_flavor_util:GetSignedFlavor() Leaving")
+
 	var flavorInterface hvs.Flavor
 	var err error
 
@@ -505,7 +550,7 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavor(flavorString string, privateKey
 			return "", errors.Wrap(err, "signing key validation failed")
 		}
 	} else {
-		return "", fmt.Errorf("GetSignedFlavor failed: signing key is missing")
+		return "", errors.Errorf("GetSignedFlavor failed: signing key is missing")
 	}
 
 	// prepare the signer
@@ -517,8 +562,7 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavor(flavorString string, privateKey
 	// unmarshal the signed flavor
 	err = json.Unmarshal([]byte(flavorString), &flavorInterface)
 	if err != nil {
-		err = errors.Wrapf(err, "Flavor unmarshal failures: %s", err.Error())
-		return "", err
+		return "", errors.Wrapf(err, "Flavor unmarshal failures: %s", err.Error())
 	}
 
 	// pack into struct and return

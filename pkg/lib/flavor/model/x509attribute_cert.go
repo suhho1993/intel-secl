@@ -20,7 +20,7 @@ import (
  * @author mullas
  */
 
-// AssetTag struct
+// AssetTag holds a subset of x509.Certificate that has relevant information for Flavor
 type X509AttributeCertificate struct {
 	Encoded           []byte      `json:"encoded"`
 	Issuer            string      `json:"issuer"`
@@ -67,8 +67,8 @@ func NewX509AttributeCertificate(tagCert *x509.Certificate) (*X509AttributeCerti
 		// fill in the values
 		_, err := asn1.Unmarshal(attrExt.Value, &tagkva1)
 		if err != nil {
-			err = errors.Wrap(err, "Failure unmarshalling ASN1 Attributes")
-			return nil, err
+
+			return nil, errors.Wrap(err, "Failure unmarshalling ASN1 Attributes")
 		}
 
 		// Append to list of Elements
@@ -83,8 +83,7 @@ func NewX509AttributeCertificate(tagCert *x509.Certificate) (*X509AttributeCerti
 	// get cert hash
 	certHash, err := crypt.GetCertHashInHex(tagCert, crypto.SHA384)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to get tag certificate SHA384 hash")
-		return nil, err
+		return nil, errors.Wrapf(err, "Failed to get tag certificate SHA384 hash")
 	}
 
 	// Assemble certificate

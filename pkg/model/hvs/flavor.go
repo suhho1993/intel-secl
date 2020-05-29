@@ -9,7 +9,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	"github.com/pkg/errors"
 )
 
 /**
@@ -50,13 +49,12 @@ func NewFlavor(meta *model.Meta, bios *model.Bios, hardware *model.Hardware, pcr
 }
 
 // NewFlavorToJson is a convenience method that returns a new instance of Flavor in JSON format ready for export
-func NewFlavorToJson(meta *model.Meta, bios *model.Bios, hardware *model.Hardware, pcrs map[crypt.DigestAlgorithm]map[types.PcrIndex]model.PcrEx, external *model.External, software *model.Software, errorMsg string) (string, error) {
+func NewFlavorToJson(meta *model.Meta, bios *model.Bios, hardware *model.Hardware, pcrs map[crypt.DigestAlgorithm]map[types.PcrIndex]model.PcrEx, external *model.External, software *model.Software) (string, error) {
 	// Assemble the Flavor
 	var flavor = NewFlavor(meta, bios, hardware, pcrs, external, software)
 	// serialize it
 	fj, err := json.Marshal(flavor)
 	if err != nil {
-		err = errors.Wrapf(err, "%s - JSON marshal failure", errorMsg)
 		return "", err
 	}
 	// return JSON

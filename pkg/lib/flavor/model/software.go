@@ -13,7 +13,7 @@ import (
  * @author mullas
  */
 
-// Software struct
+// Software consists of integrity measurements of Software/OS related resources
 type Software struct {
 	Measurements   map[string]model.MeasurementType `json:"measurements,omitempty"`
 	CumulativeHash string                           `json:"cumulative_hash,omitempty"`

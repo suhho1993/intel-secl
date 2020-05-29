@@ -23,9 +23,11 @@ import (
 )
 
 const (
-	RHELManifestPath           string = "./test/resources/RHELHostManifest.json"
-	TagCertPath                string = "./test/resources/AssetTagpem.Cert"
-	GoodSoftwareFlavor         string = "./test/resources/SoftwareFlavor.xml"
+	RHELManifestPath   string = "./test/resources/RHELHostManifest.json"
+	TagCertPath        string = "./test/resources/AssetTagpem.Cert"
+	GoodSoftwareFlavor string = "./test/resources/SoftwareFlavor.xml"
+	BadSoftwareFlavor  string = "./test/resources/BadSoftwareFlavor.xml"
+
 	ESXHostManifestPath        string = "./test/resources/VMWareManifest.json"
 	RHELManifestPathWSwFlavors string = "./test/resources/SWManifest.json"
 )
@@ -510,4 +512,19 @@ func TestFailures4SignFlavor(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestSoftwareFlavor_Failure validates GetSoftwareFlavor()
+func TestSoftwareFlavor_Failure(t *testing.T) {
+	var sf types.SoftwareFlavor
+	// load flavor
+	softwareFile, _ := os.Open(BadSoftwareFlavor)
+	sfBytes, _ := ioutil.ReadAll(softwareFile)
+
+	sf = types.SoftwareFlavor{
+		Measurement: string(sfBytes),
+	}
+	sfg, err := sf.GetSoftwareFlavor()
+	assert.Error(t, err, "Error expected for invalid software flavor")
+	t.Log(sfg)
 }

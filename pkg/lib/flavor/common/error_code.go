@@ -11,7 +11,8 @@ import "fmt"
  * @author mullas
  */
 
-// ErrorCode struct
+// ErrorCode implements Error interface and exports some standard error messages
+// helpful during flavor-processing
 type ErrorCode struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`

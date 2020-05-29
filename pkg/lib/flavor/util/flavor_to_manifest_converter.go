@@ -17,12 +17,15 @@ import (
  * @author mullas
  */
 
-// FlavorToManifestConverter umbrella for extracting Manifest from a Flavor
+// FlavorToManifestConverter is a utility for extracting Manifest from a Flavor
 type FlavorToManifestConverter struct {
 }
 
 // GetManifestXML extracts the Manifest from the Flavor
 func (fmc FlavorToManifestConverter) GetManifestXML(flavor hvs.Flavor) (string, error) {
+	log.Trace("flavor/util/flavor_to_manifest_converter:GetManifestXML() Entering")
+	defer log.Trace("flavor/util/flavor_to_manifest_converter:GetManifestXML() Leaving")
+
 	var manifest taModel.Manifest
 	var err error
 
@@ -37,6 +40,9 @@ func (fmc FlavorToManifestConverter) GetManifestXML(flavor hvs.Flavor) (string, 
 
 // getManifestFromFlavor constructs the Manifest from the Flavor
 func (fmc FlavorToManifestConverter) getManifestFromFlavor(flavor hvs.Flavor) taModel.Manifest {
+	log.Trace("flavor/util/flavor_to_manifest_converter:getManifestFromFlavor() Entering")
+	defer log.Trace("flavor/util/flavor_to_manifest_converter:getManifestFromFlavor() Leaving")
+
 	var manifest taModel.Manifest
 	manifest.DigestAlg = flavor.Meta.Description.DigestAlgorithm
 	manifest.Label = flavor.Meta.Description.Label
@@ -64,6 +70,9 @@ func (fmc FlavorToManifestConverter) getManifestFromFlavor(flavor hvs.Flavor) ta
 }
 
 func (fmc FlavorToManifestConverter) getManifestType(measurement taModel.MeasurementType) taModel.ManifestType {
+	log.Trace("flavor/util/flavor_to_manifest_converter:getManifestType() Entering")
+	defer log.Trace("flavor/util/flavor_to_manifest_converter:getManifestType() Leaving")
+
 	var manType taModel.ManifestType
 	switch reflect.TypeOf(measurement) {
 	case reflect.TypeOf(taModel.FileMeasurementType{}):

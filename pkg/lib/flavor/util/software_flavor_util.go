@@ -21,6 +21,9 @@ type SoftwareFlavorUtil struct {
 
 // GetSoftware returns the Software struct per the integrity Measurements sourced from HostManifest
 func (sfu SoftwareFlavorUtil) GetSoftware(measurements taModel.Measurement) cm.Software {
+	log.Trace("flavor/util/software_flavor_util:GetSoftware() Entering")
+	defer log.Trace("flavor/util/software_flavor_util:GetSoftware() Leaving")
+
 	measurementMap := make(map[string]taModel.MeasurementType)
 
 	// Cleanup Paths for Dir Measurement
@@ -46,6 +49,9 @@ func (sfu SoftwareFlavorUtil) GetSoftware(measurements taModel.Measurement) cm.S
 
 // cleanupPaths is a utility function that cleans up the paths in Measurement XML
 func (sfu SoftwareFlavorUtil) cleanupPaths(path string) string {
+	log.Trace("flavor/util/software_flavor_util:cleanupPaths() Entering")
+	defer log.Trace("flavor/util/software_flavor_util:cleanupPaths() Leaving")
+
 	measuredPath := strings.ReplaceAll(path, "/", "-")
 	if strings.LastIndex(measuredPath, "-") == len(measuredPath)-1 {
 		measuredPath = strings.Join(strings.Split(measuredPath, "")[1:len(measuredPath)-1], "")

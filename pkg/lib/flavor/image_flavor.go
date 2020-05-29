@@ -7,6 +7,7 @@ package flavor
 import (
 	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	"github.com/pkg/errors"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -74,7 +75,7 @@ func GetContainerImageFlavor(label string, encryptionRequired bool, keyURL strin
 	}
 
 	if label == "" {
-		return nil, fmt.Errorf("label cannot be empty")
+		return nil, errors.Errorf("label cannot be empty")
 	}
 
 	description := model.Description{

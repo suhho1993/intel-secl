@@ -6,14 +6,13 @@ package flavor
 
 import (
 	"crypto/x509"
-	"fmt"
+	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/types"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -21,6 +20,8 @@ import (
  *
  * @author mullas
  */
+
+var log = commLog.GetDefaultLogger()
 
 // FlavorProvider is an interface for PlatformFlavorProvider for a PlatformFlavorProvider
 type FlavorProvider interface {
@@ -37,6 +38,9 @@ type PlatformFlavorProvider struct {
 
 // NewPlatformFlavorProvider returns an instance of PlaformFlavorProvider
 func NewPlatformFlavorProvider(hostManifest *hcTypes.HostManifest, tagCertificate *x509.Certificate) (FlavorProvider, error) {
+	log.Trace("flavor/platform_flavor_factory:NewPlatformFlavorProvider() Entering")
+	defer log.Trace("flavor/platform_flavor_factory:NewPlatformFlavorProvider() Leaving")
+
 	var pfp FlavorProvider
 	var tc *model.X509AttributeCertificate
 	var err error
@@ -46,8 +50,7 @@ func NewPlatformFlavorProvider(hostManifest *hcTypes.HostManifest, tagCertificat
 	if tagCertificate != nil {
 		tc, err = model.NewX509AttributeCertificate(tagCertificate)
 		if err != nil {
-			err = errors.Wrap(err, "Error while generating X509AttributeCertificate from TagCertificate")
-			return nil, err
+			return nil, errors.Wrap(err, "Error while generating X509AttributeCertificate from TagCertificate")
 		}
 	}
 
@@ -61,6 +64,9 @@ func NewPlatformFlavorProvider(hostManifest *hcTypes.HostManifest, tagCertificat
 // GetPlatformFlavor parses the connection string of the target host and determines the type of the host
 // and instantiates the appropriate PlatformFlavor implementation.
 func (pff PlatformFlavorProvider) GetPlatformFlavor() (*types.PlatformFlavor, error) {
+	log.Trace("flavor/platform_flavor_factory:GetPlatformFlavor() Entering")
+	defer log.Trace("flavor/platform_flavor_factory:GetPlatformFlavor() Leaving")
+
 	var err error
 	var rp types.PlatformFlavor
 
@@ -70,25 +76,26 @@ func (pff PlatformFlavorProvider) GetPlatformFlavor() (*types.PlatformFlavor, er
 			rp = types.NewESXPlatformFlavor(pff.hostManifest, pff.attributeCertificate)
 		// Fallback to Linux
 		default:
-			rp = types.NewRHELPlatformFlavor(pff.hostManifest, pff.attributeCertificate)
+			rp = types.NewLinuxPlatformFlavor(pff.hostManifest, pff.attributeCertificate)
 		}
 	} else {
-		err = fmt.Errorf("Error while retrieving PlaformFlavor - missing HostManifest")
-		err = errors.Wrapf(err, common.INVALID_INPUT().Message)
-		return nil, err
+		err = errors.New("Error while retrieving PlaformFlavor - missing HostManifest")
+		return nil, errors.Wrapf(err, common.INVALID_INPUT().Message)
 	}
 	return &rp, err
 }
 
 // GetGenericPlatformFlavor creates an instance of a GenericPlatform flavor using tagCert and vendor
 func (pff PlatformFlavorProvider) GetGenericPlatformFlavor(vendor string) (*types.PlatformFlavor, error) {
+	log.Trace("flavor/platform_flavor_factory:GetGenericPlatformFlavor() Entering")
+	defer log.Trace("flavor/platform_flavor_factory:GetGenericPlatformFlavor() Leaving")
+
 	var err error
 	var gpf types.PlatformFlavor
 
 	if pff.attributeCertificate == nil {
-		err = fmt.Errorf("Error while retrieving GenericPlatformFlavor - Tag certificate missing")
-		err = errors.Wrapf(err, common.INVALID_INPUT().Message)
-		return nil, err
+		err = errors.New("Tag certificate missing")
+		return nil, errors.Wrapf(err, common.INVALID_INPUT().Message)
 	}
 
 	log.Info("GetGenericPlatformFlavor: creating generic platform flavor for tag certificate with host hardware UUID {}", pff.attributeCertificate.Subject)

@@ -4,7 +4,10 @@ The Flavor library is responsible for retrieving the hardware/software measureme
 When integrated with the Host Verification service, Flavor would be equivalent to what is known today as the Whitelist.
 
 ## Key features
-- Create a flavors for VM and container
+- Create flavors for VM and container images
+- Create Platform Flavors for Intel and VMWare Hosts
+- Create Software Flavors from Manifest XMLs
+- Create Generic Flavors from Asset Tag Certificates
 
 ### Direct dependencies
 

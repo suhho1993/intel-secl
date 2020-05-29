@@ -9,7 +9,7 @@ package model
  * @author mullas
  */
 
-// Description struct
+// Description is a component of Flavor that holds some information on the Flavor
 type Description struct {
 	FlavorPart      string `json:"flavor_part,omitempty"`
 	Source          string `json:"source,omitempty"`

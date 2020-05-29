@@ -6,9 +6,12 @@ package types
 
 import (
 	"crypto/rsa"
+	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 )
+
+var log = commLog.GetDefaultLogger()
 
 /**
  *

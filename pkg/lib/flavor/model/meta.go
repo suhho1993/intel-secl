@@ -9,7 +9,7 @@ package model
  * @author purvades
  */
 
-// Meta struct
+// Meta holds metadata information related to the Flavor
 type Meta struct {
 	Schema      *Schema      `json:"schema,omitempty"`
 	ID          string       `json:"id"`

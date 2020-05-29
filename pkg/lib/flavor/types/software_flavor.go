@@ -31,6 +31,9 @@ func NewSoftwareFlavor(measurement string) SoftwareFlavor {
 
 // GetSoftwareFlavor creates a SoftwareFlavor that would include all the measurements provided in input.
 func (sf *SoftwareFlavor) GetSoftwareFlavor() (string, error) {
+	log.Trace("flavor/types/software_flavor:GetSoftwareFlavor() Entering")
+	defer log.Trace("flavor/types/software_flavor:GetSoftwareFlavor() Leaving")
+
 	var errorMessage = "Error during creation of SOFTWARE flavor"
 	var measurements taModel.Measurement
 	var err error
@@ -42,15 +45,14 @@ func (sf *SoftwareFlavor) GetSoftwareFlavor() (string, error) {
 	// create meta section details
 	newMeta, err := pfutil.GetMetaSectionDetails(nil, nil, sf.Measurement, cf.Software, "")
 	if err != nil {
-		err = errors.Wrap(err, errorMessage+" Failure in Meta section details")
-		return "", err
+		return "", errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
+	log.Debugf("flavor/types/software_flavor:GetSoftwareFlavor() New Meta Section: %v", *newMeta)
 
 	f := hvs.NewFlavor(newMeta, nil, nil, nil, nil, &software)
 	strf, err := json.Marshal(f)
 	if err != nil {
-		err = errors.Wrapf(err, "Error marshalling SoftwareFlavor: %s", err)
-		return "", err
+		return "", errors.Wrapf(err, "Error marshalling SoftwareFlavor: %s", err)
 	}
 	return string(strf), nil
 }

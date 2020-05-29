@@ -6,7 +6,6 @@ package flavor
 
 import (
 	"encoding/json"
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,4 +52,21 @@ func TestContainerImageFlavorCreation(t *testing.T) {
 	flavor, err = json.Marshal(flavorInput)
 	assert.NoError(t, err)
 	assert.NotNil(t, flavor)
+}
+
+// TestImageFlavorWithEmptyLabel verifies error on empty label
+func TestImageFlavorWithEmptyLabel(t *testing.T) {
+	//Flavor with only integrity enforced
+	flavorInput, err := GetContainerImageFlavor("", false, "",
+		true, "https://docker.notary.com:4443")
+	assert.Error(t, err)
+	assert.Nil(t, flavorInput)
+}
+
+func TestContainerImageFlavorCreationFail_InvalidLabel(t *testing.T) {
+	//Flavor with only integrity enforced
+	flavorInput, err := GetContainerImageFlavor("", false, "",
+		true, "https://docker.notary.com:4443")
+	assert.Error(t, err)
+	assert.Nil(t, flavorInput)
 }

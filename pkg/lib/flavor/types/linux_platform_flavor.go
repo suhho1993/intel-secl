@@ -7,7 +7,6 @@ package types
 import (
 	"crypto/rsa"
 	"encoding/xml"
-	"fmt"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
@@ -38,13 +37,18 @@ var (
 		"EVTYPE_BOOT_POL_HASH"}
 	osModules         = []string{"vmlinuz"}
 	hostUniqueModules = []string{"initrd", "LCP_CONTROL_HASH"}
+	suefiPcrList      = []int{0, 1, 2, 3, 4, 5, 6, 7}
+	tbootPcrList      = []int{17, 18}
 )
 
 var pfutil util.PlatformFlavorUtil
 var sfutil util.SoftwareFlavorUtil
 
-// NewRHELPlatformFlavor returns an instance of LinuxPlatformFlavor
-func NewRHELPlatformFlavor(hostReport *hcTypes.HostManifest, tagCertificate *cm.X509AttributeCertificate) PlatformFlavor {
+// NewLinuxPlatformFlavor returns an instance of LinuxPlatformFlavor
+func NewLinuxPlatformFlavor(hostReport *hcTypes.HostManifest, tagCertificate *cm.X509AttributeCertificate) PlatformFlavor {
+	log.Trace("flavor/types/linux_platform_flavor:NewLinuxPlatformFlavor() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:NewLinuxPlatformFlavor() Leaving")
+
 	return LinuxPlatformFlavor{
 		HostManifest:   hostReport,
 		HostInfo:       &hostReport.HostInfo,
@@ -55,6 +59,9 @@ func NewRHELPlatformFlavor(hostReport *hcTypes.HostManifest, tagCertificate *cm.
 // GetFlavorPartRaw extracts the details of the flavor part requested by the
 // caller from the host report used during the creation of the PlatformFlavor instance
 func (rhelpf LinuxPlatformFlavor) GetFlavorPartRaw(name cf.FlavorPart) ([]string, error) {
+	log.Trace("flavor/types/linux_platform_flavor:GetFlavorPartRaw() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:GetFlavorPartRaw() Leaving")
+
 	switch name {
 	case cf.Platform:
 		return rhelpf.getPlatformFlavor()
@@ -72,6 +79,9 @@ func (rhelpf LinuxPlatformFlavor) GetFlavorPartRaw(name cf.FlavorPart) ([]string
 
 // GetFlavorPartNames retrieves the list of flavor parts that can be obtained using the GetFlavorPartRaw function
 func (rhelpf LinuxPlatformFlavor) GetFlavorPartNames() ([]cf.FlavorPart, error) {
+	log.Trace("flavor/types/linux_platform_flavor:GetFlavorPartNames() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:GetFlavorPartNames() Leaving")
+
 	flavorPartList := []cf.FlavorPart{cf.Platform, cf.Os, cf.HostUnique, cf.Software}
 
 	// For each of the flavor parts, check what PCRs are required and if those required PCRs are present in the host report.
@@ -95,6 +105,9 @@ func (rhelpf LinuxPlatformFlavor) GetFlavorPartNames() ([]cf.FlavorPart, error) 
 // GetPcrList Helper function to calculate the list of PCRs for the flavor part specified based
 // on the version of the TPM hardware.
 func (rhelpf LinuxPlatformFlavor) getPcrList(flavorPart cf.FlavorPart) []int {
+	log.Trace("flavor/types/linux_platform_flavor:getPcrList() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:getPcrList() Leaving")
+
 	var pcrSet = make(map[int]bool)
 	var pcrs []int
 	var isTboot bool
@@ -106,34 +119,41 @@ func (rhelpf LinuxPlatformFlavor) getPcrList(flavorPart cf.FlavorPart) []int {
 	switch flavorPart {
 	case cf.Platform:
 		pcrSet[0] = true
-		// check if CBNT is enabled
+		// check if CBNT is supported
 		if isCbntMeasureProfile(hostInfo.HardwareFeatures.CBNT) {
+			log.Debug("flavor/types/linux_platform_flavor:getPcrList() PlatformFlavor - platform supports CBNT")
 			pcrSet[7] = true
 		}
-		// check if SUEFI is enabled
+
+		// check if SUEFI is supported
 		if hostInfo.HardwareFeatures.SUEFI != nil {
 			if hostInfo.HardwareFeatures.SUEFI.Enabled {
-				for _, pcrx := range []int{0, 1, 2, 3, 4, 5, 6, 7} {
+				for _, pcrx := range suefiPcrList {
+					log.Debug("flavor/types/linux_platform_flavor:getPcrList() PlatformFlavor - platform supports SUEFI")
 					pcrSet[pcrx] = true
 				}
 			}
 		}
 
-		// check if TBOOT is enabled
+		// check if TBOOT is installed
 		if isTboot {
-			for _, pcrx := range []int{17, 18} {
+			for _, pcrx := range tbootPcrList {
+				log.Debug("flavor/types/linux_platform_flavor:getPcrList() PlatformFlavor - TBOOT is installed")
 				pcrSet[pcrx] = true
 			}
 		}
 	case cf.Os:
-		// check if TBOOT is enabled
+		// check if TBOOT is installed
 		if isTboot {
+			log.Debug("flavor/types/linux_platform_flavor:getPcrList() OSFlavor - TBOOT is installed")
 			pcrSet[17] = true
 		}
+
 	case cf.HostUnique:
-		// check if TBOOT is enabled
+		// check if TBOOT is installed
 		if isTboot {
-			for _, pcrx := range []int{17, 18} {
+			for _, pcrx := range tbootPcrList {
+				log.Debug("flavor/types/linux_platform_flavor:getPcrList() HostUniqueFlavor - TBOOT is installed")
 				pcrSet[pcrx] = true
 			}
 		}
@@ -145,10 +165,14 @@ func (rhelpf LinuxPlatformFlavor) getPcrList(flavorPart cf.FlavorPart) []int {
 	for k := range pcrSet {
 		pcrs = append(pcrs, k)
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getPcrList() PCRList %v", pcrs)
 	return pcrs
 }
 
 func isCbntMeasureProfile(cbnt *taModel.CBNT) bool {
+	log.Trace("flavor/types/linux_platform_flavor:isCbntMeasureProfile() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:isCbntMeasureProfile() Leaving")
+
 	if cbnt != nil {
 		return cbnt.Enabled && cbnt.Meta.Profile == cf.BootGuardProfile5().Name
 	}
@@ -158,6 +182,9 @@ func isCbntMeasureProfile(cbnt *taModel.CBNT) bool {
 // eventLogRequired Helper function to determine if the event log associated with the PCR
 // should be included in the flavor for the specified flavor part
 func (rhelpf LinuxPlatformFlavor) eventLogRequired(flavorPartName cf.FlavorPart) bool {
+	log.Trace("flavor/types/linux_platform_flavor:eventLogRequired() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:eventLogRequired() Leaving")
+
 	// defaults to false
 	var eventLogRequired bool
 
@@ -177,6 +204,9 @@ func (rhelpf LinuxPlatformFlavor) eventLogRequired(flavorPartName cf.FlavorPart)
 // getPlatformFlavor returns a json document having all the good known PCR values and
 // corresponding event logs that can be used for evaluating the PLATFORM trust of a host
 func (rhelpf LinuxPlatformFlavor) getPlatformFlavor() ([]string, error) {
+	log.Trace("flavor/types/linux_platform_flavor:getPlatformFlavor() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:getPlatformFlavor() Leaving")
+
 	var errorMessage = "Error during creation of PLATFORM flavor"
 	var platformFlavors []string
 	var platformPcrs = rhelpf.getPcrList(cf.Platform)
@@ -188,25 +218,29 @@ func (rhelpf LinuxPlatformFlavor) getPlatformFlavor() ([]string, error) {
 
 	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.Platform, "")
 	if err != nil {
-		err = errors.Wrap(err, errorMessage+" - failure in Meta section details")
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" - failure in Meta section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getPlatformFlavor() New Meta Section: %v", *newMeta)
+
 	newBios := pfutil.GetBiosSectionDetails(rhelpf.HostInfo)
 	if newBios == nil {
-		err = fmt.Errorf(errorMessage + " - failure in Bios section details")
-		return nil, err
+		return nil, errors.Errorf(errorMessage + " - failure in Bios section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getPlatformFlavor() New Bios Section: %v", *newBios)
+
 	newHW := pfutil.GetHardwareSectionDetails(rhelpf.HostInfo)
 	if newHW == nil {
-		err = fmt.Errorf(errorMessage + " - failure in Hardware section details")
-		return nil, err
+		return nil, errors.Errorf(errorMessage + " - failure in Hardware section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getPlatformFlavor() New Hardware Section: %v", *newHW)
 
 	// Assemble the Platform Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, newHW, filteredPcrDetails, nil, nil, errorMessage)
+	fj, err := hvs.NewFlavorToJson(newMeta, newBios, newHW, filteredPcrDetails, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getPlatformFlavor()  New PlatformFlavor: %s", fj)
+
 	// return JSON
 	platformFlavors = append(platformFlavors, fj)
 	return platformFlavors, nil
@@ -215,6 +249,9 @@ func (rhelpf LinuxPlatformFlavor) getPlatformFlavor() ([]string, error) {
 // getOsFlavor Returns a json document having all the good known PCR values and
 // corresponding event logs that can be used for evaluating the OS Trust of a host
 func (rhelpf LinuxPlatformFlavor) getOsFlavor() ([]string, error) {
+	log.Trace("flavor/types/linux_platform_flavor:getOsFlavor() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:getOsFlavor() Leaving")
+
 	var errorMessage = "Error during creation of OS flavor"
 	var err error
 	var osFlavors []string
@@ -227,20 +264,23 @@ func (rhelpf LinuxPlatformFlavor) getOsFlavor() ([]string, error) {
 
 	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.Os, "")
 	if err != nil {
-		err = errors.Wrap(err, errorMessage+" Failure in Meta section details")
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getOsFlavor() New Meta Section: %v", *newMeta)
+
 	newBios := pfutil.GetBiosSectionDetails(rhelpf.HostInfo)
 	if newBios == nil {
-		err = fmt.Errorf("%s Failure in Bios section details", errorMessage)
-		return nil, err
+		return nil, errors.Errorf("%s Failure in Bios section details", errorMessage)
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getOsFlavor() New Bios Section: %v", *newBios)
 
 	// Assemble the OS Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil, errorMessage)
+	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getOSFlavor()  New OS Flavor: %s", fj)
+
 	// return JSON
 	osFlavors = append(osFlavors, fj)
 	return osFlavors, nil
@@ -250,6 +290,9 @@ func (rhelpf LinuxPlatformFlavor) getOsFlavor() ([]string, error) {
 // can be used for evaluating the unique part of the PCR configurations of a host. These include PCRs/modules getting
 // extended to PCRs that would vary from host to host.
 func (rhelpf LinuxPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
+	log.Trace("flavor/types/linux_platform_flavor:getHostUniqueFlavor() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:getHostUniqueFlavor() Leaving")
+
 	var errorMessage = "Error during creation of HOST_UNIQUE flavor"
 	var err error
 	var hostUniqueFlavors []string
@@ -262,20 +305,23 @@ func (rhelpf LinuxPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
 
 	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.HostUnique, "")
 	if err != nil {
-		err = errors.Wrap(err, errorMessage+" Failure in Meta section details")
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getHostUniqueFlavor() New Meta Section: %v", *newMeta)
+
 	newBios := pfutil.GetBiosSectionDetails(rhelpf.HostInfo)
 	if newBios == nil {
-		err = errors.Wrap(err, errorMessage+" Failure in Bios section details")
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" Failure in Bios section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getHostUniqueFlavor() New Bios Section: %v", *newBios)
 
 	// Assemble the Host Unique Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil, errorMessage)
+	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
+	log.Debugf("flavor/types/esx_platform_flavor:getHostUniqueFlavor() New PlatformFlavor: %s", fj)
+
 	// return JSON
 	hostUniqueFlavors = append(hostUniqueFlavors, fj)
 	return hostUniqueFlavors, nil
@@ -284,37 +330,43 @@ func (rhelpf LinuxPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
 // getAssetTagFlavor Retrieves the asset tag part of the flavor including the certificate and all the key-value pairs
 // that are part of the certificate.
 func (rhelpf LinuxPlatformFlavor) getAssetTagFlavor() ([]string, error) {
+	log.Trace("flavor/types/linux_platform_flavor:getAssetTagFlavor() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:getAssetTagFlavor() Leaving")
+
 	var errorMessage = "Error during creation of ASSET_TAG flavor"
 	var err error
 	var assetTagFlavors []string
 	if rhelpf.TagCertificate == nil {
-		return nil, fmt.Errorf("%s - %s", errorMessage, cf.FLAVOR_PART_CANNOT_BE_SUPPORTED().Message)
+		return nil, errors.Errorf("%s - %s", errorMessage, cf.FLAVOR_PART_CANNOT_BE_SUPPORTED().Message)
 	}
 
 	// create meta section details
 	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.AssetTag, "")
 	if err != nil {
-		err = errors.Wrap(err, errorMessage+" Failure in Meta section details")
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getAssetTagFlavor() New Meta Section: %v", *newMeta)
+
 	// create bios section details
 	newBios := pfutil.GetBiosSectionDetails(rhelpf.HostInfo)
 	if newBios == nil {
-		err = fmt.Errorf("%s - Failure in Bios section details", errorMessage)
-		return nil, err
+		return nil, errors.Errorf("%s - Failure in Bios section details", errorMessage)
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getAssetTagFlavor() New Bios Section: %v", *newBios)
+
 	// create external section details
 	newExt, err := pfutil.GetExternalConfigurationDetails(rhelpf.TagCertificate)
 	if err != nil {
-		err = errors.Wrap(err, errorMessage+" Failure in External configuration section details")
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" Failure in External configuration section details")
 	}
+	log.Debugf("flavor/types/linux_platform_flavor:getAssetTagFlavor() New External Section: %v", *newExt)
 
 	// Assemble the Asset Tag Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, nil, newExt, nil, errorMessage)
+	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, nil, newExt, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
+	log.Debugf("flavor/types/esx_platform_flavor:getPlatformFlavor() New Asset Tag Flavor: %s", fj)
 	// return JSON
 	assetTagFlavors = append(assetTagFlavors, fj)
 	return assetTagFlavors, nil
@@ -323,6 +375,9 @@ func (rhelpf LinuxPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 // getDefaultSoftwareFlavor Method to create a software flavor. This method would create a software flavor that would
 // include all the measurements provided from host.
 func (rhelpf LinuxPlatformFlavor) getDefaultSoftwareFlavor() ([]string, error) {
+	log.Trace("flavor/types/linux_platform_flavor:getDefaultSoftwareFlavor() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:getDefaultSoftwareFlavor() Leaving")
+
 	var softwareFlavors []string
 	var errorMessage = cf.SOFTWARE_FLAVOR_CANNOT_BE_CREATED().Message
 
@@ -341,11 +396,15 @@ func (rhelpf LinuxPlatformFlavor) getDefaultSoftwareFlavor() ([]string, error) {
 			softwareFlavors = append(softwareFlavors, swFlavorStr)
 		}
 	}
+	log.Debugf("flavor/types/esx_platform_flavor:getDefaultSoftwareFlavor() New Software Flavor: %s", softwareFlavors)
 	return softwareFlavors, nil
 }
 
 // getDefaultMeasurement returns a default set of measurements for the Platform Flavor
 func (rhelpf LinuxPlatformFlavor) getDefaultMeasurement() ([]string, error) {
+	log.Trace("flavor/types/linux_platform_flavor:getDefaultMeasurement() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:getDefaultMeasurement() Leaving")
+
 	var measurementXmlCollection []string
 	var err error
 
@@ -353,12 +412,12 @@ func (rhelpf LinuxPlatformFlavor) getDefaultMeasurement() ([]string, error) {
 		var measurement taModel.Measurement
 		err = xml.Unmarshal([]byte(measurementXML), &measurement)
 		if err != nil {
-			err = errors.Wrapf(err, "Error unmarshalling measurement XML: %s", err.Error())
-			return nil, err
+			return nil, errors.Wrapf(err, "Error unmarshalling measurement XML: %s", err.Error())
 		}
 		if strings.Contains(measurement.Label, constants.DefaultSoftwareFlavorPrefix) ||
 			strings.Contains(measurement.Label, constants.DefaultWorkloadFlavorPrefix) {
 			measurementXmlCollection = append(measurementXmlCollection, measurementXML)
+			log.Debugf("flavor/types/esx_platform_flavor:getDefaultMeasurement() Measurement XML: %s", measurementXML)
 		}
 	}
 	return measurementXmlCollection, nil
@@ -367,6 +426,9 @@ func (rhelpf LinuxPlatformFlavor) getDefaultMeasurement() ([]string, error) {
 // GetFlavorPart extracts the details of the flavor part requested by the caller from
 // the host report used during the creation of the PlatformFlavor instance and it's corresponding signature.
 func (rhelpf LinuxPlatformFlavor) GetFlavorPart(part cf.FlavorPart, flavorSigningPrivateKey *rsa.PrivateKey) ([]hvs.SignedFlavor, error) {
+	log.Trace("flavor/types/linux_platform_flavor:GetFlavorPart() Entering")
+	defer log.Trace("flavor/types/linux_platform_flavor:GetFlavorPart() Leaving")
+
 	var flavors []string
 	var err error
 
@@ -386,7 +448,7 @@ func (rhelpf LinuxPlatformFlavor) GetFlavorPart(part cf.FlavorPart, flavorSignin
 
 	sfList, err := pfutil.GetSignedFlavorList(flavors, flavorSigningPrivateKey)
 	if err != nil {
-		return []hvs.SignedFlavor{}, err
+		return nil, err
 	}
 	return *sfList, nil
 }
