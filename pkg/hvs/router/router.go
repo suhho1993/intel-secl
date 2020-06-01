@@ -35,8 +35,9 @@ func InitRoutes(cfg *config.Configuration) *mux.Router {
 	defaultLog.Trace("router/router:InitRoutes() Entering")
 	defer defaultLog.Trace("router/router:InitRoutes() Leaving")
 
-	// Create config for Postgres
+	// Create config for DBTypePostgres
 	config := postgres.Config{
+		Vendor:            constants.DBTypePostgres,
 		Host:              cfg.Postgres.Hostname,
 		Port:              strconv.Itoa(cfg.Postgres.Port),
 		User:              cfg.Postgres.Username,
@@ -48,8 +49,8 @@ func InitRoutes(cfg *config.Configuration) *mux.Router {
 		ConnRetryTime:     cfg.Postgres.ConnRetryTime,
 	}
 
-	// Creates a Postgres DB instance
-	dataStore, err := postgres.New(config)
+	// Creates a DBTypePostgres DB instance
+	dataStore, err := NewDataStore(&config)
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +67,7 @@ func InitRoutes(cfg *config.Configuration) *mux.Router {
 	return router
 }
 
-func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore postgres.DataStore) {
+func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore) {
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
 
@@ -84,7 +85,15 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetFlavorGroupRoutes(subRouter, dataStore)
 }
 
+func NewDataStore(config *postgres.Config) (*postgres.DataStore, error) {
+	if config.Vendor == constants.DBTypePostgres {
+		return postgres.New(config)
+	}
+	return nil, errors.Errorf("Unsupported database vendor")
+}
+
 // Fetch JWT certificate from AAS
+//TODO: use interface to store save certificates
 func (r *Router) fnGetJwtCerts() error {
 	defaultLog.Trace("router/router:fnGetJwtCerts() Entering")
 	defer defaultLog.Trace("router/router:fnGetJwtCerts() Leaving")

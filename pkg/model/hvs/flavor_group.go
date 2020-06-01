@@ -6,6 +6,7 @@
 package hvs
 
 import (
+	"github.com/google/uuid"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 )
 
@@ -14,7 +15,7 @@ type FlavorgroupCollection struct {
 }
 
 type FlavorGroup struct {
-	ID                          string                       `json:"id,omitempty"`
+	ID                          uuid.UUID                    `json:"id,omitempty"`
 	Name                        string                       `json:"name,omitempty"`
 	FlavorIds                   []string                     `json:"flavorIds,omitempty"`
 	Flavors                     []Flavor                     `json:"flavors,omitempty"`

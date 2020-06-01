@@ -19,6 +19,10 @@ hvs-installer: hvs
 
 installer: hvs-installer
 
+swagger:
+	mkdir -p out/swagger
+	swagger generate spec -o ./out/swagger/openapi.yml --scan-models
+
 test:
 	go test ./... -coverprofile cover.out
 	go tool cover -func cover.out

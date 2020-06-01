@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/jinzhu/gorm"
@@ -24,31 +23,30 @@ import (
 var defaultLog = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
-// Config holds the configuration used for instantiating a new DataStore.
 type Config struct {
-	Host, Port, Dbname, User, Password, SslMode, SslCert string
+	Vendor, Host, Port, Dbname, User, Password, SslMode, SslCert string
 	ConnRetryAttempts, ConnRetryTime int
 }
 
 type DataStore struct {
 	Db  *gorm.DB
-	cfg Config
 }
+
 // New returns a DataStore instance with the gorm.DB set with the postgres
-func New(cfg Config) (DataStore, error) {
+func New(cfg *Config) (*DataStore, error) {
 	defaultLog.Trace("postgres/postgres:New() Entering")
 	defer defaultLog.Trace("postgres/postgres:New() Leaving")
 
 	var store DataStore
-	
+
 	if cfg.Host == "" || cfg.Port == "" || cfg.User == "" ||
 		cfg.Password == "" || cfg.Dbname == "" {
 		err := errors.Errorf("postgres/postgres:New() All fields must be set (%s)", spew.Sdump(cfg))
 		defaultLog.Error(err)
 		secLog.Warningf("%s: Failed to connect to db, missing configuration - %s", commLogMsg.BadConnection, err)
-		return store, err
+		return nil, err
 	}
-	
+
 	cfg.SslMode = strings.TrimSpace(strings.ToLower(cfg.SslMode))
 	if cfg.SslMode != constants.SslModeAllow && cfg.SslMode != constants.SslModePrefer &&
 		cfg.SslMode != constants.SslModeVerifyCa && cfg.SslMode != constants.SslModeRequire {
@@ -60,7 +58,6 @@ func New(cfg Config) (DataStore, error) {
 		sslCertParams = " sslrootcert=" + cfg.SslCert
 	}
 
-	store.cfg = cfg
 	var db *gorm.DB
 	var dbErr error
 	numAttempts := cfg.ConnRetryAttempts
@@ -78,10 +75,10 @@ func New(cfg Config) (DataStore, error) {
 	if dbErr != nil {
 		defaultLog.WithError(dbErr).Infof("postgres/postgres:New() Failed to connect to db after %d attempts\n", numAttempts)
 		secLog.Warningf("%s: Failed to connect to db after %d attempts", commLogMsg.BadConnection, numAttempts)
-		return store, errors.Wrapf(dbErr, "Failed to connect to db after %d attempts", numAttempts)
+		return nil, errors.Wrapf(dbErr, "Failed to connect to db after %d attempts", numAttempts)
 	}
 	store.Db = db
-	return store, nil
+	return &store, nil
 }
 
 func (ds *DataStore) ExecuteSql(sql *string) error {
@@ -115,7 +112,7 @@ func (ds *DataStore) Migrate() error {
 	defaultLog.Trace("postgres/postgres:Migrate() Entering")
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 
-	ds.Db.AutoMigrate(domain.FlavorGroup{})
+	ds.Db.AutoMigrate(FlavorGroup{})
 	return nil
 }
 

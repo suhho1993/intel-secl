@@ -23,7 +23,6 @@ const (
 	ServiceRemoveCmd              = "systemctl disable hvs"
 	DefaultTLSCertPath            = ConfigDir + "tls-cert.pem"
 	DefaultTLSKeyPath             = ConfigDir + "tls.key"
-	CertApproverGroupName         = "CertApprover"
 	DefaultHvsTlsCn               = "HVS TLS Certificate"
 	DefaultHvsTlsSan              = "127.0.0.1,localhost"
 	DefaultKeyAlgorithm           = "rsa"

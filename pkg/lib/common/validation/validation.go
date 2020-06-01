@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	nameReg          = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
 	unameReg         = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
 	userorEmailReg   = regexp.MustCompile("^[a-zA-Z0-9.-_]+@?[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 	emailReg         = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
@@ -78,6 +79,15 @@ func ValidateAccount(uname string, pwd string) error {
 		return nil
 	}
 	return errors.New("Invalid input for username or password")
+}
+
+// ValidateNameString validate user primarily forbidding any quotation marks in the input
+// as well as restricting the length.
+func ValidateNameString(name string) error {
+	if len(name) < 256 && nameReg.MatchString(name) {
+		return nil
+	}
+	return errors.New("Invalid input for name")
 }
 
 // ValidateUserNameString validate user primarily forbidding any quotation marks in the input

@@ -24,6 +24,7 @@ func (v VersionController) GetVersion() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		verStr := fmt.Sprintf("%s-%s", version.Version, version.GitHash)
 		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(verStr))
 	})
 }

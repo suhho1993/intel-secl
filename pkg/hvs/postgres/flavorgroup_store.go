@@ -6,8 +6,7 @@ package postgres
 
 import (
 	"encoding/json"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -16,7 +15,11 @@ import (
 )
 
 type FlavorGroupStore struct {
-	Store DataStore
+	Store *DataStore
+}
+
+func NewFlavorGroupStore(store *DataStore) *FlavorGroupStore {
+	return &FlavorGroupStore{store}
 }
 
 func (f *FlavorGroupStore) Create(flavorGroup *hvs.FlavorGroup) (*hvs.FlavorGroup, error) {
@@ -28,7 +31,11 @@ func (f *FlavorGroupStore) Create(flavorGroup *hvs.FlavorGroup) (*hvs.FlavorGrou
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Create() failed to marshal to dbFlavorgroup")
 	}
 
-	dbFlavorGroup.ID = crypt.GenUUID("")
+	dbFlavorGroup.ID, err = uuid.NewUUID()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Create() Error generating new UUID")
+	}
+
 	if err := f.Store.Db.Create(&dbFlavorGroup).Error; err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Create() failed to create Flavorgroup")
 	}
@@ -39,12 +46,12 @@ func (f *FlavorGroupStore) Create(flavorGroup *hvs.FlavorGroup) (*hvs.FlavorGrou
 	return flavorGroup, nil
 }
 
-func (f *FlavorGroupStore) Retrieve(flavorGroupId string) (*hvs.FlavorGroup, error) {
+func (f *FlavorGroupStore) Retrieve(flavorGroupId *uuid.UUID) (*hvs.FlavorGroup, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Leaving")
 
-	dbFlavorGroup := domain.FlavorGroup{
-		ID: flavorGroupId,
+	dbFlavorGroup := FlavorGroup{
+		ID: *flavorGroupId,
 	}
 	err := f.Store.Db.Where(&dbFlavorGroup).First(&dbFlavorGroup).Error
 	if err != nil {
@@ -64,7 +71,7 @@ func (f *FlavorGroupStore) Search(fgFilter *hvs.FlavorGroupFilterCriteria) (*hvs
 			" a gorm query object in FlavorGroups Search function.")
 	}
 
-	var dbFlavorgroups []domain.FlavorGroup
+	var dbFlavorgroups []FlavorGroup
 	if err := tx.Find(&dbFlavorgroups).Error; err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Search() failed to search all "+
 			"Flavorgroups")
@@ -73,12 +80,12 @@ func (f *FlavorGroupStore) Search(fgFilter *hvs.FlavorGroupFilterCriteria) (*hvs
 	return fromDbFlavorGroups(dbFlavorgroups)
 }
 
-func (f *FlavorGroupStore) Delete(flavorGroupId string) error {
+func (f *FlavorGroupStore) Delete(flavorGroupId *uuid.UUID) error {
 	defaultLog.Trace("postgres/flavorgroup_store:Delete() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Delete() Leaving")
 
-	dbFlavorGroup := domain.FlavorGroup{
-		ID: flavorGroupId,
+	dbFlavorGroup := FlavorGroup{
+		ID: *flavorGroupId,
 	}
 	if err := f.Store.Db.Delete(&dbFlavorGroup).Error; err != nil {
 		return errors.Wrap(err, "postgres/flavorgroup_store:Delete() failed to delete Flavorgroup")
@@ -96,7 +103,7 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *hvs.FlavorGroupFilterCri
 	}
 
 	if fgFilter == nil {
-		return tx.Where(&domain.FlavorGroup{})
+		return tx.Where(&FlavorGroup{})
 	}
 	if fgFilter.Id != "" {
 		tx = tx.Where("id = ?", fgFilter.Id)
@@ -109,14 +116,14 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *hvs.FlavorGroupFilterCri
 	return tx
 }
 
-func toDbFlavorGroup(flavorGroup *hvs.FlavorGroup) (*domain.FlavorGroup, error) {
+func toDbFlavorGroup(flavorGroup *hvs.FlavorGroup) (*FlavorGroup, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:toDbFlavorGroup() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:toDbFlavorGroup() Leaving")
 
-	var dbFlavorGroup domain.FlavorGroup
+	var dbFlavorGroup FlavorGroup
 
 	if flavorGroup == nil {
-		return &dbFlavorGroup, nil
+		return nil, nil
 	}
 
 	flavorMatchPolicyCollection, err := json.Marshal(flavorGroup.FlavorMatchPolicyCollection)
@@ -124,7 +131,7 @@ func toDbFlavorGroup(flavorGroup *hvs.FlavorGroup) (*domain.FlavorGroup, error) 
 		return &dbFlavorGroup, errors.Wrap(err, "postgres/flavorgroup_store:toDbFlavorGroup() failed to" +
 			" marshal FlavorMatchPolicyCollection to JSON")
 	}
-	dbFlavorGroup = domain.FlavorGroup{
+	dbFlavorGroup = FlavorGroup{
 		ID:                    flavorGroup.ID,
 		Name:                  flavorGroup.Name,
 		FlavorTypeMatchPolicy: &postgres.Jsonb{RawMessage: flavorMatchPolicyCollection},
@@ -132,7 +139,7 @@ func toDbFlavorGroup(flavorGroup *hvs.FlavorGroup) (*domain.FlavorGroup, error) 
 	return &dbFlavorGroup, nil
 }
 
-func fromDbFlavorGroups(dbFlavorgroups []domain.FlavorGroup) (*hvs.FlavorgroupCollection, error) {
+func fromDbFlavorGroups(dbFlavorgroups []FlavorGroup) (*hvs.FlavorgroupCollection, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:fromDbFlavorGroups() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:fromDbFlavorGroups() Leaving")
 
@@ -154,13 +161,13 @@ func fromDbFlavorGroups(dbFlavorgroups []domain.FlavorGroup) (*hvs.FlavorgroupCo
 	return &flavorgroupCollection, nil
 }
 
-func fromDbFlavorGroup(fg *domain.FlavorGroup) (*hvs.FlavorGroup, error) {
+func fromDbFlavorGroup(fg *FlavorGroup) (*hvs.FlavorGroup, error) {
 	log.Trace("postgres/flavorgroup_store:fromDbFlavorGroup() Entering")
 	defer log.Trace("postgres/flavorgroup_store:fromDbFlavorGroup() Leaving")
 
 	flavorGroup := hvs.FlavorGroup{}
 	if fg == nil {
-		return &flavorGroup, nil
+		return nil, nil
 	}
 
 	var matchPolicyCollection hvs.FlavorMatchPolicyCollection

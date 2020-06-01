@@ -10,6 +10,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
@@ -78,16 +79,17 @@ func (db Database) Run(c setup.Context) error {
 	db.Config.Postgres.ConnRetryAttempts = constants.DefaultDbConnRetryAttempts
 	db.Config.Postgres.ConnRetryTime = constants.DefaultDbConnRetryTime
 	pg := db.Config.Postgres
-	p, err := postgres.New(postgres.Config{
-		pg.Hostname,
-		strconv.Itoa(pg.Port),
-		pg.DBName,
-		pg.Username,
-		pg.Password,
-		pg.SSLMode,
-		pg.SSLCert,
-		pg.ConnRetryAttempts,
-		pg.ConnRetryTime,
+	p, err := router.NewDataStore(&postgres.Config{
+		Vendor:            constants.DBTypePostgres,
+		Host:              pg.Hostname,
+		Port:              strconv.Itoa(pg.Port),
+		Dbname:            pg.DBName,
+		User:              pg.Username,
+		Password:          pg.Password,
+		SslMode:           pg.SSLMode,
+		SslCert:           pg.SSLCert,
+		ConnRetryAttempts: pg.ConnRetryAttempts,
+		ConnRetryTime:     pg.ConnRetryTime,
 	})
 	if err != nil {
 		return errors.Wrap(err, "setup database: failed to open database")

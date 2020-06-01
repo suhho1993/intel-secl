@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+	_ "github.com/intel-secl/intel-secl/v3/docs/shared/hvs"
 )
 
 var defaultLog = commLog.GetDefaultLogger()

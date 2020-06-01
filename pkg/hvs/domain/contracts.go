@@ -4,14 +4,17 @@
  */
 package domain
 
-import "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+import (
+	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+)
 
 type (
 	FlavorGroupStore interface {
 		Create(*hvs.FlavorGroup) (*hvs.FlavorGroup, error)
-		Retrieve(string) (*hvs.FlavorGroup, error)
+		Retrieve(*uuid.UUID) (*hvs.FlavorGroup, error)
 		Search(*hvs.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error)
-		Delete(string) error
+		Delete(*uuid.UUID) error
 	}
 
 	FlavorStore interface {

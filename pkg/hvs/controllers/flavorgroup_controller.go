@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/types"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	"github.com/google/uuid"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type FlavorgroupController struct {
@@ -27,7 +28,7 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/flavorgroup_controller:Create() The request body is not provided")
-		return nil, http.StatusBadRequest, errors.Errorf("The request body is not provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body is not provided"}
 	}
 
 	var reqFlavorGroup hvs.FlavorGroup
@@ -38,12 +39,12 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 	err := dec.Decode(&reqFlavorGroup)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/flavorgroup_controller:Create() %s :  Failed to decode request body as FlavorGroup", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusBadRequest, errors.Wrap(err, "Unable to decode JSON request body")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
 	}
 
-	if reqFlavorGroup.Name == "" || (&reqFlavorGroup.FlavorMatchPolicyCollection == nil && reqFlavorGroup.Name != types.HostUnique.String()) {
-		secLog.Error("controllers/flavorgroup_controller:Create()  flavorgroup name and flavor match policy must be specified")
-		return nil, http.StatusBadRequest, errors.Errorf("flavorgroup name and flavor match policy must be specified")
+	if _, err := reqFlavorGroup.Valid(); err != nil {
+		secLog.Errorf("controllers/flavorgroup_controller:Create()  %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
 	existingFlavorGroups, err := controller.Store.Search(&hvs.FlavorGroupFilterCriteria{
@@ -51,14 +52,14 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 	})
 	if existingFlavorGroups != nil && len(existingFlavorGroups.Flavorgroups) > 0 {
 		secLog.WithField("Name", existingFlavorGroups.Flavorgroups[0].Name).Warningf("%s: Trying to create duplicated FlavorGroup from addr: %s", commLogMsg.InvalidInputBadParam, r.RemoteAddr)
-		return nil, http.StatusBadRequest, errors.Errorf("FlavorGroup with same name already exist.")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "FlavorGroup with same name already exist"}
 	}
 
 	// Persistence
 	newFlavorGroup, err := controller.Store.Create(&reqFlavorGroup)
 	if err != nil {
 		secLog.WithError(err).Error("controllers/flavorgroup_controller:Create() Flavorgroup save failed")
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "Error on inserting Flavorgroup")
+		return nil, http.StatusInternalServerError, errors.Errorf("Error while inserting a new Flavorgroup")
 	}
 	secLog.WithField("Name", reqFlavorGroup.Name).Infof("%s: FlavorGroup created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	return newFlavorGroup, http.StatusCreated, nil
@@ -78,7 +79,6 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 
 	var filter *hvs.FlavorGroupFilterCriteria = nil
 
-	//TODO: Add input validation
 	if id != "" || nameEqualTo != "" || nameContains != "" || hostId != "" {
 		filter = &hvs.FlavorGroupFilterCriteria{
 			Id:           id,
@@ -86,12 +86,16 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 			NameContains: nameContains,
 			HostId:       hostId,
 		}
+		if _, err := filter.Valid(); err != nil {
+			secLog.Errorf("controllers/flavorgroup_controller:Search()  %s", err.Error())
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		}
 	}
 
 	flavorgroupCollection, err := controller.Store.Search(filter)
 	if err != nil {
 		secLog.WithError(err).Error("controllers/flavorgroup_controller:Search() Flavorgroup get all failed")
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "Unable to search Flavorgroups")
+		return nil, http.StatusInternalServerError, errors.Errorf("Unable to search Flavorgroups")
 	}
 
 	//TODO: get the collection of flavorId's from mw_link_flavor_flavorgroup
@@ -106,31 +110,31 @@ func (controller FlavorgroupController) Delete(w http.ResponseWriter, r *http.Re
 	defaultLog.Trace("controllers/flavorgroup_controller:Delete() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:Delete() Leaving")
 
-	id := mux.Vars(r)["id"]
-	validationErr := validation.ValidateUUIDv4(id)
-	if validationErr != nil {
-		secLog.WithError(validationErr).WithField("id", id).Info(
-			"controllers/flavorgroup_controller:Delete() attempt to delete invalid FlavorGroup")
-		return nil, http.StatusBadRequest, errors.Errorf("Invalid UUID format of the identifier provided")
-	}
-
-	delFlavorGroup, err := controller.Store.Retrieve(id)
+	id, err := uuid.Parse(mux.Vars(r)["id"])
 	if err != nil {
 		secLog.WithError(err).WithField("id", id).Info(
-			"controllers/flavorgroup_controller:Delete() attempt to delete invalid FlavorGroup")
-		return nil, http.StatusInternalServerError, errors.Errorf("Failed to delete FlavorGroup")
+			"controllers/flavorgroup_controller:Delete() Invalid UUID format of the identifier provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Invalid UUID format of the identifier provided"}
 	}
-	if delFlavorGroup == nil {
-		secLog.WithError(err).WithField("id", id).Info(
-			"controllers/flavorgroup_controller:Delete() attempt to delete invalid FlavorGroup")
-		return nil, http.StatusNotFound, errors.Errorf("FlavorGroup with given ID does not exist")
+
+	delFlavorGroup, err := controller.Store.Retrieve(&id)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RecordNotFound) {
+			secLog.WithError(err).WithField("id", id).Info(
+				"controllers/flavorgroup_controller:Delete()  FlavorGroup with given ID does not exist")
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"FlavorGroup with given ID does not exist"}
+		} else {
+			secLog.WithError(err).WithField("id", id).Info(
+				"controllers/flavorgroup_controller:Delete() attempt to delete invalid FlavorGroup")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete FlavorGroup"}
+		}
 	}
 	//TODO: Check if the flavor group is linked to any host
 
-	if err := controller.Store.Delete(id); err != nil {
+	if err := controller.Store.Delete(&id); err != nil {
 		defaultLog.WithError(err).WithField("id", id).Info(
 			"controllers/flavorgroup_controller:Delete() failed to delete FlavorGroup")
-		return nil, http.StatusInternalServerError, errors.Errorf("Failed to delete FlavorGroup")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to delete FlavorGroup"}
 	}
 	secLog.WithField("user", delFlavorGroup.Name).Infof("FlavorGroup deleted by: %s", r.RemoteAddr)
 	return nil, http.StatusNoContent, nil
@@ -140,24 +144,24 @@ func (controller FlavorgroupController) Retrieve(w http.ResponseWriter, r *http.
 	defaultLog.Trace("controllers/flavorgroup_controller:Retrieve() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:Retrieve() Leaving")
 
-	id := mux.Vars(r)["id"]
-	validationErr := validation.ValidateUUIDv4(id)
-	if validationErr != nil {
-		secLog.WithError(validationErr).WithField("id", id).Info(
-			"controllers/flavorgroup_controller:Retrieve() attempt to retrieve invalid FlavorGroup")
-		return nil, http.StatusBadRequest, errors.Errorf("Invalid UUID format of the identifier provided")
-	}
-
-	flavorGroup, err := controller.Store.Retrieve(id)
+	id, err := uuid.Parse(mux.Vars(r)["id"])
 	if err != nil {
 		secLog.WithError(err).WithField("id", id).Info(
-			"controllers/flavorgroup_controller:Retrieve() failed to retrieve FlavorGroup")
-		return nil, http.StatusInternalServerError, errors.Errorf("Failed to retrieve FlavorGroup")
+			"controllers/flavorgroup_controller:Delete() Invalid UUID format of the identifier provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Invalid UUID format of the identifier provided"}
 	}
-	if flavorGroup == nil {
-		secLog.WithError(err).WithField("id", id).Info(
-			"controllers/flavorgroup_controller:Retrieve() failed to retrieve FlavorGroup")
-		return nil, http.StatusNotFound, errors.Errorf("FlavorGroup with given ID does not exist")
+
+	flavorGroup, err := controller.Store.Retrieve(&id)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RecordNotFound) {
+			secLog.WithError(err).WithField("id", id).Info(
+				"controllers/flavorgroup_controller:Retrieve() FlavorGroup with given ID does not exist")
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"FlavorGroup with given ID does not exist"}
+		} else {
+			secLog.WithError(err).WithField("id", id).Info(
+				"controllers/flavorgroup_controller:Retrieve() failed to retrieve FlavorGroup")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve FlavorGroup"}
+		}
 	}
 
 	//TODO: get the collection of flavorId's from mw_link_flavor_flavorgroup

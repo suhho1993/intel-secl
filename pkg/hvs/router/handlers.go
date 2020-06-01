@@ -8,53 +8,17 @@ import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/auth"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"net/http"
-
-	"fmt"
 )
 
 type endpointHandler func(w http.ResponseWriter, r *http.Request) error
 
-type privilegeError struct {
-	StatusCode int
-	Message    string
-}
-
-func (e privilegeError) Error() string {
-	defaultLog.Trace("router/handlers:Error() Entering")
-	defer defaultLog.Trace("router/handlers:Error() Leaving")
-
-	return fmt.Sprintf("%d: %s", e.StatusCode, e.Message)
-}
-
-type resourceError struct {
-	StatusCode int
-	Message    string
-}
-
-func (e resourceError) Error() string {
-	defaultLog.Trace("router/handlers:Error() Entering")
-	defer defaultLog.Trace("router/handlers:Error() Leaving")
-
-	return fmt.Sprintf("%d: %s", e.StatusCode, e.Message)
-}
-
-
-type endpointError struct {
-	Message    string
-	StatusCode int
-}
-func (e endpointError) Error() string {
-	defaultLog.Trace("router/handlers:Error() Entering")
-	defer defaultLog.Trace("router/handlers:Error() Leaving")
-
-	return fmt.Sprintf("%d: %s", e.StatusCode, e.Message)
-}
 
 // Generic handler for writing response header and body for all handler functions
 func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) endpointHandler {
@@ -64,6 +28,14 @@ func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, in
 	return func(w http.ResponseWriter, r *http.Request) error {
 		data, status, err := h(w, r) // execute application handler
 		if err != nil {
+			switch t := err.(type) {
+			case *commErr.EndpointError:
+				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+			case *commErr.ResourceError:
+				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+			case *commErr.PrivilegeError:
+				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+			}
 			return err
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -99,7 +71,7 @@ func permissionsHandler(eh endpointHandler, permissionNames []string) endpointHa
 		if !foundMatchingPermission {
 			w.WriteHeader(http.StatusUnauthorized)
 			secLog.Errorf("router/handlers:permissionsHandler() %s Insufficient privileges to access %s", commLogMsg.UnauthorizedAccess, r.RequestURI)
-			return &privilegeError{Message: "Insufficient privileges to access " + r.RequestURI, StatusCode: http.StatusUnauthorized}
+			return &commErr.PrivilegeError{Message: "Insufficient privileges to access " + r.RequestURI, StatusCode: http.StatusUnauthorized}
 		}
 		secLog.Infof("router/handlers:permissionsHandler() %s - %s", commLogMsg.AuthorizedAccess, r.RequestURI)
 		return eh(w, r)
@@ -119,11 +91,9 @@ func ErrorHandler(eh endpointHandler) http.HandlerFunc {
 				return
 			}
 			switch t := err.(type) {
-			case *endpointError:
+			case *commErr.HandledError:
 				http.Error(w, t.Message, t.StatusCode)
-			case privilegeError:
-				http.Error(w, t.Message, t.StatusCode)
-			case resourceError:
+			case *commErr.PrivilegeError:
 				http.Error(w, t.Message, t.StatusCode)
 			default:
 				http.Error(w, err.Error(), http.StatusInternalServerError)
