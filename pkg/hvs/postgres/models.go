@@ -10,7 +10,7 @@ import (
 )
 
 type (
-	FlavorGroup struct {
+	flavorGroup struct {
 		ID                    uuid.UUID       `json:"id" gorm:"primary_key;type:uuid"`
 		Name                  string          `json:"name"`
 		FlavorTypeMatchPolicy *postgres.Jsonb `json:"flavor_type_match_policy" gorm:"type:json"`

@@ -309,4 +309,103 @@ var _ = Describe("FlavorgroupController", func() {
 			Expect(w.Code).To(Equal(400))
 		})
 	})
+
+
+	// Specs for flavorGroup validation
+	Describe("FlavorGroup Validation", func() {
+		Context("FlavorGroup with correct content", func() {
+			It("should pass flavorGroup validation", func() {
+				flavorgroupJson := `{
+								"name": "hvs_flavorgroup_test1",
+								"flavor_match_policy_collection": {
+									"flavor_match_policies": [
+										{
+											"flavor_part": "HOST_UNIQUE",
+											"match_policy": {
+												"match_type": "ALL_OF",
+												"required": "REQUIRED_IF_DEFINED"
+											}
+										}
+									]
+								}
+							}`
+
+				flavorGroup := hvs.FlavorGroup{}
+				json.Unmarshal([]byte(flavorgroupJson), &flavorGroup)
+				err := controllers.ValidateFlavorGroup(flavorGroup)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+		})
+		Context("FlavorGroup with incorrect content", func() {
+			It("should fail flavorGroup validation", func() {
+				flavorgroupJson := `{
+								"flavor_match_policy_collection": {
+									"name": "hvs_flavorgroup_test1",
+									"flavor_match_policies": [
+										{
+											"flavor_part": "HOST_UNIQUE",
+											"match_policy": {
+												"match_type": "ALL_OF",
+												"required": "REQUIRED_IF_DEFINED"
+											}
+										}
+									]
+								}
+							}`
+
+				flavorGroup := hvs.FlavorGroup{}
+				json.Unmarshal([]byte(flavorgroupJson), &flavorGroup)
+				flavorGroup.Name = ""
+				err := controllers.ValidateFlavorGroup(flavorGroup)
+				Ω(err).Should(HaveOccurred())
+
+				flavorGroup.Name = "----"
+				err = controllers.ValidateFlavorGroup(flavorGroup)
+				Ω(err).Should(HaveOccurred())
+
+				flavorGroup.Name = "test"
+				flavorGroup.FlavorMatchPolicyCollection = nil
+				err = controllers.ValidateFlavorGroup(flavorGroup)
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+	})
+
+	// Specs for FlavorGroupFilterCriteria validation
+	Describe("FlavorGroupFilterCriteria Validation", func() {
+		Context("FlavorGroupFilterCriteria with correct/empty content", func() {
+			It("should pass FlavorGroupFilterCriteria validation", func() {
+				filterCriteria := hvs.FlavorGroupFilterCriteria{}
+				err := controllers.ValidateFgCriteria(filterCriteria)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+		})
+		Context("FlavorGroupFilterCriteria with incorrect content", func() {
+			It("should fail FlavorGroupFilterCriteria validation", func() {
+				filterCriteria := hvs.FlavorGroupFilterCriteria {
+					Id: "123",
+				}
+				err := controllers.ValidateFgCriteria(filterCriteria)
+				Ω(err).Should(HaveOccurred())
+
+				filterCriteria = hvs.FlavorGroupFilterCriteria {
+					HostId: "123",
+				}
+				err = controllers.ValidateFgCriteria(filterCriteria)
+				Ω(err).Should(HaveOccurred())
+
+				filterCriteria = hvs.FlavorGroupFilterCriteria {
+					NameContains: "----",
+				}
+				err = controllers.ValidateFgCriteria(filterCriteria)
+				Ω(err).Should(HaveOccurred())
+
+				filterCriteria = hvs.FlavorGroupFilterCriteria {
+					NameEqualTo: "----",
+				}
+				err = controllers.ValidateFgCriteria(filterCriteria)
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+	})
 })

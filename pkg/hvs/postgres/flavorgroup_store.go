@@ -50,7 +50,7 @@ func (f *FlavorGroupStore) Retrieve(flavorGroupId *uuid.UUID) (*hvs.FlavorGroup,
 	defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Leaving")
 
-	dbFlavorGroup := FlavorGroup{
+	dbFlavorGroup := flavorGroup{
 		ID: *flavorGroupId,
 	}
 	err := f.Store.Db.Where(&dbFlavorGroup).First(&dbFlavorGroup).Error
@@ -71,7 +71,7 @@ func (f *FlavorGroupStore) Search(fgFilter *hvs.FlavorGroupFilterCriteria) (*hvs
 			" a gorm query object in FlavorGroups Search function.")
 	}
 
-	var dbFlavorgroups []FlavorGroup
+	var dbFlavorgroups []flavorGroup
 	if err := tx.Find(&dbFlavorgroups).Error; err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Search() failed to search all "+
 			"Flavorgroups")
@@ -84,7 +84,7 @@ func (f *FlavorGroupStore) Delete(flavorGroupId *uuid.UUID) error {
 	defaultLog.Trace("postgres/flavorgroup_store:Delete() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Delete() Leaving")
 
-	dbFlavorGroup := FlavorGroup{
+	dbFlavorGroup := flavorGroup{
 		ID: *flavorGroupId,
 	}
 	if err := f.Store.Db.Delete(&dbFlavorGroup).Error; err != nil {
@@ -103,7 +103,7 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *hvs.FlavorGroupFilterCri
 	}
 
 	if fgFilter == nil {
-		return tx.Where(&FlavorGroup{})
+		return tx.Where(&flavorGroup{})
 	}
 	if fgFilter.Id != "" {
 		tx = tx.Where("id = ?", fgFilter.Id)
@@ -116,30 +116,27 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *hvs.FlavorGroupFilterCri
 	return tx
 }
 
-func toDbFlavorGroup(flavorGroup *hvs.FlavorGroup) (*FlavorGroup, error) {
+func toDbFlavorGroup(fg *hvs.FlavorGroup) (*flavorGroup, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:toDbFlavorGroup() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:toDbFlavorGroup() Leaving")
-
-	var dbFlavorGroup FlavorGroup
-
-	if flavorGroup == nil {
+	if fg == nil {
 		return nil, nil
 	}
 
-	flavorMatchPolicyCollection, err := json.Marshal(flavorGroup.FlavorMatchPolicyCollection)
+	flavorMatchPolicyCollection, err := json.Marshal(fg.FlavorMatchPolicyCollection)
 	if err != nil {
-		return &dbFlavorGroup, errors.Wrap(err, "postgres/flavorgroup_store:toDbFlavorGroup() failed to" +
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:toDbFlavorGroup() failed to" +
 			" marshal FlavorMatchPolicyCollection to JSON")
 	}
-	dbFlavorGroup = FlavorGroup{
-		ID:                    flavorGroup.ID,
-		Name:                  flavorGroup.Name,
+	dbFlavorGroup := flavorGroup{
+		ID:                    fg.ID,
+		Name:                  fg.Name,
 		FlavorTypeMatchPolicy: &postgres.Jsonb{RawMessage: flavorMatchPolicyCollection},
 	}
 	return &dbFlavorGroup, nil
 }
 
-func fromDbFlavorGroups(dbFlavorgroups []FlavorGroup) (*hvs.FlavorgroupCollection, error) {
+func fromDbFlavorGroups(dbFlavorgroups []flavorGroup) (*hvs.FlavorgroupCollection, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:fromDbFlavorGroups() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:fromDbFlavorGroups() Leaving")
 
@@ -161,11 +158,10 @@ func fromDbFlavorGroups(dbFlavorgroups []FlavorGroup) (*hvs.FlavorgroupCollectio
 	return &flavorgroupCollection, nil
 }
 
-func fromDbFlavorGroup(fg *FlavorGroup) (*hvs.FlavorGroup, error) {
+func fromDbFlavorGroup(fg *flavorGroup) (*hvs.FlavorGroup, error) {
 	log.Trace("postgres/flavorgroup_store:fromDbFlavorGroup() Entering")
 	defer log.Trace("postgres/flavorgroup_store:fromDbFlavorGroup() Leaving")
 
-	flavorGroup := hvs.FlavorGroup{}
 	if fg == nil {
 		return nil, nil
 	}
@@ -173,12 +169,15 @@ func fromDbFlavorGroup(fg *FlavorGroup) (*hvs.FlavorGroup, error) {
 	var matchPolicyCollection hvs.FlavorMatchPolicyCollection
 	err := json.Unmarshal(fg.FlavorTypeMatchPolicy.RawMessage, &matchPolicyCollection)
 	if err != nil {
-		return &flavorGroup, errors.Wrap(err, "postgres/flavorgroup_store:fromDbFlavorGroup()" +
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:fromDbFlavorGroup()" +
 			" Error in unmarshalling the FlavorTypeMatchPolicy")
 	}
 
-	flavorGroup.ID = fg.ID
-	flavorGroup.Name = fg.Name
+	flavorGroup := hvs.FlavorGroup{
+		ID:   fg.ID,
+		Name: fg.Name,
+	}
+
 	if &matchPolicyCollection != nil && len(matchPolicyCollection.FlavorMatchPolicies) > 0 {
 		flavorGroup.FlavorMatchPolicyCollection = &matchPolicyCollection
 	}

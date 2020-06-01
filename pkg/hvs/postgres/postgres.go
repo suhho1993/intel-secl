@@ -112,7 +112,7 @@ func (ds *DataStore) Migrate() error {
 	defaultLog.Trace("postgres/postgres:Migrate() Entering")
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 
-	ds.Db.AutoMigrate(FlavorGroup{})
+	ds.Db.AutoMigrate(flavorGroup{})
 	return nil
 }
 

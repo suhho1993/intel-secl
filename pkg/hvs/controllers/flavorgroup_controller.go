@@ -6,13 +6,14 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
-	"github.com/google/uuid"
 	"net/http"
 	"strconv"
 	"strings"
@@ -42,7 +43,7 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
 	}
 
-	if _, err := reqFlavorGroup.Valid(); err != nil {
+	if err := ValidateFlavorGroup(reqFlavorGroup); err != nil {
 		secLog.Errorf("controllers/flavorgroup_controller:Create()  %s", err.Error())
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
@@ -86,7 +87,7 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 			NameContains: nameContains,
 			HostId:       hostId,
 		}
-		if _, err := filter.Valid(); err != nil {
+		if err := ValidateFgCriteria(*filter); err != nil {
 			secLog.Errorf("controllers/flavorgroup_controller:Search()  %s", err.Error())
 			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 		}
@@ -166,4 +167,49 @@ func (controller FlavorgroupController) Retrieve(w http.ResponseWriter, r *http.
 
 	//TODO: get the collection of flavorId's from mw_link_flavor_flavorgroup
 	return flavorGroup, http.StatusOK, nil
+}
+
+func ValidateFlavorGroup(flavorGroup hvs.FlavorGroup) error {
+	defaultLog.Trace("controllers/flavorgroup_controller:ValidateFlavorGroup() Entering")
+	defer defaultLog.Trace("controllers/flavorgroup_controller:ValidateFlavorGroup() Leaving")
+
+	if flavorGroup.Name == "" {
+		return errors.New("FlavorGroup Name must be specified")
+	}
+	if flavorGroup.Name != "" {
+		if errs := validation.ValidateNameString(flavorGroup.Name); errs != nil {
+			return errors.Wrap(errs, "Valid FlavorGroup Name must be specified")
+		}
+	}
+	if flavorGroup.FlavorMatchPolicyCollection == nil || len(flavorGroup.FlavorMatchPolicyCollection.FlavorMatchPolicies) == 0  {
+		return errors.New("Flavor Type Match Policy Collection must be specified")
+	}
+	return nil
+}
+
+func ValidateFgCriteria(filterCriteria hvs.FlavorGroupFilterCriteria) error {
+	defaultLog.Trace("controllers/flavorgroup_controller:ValidateFgCriteria() Entering")
+	defer defaultLog.Trace("controllers/flavorgroup_controller:ValidateFgCriteria() Leaving")
+
+	if filterCriteria.Id != "" {
+		if _, errs := uuid.Parse(filterCriteria.Id); errs != nil {
+			return errors.New("Invalid UUID format of the Flavorgroup Identifier")
+		}
+	}
+	if filterCriteria.NameEqualTo != "" {
+		if errs := validation.ValidateNameString(filterCriteria.NameEqualTo); errs != nil {
+			return errors.Wrap(errs, "Valid contents for NameEqualTo must be specified")
+		}
+	}
+	if filterCriteria.NameContains != "" {
+		if errs := validation.ValidateNameString(filterCriteria.NameContains); errs != nil {
+			return errors.Wrap(errs, "Valid contents for NameContains must be specified")
+		}
+	}
+	if filterCriteria.HostId != "" {
+		if _, errs := uuid.Parse(filterCriteria.HostId); errs != nil {
+			return errors.New("Invalid UUID format of the Host Identifier")
+		}
+	}
+	return nil
 }
