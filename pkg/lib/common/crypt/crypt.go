@@ -18,7 +18,6 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"math/big"
 	"net/url"
@@ -141,7 +140,10 @@ func CreateSelfSignedCertAndRSAPrivKeys(bits ...int) (*rsa.PrivateKey, string, e
 	}
 
 	out := &bytes.Buffer{}
-	pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	err = pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if err != nil {
+		return nil, "", fmt.Errorf("Failed to encode cert to PEM: %s", err)
+	}
 	return rsaKeyPair, out.String(), nil
 
 }
@@ -226,18 +228,4 @@ func RetrieveValidatedPeerCert(baseUrl string, trustFirstCert bool, trustedThumb
 
 	return peerCert, nil
 
-}
-
-// GenUUID returns new UUID if the input ID has not been set
-func GenUUID(id string) string {
-	var newid string
-	_, err := uuid.FromString(id)
-	if err != nil {
-		// Generate new UUID
-		id, _ := uuid.NewV4()
-		newid = id.String()
-	} else {
-		newid = id
-	}
-	return newid
 }

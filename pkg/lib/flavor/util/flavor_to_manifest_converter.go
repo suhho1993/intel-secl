@@ -46,7 +46,7 @@ func (fmc FlavorToManifestConverter) getManifestFromFlavor(flavor hvs.Flavor) ta
 	var manifest taModel.Manifest
 	manifest.DigestAlg = flavor.Meta.Description.DigestAlgorithm
 	manifest.Label = flavor.Meta.Description.Label
-	manifest.Uuid = flavor.Meta.ID
+	manifest.Uuid = flavor.Meta.ID.String()
 	// extract the manifest types from the flavor based on the measurement types
 	var allMeasurements []taModel.MeasurementType
 	for _, meT := range flavor.Software.Measurements {

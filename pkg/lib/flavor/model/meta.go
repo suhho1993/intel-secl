@@ -4,6 +4,8 @@
  */
 package model
 
+import "github.com/google/uuid"
+
 /**
  *
  * @author purvades
@@ -12,7 +14,7 @@ package model
 // Meta holds metadata information related to the Flavor
 type Meta struct {
 	Schema      *Schema      `json:"schema,omitempty"`
-	ID          string       `json:"id"`
+	ID          uuid.UUID    `json:"id"`
 	Author      *Author      `json:"author,omitempty"`
 	Realm       string       `json:"realm,omitempty"`
 	Description *Description `json:"description,omitempty"`

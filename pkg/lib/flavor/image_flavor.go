@@ -5,11 +5,10 @@
 package flavor
 
 import (
-	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/pkg/errors"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 /**
@@ -28,11 +27,6 @@ type ImageFlavor struct {
 func GetImageFlavor(label string, encryptionRequired bool, keyURL string, digest string) (*ImageFlavor, error) {
 
 	var encryption *model.Encryption
-	flavorID, err := uuid.NewV4()
-	if err != nil {
-		fmt.Println("Unable to create uuid. ", err)
-		return nil, nil
-	}
 
 	description := model.Description{
 		Label:      label,
@@ -40,7 +34,7 @@ func GetImageFlavor(label string, encryptionRequired bool, keyURL string, digest
 	}
 
 	meta := model.Meta{
-		ID:          flavorID.String(),
+		ID:          uuid.New(),
 		Description: &description,
 	}
 
@@ -68,11 +62,6 @@ func GetImageFlavor(label string, encryptionRequired bool, keyURL string, digest
 func GetContainerImageFlavor(label string, encryptionRequired bool, keyURL string, integrityEnforced bool, notaryURL string) (*ImageFlavor, error) {
 	var encryption *model.Encryption
 	var integrity *model.Integrity
-	flavorID, err := uuid.NewV4()
-	if err != nil {
-		fmt.Println("Unable to create uuid. ", err)
-		return nil, nil
-	}
 
 	if label == "" {
 		return nil, errors.Errorf("label cannot be empty")
@@ -84,7 +73,7 @@ func GetContainerImageFlavor(label string, encryptionRequired bool, keyURL strin
 	}
 
 	meta := model.Meta{
-		ID:          flavorID.String(),
+		ID:          uuid.New(),
 		Description: &description,
 	}
 

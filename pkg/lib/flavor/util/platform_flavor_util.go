@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
@@ -45,9 +46,10 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 	defer log.Trace("flavor/util/platform_flavor_util:GetMetaSectionDetails() Leaving")
 
 	var meta cm.Meta
+	var err error
 
 	// Set UUID
-	meta.ID = crypt.GenUUID("")
+	meta.ID = uuid.New()
 
 	// Set Vendor
 	if strings.TrimSpace(vendor) == "" {
@@ -118,29 +120,39 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		default:
 			return nil, errors.Errorf("invalid Digest Algorithm in measurement XML")
 		}
-		meta.ID = crypt.GenUUID(measurements.Uuid)
+		meta.ID, err = uuid.Parse(measurements.Uuid)
+		if err != nil {
+			// if Software UUID is empty, we generate a new UUID and use it
+			meta.ID = uuid.New()
+		}
 		meta.Schema = pfutil.getSchema()
 
 	case common.AssetTag:
 		description.FlavorPart = flavorPartName.String()
 		if hostDetails != nil {
-			if hostDetails.HardwareUUID != "" {
-				description.HardwareUUID = strings.TrimSpace(hostDetails.HardwareUUID)
+			description.HardwareUUID, err = uuid.Parse(hostDetails.HardwareUUID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Invalid Hardware UUID for %s FlavorPart", flavorPartName)
 			}
+
 			if hostDetails.HostName != "" {
 				description.Source = strings.TrimSpace(hostDetails.HostName)
 			}
 		} else if tagCertificate != nil {
-			description.HardwareUUID = strings.ToUpper(strings.TrimSpace(tagCertificate.Subject))
+			description.HardwareUUID, err = uuid.Parse(tagCertificate.Subject)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Invalid Hardware UUID for %s FlavorPart", flavorPartName)
+			}
 		}
-		description.Label = pfutil.getLabelFromDetails(meta.Vendor, description.HardwareUUID, pfutil.getCurrentTimeStamp())
+		description.Label = pfutil.getLabelFromDetails(meta.Vendor, description.HardwareUUID.String(), pfutil.getCurrentTimeStamp())
 	case common.HostUnique:
 		if hostDetails != nil {
 			if hostDetails.HostName != "" {
 				description.Source = strings.TrimSpace(hostDetails.HostName)
 			}
-			if hostDetails.HardwareUUID != "" {
-				description.HardwareUUID = strings.TrimSpace(hostDetails.HardwareUUID)
+			description.HardwareUUID, err = uuid.Parse(hostDetails.HardwareUUID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Invalid Hardware UUID for %s FlavorPart", flavorPartName)
 			}
 		}
 		description.BiosName = biosName
@@ -148,9 +160,9 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		description.OsName = osName
 		description.OsVersion = osVersion
 		description.FlavorPart = flavorPartName.String()
-		description.Label = pfutil.getLabelFromDetails(meta.Vendor, description.HardwareUUID, pfutil.getCurrentTimeStamp())
+		description.Label = pfutil.getLabelFromDetails(meta.Vendor, description.HardwareUUID.String(), pfutil.getCurrentTimeStamp())
 	default:
-		return nil, errors.Errorf("Error fetching Meta Section details: Invalid FlavorPart %s", flavorPartName.String())
+		return nil, errors.Errorf("Invalid FlavorPart %s", flavorPartName.String())
 	}
 	meta.Description = &description
 

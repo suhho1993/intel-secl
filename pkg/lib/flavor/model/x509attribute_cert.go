@@ -80,6 +80,10 @@ func NewX509AttributeCertificate(tagCert *x509.Certificate) (*X509AttributeCerti
 		attrkvas = append(attrkvas, attrkva)
 	}
 
+	// get common name
+	var subjectName string
+	_, err := asn1.Unmarshal([]byte(tagCert.Subject.CommonName), &subjectName)
+
 	// get cert hash
 	certHash, err := crypt.GetCertHashInHex(tagCert, crypto.SHA384)
 	if err != nil {
@@ -91,7 +95,7 @@ func NewX509AttributeCertificate(tagCert *x509.Certificate) (*X509AttributeCerti
 		Encoded:           tagCert.Raw,
 		Issuer:            tagCert.Issuer.CommonName,
 		SerialNumber:      tagCert.SerialNumber.Int64(),
-		Subject:           tagCert.Subject.CommonName,
+		Subject:           subjectName,
 		NotBefore:         tagCert.NotBefore.Format(constants.FlavorTimestampFormat),
 		NotAfter:          tagCert.NotAfter.Format(constants.FlavorTimestampFormat),
 		Attributes:        attrkvas,
