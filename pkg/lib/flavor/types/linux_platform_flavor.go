@@ -63,15 +63,15 @@ func (rhelpf LinuxPlatformFlavor) GetFlavorPartRaw(name cf.FlavorPart) ([]string
 	defer log.Trace("flavor/types/linux_platform_flavor:GetFlavorPartRaw() Leaving")
 
 	switch name {
-	case cf.Platform:
+	case cf.FlavorPartPlatform:
 		return rhelpf.getPlatformFlavor()
-	case cf.Os:
+	case cf.FlavorPartOs:
 		return rhelpf.getOsFlavor()
-	case cf.AssetTag:
+	case cf.FlavorPartAssetTag:
 		return rhelpf.getAssetTagFlavor()
-	case cf.HostUnique:
+	case cf.FlavorPartHostUnique:
 		return rhelpf.getHostUniqueFlavor()
-	case cf.Software:
+	case cf.FlavorPartSoftware:
 		return rhelpf.getDefaultSoftwareFlavor()
 	}
 	return nil, cf.UNKNOWN_FLAVOR_PART()
@@ -82,7 +82,7 @@ func (rhelpf LinuxPlatformFlavor) GetFlavorPartNames() ([]cf.FlavorPart, error) 
 	log.Trace("flavor/types/linux_platform_flavor:GetFlavorPartNames() Entering")
 	defer log.Trace("flavor/types/linux_platform_flavor:GetFlavorPartNames() Leaving")
 
-	flavorPartList := []cf.FlavorPart{cf.Platform, cf.Os, cf.HostUnique, cf.Software}
+	flavorPartList := []cf.FlavorPart{cf.FlavorPartPlatform, cf.FlavorPartOs, cf.FlavorPartHostUnique, cf.FlavorPartSoftware}
 
 	// For each of the flavor parts, check what PCRs are required and if those required PCRs are present in the host report.
 	for i := 0; i < len(flavorPartList); i++ {
@@ -97,7 +97,7 @@ func (rhelpf LinuxPlatformFlavor) GetFlavorPartNames() ([]cf.FlavorPart, error) 
 
 	// Check if the AssetTag flavor part is present by checking if tagCertificate is present
 	if rhelpf.TagCertificate != nil {
-		flavorPartList = append(flavorPartList, cf.AssetTag)
+		flavorPartList = append(flavorPartList, cf.FlavorPartAssetTag)
 	}
 	return flavorPartList, nil
 }
@@ -117,7 +117,7 @@ func (rhelpf LinuxPlatformFlavor) getPcrList(flavorPart cf.FlavorPart) []int {
 	isTboot = hostInfo.TbootInstalled
 
 	switch flavorPart {
-	case cf.Platform:
+	case cf.FlavorPartPlatform:
 		pcrSet[0] = true
 		// check if CBNT is supported
 		if isCbntMeasureProfile(hostInfo.HardwareFeatures.CBNT) {
@@ -142,14 +142,14 @@ func (rhelpf LinuxPlatformFlavor) getPcrList(flavorPart cf.FlavorPart) []int {
 				pcrSet[pcrx] = true
 			}
 		}
-	case cf.Os:
+	case cf.FlavorPartOs:
 		// check if TBOOT is installed
 		if isTboot {
 			log.Debug("flavor/types/linux_platform_flavor:getPcrList() OSFlavor - TBOOT is installed")
 			pcrSet[17] = true
 		}
 
-	case cf.HostUnique:
+	case cf.FlavorPartHostUnique:
 		// check if TBOOT is installed
 		if isTboot {
 			for _, pcrx := range tbootPcrList {
@@ -157,7 +157,7 @@ func (rhelpf LinuxPlatformFlavor) getPcrList(flavorPart cf.FlavorPart) []int {
 				pcrSet[pcrx] = true
 			}
 		}
-	case cf.Software:
+	case cf.FlavorPartSoftware:
 		pcrSet[15] = true
 	}
 
@@ -189,13 +189,13 @@ func (rhelpf LinuxPlatformFlavor) eventLogRequired(flavorPartName cf.FlavorPart)
 	var eventLogRequired bool
 
 	switch flavorPartName {
-	case cf.Platform:
+	case cf.FlavorPartPlatform:
 		eventLogRequired = true
-	case cf.Os:
+	case cf.FlavorPartOs:
 		eventLogRequired = true
-	case cf.HostUnique:
+	case cf.FlavorPartHostUnique:
 		eventLogRequired = true
-	case cf.Software:
+	case cf.FlavorPartSoftware:
 		eventLogRequired = true
 	}
 	return eventLogRequired
@@ -209,14 +209,14 @@ func (rhelpf LinuxPlatformFlavor) getPlatformFlavor() ([]string, error) {
 
 	var errorMessage = "Error during creation of PLATFORM flavor"
 	var platformFlavors []string
-	var platformPcrs = rhelpf.getPcrList(cf.Platform)
-	var includeEventLog = rhelpf.eventLogRequired(cf.Platform)
+	var platformPcrs = rhelpf.getPcrList(cf.FlavorPartPlatform)
+	var includeEventLog = rhelpf.eventLogRequired(cf.FlavorPartPlatform)
 	var allPcrDetails = pfutil.GetPcrDetails(
 		rhelpf.HostManifest.PcrManifest, platformPcrs, includeEventLog)
 	var filteredPcrDetails = pfutil.IncludeModulesToEventLog(
 		allPcrDetails, platformModules)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.Platform, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartPlatform, "")
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - failure in Meta section details")
 	}
@@ -255,14 +255,14 @@ func (rhelpf LinuxPlatformFlavor) getOsFlavor() ([]string, error) {
 	var errorMessage = "Error during creation of OS flavor"
 	var err error
 	var osFlavors []string
-	var osPcrs = rhelpf.getPcrList(cf.Os)
-	var includeEventLog = rhelpf.eventLogRequired(cf.Os)
+	var osPcrs = rhelpf.getPcrList(cf.FlavorPartOs)
+	var includeEventLog = rhelpf.eventLogRequired(cf.FlavorPartOs)
 	var allPcrDetails = pfutil.GetPcrDetails(
 		rhelpf.HostManifest.PcrManifest, osPcrs, includeEventLog)
 	var filteredPcrDetails = pfutil.IncludeModulesToEventLog(
 		allPcrDetails, osModules)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.Os, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartOs, "")
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
@@ -296,14 +296,14 @@ func (rhelpf LinuxPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
 	var errorMessage = "Error during creation of HOST_UNIQUE flavor"
 	var err error
 	var hostUniqueFlavors []string
-	var hostUniquePcrs = rhelpf.getPcrList(cf.HostUnique)
-	var includeEventLog = rhelpf.eventLogRequired(cf.HostUnique)
+	var hostUniquePcrs = rhelpf.getPcrList(cf.FlavorPartHostUnique)
+	var includeEventLog = rhelpf.eventLogRequired(cf.FlavorPartHostUnique)
 	var allPcrDetails = pfutil.GetPcrDetails(
 		rhelpf.HostManifest.PcrManifest, hostUniquePcrs, includeEventLog)
 	var filteredPcrDetails = pfutil.IncludeModulesToEventLog(
 		allPcrDetails, hostUniqueModules)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.HostUnique, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartHostUnique, "")
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
@@ -341,7 +341,7 @@ func (rhelpf LinuxPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	}
 
 	// create meta section details
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.AssetTag, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartAssetTag, "")
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}

@@ -32,7 +32,7 @@ func (gpf GenericPlatformFlavor) GetFlavorPartRaw(name cf.FlavorPart) ([]string,
 	var returnThis []string
 	var err error
 	switch name {
-	case cf.AssetTag:
+	case cf.FlavorPartAssetTag:
 		returnThis, err = gpf.getAssetTagFlavor()
 	default:
 		returnThis = nil
@@ -46,7 +46,7 @@ func (gpf GenericPlatformFlavor) GetFlavorPartNames() ([]cf.FlavorPart, error) {
 	log.Trace("flavor/types/generic_platform_flavor:GetFlavorPartNames() Entering")
 	defer log.Trace("flavor/types/generic_platform_flavor:GetFlavorPartNames() Leaving")
 
-	flavorPartList := []cf.FlavorPart{cf.AssetTag}
+	flavorPartList := []cf.FlavorPart{cf.FlavorPartAssetTag}
 	return flavorPartList, nil
 }
 
@@ -64,7 +64,7 @@ func (gpf GenericPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	}
 
 	// create meta section details
-	newMeta, err := pfutil.GetMetaSectionDetails(nil, gpf.TagCertificate, "", cf.AssetTag, gpf.Vendor)
+	newMeta, err := pfutil.GetMetaSectionDetails(nil, gpf.TagCertificate, "", cf.FlavorPartAssetTag, gpf.Vendor)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}

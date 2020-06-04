@@ -79,7 +79,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		description.TpmVersion = strings.TrimSpace(hostDetails.HardwareFeatures.TPM.Meta.TPMVersion)
 	}
 	switch flavorPartName {
-	case common.Platform:
+	case common.FlavorPartPlatform:
 		var features = pfutil.getSupportedHardwareFeatures(hostDetails)
 		description.Label = pfutil.getLabelFromDetails(meta.Vendor, biosName,
 			biosVersion, strings.Join(features, "_"), pfutil.getCurrentTimeStamp())
@@ -89,7 +89,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		if hostDetails != nil && hostDetails.HostName != "" {
 			description.Source = strings.TrimSpace(hostDetails.HostName)
 		}
-	case common.Os:
+	case common.FlavorPartOs:
 		description.Label = pfutil.getLabelFromDetails(meta.Vendor, osName, osVersion,
 			vmmName, vmmVersion, pfutil.getCurrentTimeStamp())
 		description.OsName = osName
@@ -105,7 +105,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 			description.VmmVersion = strings.TrimSpace(vmmVersion)
 		}
 
-	case common.Software:
+	case common.FlavorPartSoftware:
 		var measurements taModel.Measurement
 		err := xml.Unmarshal([]byte(xmlMeasurement), &measurements)
 		if err != nil {
@@ -127,7 +127,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		}
 		meta.Schema = pfutil.getSchema()
 
-	case common.AssetTag:
+	case common.FlavorPartAssetTag:
 		description.FlavorPart = flavorPartName.String()
 		if hostDetails != nil {
 			description.HardwareUUID, err = uuid.Parse(hostDetails.HardwareUUID)
@@ -143,9 +143,10 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 			if err != nil {
 				return nil, errors.Wrapf(err, "Invalid Hardware UUID for %s FlavorPart", flavorPartName)
 			}
+			description.Label = pfutil.getLabelFromDetails(meta.Vendor, description.HardwareUUID.String(), pfutil.getCurrentTimeStamp())
 		}
+	case common.FlavorPartHostUnique:
 		description.Label = pfutil.getLabelFromDetails(meta.Vendor, description.HardwareUUID.String(), pfutil.getCurrentTimeStamp())
-	case common.HostUnique:
 		if hostDetails != nil {
 			if hostDetails.HostName != "" {
 				description.Source = strings.TrimSpace(hostDetails.HostName)

@@ -32,7 +32,7 @@ func (store *MockFlavorgroupStore) Delete(id *uuid.UUID) error {
 func (store *MockFlavorgroupStore) Retrieve(id *uuid.UUID) (*hvs.FlavorGroup, error) {
 	for _, fg := range store.flavorgroupStore {
 		if fg.ID == *id {
-			return  fg, nil
+			return fg, nil
 		}
 	}
 	return nil, errors.New("record not found")
@@ -42,21 +42,21 @@ func (store *MockFlavorgroupStore) Retrieve(id *uuid.UUID) (*hvs.FlavorGroup, er
 func (store *MockFlavorgroupStore) Search(criteria *hvs.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
 	if criteria == nil {
 		return &hvs.FlavorgroupCollection{Flavorgroups: store.flavorgroupStore}, nil
-	}  else if criteria.Id != "" {
+	} else if criteria.Id != "" {
 		id := uuid.MustParse(criteria.Id)
 		fg, _ := store.Retrieve(&id)
-		return  &hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{fg}}, nil
+		return &hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{fg}}, nil
 	} else if criteria.NameEqualTo != "" {
 		for _, fg := range store.flavorgroupStore {
 			if fg.Name == criteria.NameEqualTo {
-				return  &hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{fg}}, nil
+				return &hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{fg}}, nil
 			}
 		}
 	} else if criteria.NameContains != "" {
 		var flavorgroups []*hvs.FlavorGroup
 		for _, fg := range store.flavorgroupStore {
-			if strings.Contains(fg.Name,criteria.NameContains) {
-				flavorgroups =  append(flavorgroups, fg)
+			if strings.Contains(fg.Name, criteria.NameContains) {
+				flavorgroups = append(flavorgroups, fg)
 			}
 		}
 		return &hvs.FlavorgroupCollection{Flavorgroups: flavorgroups}, nil
@@ -70,28 +70,27 @@ func (store *MockFlavorgroupStore) Create(flavorgroup *hvs.FlavorGroup) (*hvs.Fl
 	return flavorgroup, nil
 }
 
-
 // NewFakeFlavorgroupStore provides two dummy data for Flavorgroups
 func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	store := &MockFlavorgroupStore{}
 
 	store.Create(&hvs.FlavorGroup{
-		ID: uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
+		ID:   uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		Name: "hvs_flavorgroup_test1",
 		FlavorMatchPolicyCollection: &hvs.FlavorMatchPolicyCollection{
 			FlavorMatchPolicies: []hvs.FlavorMatchPolicy{
 				{
-					FlavorPart: cf.Os,
+					FlavorPart: cf.FlavorPartOs,
 					MatchPolicy: hvs.MatchPolicy{
 						MatchType: hvs.AllOf,
-						Required: hvs.Required,
+						Required:  hvs.Required,
 					},
 				},
 				{
-					FlavorPart: cf.Platform,
+					FlavorPart: cf.FlavorPartPlatform,
 					MatchPolicy: hvs.MatchPolicy{
 						MatchType: hvs.AnyOf,
-						Required: hvs.RequiredIfDefined,
+						Required:  hvs.RequiredIfDefined,
 					},
 				},
 			},
@@ -99,15 +98,15 @@ func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	})
 
 	store.Create(&hvs.FlavorGroup{
-		ID: uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
+		ID:   uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
 		Name: "hvs_flavorgroup_test2",
 		FlavorMatchPolicyCollection: &hvs.FlavorMatchPolicyCollection{
 			FlavorMatchPolicies: []hvs.FlavorMatchPolicy{
 				{
-					FlavorPart: cf.HostUnique,
+					FlavorPart: cf.FlavorPartHostUnique,
 					MatchPolicy: hvs.MatchPolicy{
 						MatchType: hvs.AllOf,
-						Required: hvs.Required,
+						Required:  hvs.Required,
 					},
 				},
 			},

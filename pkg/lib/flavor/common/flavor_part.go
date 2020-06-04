@@ -19,11 +19,11 @@ var log = commLog.GetDefaultLogger()
 type FlavorPart string
 
 const (
-	Platform   FlavorPart = "PLATFORM"
-	Os         FlavorPart = "OS"
-	HostUnique FlavorPart = "HOST_UNIQUE"
-	Software   FlavorPart = "SOFTWARE"
-	AssetTag   FlavorPart = "ASSET_TAG"
+	FlavorPartPlatform   FlavorPart = "PLATFORM"
+	FlavorPartOs         FlavorPart = "OS"
+	FlavorPartHostUnique FlavorPart = "HOST_UNIQUE"
+	FlavorPartSoftware   FlavorPart = "SOFTWARE"
+	FlavorPartAssetTag   FlavorPart = "ASSET_TAG"
 )
 
 // GetFlavorTypes returns a list of flavor types as strings
@@ -31,7 +31,7 @@ func GetFlavorTypes() []FlavorPart {
 	log.Trace("flavor/common/flavor_part:GetFlavorTypes() Entering")
 	defer log.Trace("flavor/common/flavor_part:GetFlavorTypes() Leaving")
 
-	return []FlavorPart{Platform, Os, HostUnique, Software, AssetTag}
+	return []FlavorPart{FlavorPartPlatform, FlavorPartOs, FlavorPartHostUnique, FlavorPartSoftware, FlavorPartAssetTag}
 }
 
 func (fp FlavorPart) String() string {

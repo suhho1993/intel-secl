@@ -43,7 +43,7 @@ func (sf *SoftwareFlavor) GetSoftwareFlavor() (string, error) {
 	}
 	var software = sfutil.GetSoftware(measurements)
 	// create meta section details
-	newMeta, err := pfutil.GetMetaSectionDetails(nil, nil, sf.Measurement, cf.Software, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(nil, nil, sf.Measurement, cf.FlavorPartSoftware, "")
 	if err != nil {
 		return "", errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}

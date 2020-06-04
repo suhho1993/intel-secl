@@ -139,14 +139,14 @@ func TestLinuxPlatformFlavorGetSignedPlatformFlavorWithoutAssetTag(t *testing.T)
 
 	// remove Asset Tag from the list of expected flavors
 	for i, flavorPart := range expFlavorParts {
-		if flavorPart == cf.AssetTag {
+		if flavorPart == cf.FlavorPartAssetTag {
 			expFlavorParts = append(expFlavorParts[:i], expFlavorParts[i+1:]...)
 		}
 	}
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.Platform)
+	getSignedFlavor(t, pflavor, cf.FlavorPartPlatform)
 }
 
 // TestLinuxPlatformFlavorGetSignedPlatformFlavor fetches the Platform flavor using
@@ -173,7 +173,7 @@ func TestLinuxPlatformFlavorGetSignedPlatformFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.Platform)
+	getSignedFlavor(t, pflavor, cf.FlavorPartPlatform)
 }
 
 // TestLinuxPlatformFlavorGetSignedOSFlavor fetches the OS flavor using
@@ -184,7 +184,7 @@ func TestLinuxPlatformFlavorGetSignedOSFlavor(t *testing.T) {
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.Os}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartOs}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(RHELManifestPath, TagCertPath)
@@ -200,7 +200,7 @@ func TestLinuxPlatformFlavorGetSignedOSFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.Os)
+	getSignedFlavor(t, pflavor, cf.FlavorPartOs)
 }
 
 // TestLinuxPlatformFlavorGetSignedHostUniqueFlavor fetches the Host Unique flavor using
@@ -211,7 +211,7 @@ func TestLinuxPlatformFlavorGetSignedHostUniqueFlavor(t *testing.T) {
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.HostUnique}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartHostUnique}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(RHELManifestPath, TagCertPath)
@@ -227,7 +227,7 @@ func TestLinuxPlatformFlavorGetSignedHostUniqueFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.HostUnique)
+	getSignedFlavor(t, pflavor, cf.FlavorPartHostUnique)
 }
 
 // TestLinuxPlatformFlavorGetSignedSoftwareFlavor fetches the Software flavor using
@@ -238,7 +238,7 @@ func TestLinuxPlatformFlavorGetSignedSoftwareFlavor(t *testing.T) {
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.Software}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartSoftware}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(RHELManifestPathWSwFlavors, TagCertPath)
@@ -254,7 +254,7 @@ func TestLinuxPlatformFlavorGetSignedSoftwareFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.Software)
+	getSignedFlavor(t, pflavor, cf.FlavorPartSoftware)
 }
 
 // TestCreateAssetTagFlavorOnly fetches the ASSET_TAG flavor using
@@ -265,7 +265,7 @@ func TestRHELCreateAssetTagFlavorOnly(t *testing.T) {
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.AssetTag}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartAssetTag}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(RHELManifestPath, TagCertPath)
@@ -281,7 +281,7 @@ func TestRHELCreateAssetTagFlavorOnly(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.AssetTag)
+	getSignedFlavor(t, pflavor, cf.FlavorPartAssetTag)
 }
 
 // TestSoftwareFlavor validates GetSoftwareFlavor()
@@ -303,14 +303,14 @@ func TestSoftwareFlavor(t *testing.T) {
 // ESXPlatformFlavor Tests
 // ---------------------------------------
 
-// TestSignedESXPlatformFlavor validates the flavorparts from an ESXPlatformFlavor
+// TestSignedESXPlatformFlavor validates the FlavorParts from an ESXPlatformFlavor
 // and generates a Signed Platform Flavor
 func TestSignedESXPlatformFlavor(t *testing.T) {
 	var pffactory FlavorProvider
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.Platform, cf.Os, cf.HostUnique}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartPlatform, cf.FlavorPartOs, cf.FlavorPartHostUnique}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(ESXHostManifestPath, "")
@@ -326,7 +326,7 @@ func TestSignedESXPlatformFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.Platform)
+	getSignedFlavor(t, pflavor, cf.FlavorPartPlatform)
 }
 
 // TestSignedESXOsFlavor validates the flavorparts from an ESXPlatformFlavor
@@ -336,7 +336,7 @@ func TestSignedESXOsFlavor(t *testing.T) {
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.Os}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartOs}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(ESXHostManifestPath, "")
@@ -352,17 +352,17 @@ func TestSignedESXOsFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.Os)
+	getSignedFlavor(t, pflavor, cf.FlavorPartOs)
 }
 
-// TestSignedESXHostUniqueFlavor validates the flavorparts from an ESXPlatformFlavor
+// TestSignedESXHostUniqueFlavor validates the FlavorParts from an ESXPlatformFlavor
 // and generates a Signed HostUnique Flavor
 func TestSignedESXHostUniqueFlavor(t *testing.T) {
 	var pffactory FlavorProvider
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.HostUnique}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartHostUnique}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(ESXHostManifestPath, "")
@@ -378,7 +378,7 @@ func TestSignedESXHostUniqueFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.HostUnique)
+	getSignedFlavor(t, pflavor, cf.FlavorPartHostUnique)
 }
 
 // TestSignedESXAssetTagFlavorFlavor validates the flavorparts from an ESXPlatformFlavor
@@ -388,7 +388,7 @@ func TestSignedESXAssetTagFlavorFlavor(t *testing.T) {
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.AssetTag}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartAssetTag}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(ESXHostManifestPath, TagCertPath)
@@ -404,7 +404,7 @@ func TestSignedESXAssetTagFlavorFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.AssetTag)
+	getSignedFlavor(t, pflavor, cf.FlavorPartAssetTag)
 }
 
 // TestPlatformFlavorFactory_GetGenericPlatformFlavor attempts to generate a GenericPlatformFlavor from the
@@ -414,7 +414,7 @@ func TestPlatformFlavorFactory_GetGenericPlatformFlavor(t *testing.T) {
 	var err error
 
 	// expected FlavorParts
-	expFlavorParts := []cf.FlavorPart{cf.AssetTag}
+	expFlavorParts := []cf.FlavorPart{cf.FlavorPartAssetTag}
 
 	// load hostManifest and tagCertificate
 	hm, tagCert := loadManifestAndTagCert(ESXHostManifestPath, TagCertPath)
@@ -431,7 +431,7 @@ func TestPlatformFlavorFactory_GetGenericPlatformFlavor(t *testing.T) {
 
 	checkIfRequiredFlavorsArePresent(t, expFlavorParts, pFlavorParts)
 
-	getSignedFlavor(t, pflavor, cf.AssetTag)
+	getSignedFlavor(t, pflavor, cf.FlavorPartAssetTag)
 }
 
 // NEGATIVE Cases
@@ -505,7 +505,7 @@ func TestFailures4SignFlavor(t *testing.T) {
 				assert.NotNil(t, pflavor, "Error initializing PlatformFlavor")
 
 				// Sign the flavor - if Nil Signed Flavor or Invalid Signing Key we expect this step to fail
-				_, err = (*pflavor).(types.LinuxPlatformFlavor).GetFlavorPart(cf.Platform, tt.signingKey)
+				_, err = (*pflavor).(types.LinuxPlatformFlavor).GetFlavorPart(cf.FlavorPartPlatform, tt.signingKey)
 				if tt.name == "Nil Signing Key" || tt.name == "Invalid Signing Key" {
 					assert.Error(t, err, "Invalid Singing Key Did not fail as expected")
 				}
