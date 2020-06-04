@@ -12,6 +12,7 @@ hvs:
 hvs-installer: hvs
 	mkdir -p bin/installer
 	cp pkg/hvs/dist/linux/hvs.service bin/installer/hvs.service
+	cp pkg/hvs/dist/linux/EndorsementCA-external.pem bin/installer/EndorsementCA-external.pem
 	cp pkg/hvs/dist/linux/install.sh bin/installer/install.sh && chmod +x bin/installer/install.sh
 	cp cmd/hvs/hvs bin/installer/hvs
 	makeself bin/installer bin/hvs-$(VERSION).bin "HVS $(VERSION)" ./install.sh

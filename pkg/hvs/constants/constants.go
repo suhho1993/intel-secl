@@ -7,44 +7,53 @@ package constants
 import "time"
 
 const (
-	ServiceName                   = "HVS"
-	OldServiceName                = "mtwilson"
-	ApiVersion                    = "/v2"
-	ServiceUserName               = "hvs"
-	ServiceDir                    = "hvs/"
-	HomeDir                       = "/opt/" + ServiceDir
-	ConfigDir                     = "/etc/" + ServiceDir
-	ConfigFile                    = "config.yml"
-	ExecLinkPath                  = "/usr/bin/" + ServiceUserName
-	RunDirPath                    = "/run/" + ServiceDir
-	LogDir                        = "/var/log/" + ServiceDir
-	TrustedJWTSigningCertsDir     = ConfigDir + "/certs/trustedjwt/"
-	TrustedCaCertsDir             = ConfigDir + "/certs/trustedca/"
-	ServiceRemoveCmd              = "systemctl disable hvs"
-	DefaultTLSCertPath            = ConfigDir + "tls-cert.pem"
-	DefaultTLSKeyPath             = ConfigDir + "tls.key"
-	DefaultHvsTlsCn               = "HVS TLS Certificate"
-	DefaultHvsTlsSan              = "127.0.0.1,localhost"
-	DefaultKeyAlgorithm           = "rsa"
-	DefaultKeyAlgorithmLength     = 3072
-	DefaultSSLCertFilePath        = ConfigDir + "hvsdbsslcert.pem"
-	BearerTokenEnv                = "BEARER_TOKEN"
-	CmsBaseUrlEnv                 = "CMS_BASE_URL"
-	AasApiUrlEnv                  = "AAS_API_URL"
-	HvsServiceUsernameEnv         = "HVS_SERVICE_USERNAME"
-	HvsServicePasswordEnv         = "HVS_SERVICE_PASSWORD"
-	CmsTlsCertDigestEnv           = "CMS_TLS_CERT_SHA384"
-	JWTCertsCacheTime             = "1m"
-	DefaultReadTimeout            = 30 * time.Second
-	DefaultReadHeaderTimeout      = 10 * time.Second
-	DefaultWriteTimeout           = 10 * time.Second
-	DefaultIdleTimeout            = 10 * time.Second
-	DefaultMaxHeaderBytes         = 1 << 20
-	DefaultHVSListenerPort        = 8443
-	DBTypePostgres                = "postgres"
-	DefaultLogEntryMaxlength      = 300
-	DefaultDbConnRetryAttempts    = 4
-	DefaultDbConnRetryTime        = 1
+	ServiceName                    = "HVS"
+	OldServiceName                 = "mtwilson"
+	ApiVersion                     = "/v2"
+	ServiceUserName                = "hvs"
+	ServiceDir                     = "hvs/"
+	HomeDir                        = "/opt/" + ServiceDir
+	ConfigDir                      = "/etc/" + ServiceDir
+	ConfigFile                     = "config.yml"
+	ExecLinkPath                   = "/usr/bin/" + ServiceUserName
+	RunDirPath                     = "/run/" + ServiceDir
+	LogDir                         = "/var/log/" + ServiceDir
+	TrustedJWTSigningCertsDir      = ConfigDir + "certs/trustedjwt/"
+	TrustedCaCertsDir              = ConfigDir + "certs/trustedca/"
+	KeyPath                        = ConfigDir + "trusted-keys/privacy-ca-key.pem"
+	CertPath                       = TrustedCaCertsDir + "privacy-ca-cert.pem"
+	//TODO remove or dont use temporary files
+	AikRequestsDir                 = HomeDir + "privacyca-aik-requests/"
+	//TODO use EndorsementCA file after implementation of create_endorsement_ca setup task
+	EndorsementCAFile              = ConfigDir + "certs/endorsement/EndorsementCA-external.pem"
+	AIKCertValidity                = 1
+	DefaultPrivacyCACertValidity   = 5
+	DefaultPrivacyCaIdentityIssuer = "hvs-pca-aik"
+	ServiceRemoveCmd               = "systemctl disable hvs"
+	DefaultTLSCertPath             = ConfigDir + "tls-cert.pem"
+	DefaultTLSKeyPath              = ConfigDir + "tls.key"
+	DefaultHvsTlsCn                = "HVS TLS Certificate"
+	DefaultHvsTlsSan               = "127.0.0.1,localhost"
+	DefaultKeyAlgorithm            = "rsa"
+	DefaultKeyAlgorithmLength      = 3072
+	DefaultSSLCertFilePath         = ConfigDir + "hvsdbsslcert.pem"
+	BearerTokenEnv                 = "BEARER_TOKEN"
+	CmsBaseUrlEnv                  = "CMS_BASE_URL"
+	AasApiUrlEnv                   = "AAS_API_URL"
+	HvsServiceUsernameEnv          = "HVS_SERVICE_USERNAME"
+	HvsServicePasswordEnv          = "HVS_SERVICE_PASSWORD"
+	CmsTlsCertDigestEnv            = "CMS_TLS_CERT_SHA384"
+	JWTCertsCacheTime              = "1m"
+	DefaultReadTimeout             = 30 * time.Second
+	DefaultReadHeaderTimeout       = 10 * time.Second
+	DefaultWriteTimeout            = 10 * time.Second
+	DefaultIdleTimeout             = 10 * time.Second
+	DefaultMaxHeaderBytes          = 1 << 20
+	DefaultHVSListenerPort         = 8443
+	DBTypePostgres                 = "postgres"
+	DefaultLogEntryMaxlength       = 300
+	DefaultDbConnRetryAttempts     = 4
+	DefaultDbConnRetryTime         = 1
 )
 
 //Roles and permissions
@@ -55,6 +64,7 @@ const (
 	FlavorGroupRetrieve = "flavorgroups:retrieve"
 	FlavorGroupSearch   = "flavorgroups:search"
 	FlavorGroupDelete   = "flavorgroups:delete"
+	CertifyAik          = "host_aiks:certify"
 )
 
 //Postgres connection SslModes

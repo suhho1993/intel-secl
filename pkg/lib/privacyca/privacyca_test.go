@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 package privacyca_test
 
 import (
@@ -66,18 +71,18 @@ func TestProcessMakeCredential(t *testing.T) {
 	iv := make([]byte, aes.BlockSize)
 
 	//Decrypt the encryptedCredential for getting the symmetric key from which the symmetric key for decrypting the identityChallengeNonce can be decrypted
-	key, err := tpm2utils.DecryptSym(encryptedCredential, symKey, iv,"CBF", consts.TPM2AlgorithmSymmetricAES)
+	key, err := tpm2utils.DecryptSym(encryptedCredential, symKey, iv,"CBF", consts.TPM_ALG_AES)
 	assert.NoError(t, err)
 	buf = bytes.NewBuffer(key)
 	binary.Read(buf, binary.BigEndian, &encryptedCredentialLength)
 	key = buf.Next(int(encryptedCredentialLength))
 	symmetricBlob := tpm2IdentityProofReq.SymmetricBlob
 	buf = bytes.NewBuffer(symmetricBlob)
-	iv = buf.Next(int(16))
-	secret = buf.Next(len(symmetricBlob) - 16)
+	iv = tpm2IdentityProofReq.TpmSymmetricKeyParams.IV
 
 	//Decrypt the credential secret to retrive identityChallengeNonce
-	dataBlob, err := tpm2utils.DecryptSym(secret, key, iv,"CBC", consts.TPM2AlgorithmSymmetricAES)
+	dataBlob, err := tpm2utils.DecryptSym(symmetricBlob, key, iv,"CBC", consts.TPM_ALG_AES)
 	assert.NoError(t, err)
+
 	assert.Equal(t, dataBlob, identityChallengeNonce)
 }

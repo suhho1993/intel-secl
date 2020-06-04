@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 package tpm2utils
 
 import (
@@ -14,7 +19,6 @@ import (
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	consts "github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca/types"
-	model "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"io"
 	"math"
 
@@ -45,19 +49,19 @@ func isSupportedHashAlgorithm(hashAlg crypto.Hash) bool {
    Tpm2Credential.CredentialBlob and Tpm2Credential.SecretBlob will be among inputs to the TPM ActivateCredential
  */
 func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKeySizeInBits int, nameAlgorithm crypto.Hash, credential []byte, aikName []byte) (types.Tpm2Credential, error) {
-	log.Trace("privacyca/tpm2utils:MakeCredential() Entering")
-	defer log.Trace("privacyca/tpm2utils:MakeCredential() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:MakeCredential() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:MakeCredential() Leaving")
 
 	if credential == nil || len(credential) <= 0 {
-		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils:MakeCredential() credential is null or empty")
+		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils/utils:MakeCredential() credential is null or empty")
 	}
 
 	if aikName == nil || len(aikName) <= 0 {
-		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils:MakeCredential() aikName is null or empty")
+		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils/utils:MakeCredential() aikName is null or empty")
 	}
 
 	if !isSupportedAsymAlgorithm(ekPubKey) {
-		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils:MakeCredential() Ek PubKey Algorithm is not (currently) supported")
+		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils/utils:MakeCredential() Ek PubKey Algorithm is not (currently) supported")
 	}
 
 	if !isSupportedHashAlgorithm(nameAlgorithm) {
@@ -65,7 +69,7 @@ func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKey
 	}
 	nameAlgDigestLength := nameAlgorithm.Size()
 	if len(credential) > nameAlgDigestLength {
-		return types.Tpm2Credential{}, errors.Errorf("privacyca/tpm2utils:MakeCredential() Credential cannot be larger than %d bytes", nameAlgDigestLength)
+		return types.Tpm2Credential{}, errors.Errorf("privacyca/tpm2utils/utils:MakeCredential() Credential cannot be larger than %d bytes", nameAlgDigestLength)
 	}
 	var seed []byte
 	encryptedSecretByteBuffer := new(bytes.Buffer)
@@ -75,12 +79,12 @@ func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKey
 			//Generate and encrypt the seed
 			secretData, err := crypt.GetRandomBytes(32)
 			if err != nil {
-				return types.Tpm2Credential{}, errors.Wrap(err, "privacyca/tpm2utils:MakeCredential() Unable to generate Random Bytes for Secret")
+				return types.Tpm2Credential{}, errors.Wrap(err, "privacyca/tpm2utils/utils:MakeCredential() Unable to generate Random Bytes for Secret")
 			}
 			seed = secretData
 			asymKey, err := crypt.GetRandomBytes(nameAlgDigestLength)
 			if err != nil {
-				return types.Tpm2Credential{}, errors.Wrap(err, "privacyca/tpm2utils:MakeCredential() Unable to generate Random Bytes for entropy")
+				return types.Tpm2Credential{}, errors.Wrap(err, "privacyca/tpm2utils/utils:MakeCredential() Unable to generate Random Bytes for entropy")
 			}
 
 			identityBuf := new(bytes.Buffer)
@@ -97,12 +101,12 @@ func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKey
 				binary.Write(encryptedSecretByteBuffer, binary.BigEndian, encryptedSecret)
 				break
 			default:
-				return types.Tpm2Credential{}, errors.Errorf("privacyca/tpm2utils:MakeCredential() Hashing Algorithm %s is not currently supported", crypt.GetHashingAlgorithmName(nameAlgorithm))
+				return types.Tpm2Credential{}, errors.Errorf("privacyca/tpm2utils/utils:MakeCredential() Hashing Algorithm %s is not currently supported", crypt.GetHashingAlgorithmName(nameAlgorithm))
 			}
 		}
 		break
 	default:
-		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils:MakeCredential() Key Algorithm is not currently supported")
+		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils/utils:MakeCredential() Key Algorithm is not currently supported")
 	}
 
 	//Derive the symmetric key symKey using the seed
@@ -127,7 +131,7 @@ func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKey
 	}
 
 	if nameAlgorithm != crypto.SHA256 {
-		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils:MakeCredential() Unsupported algorithm for hmac")
+		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils/utils:MakeCredential() Unsupported algorithm for hmac")
 	}
 
 	//Calculate hmac sha256 digest of encryptedCredential and aikName
@@ -138,7 +142,7 @@ func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKey
 	mac.Write(integrityBuf.Bytes())
 	integrity := mac.Sum(nil)
 	if err != nil {
-		return types.Tpm2Credential{}, errors.Wrap(err, "privacyca/tpm2utils:MakeCredential() Error while generating hmac hash")
+		return types.Tpm2Credential{}, errors.Wrap(err, "privacyca/tpm2utils/utils:MakeCredential() Error while generating hmac hash")
 	}
 
 	credentialBlob := new(bytes.Buffer)
@@ -161,11 +165,11 @@ func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKey
 }
 
 func KDFa(hashAlg crypto.Hash, key []byte, label string, contextU, contextV []byte, sizeInBits int) ([]byte, error) {
-	log.Trace("privacyca/tpm2utils:KDFa() Entering")
-	defer log.Trace("privacyca/tpm2utils:KDFa() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:KDFa() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:KDFa() Leaving")
 
 	if hashAlg != crypto.SHA256 {
-		return nil, errors.Errorf("privacyca/tpm2utils:KDFa() Algorithm: %s, is not a supported hashing algorithm", crypt.GetHashingAlgorithmName(hashAlg))
+		return nil, errors.Errorf("privacyca/tpm2utils/utils:KDFa() Algorithm: %s, is not a supported hashing algorithm", crypt.GetHashingAlgorithmName(hashAlg))
 	}
 
 	var labelBuf []byte
@@ -174,7 +178,7 @@ func KDFa(hashAlg crypto.Hash, key []byte, label string, contextU, contextV []by
 	}
 
 	if ((sizeInBits + 7) / 8) > math.MaxInt16 {
-		return nil, errors.New("privacyca/tpm2utils:KDFa() sizeInBits is invalid ")
+		return nil, errors.New("privacyca/tpm2utils/utils:KDFa() sizeInBits is invalid ")
 	}
 
 	symBytesLen := (sizeInBits + 7) / 8
@@ -222,16 +226,16 @@ func KDFa(hashAlg crypto.Hash, key []byte, label string, contextU, contextV []by
 }
 
 func EncryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorithm string) ([]byte, error) {
-	log.Trace("privacyca/tpm2utils:EncryptSym() Entering")
-	defer log.Trace("privacyca/tpm2utils:EncryptSym() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:EncryptSym() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:EncryptSym() Leaving")
 
 	if len(payload) == 0 || len (key) == 0  || len (iv) == 0{
-		return nil, errors.New("privacyca/tpm2utils:EncryptSym() Either key,payload or iv is empty")
+		return nil, errors.New("privacyca/tpm2utils/utils:EncryptSym() Either key,payload or iv is empty")
 	}
 	if algorithm == "AES" {
 		block, err := aes.NewCipher(key)
 		if err != nil {
-			return nil, errors.Wrap(err, "privacyca/tpm2utils:EncryptSym() Error while getting aes cipher block")
+			return nil, errors.Wrap(err, "privacyca/tpm2utils/utils:EncryptSym() Error while getting aes cipher block")
 		}
 		switch encScheme {
 		case "CBC":
@@ -239,7 +243,7 @@ func EncryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorit
 		case "CFB":
 			return encryptSymCFB(payload, block, iv), nil
 		default:
-			return nil, errors.New("privacyca/tpm2utils:EncryptSym() Unsupported symmetric algorithm scheme")
+			return nil, errors.New("privacyca/tpm2utils/utils:EncryptSym() Unsupported symmetric algorithm scheme")
 		}
 	} else {
 		return nil, errors.New("Unsupported symmetric algorithm")
@@ -247,9 +251,10 @@ func EncryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorit
 }
 
 func encryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils:encryptSymCBC() Entering")
-	defer log.Trace("privacyca/tpm2utils:encryptSymCBC() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Leaving")
 	mode := cipher.NewCBCEncrypter(block, iv)
+
 	encryptedBytes := make([]byte, len(payload))
 	mode.CryptBlocks(encryptedBytes, payload)
 
@@ -257,8 +262,8 @@ func encryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
 }
 
 func encryptSymCFB(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils:encryptSymCFB() Entering")
-	defer log.Trace("privacyca/tpm2utils:encryptSymCFB() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:encryptSymCFB() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:encryptSymCFB() Leaving")
 	encryptedCredential :=	make([]byte, len(payload))
 	stream := cipher.NewCFBEncrypter(block, iv)
 	stream.XORKeyStream(encryptedCredential, payload)
@@ -266,17 +271,17 @@ func encryptSymCFB(payload []byte, block cipher.Block, iv []byte) []byte{
 	return encryptedCredential
 }
 
-func DecryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorithm string) ([]byte, error) {
-	log.Trace("privacyca/tpm2utils:DecryptSym() Entering")
-	defer log.Trace("privacyca/tpm2utils:DecryptSym() Leaving")
+func DecryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorithm int) ([]byte, error) {
+	log.Trace("privacyca/tpm2utils/utils:DecryptSym() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:DecryptSym() Leaving")
 
 	if len(payload) == 0 || len (key) == 0  || len (iv) == 0{
-		return nil, errors.New("privacyca/tpm2utils:DecryptSym() Either key, payload or iv is empty")
+		return nil, errors.New("privacyca/tpm2utils/utils:DecryptSym() Either key, payload or iv is empty")
 	}
-	if algorithm == "AES" {
+	if algorithm == consts.TPM_ALG_AES {
 		block, err := aes.NewCipher(key)
 		if err != nil {
-			return nil, errors.Wrap(err, "privacyca/tpm2utils:DecryptSym() Error while getting aes cipher block")
+			return nil, errors.Wrap(err, "privacyca/tpm2utils/utils:DecryptSym() Error while getting aes cipher block")
 		}
 		switch encScheme{
 		case "CBC":
@@ -284,16 +289,16 @@ func DecryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorit
 		case "CBF":
 			return decryptSymCBF(payload, block, iv), nil
 		default:
-			return nil, errors.New("privacyca/tpm2utils:DecryptSym() Unsupported symmetric algorithm scheme")
+			return nil, errors.New("privacyca/tpm2utils/utils:DecryptSym() Unsupported symmetric algorithm scheme")
 		}
 	} else {
-		return nil, errors.New("privacyca/tpm2utils:KDFa() Unsupported symmetric algorithm")
+		return nil, errors.New("privacyca/tpm2utils/utils:KDFa() Unsupported symmetric algorithm")
 	}
 }
 
 func decryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils:decryptSymCBC() Entering")
-	defer log.Trace("privacyca/tpm2utils:decryptSymCBC() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:decryptSymCBC() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:decryptSymCBC() Leaving")
 	mode := cipher.NewCBCDecrypter(block, iv)
 	decryptedBytes := make([]byte, len(payload))
 	mode.CryptBlocks(decryptedBytes, payload)
@@ -302,8 +307,8 @@ func decryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
 }
 
 func decryptSymCBF(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils:decryptSymCBF() Entering")
-	defer log.Trace("privacyca/tpm2utils:decryptSymCBF() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:decryptSymCBF() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:decryptSymCBF() Leaving")
 	mode := cipher.NewCFBDecrypter(block, iv)
 	decryptedBytes := make([]byte, len(payload))
 	mode.XORKeyStream(decryptedBytes, payload)
@@ -312,8 +317,8 @@ func decryptSymCBF(payload []byte, block cipher.Block, iv []byte) []byte{
 }
 
 func Tpm2DecryptAsym(ciphertext []byte, key crypto.PrivateKey, encScheme int, label []byte)([]byte, error){
-	log.Trace("privacyca/tpm2utils:Tpm2DecryptAsym() Entering")
-	defer log.Trace("privacyca/tpm2utils:Tpm2DecryptAsym() Leaving")
+	log.Trace("privacyca/tpm2utils/utils:Tpm2DecryptAsym() Entering")
+	defer log.Trace("privacyca/tpm2utils/utils:Tpm2DecryptAsym() Leaving")
 	switch encScheme{
 	case consts.TPM_ALG_ID_SHA256:
 		var rng io.Reader
@@ -326,64 +331,4 @@ func Tpm2DecryptAsym(ciphertext []byte, key crypto.PrivateKey, encScheme int, la
 	default:
 		return rsa.DecryptPKCS1v15(rand.Reader, key.(*rsa.PrivateKey), ciphertext)
 	}
-}
-
-func GetTpmSymmetricKeyParams(payload []byte, ) (model.TpmSymmetricKeyParams, []byte, error){
-	log.Trace("privacyca/tpm2utils:GetTpmSymmetricKeyParams() Entering")
-	defer log.Trace("privacyca/tpm2utils:GetTpmSymmetricKeyParams() Leaving")
-	//---------------------------------------------------------------------------------------------
-	// Encrypt the bytes using aes from https://golang.org/pkg/crypto/cipher/#example_NewCBCEncrypter
-	//---------------------------------------------------------------------------------------------
-
-	cipherKey, err := crypt.GetRandomBytes(16)
-	if err != nil {
-		return model.TpmSymmetricKeyParams{}, nil, err
-	}
-
-	iv, err := crypt.GetRandomBytes(16) // aes.Blocksize == 16
-	if err != nil {
-		return model.TpmSymmetricKeyParams{}, nil, err
-	}
-
-	symmetricBytes, err := EncryptSym(payload, cipherKey, iv, "CBC", "AES")
-	if err != nil {
-		return model.TpmSymmetricKeyParams{}, nil, err
-	}
-
-	tpmSymmetricKeyParams := model.TpmSymmetricKeyParams{
-		TpmAlgId                : consts.TPM_ALG_AES,
-		TpmAlgEncScheme         : consts.TPM_ES_SYM_CBC_PKCS5PAD,
-		TpmAlgSignatureScheme   : consts.TPM_SS_NONE,
-		KeyLength               : 128,
-		BlockSize               : 128,
-		IV                      : iv,
-	}
-	return tpmSymmetricKeyParams, symmetricBytes, nil
-
-	}
-
-func GetTpmAsymmetricKeyParams(payload []byte, pubKey *rsa.PublicKey) (model.TpmAsymmetricKeyParams, []byte, error){
-	log.Trace("privacyca/tpm2utils:GetTpmAsymmetricKeyParams() Entering")
-	defer log.Trace("privacyca/tpm2utils:GetTpmAsymmetricKeyParams() Leaving")
-	// EncryptOAEP requires a 20 byte key (not 16)
-	asymKey, err := crypt.GetRandomBytes(20)
-	if err != nil {
-		return model.TpmAsymmetricKeyParams{}, nil, err
-	}
-
-	asymmetricBytes, err := rsa.EncryptOAEP(sha256.New(), bytes.NewBuffer(asymKey), pubKey, payload, nil)
-	if err != nil {
-		return model.TpmAsymmetricKeyParams{}, nil, errors.Wrap(err,"privacyca/tpm2utils:GetTpmAsymmetricKeyParams() Error encrypting tpm symmetric key")
-	}
-
-	asymmetricKeyParams := model.TpmAsymmetricKeyParams{
-		TpmAlgId                : consts.TPM_ALG_RSA,
-		TpmAlgEncScheme         : consts.TPM_ALG_ID_SHA256,
-		TpmAlgSignatureScheme   : consts.TPM_SS_NONE,
-		KeyLength               : 2048,
-		PrimesCount             : 2,
-		ExponentSize            : 0,
-	}
-
-	return asymmetricKeyParams, asymmetricBytes, nil
 }

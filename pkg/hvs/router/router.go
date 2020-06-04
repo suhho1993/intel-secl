@@ -74,6 +74,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	serviceApi := "/" + service + constants.ApiVersion
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
 	subRouter = SetVersionRoutes(subRouter)
+	subRouter = SetCaCertificatesRoutes(subRouter)
 
 	subRouter = router.PathPrefix(serviceApi).Subrouter()
 	cfgRouter := Router{cfg: cfg}
@@ -83,6 +84,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 		constants.TrustedCaCertsDir, cfgRouter.fnGetJwtCerts,
 		cacheTime))
 	subRouter = SetFlavorGroupRoutes(subRouter, dataStore)
+	subRouter = SetCertifyAiksRoutes(subRouter)
 }
 
 func NewDataStore(config *postgres.Config) (*postgres.DataStore, error) {

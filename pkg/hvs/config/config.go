@@ -29,6 +29,10 @@ type Configuration struct {
 	configFile       string
 	Port             int
 	CmsTlsCertDigest string
+	PrivacyCA struct {
+		PrivacyCACertValidity   int
+		PrivacyCaIdentityIssuer string
+	}
 	Postgres         struct {
 		DBName            string
 		Username          string

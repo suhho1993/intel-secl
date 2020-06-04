@@ -29,6 +29,9 @@ type Database struct {
 }
 
 func (db Database) Run(c setup.Context) error {
+	defaultLog.Trace("tasks/database:Run() Entering")
+	defer defaultLog.Trace("tasks/database:Run() Leaving")
+
 	fmt.Fprintln(db.ConsoleWriter, "Running database setup...")
 
 	envHost, _ := c.GetenvString("HVS_DB_HOSTNAME", "Database Hostname")
@@ -104,6 +107,9 @@ func (db Database) Run(c setup.Context) error {
 }
 
 func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, error) {
+	defaultLog.Trace("tasks/database:configureDBSSLParams() Entering")
+	defer defaultLog.Trace("tasks/database:configureDBSSLParams() Leaving")
+
 	sslMode = strings.TrimSpace(strings.ToLower(sslMode))
 	sslCert = strings.TrimSpace(sslCert)
 	sslCertSrc = strings.TrimSpace(sslCertSrc)
@@ -145,6 +151,9 @@ func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, 
 }
 
 func (db Database) Validate(c setup.Context) error {
+	defaultLog.Trace("tasks/database:Validate() Entering")
+	defer defaultLog.Trace("tasks/database:Validate() Leaving")
+
 	if db.Config.Postgres.Hostname == "" {
 		return errors.New("Hostname is not set")
 	}

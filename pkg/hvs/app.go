@@ -278,6 +278,7 @@ func (a *App) Run(args []string) error {
 			args[2] != "download_cert" &&
 			args[2] != "database" &&
 			args[2] != "server" &&
+			args[2] != "create_privacy_ca" &&
 			args[2] != "all" {
 			a.printUsage()
 			return errors.New("No such setup task")
@@ -329,6 +330,11 @@ func (a *App) Run(args []string) error {
 					ConsoleWriter: os.Stdout,
 				},
 				tasks.Database{
+					Flags:         flags,
+					Config:        a.configuration(),
+					ConsoleWriter: os.Stdout,
+				},
+				tasks.CreatePrivacyCA{
 					Flags:         flags,
 					Config:        a.configuration(),
 					ConsoleWriter: os.Stdout,
