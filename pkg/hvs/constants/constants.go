@@ -28,6 +28,8 @@ const (
 	EndorsementCAFile              = ConfigDir + "certs/endorsement/EndorsementCA-external.pem"
 	AIKCertValidity                = 1
 	DefaultPrivacyCACertValidity   = 5
+	HostSigningKeyCertificateCN    = "Signing_Key_Certificate"
+	HostBindingKeyCertificateCN    = "Binding_Key_Certificate"
 	DefaultPrivacyCaIdentityIssuer = "hvs-pca-aik"
 	ServiceRemoveCmd               = "systemctl disable hvs"
 	DefaultTLSCertPath             = ConfigDir + "tls-cert.pem"
@@ -60,11 +62,14 @@ const (
 const (
 	Administrator = "*:*:*"
 
-	FlavorGroupCreate   = "flavorgroups:create"
-	FlavorGroupRetrieve = "flavorgroups:retrieve"
-	FlavorGroupSearch   = "flavorgroups:search"
-	FlavorGroupDelete   = "flavorgroups:delete"
-	CertifyAik          = "host_aiks:certify"
+	FlavorGroupCreate     = "flavorgroups:create"
+	FlavorGroupRetrieve   = "flavorgroups:retrieve"
+	FlavorGroupSearch     = "flavorgroups:search"
+	FlavorGroupDelete     = "flavorgroups:delete"
+
+	CertifyAik            = "host_aiks:certify"
+
+	CertifyHostSigningKey = "host_signing_key_certificates:create"
 )
 
 //Postgres connection SslModes

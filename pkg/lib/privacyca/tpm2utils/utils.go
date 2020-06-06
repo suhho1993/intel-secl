@@ -16,7 +16,6 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
-	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	consts "github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca/types"
 	"io"
@@ -24,8 +23,6 @@ import (
 
 	"github.com/pkg/errors"
 )
-
-var log = commLog.GetDefaultLogger()
 
 func isSupportedAsymAlgorithm(pubKey crypto.PublicKey) bool {
 	switch pubKey.(type) {
@@ -49,8 +46,8 @@ func isSupportedHashAlgorithm(hashAlg crypto.Hash) bool {
    Tpm2Credential.CredentialBlob and Tpm2Credential.SecretBlob will be among inputs to the TPM ActivateCredential
  */
 func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKeySizeInBits int, nameAlgorithm crypto.Hash, credential []byte, aikName []byte) (types.Tpm2Credential, error) {
-	log.Trace("privacyca/tpm2utils/utils:MakeCredential() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:MakeCredential() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:MakeCredential() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:MakeCredential() Leaving")
 
 	if credential == nil || len(credential) <= 0 {
 		return types.Tpm2Credential{}, errors.New("privacyca/tpm2utils/utils:MakeCredential() credential is null or empty")
@@ -165,8 +162,8 @@ func MakeCredential(ekPubKey crypto.PublicKey, symmetricAlgorithm string, symKey
 }
 
 func KDFa(hashAlg crypto.Hash, key []byte, label string, contextU, contextV []byte, sizeInBits int) ([]byte, error) {
-	log.Trace("privacyca/tpm2utils/utils:KDFa() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:KDFa() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:KDFa() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:KDFa() Leaving")
 
 	if hashAlg != crypto.SHA256 {
 		return nil, errors.Errorf("privacyca/tpm2utils/utils:KDFa() Algorithm: %s, is not a supported hashing algorithm", crypt.GetHashingAlgorithmName(hashAlg))
@@ -226,8 +223,8 @@ func KDFa(hashAlg crypto.Hash, key []byte, label string, contextU, contextV []by
 }
 
 func EncryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorithm string) ([]byte, error) {
-	log.Trace("privacyca/tpm2utils/utils:EncryptSym() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:EncryptSym() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:EncryptSym() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:EncryptSym() Leaving")
 
 	if len(payload) == 0 || len (key) == 0  || len (iv) == 0{
 		return nil, errors.New("privacyca/tpm2utils/utils:EncryptSym() Either key,payload or iv is empty")
@@ -251,8 +248,8 @@ func EncryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorit
 }
 
 func encryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Leaving")
 	mode := cipher.NewCBCEncrypter(block, iv)
 
 	encryptedBytes := make([]byte, len(payload))
@@ -262,8 +259,8 @@ func encryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
 }
 
 func encryptSymCFB(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils/utils:encryptSymCFB() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:encryptSymCFB() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:encryptSymCFB() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:encryptSymCFB() Leaving")
 	encryptedCredential :=	make([]byte, len(payload))
 	stream := cipher.NewCFBEncrypter(block, iv)
 	stream.XORKeyStream(encryptedCredential, payload)
@@ -272,8 +269,8 @@ func encryptSymCFB(payload []byte, block cipher.Block, iv []byte) []byte{
 }
 
 func DecryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorithm int) ([]byte, error) {
-	log.Trace("privacyca/tpm2utils/utils:DecryptSym() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:DecryptSym() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:DecryptSym() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:DecryptSym() Leaving")
 
 	if len(payload) == 0 || len (key) == 0  || len (iv) == 0{
 		return nil, errors.New("privacyca/tpm2utils/utils:DecryptSym() Either key, payload or iv is empty")
@@ -297,8 +294,8 @@ func DecryptSym(payload []byte, key []byte, iv []byte, encScheme string, algorit
 }
 
 func decryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils/utils:decryptSymCBC() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:decryptSymCBC() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:decryptSymCBC() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:decryptSymCBC() Leaving")
 	mode := cipher.NewCBCDecrypter(block, iv)
 	decryptedBytes := make([]byte, len(payload))
 	mode.CryptBlocks(decryptedBytes, payload)
@@ -307,8 +304,8 @@ func decryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
 }
 
 func decryptSymCBF(payload []byte, block cipher.Block, iv []byte) []byte{
-	log.Trace("privacyca/tpm2utils/utils:decryptSymCBF() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:decryptSymCBF() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:decryptSymCBF() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:decryptSymCBF() Leaving")
 	mode := cipher.NewCFBDecrypter(block, iv)
 	decryptedBytes := make([]byte, len(payload))
 	mode.XORKeyStream(decryptedBytes, payload)
@@ -317,8 +314,8 @@ func decryptSymCBF(payload []byte, block cipher.Block, iv []byte) []byte{
 }
 
 func Tpm2DecryptAsym(ciphertext []byte, key crypto.PrivateKey, encScheme int, label []byte)([]byte, error){
-	log.Trace("privacyca/tpm2utils/utils:Tpm2DecryptAsym() Entering")
-	defer log.Trace("privacyca/tpm2utils/utils:Tpm2DecryptAsym() Leaving")
+	defaultLog.Trace("privacyca/tpm2utils/utils:Tpm2DecryptAsym() Entering")
+	defer defaultLog.Trace("privacyca/tpm2utils/utils:Tpm2DecryptAsym() Leaving")
 	switch encScheme{
 	case consts.TPM_ALG_ID_SHA256:
 		var rng io.Reader
