@@ -20,9 +20,10 @@ hvs-installer: hvs
 
 installer: hvs-installer
 
-swagger:
-	mkdir -p out/swagger
-	swagger generate spec -o ./out/swagger/openapi.yml --scan-models
+hvs-swagger:
+	mkdir -p docs/swagger
+	swagger generate spec -c docs\/shared\/hvs -o ./docs/swagger/hvs-openapi.yml --scan-models
+	swagger validate ./docs/swagger/hvs-openapi.yml
 
 test:
 	go test ./... -coverprofile cover.out
