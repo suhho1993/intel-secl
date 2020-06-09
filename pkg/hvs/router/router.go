@@ -35,8 +35,8 @@ func InitRoutes(cfg *config.Configuration) *mux.Router {
 	defaultLog.Trace("router/router:InitRoutes() Entering")
 	defer defaultLog.Trace("router/router:InitRoutes() Leaving")
 
-	// Create config for DBTypePostgres
-	config := postgres.Config{
+	// Create conf for DBTypePostgres
+	conf := postgres.Config{
 		Vendor:            constants.DBTypePostgres,
 		Host:              cfg.Postgres.Hostname,
 		Port:              strconv.Itoa(cfg.Postgres.Port),
@@ -50,7 +50,7 @@ func InitRoutes(cfg *config.Configuration) *mux.Router {
 	}
 
 	// Creates a DBTypePostgres DB instance
-	dataStore, err := NewDataStore(&config)
+	dataStore, err := NewDataStore(&conf)
 	if err != nil {
 		panic(err)
 	}
@@ -86,6 +86,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetFlavorGroupRoutes(subRouter, dataStore)
 	subRouter = SetCertifyAiksRoutes(subRouter)
 	subRouter = SetCertifyHostKeysRoutes(subRouter)
+	subRouter = SetTlsPolicyRoutes(subRouter, dataStore)
 }
 
 func NewDataStore(config *postgres.Config) (*postgres.DataStore, error) {

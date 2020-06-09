@@ -8,6 +8,7 @@ import "fmt"
 
 const (
 	RecordNotFound = "record not found"
+	RowsNotFound   = "no rows in result set"
 )
 type HandledError struct {
 	StatusCode int

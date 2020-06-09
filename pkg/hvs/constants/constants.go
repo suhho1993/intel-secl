@@ -70,6 +70,12 @@ const (
 	CertifyAik            = "host_aiks:certify"
 
 	CertifyHostSigningKey = "host_signing_key_certificates:create"
+
+	TlsPolicyCreate   = "host_tls_policies:create"
+	TlsPolicyRetrieve = "host_tls_policies:retrieve"
+	TlsPolicyUpdate   = "host_tls_policies:store"
+	TlsPolicyDelete   = "host_tls_policies:delete"
+	TlsPolicySearch   = "host_tls_policies:search"
 )
 
 //Postgres connection SslModes

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/jinzhu/gorm"
@@ -112,7 +113,7 @@ func (ds *DataStore) Migrate() error {
 	defaultLog.Trace("postgres/postgres:Migrate() Entering")
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 
-	ds.Db.AutoMigrate(flavorGroup{})
+	ds.Db.AutoMigrate(flavorGroup{}, domain.TlsPolicy{})
 	return nil
 }
 

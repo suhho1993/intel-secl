@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/auth"
-	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	"github.com/jinzhu/gorm"
@@ -17,8 +17,9 @@ import (
 	"net/http"
 )
 
+// endpointHandler is the same as http.ResponseHandler, but returns an error that can be handled by a generic
+// middleware handler
 type endpointHandler func(w http.ResponseWriter, r *http.Request) error
-
 
 // Generic handler for writing response header and body for all handler functions
 func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) endpointHandler {
@@ -77,9 +78,6 @@ func permissionsHandler(eh endpointHandler, permissionNames []string) endpointHa
 		return eh(w, r)
 	}
 }
-
-// endpointHandler is the same as http.ResponseHandler, but returns an error that can be handled by a generic
-// middleware handler
 
 func ErrorHandler(eh endpointHandler) http.HandlerFunc {
 	defaultLog.Trace("router/handlers:ErrorHandler() Entering")
