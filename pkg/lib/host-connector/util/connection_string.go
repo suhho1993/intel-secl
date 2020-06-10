@@ -7,15 +7,17 @@ package util
 import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"net/url"
 	"strings"
 )
 
-func GetConnectorDetails(connectionString string) types.VendorConnector {
+func GetConnectorDetails(connectionString string) (types.VendorConnector, error) {
 
 	log.Trace("util/connection_string:GetConnectorDetails() Entering")
 	defer log.Trace("util/connection_string:GetConnectorDetails() Leaving")
 	var vendorConnector types.VendorConnector
 	var vendorURL string
+
 	vendor := GetVendorPrefix(connectionString)
 	if vendor != "" {
 		vendor = strings.ToUpper(vendor)
@@ -24,10 +26,14 @@ func GetConnectorDetails(connectionString string) types.VendorConnector {
 		vendor = GuessVendorFromURL(connectionString)
 		vendorURL = connectionString
 	}
-	vendorConnector.Vendor = vendor
 	vendorConnector.Url, vendorConnector.Configuration.Username, vendorConnector.Configuration.Password,
 		vendorConnector.Configuration.Hostname = ParseConnectionString(vendorURL)
-	return vendorConnector
+
+	if _, err := url.Parse(vendorConnector.Url); err != nil {
+		return types.VendorConnector{}, err
+	}
+	vendorConnector.Vendor = vendor
+	return vendorConnector, nil
 }
 
 func GuessVendorFromURL(connectionString string) string {
@@ -51,6 +57,8 @@ func GetVendorPrefix(connectionString string) string {
 		return constants.VMWARE
 	} else if strings.HasPrefix(strings.ToLower(connectionString), strings.ToLower(constants.MICROSOFT+":")) {
 		return constants.MICROSOFT
+	} else if connectionString != "" && strings.ToLower(connectionString[:strings.Index(connectionString, ":")]) != "https" {
+		return connectionString[:strings.Index(connectionString, ":")]
 	}
 	return ""
 }

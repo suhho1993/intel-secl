@@ -23,6 +23,7 @@ func (vcf *VmwareConnectorFactory) GetHostConnector(vc types.VendorConnector, aa
 	if err!= nil {
 		return nil, errors.Wrap(err, "vmware_host_connector_factory:GetHostConnector() Invalid vcenter URL provided")
 	}
+
 	vmwareClient, err := vmware.NewVMwareClient(parsedURL, vc.Configuration.Username, vc.Configuration.Password,
 		vc.Configuration.Hostname)
 	if err != nil {

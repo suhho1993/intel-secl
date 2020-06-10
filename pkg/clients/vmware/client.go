@@ -7,15 +7,17 @@ package vmware
 
 import (
 	"context"
-	"github.com/vmware/govmomi/vim25/methods"
-	"github.com/vmware/govmomi/vim25/types"
-
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/session"
 	"github.com/vmware/govmomi/view"
+	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
+	"github.com/vmware/govmomi/vim25/soap"
+	"github.com/vmware/govmomi/vim25/types"
 	"net/url"
 	"strings"
 )
@@ -29,8 +31,7 @@ type VMWareClient interface {
 
 const HOST_SYSTEM_PROPERTY = "HostSystem"
 
-func NewVMwareClient(vcenterApiUrl *url.URL, vcenterUserName string, vcenterPassword string,
-	hostName string) (VMWareClient, error) {
+func NewVMwareClient(vcenterApiUrl *url.URL, vcenterUserName, vcenterPassword, hostName string) (VMWareClient, error) {
 
 	vmwareClient := vmwareClient{
 		BaseURL:         vcenterApiUrl,
@@ -41,15 +42,16 @@ func NewVMwareClient(vcenterApiUrl *url.URL, vcenterUserName string, vcenterPass
 	//Set username and password in the same URL struct
 	vmwareClient.BaseURL.User = url.UserPassword(vmwareClient.vCenterUsername, vmwareClient.vCenterPassword)
 
-	ctx := context.Background()
-	host, vCenterClient, err := getVmwareHostReference(&vmwareClient, ctx)
+	ctx, _ := context.WithCancel(context.Background())
+	vmwareClient.Context = ctx
+
+	host, vCenterClient, err := getVmwareHostReference(&vmwareClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "vmware/client:NewVMwareClient() Error creating Vmware client")
 	}
 
 	vmwareClient.hostReference = host
 	vmwareClient.vCenterClient = vCenterClient
-	vmwareClient.Context = ctx
 
 	return &vmwareClient, nil
 }
@@ -71,7 +73,6 @@ func (vc *vmwareClient) GetHostInfo() (taModel.HostInfo, error) {
 	var hostInfo taModel.HostInfo
 
 	vcenterVersion := vc.vCenterClient.ServiceContent.About.Version
-
 	hostInfo.HostName = vc.hostReference.Name
 	hostInfo.VMMName = vc.hostReference.Config.Product.Name
 	hostInfo.OSName = vc.hostReference.Config.Product.Name
@@ -99,7 +100,6 @@ func (vc *vmwareClient) GetHostInfo() (taModel.HostInfo, error) {
 		hostInfo.HardwareFeatures.TPM.Meta.TPMVersion = vc.hostReference.Capability.TpmVersion
 		hostInfo.HardwareFeatures.TXT = &taModel.HardwareFeature{Enabled: *vc.hostReference.Capability.TxtEnabled}
 	}
-
 	return hostInfo, nil
 }
 
@@ -116,25 +116,45 @@ func (vc *vmwareClient) GetTPMAttestationReport() (*types.QueryTpmAttestationRep
 	return attestationReport, nil
 }
 
-func getVmwareHostReference(vc *vmwareClient, ctx context.Context) (mo.HostSystem, *govmomi.Client, error) {
+func getVmwareHostReference(vc *vmwareClient) (mo.HostSystem, *govmomi.Client, error) {
 
 	log.Trace("vmware/client:getVmwareHostReference() Entering ")
 	defer log.Trace("vmware/client:getVmwareHostReference() Leaving ")
-	vmwareClient, err := govmomi.NewClient(ctx, vc.BaseURL, true)
+
+	soapClient := soap.NewClient(vc.BaseURL, true)
+
+	vimClient, err := vim25.NewClient(vc.Context, soapClient)
 	if err != nil {
-		return mo.HostSystem{}, vmwareClient, errors.Wrap(err, "vmware/client:getVmwareHostReference() Error creating vmware client")
+		return mo.HostSystem{}, &govmomi.Client{}, errors.Wrap(err, "vmware/client:getVmwareHostReference() Error " +
+			"creating vim25 client")
+	}
+	vmwareClient := &govmomi.Client{
+		Client:         vimClient,
+		SessionManager: session.NewManager(vimClient),
+	}
+
+	// Only login if the URL contains user information.
+	if vc.BaseURL.User != nil || vc.BaseURL.User.String() != "" {
+		err = vmwareClient.Login(vc.Context, vc.BaseURL.User)
+		if err != nil {
+			return mo.HostSystem{}, vmwareClient, err
+		}
 	}
 
 	viewManager := view.NewManager(vmwareClient.Client)
-	viewer, err := viewManager.CreateContainerView(ctx, vmwareClient.ServiceContent.RootFolder, []string{HOST_SYSTEM_PROPERTY}, true)
+	viewer, err := viewManager.CreateContainerView(vc.Context, vmwareClient.ServiceContent.RootFolder,
+		[]string{HOST_SYSTEM_PROPERTY}, true)
+	defer viewManager.Destroy(vc.Context)
+
 	if err != nil {
-		return mo.HostSystem{}, vmwareClient, errors.Wrap(err, "vmware/client:getVmwareHostReference() Error " +
+		return mo.HostSystem{}, vmwareClient, errors.Wrap(err, "vmware/client:getVmwareHostReference() Error "+
 			"creating container view from client")
 	}
 
 	var hs []mo.HostSystem
 
-	err = viewer.Retrieve(ctx, []string{HOST_SYSTEM_PROPERTY}, []string{"name", "summary", "config", "capability", "hardware", "runtime"}, &hs)
+	err = viewer.Retrieve(vc.Context, []string{HOST_SYSTEM_PROPERTY}, []string{"name", "summary", "config",
+		"capability", "hardware", "runtime"}, &hs)
 	if err != nil {
 		return mo.HostSystem{}, vmwareClient, err
 	}
@@ -144,6 +164,6 @@ func getVmwareHostReference(vc *vmwareClient, ctx context.Context) (mo.HostSyste
 			return host, vmwareClient, nil
 		}
 	}
-	return mo.HostSystem{}, vmwareClient, errors.New("vmware/client:getVmwareHostReference() No host with hostname " +
-		vc.HostName + " found in cluster")
+	return mo.HostSystem{}, vmwareClient, errors.New("vmware/client:getVmwareHostReference() No host with " +
+		"hostname " + vc.HostName + " found in cluster")
 }

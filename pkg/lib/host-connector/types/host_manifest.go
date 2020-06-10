@@ -7,8 +7,8 @@ package types
 import (
 	"crypto/x509"
 	"encoding/base64"
-	"github.com/pkg/errors"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"github.com/pkg/errors"
 )
 
 type HostManifest struct {
@@ -19,7 +19,6 @@ type HostManifest struct {
 	BindingKeyCertificate string           `json:"binding_key_certificate,omitempty"`
 	MeasurementXmls       []string         `json:"measurement_xmls,omitempty"`
 }
-
 
 func (hostManifest *HostManifest) GetAIKCertificate() (*x509.Certificate, error) {
 

@@ -8,27 +8,39 @@ package host_connector
 import (
 	"encoding/json"
 	"encoding/xml"
-	"github.com/stretchr/testify/assert"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/ta"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io/ioutil"
-	"testing"
 	"net/url"
+	"testing"
 )
 
-func TestHostManifestParsing(t *testing.T) {
-	log.Trace("resource/flavors_test:TestHostManifestParsing() Entering")
-	defer log.Trace("resource/flavors_test:TestHostManifestParsing() Leaving")
+func TestGetHostDetails(t *testing.T) {
+	// create a mock ta client that will return dummy data to host-connector
+	mockTAClient, err := ta.NewMockTAClient()
+	assert.NoError(t, err)
+	var hostInfo taModel.HostInfo
+	hostInfoJson, err := ioutil.ReadFile("./test/sample_platform_info.json")
+	assert.NoError(t, err)
+	err = json.Unmarshal(hostInfoJson, &hostInfo)
+	assert.NoError(t, err)
 
-	var hostManifest types.HostManifest
-	readBytes, err := ioutil.ReadFile("./test/sample_host_manifest.txt")
-	assert.Equal(t, err, nil)
-	err = json.Unmarshal(readBytes, &hostManifest)
-	assert.Equal(t, err, nil)
-	log.Info("Host Manifest : ", hostManifest)
+	mockTAClient.On("GetHostInfo").Return(hostInfo, nil)
+
+	// create an intel host connector and collect the manifest
+	intelConnector := IntelConnector{
+		client: mockTAClient,
+	}
+
+	hostInfo, err = intelConnector.GetHostDetails()
+	assert.NoError(t, err)
+	assert.Equal(t, "RedHatEnterprise", hostInfo.OSName )
+	assert.Equal(t, "Intel Corporation", hostInfo.BiosName)
 }
+
 
 func TestCreateHostManifestFromSampleData(t *testing.T) {
 
@@ -50,7 +62,7 @@ func TestCreateHostManifestFromSampleData(t *testing.T) {
 	err = json.Unmarshal(b, &hostInfo)
 	assert.NoError(t, err)
 	mockTAClient.On("GetHostInfo").Return(hostInfo, nil)
-	
+
 	// read the aik that will be returned by the mock
 	aik, err := ioutil.ReadFile("./test/aik.der")
 	assert.NoError(t, err)
@@ -66,14 +78,14 @@ func TestCreateHostManifestFromSampleData(t *testing.T) {
 	mockTAClient.On("GetBindingKeyCertificate").Return([]byte{}, nil)
 
 	// create an intel host connector and collect the manifest
-	intelConnector := IntelConnector {
-		client : mockTAClient,
+	intelConnector := IntelConnector{
+		client: mockTAClient,
 	}
 
 	// the sample data in ./test used this nonce which needs to be provided to GetHostManifest...
 	nonce := "3FvsK0fpHg5qtYuZHn1MriTMOxc="
 
-	hostManifest, err := intelConnector.GetHostManifest(nonce, []int {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23}, []string {"SHA1", "SHA256"})
+	hostManifest, err := intelConnector.GetHostManifest(nonce, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}, []string{"SHA1", "SHA256"})
 	assert.NoError(t, err)
 
 	json, err := json.Marshal(hostManifest)
@@ -163,11 +175,81 @@ func TestEventReplay256(t *testing.T) {
 
 	var eventLogEntry types.EventLogEntry
 	var pcr18 types.Pcr
-	
+
 	assert.NoError(t, json.Unmarshal([]byte(eventLogJson), &eventLogEntry))
 	assert.NoError(t, json.Unmarshal([]byte(pcr18json), &pcr18))
 
-	cumalativeHash, err := eventLogEntry.Replay()
+	cumulativeHash, err := eventLogEntry.Replay()
 	assert.NoError(t, err)
-	assert.Equal(t, pcr18.Value, cumalativeHash)
+	assert.Equal(t, pcr18.Value, cumulativeHash)
+}
+
+func TestGetMeasurementFromManifest(t *testing.T) {
+	// create a mock ta client that will return dummy data to host-connector
+	mockTAClient, err := ta.NewMockTAClient()
+	var manifest taModel.Manifest
+	var measurement taModel.Measurement
+
+	manifestXml, err := ioutil.ReadFile("./test/sample_manifest.xml")
+	assert.NoError(t, err)
+
+	err = xml.Unmarshal([]byte(manifestXml), &manifest)
+	assert.NoError(t, err)
+
+	measurementXml, err := ioutil.ReadFile("./test/sample_measurement.xml")
+	err = xml.Unmarshal(measurementXml, &measurement)
+	assert.NoError(t, err)
+	mockTAClient.On("GetMeasurementFromManifest", manifest).Return(measurement, nil)
+
+	// create an intel host connector and collect the manifest
+	intelConnector := IntelConnector{
+		client: mockTAClient,
+	}
+
+	measurementResponse, err := intelConnector.GetMeasurementFromManifest(manifest)
+	assert.NoError(t, err)
+	log.Info("Measurement is : ", measurementResponse)
+}
+
+func TestDeployAssetTag(t *testing.T) {
+	// create a mock ta client that will return dummy data to host-connector
+	mockTAClient, err := ta.NewMockTAClient()
+	assert.NoError(t, err)
+
+	hardwareUUID := "7a569dad-2d82-49e4-9156-069b0065b262"
+	tag := "tHgfRQED1+pYgEZpq3dZC9ONmBCZKdx10LErTZs1k/k="
+
+	mockTAClient.On("DeployAssetTag", hardwareUUID, tag).Return(nil)
+
+	// create an intel host connector and collect the manifest
+	intelConnector := IntelConnector{
+		client: mockTAClient,
+	}
+
+	err = intelConnector.DeployAssetTag(hardwareUUID, tag)
+	assert.NoError(t, err)
+}
+
+func TestDeploySoftwareManifest(t *testing.T) {
+	// create a mock ta client that will return dummy data to host-connector
+	mockTAClient, err := ta.NewMockTAClient()
+	assert.NoError(t, err)
+
+	var manifest taModel.Manifest
+
+	manifestXml, err := ioutil.ReadFile("./test/sample_manifest.xml")
+	assert.NoError(t, err)
+
+	err = xml.Unmarshal(manifestXml, &manifest)
+	assert.NoError(t, err)
+
+	mockTAClient.On("DeploySoftwareManifest", manifest).Return(nil)
+
+	// create an intel host connector and collect the manifest
+	intelConnector := IntelConnector{
+		client: mockTAClient,
+	}
+
+	err = intelConnector.DeploySoftwareManifest(manifest)
+	assert.NoError(t, err)
 }

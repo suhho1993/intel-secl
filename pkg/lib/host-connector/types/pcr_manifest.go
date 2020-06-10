@@ -279,11 +279,11 @@ func (eventLogEntry *EventLogEntry) Subtract(eventsToSubtract *EventLogEntry) (*
 	}
 
 	index := make(map[string]int)
-	for i, eventLog := range(eventsToSubtract.EventLogs) {
+	for i, eventLog := range eventsToSubtract.EventLogs {
 		index[eventLog.Value] = i
 	}
 
-	for _, eventLog := range(eventLogEntry.EventLogs) {
+	for _, eventLog := range eventLogEntry.EventLogs {
 		if _, ok := index[eventLog.Value]; !ok {
 			difference.EventLogs = append(difference.EventLogs, eventLog)
 		}
