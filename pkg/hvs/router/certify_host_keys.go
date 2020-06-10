@@ -15,7 +15,8 @@ func SetCertifyHostKeysRoutes(router *mux.Router) *mux.Router {
 	defaultLog.Trace("router/certify_host_keys:SetCertifyHostKeys() Entering")
 	defer defaultLog.Trace("router/certify_host_keys:SetCertifyHostKeys() Leaving")
 
-	certifyHostKeysController := controllers.CertifyHostKeysController{}
+	fStore := controllers.NewPrivacyCAFileStore(consts.KeyPath, consts.CertPath, consts.EndorsementCAFile, consts.AikRequestsDir)
+	certifyHostKeysController := controllers.CertifyHostKeysController{Store: fStore}
 
 	router.HandleFunc("/rpc/certify-host-signing-key", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostKeysController.CertifySigningKey), []string{consts.CertifyHostSigningKey}))).Methods("POST")
 	router.HandleFunc("/rpc/certify-host-binding-key", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostKeysController.CertifyBindingKey), []string{consts.CertifyHostSigningKey}))).Methods("POST")
@@ -26,7 +27,9 @@ func SetCertifyAiksRoutes(router *mux.Router) *mux.Router {
 	defaultLog.Trace("router/certify_host_aiks:SetCertifyAiksRoutes() Entering")
 	defer defaultLog.Trace("router/certify_host_aiks:SetCertifyAiksRoutes() Leaving")
 
-	certifyHostAiksController := controllers.CertifyHostAiksController{}
+	fStore := controllers.NewPrivacyCAFileStore(consts.KeyPath, consts.CertPath, consts.EndorsementCAFile, consts.AikRequestsDir)
+
+	certifyHostAiksController := controllers.CertifyHostAiksController{Store: fStore}
 	router.Handle("/privacyca/identity-challenge-request", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge),
 		[]string{consts.CertifyAik}))).Methods("POST")
 	router.Handle("/privacyca/identity-challenge-response", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse),
