@@ -65,11 +65,6 @@ type Configuration struct {
 	WriteTimeout      time.Duration
 	IdleTimeout       time.Duration
 	MaxHeaderBytes    int
-
-	TlsPolicy struct {
-		Allow   []string
-		Default string
-	}
 }
 
 var mu sync.Mutex
@@ -220,16 +215,6 @@ func (conf *Configuration) SaveConfiguration(c setup.Context) error {
 		conf.MaxHeaderBytes = constants.DefaultMaxHeaderBytes
 	} else {
 		conf.MaxHeaderBytes = maxHeaderBytes
-	}
-
-	tlsPolicyAllow, err := c.GetenvString("HVS_TLS_POLICY_ALLOW", "HVS Tls Policy Allow")
-	if err == nil {
-		conf.TlsPolicy.Allow[0] = tlsPolicyAllow
-	}
-
-	defaultTlsPolicyId, err := c.GetenvString("HVS_DEFAULT_TLS_POLICY_ID", "HVS Default Tls Policy Id")
-	if err == nil {
-		conf.TlsPolicy.Default = defaultTlsPolicyId
 	}
 
 	conf.LogEnableStdout = false

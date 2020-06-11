@@ -18,14 +18,6 @@ type (
 		Delete(*uuid.UUID) error
 	}
 
-	TlsPolicyStore interface {
-		Create(*hvs.TlsPolicy) (*hvs.TlsPolicy, error)
-		Retrieve(uuid.UUID) (*hvs.TlsPolicy, error)
-		Update(*hvs.TlsPolicy) (*hvs.TlsPolicy, error)
-		Delete(uuid.UUID) error
-		Search(*hvs.TlsPolicyFilterCriteria) (*hvs.TlsPolicyCollection, error)
-	}
-
 	FlavorStore interface {
 	}
 	// TODO: Define all contract methods here

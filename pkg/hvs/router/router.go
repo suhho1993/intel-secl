@@ -86,7 +86,6 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetFlavorGroupRoutes(subRouter, dataStore)
 	subRouter = SetCertifyAiksRoutes(subRouter)
 	subRouter = SetCertifyHostKeysRoutes(subRouter)
-	subRouter = SetTlsPolicyRoutes(subRouter, dataStore)
 }
 
 func NewDataStore(config *postgres.Config) (*postgres.DataStore, error) {
