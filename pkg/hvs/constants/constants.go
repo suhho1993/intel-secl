@@ -71,6 +71,11 @@ const (
 
 	CertifyHostSigningKey = "host_signing_key_certificates:create"
 
+	HostCreate   = "hosts:create"
+	HostRetrieve = "hosts:retrieve"
+	HostUpdate   = "hosts:store"
+	HostDelete   = "hosts:delete"
+	HostSearch   = "hosts:search"
 )
 
 //Postgres connection SslModes

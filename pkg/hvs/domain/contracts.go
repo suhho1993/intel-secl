@@ -18,6 +18,14 @@ type (
 		Delete(*uuid.UUID) error
 	}
 
+	HostStore interface {
+		Create(*hvs.Host) (*hvs.Host, error)
+		Retrieve(uuid.UUID) (*hvs.Host, error)
+		Update(*hvs.Host) (*hvs.Host, error)
+		Delete(uuid.UUID) error
+		Search(*hvs.HostFilterCriteria) (*hvs.HostCollection, error)
+	}
+
 	FlavorStore interface {
 	}
 	// TODO: Define all contract methods here
