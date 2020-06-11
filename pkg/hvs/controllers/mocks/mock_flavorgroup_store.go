@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"github.com/google/uuid"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
@@ -21,11 +22,11 @@ type MockFlavorgroupStore struct {
 func (store *MockFlavorgroupStore) Delete(id *uuid.UUID) error {
 	for i, fg := range store.flavorgroupStore {
 		if fg.ID == *id {
-			store.flavorgroupStore[i] = nil
+			store.flavorgroupStore[i] = &hvs.FlavorGroup{}
 			return nil
 		}
 	}
-	return errors.New("record not found")
+	return errors.New(commErr.RowsNotFound)
 }
 
 // Retrieve returns FlavorGroup
@@ -35,7 +36,7 @@ func (store *MockFlavorgroupStore) Retrieve(id *uuid.UUID) (*hvs.FlavorGroup, er
 			return fg, nil
 		}
 	}
-	return nil, errors.New("record not found")
+	return nil, errors.New(commErr.RowsNotFound)
 }
 
 // Search returns all FlavorGroups
@@ -77,20 +78,20 @@ func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	store.Create(&hvs.FlavorGroup{
 		ID:   uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		Name: "hvs_flavorgroup_test1",
-		FlavorMatchPolicyCollection: &hvs.FlavorMatchPolicyCollection{
+		FlavorMatchPolicyCollection: hvs.FlavorMatchPolicyCollection{
 			FlavorMatchPolicies: []hvs.FlavorMatchPolicy{
 				{
 					FlavorPart: cf.FlavorPartOs,
 					MatchPolicy: hvs.MatchPolicy{
-						MatchType: hvs.AllOf,
-						Required:  hvs.Required,
+						MatchType: hvs.MatchTypeAllOf,
+						Required:  hvs.FlavorRequired,
 					},
 				},
 				{
 					FlavorPart: cf.FlavorPartPlatform,
 					MatchPolicy: hvs.MatchPolicy{
-						MatchType: hvs.AnyOf,
-						Required:  hvs.RequiredIfDefined,
+						MatchType: hvs.MatchTypeAnyOf,
+						Required:  hvs.FlavorRequiredIfDefined,
 					},
 				},
 			},
@@ -100,13 +101,13 @@ func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	store.Create(&hvs.FlavorGroup{
 		ID:   uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
 		Name: "hvs_flavorgroup_test2",
-		FlavorMatchPolicyCollection: &hvs.FlavorMatchPolicyCollection{
+		FlavorMatchPolicyCollection: hvs.FlavorMatchPolicyCollection{
 			FlavorMatchPolicies: []hvs.FlavorMatchPolicy{
 				{
 					FlavorPart: cf.FlavorPartHostUnique,
 					MatchPolicy: hvs.MatchPolicy{
-						MatchType: hvs.AllOf,
-						Required:  hvs.Required,
+						MatchType: hvs.MatchTypeAllOf,
+						Required:  hvs.FlavorRequired,
 					},
 				},
 			},

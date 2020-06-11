@@ -5,13 +5,10 @@
 package postgres
 
 import (
-	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 type FlavorGroupStore struct {
@@ -22,42 +19,33 @@ func NewFlavorGroupStore(store *DataStore) *FlavorGroupStore {
 	return &FlavorGroupStore{store}
 }
 
-func (f *FlavorGroupStore) Create(flavorGroup *hvs.FlavorGroup) (*hvs.FlavorGroup, error) {
+func (f *FlavorGroupStore) Create(fg *hvs.FlavorGroup) (*hvs.FlavorGroup, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:Create() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Create() Leaving")
 
-	dbFlavorGroup, err := toDbFlavorGroup(flavorGroup)
-	if err != nil {
-		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Create() failed to marshal to dbFlavorgroup")
-	}
-
-	dbFlavorGroup.ID, err = uuid.NewUUID()
-	if err != nil {
-		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Create() Error generating new UUID")
+	fg.ID = uuid.New()
+	dbFlavorGroup := &flavorGroup {
+		ID:                    fg.ID,
+		Name:                  fg.Name,
+		FlavorTypeMatchPolicy: PGFlavorMatchPolicies{fg.FlavorMatchPolicyCollection.FlavorMatchPolicies},
 	}
 
 	if err := f.Store.Db.Create(&dbFlavorGroup).Error; err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Create() failed to create Flavorgroup")
 	}
-	flavorGroup, err = fromDbFlavorGroup(dbFlavorGroup)
-	if err != nil {
-		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Create() failed to unmarshal to Flavorgroup")
-	}
-	return flavorGroup, nil
+	return fg, nil
 }
 
 func (f *FlavorGroupStore) Retrieve(flavorGroupId *uuid.UUID) (*hvs.FlavorGroup, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Leaving")
 
-	dbFlavorGroup := flavorGroup{
-		ID: *flavorGroupId,
+	fg := hvs.FlavorGroup{}
+	row := f.Store.Db.Model(&flavorGroup{}).Where(&flavorGroup{ID: *flavorGroupId}).Row()
+	if err := row.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.FlavorMatchPolicyCollection)); err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Retrieve() failed to scan record")
 	}
-	err := f.Store.Db.Where(&dbFlavorGroup).First(&dbFlavorGroup).Error
-	if err != nil {
-		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Retrieve() failed to retrieve Flavorgroup")
-	}
-	return fromDbFlavorGroup(&dbFlavorGroup)
+	return &fg, nil
 }
 
 func (f *FlavorGroupStore) Search(fgFilter *hvs.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
@@ -71,13 +59,22 @@ func (f *FlavorGroupStore) Search(fgFilter *hvs.FlavorGroupFilterCriteria) (*hvs
 			" a gorm query object in FlavorGroups Search function.")
 	}
 
-	var dbFlavorgroups []flavorGroup
-	if err := tx.Find(&dbFlavorgroups).Error; err != nil {
-		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Search() failed to search all "+
-			"Flavorgroups")
+	rows, err := tx.Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Search() failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	flavorgroupCollection := hvs.FlavorgroupCollection{ Flavorgroups: []*hvs.FlavorGroup{}}
+	for rows.Next() {
+		fg := hvs.FlavorGroup{}
+		if err := rows.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.FlavorMatchPolicyCollection)); err != nil {
+			return nil, errors.Wrap(err, "postgres/flavorgroup_store:Search() failed to scan record")
+		}
+		flavorgroupCollection.Flavorgroups = append(flavorgroupCollection.Flavorgroups, &fg)
 	}
 
-	return fromDbFlavorGroups(dbFlavorgroups)
+	return &flavorgroupCollection, nil
 }
 
 func (f *FlavorGroupStore) Delete(flavorGroupId *uuid.UUID) error {
@@ -102,9 +99,11 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *hvs.FlavorGroupFilterCri
 		return nil
 	}
 
+	tx = tx.Model(&flavorGroup{})
 	if fgFilter == nil {
-		return tx.Where(&flavorGroup{})
+		return tx
 	}
+
 	if fgFilter.Id != "" {
 		tx = tx.Where("id = ?", fgFilter.Id)
 	} else if fgFilter.NameEqualTo != "" {
@@ -123,63 +122,10 @@ func toDbFlavorGroup(fg *hvs.FlavorGroup) (*flavorGroup, error) {
 		return nil, nil
 	}
 
-	flavorMatchPolicyCollection, err := json.Marshal(fg.FlavorMatchPolicyCollection)
-	if err != nil {
-		return nil, errors.Wrap(err, "postgres/flavorgroup_store:toDbFlavorGroup() failed to" +
-			" marshal FlavorMatchPolicyCollection to JSON")
-	}
 	dbFlavorGroup := flavorGroup{
 		ID:                    fg.ID,
 		Name:                  fg.Name,
-		FlavorTypeMatchPolicy: &postgres.Jsonb{RawMessage: flavorMatchPolicyCollection},
+		FlavorTypeMatchPolicy: PGFlavorMatchPolicies{fg.FlavorMatchPolicyCollection.FlavorMatchPolicies},
 	}
 	return &dbFlavorGroup, nil
-}
-
-func fromDbFlavorGroups(dbFlavorgroups []flavorGroup) (*hvs.FlavorgroupCollection, error) {
-	defaultLog.Trace("postgres/flavorgroup_store:fromDbFlavorGroups() Entering")
-	defer defaultLog.Trace("postgres/flavorgroup_store:fromDbFlavorGroups() Leaving")
-
-	var flavorgroupCollection hvs.FlavorgroupCollection
-	if dbFlavorgroups == nil || len(dbFlavorgroups) == 0 {
-		flavorgroupCollection.Flavorgroups = []*hvs.FlavorGroup{}
-		return &flavorgroupCollection, nil
-	}
-
-	for _, dbFlavorGroup := range dbFlavorgroups {
-		flavorgroup, err := fromDbFlavorGroup(&dbFlavorGroup)
-		if err != nil {
-			return &flavorgroupCollection, errors.Wrap(err, "postgres/flavorgroup_store:fromDbFlavorGroups() " +
-				"failed to unmarshal dbFlavorGroup")
-		}
-		flavorgroupCollection.Flavorgroups = append(flavorgroupCollection.Flavorgroups, flavorgroup)
-	}
-
-	return &flavorgroupCollection, nil
-}
-
-func fromDbFlavorGroup(fg *flavorGroup) (*hvs.FlavorGroup, error) {
-	log.Trace("postgres/flavorgroup_store:fromDbFlavorGroup() Entering")
-	defer log.Trace("postgres/flavorgroup_store:fromDbFlavorGroup() Leaving")
-
-	if fg == nil {
-		return nil, nil
-	}
-
-	var matchPolicyCollection hvs.FlavorMatchPolicyCollection
-	err := json.Unmarshal(fg.FlavorTypeMatchPolicy.RawMessage, &matchPolicyCollection)
-	if err != nil {
-		return nil, errors.Wrap(err, "postgres/flavorgroup_store:fromDbFlavorGroup()" +
-			" Error in unmarshalling the FlavorTypeMatchPolicy")
-	}
-
-	flavorGroup := hvs.FlavorGroup{
-		ID:   fg.ID,
-		Name: fg.Name,
-	}
-
-	if &matchPolicyCollection != nil && len(matchPolicyCollection.FlavorMatchPolicies) > 0 {
-		flavorGroup.FlavorMatchPolicyCollection = &matchPolicyCollection
-	}
-	return &flavorGroup, nil
 }

@@ -15,11 +15,11 @@ type FlavorgroupCollection struct {
 }
 
 type FlavorGroup struct {
-	ID                          uuid.UUID                    `json:"id,omitempty"`
-	Name                        string                       `json:"name,omitempty"`
-	FlavorIds                   []string                     `json:"flavorIds,omitempty"`
-	Flavors                     []Flavor                     `json:"flavors,omitempty"`
-	FlavorMatchPolicyCollection *FlavorMatchPolicyCollection `json:"flavor_match_policy_collection,omitempty"`
+	ID                          uuid.UUID                   `json:"id,omitempty"`
+	Name                        string                      `json:"name,omitempty"`
+	FlavorIds                   []string                    `json:"flavorIds,omitempty"`
+	Flavors                     []Flavor                    `json:"flavors,omitempty"`
+	FlavorMatchPolicyCollection FlavorMatchPolicyCollection `json:"flavor_match_policy_collection,omitempty"`
 }
 
 type FlavorMatchPolicyCollection struct {
@@ -27,32 +27,34 @@ type FlavorMatchPolicyCollection struct {
 }
 
 type FlavorMatchPolicy struct {
-	FlavorPart  cf.FlavorPart  `json:"flavor_part,omitempty"`
-	MatchPolicy MatchPolicy `json:"match_policy,omitempty"`
+	FlavorPart  cf.FlavorPart `json:"flavor_part,omitempty"`
+	MatchPolicy MatchPolicy   `json:"match_policy,omitempty"`
 }
 
 type MatchPolicy struct {
-	MatchType MatchType      `json:"match_type,omitempty"`
-	Required  PolicyRequired `json:"required,omitempty"`
+	MatchType MatchType            `json:"match_type,omitempty"`
+	Required  FlavorRequiredPolicy `json:"required,omitempty"`
 }
 
 type MatchType string
 
 const (
-	AnyOf  MatchType = "ANY_OF"
-	AllOf  MatchType = "ALL_OF"
-	Latest MatchType = "LATEST"
+	MatchTypeAnyOf  MatchType = "ANY_OF"
+	MatchTypeAllOf  MatchType = "ALL_OF"
+	MatchTypeLatest MatchType = "LATEST"
 )
+
 func (mt MatchType) String() string {
 	return mt.String()
 }
 
-type PolicyRequired string
+type FlavorRequiredPolicy string
 
 const (
-	Required            PolicyRequired = "REQUIRED"
-	RequiredIfDefined   PolicyRequired = "REQUIRED_IF_DEFINED"
+	FlavorRequired          FlavorRequiredPolicy = "REQUIRED"
+	FlavorRequiredIfDefined FlavorRequiredPolicy = "REQUIRED_IF_DEFINED"
 )
-func (req PolicyRequired) String() string {
+
+func (req FlavorRequiredPolicy) String() string {
 	return req.String()
 }

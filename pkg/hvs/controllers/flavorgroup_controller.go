@@ -120,7 +120,7 @@ func (controller FlavorgroupController) Delete(w http.ResponseWriter, r *http.Re
 
 	delFlavorGroup, err := controller.Store.Retrieve(&id)
 	if err != nil {
-		if strings.Contains(err.Error(), commErr.RecordNotFound) {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", id).Info(
 				"controllers/flavorgroup_controller:Delete()  FlavorGroup with given ID does not exist")
 			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"FlavorGroup with given ID does not exist"}
@@ -154,7 +154,7 @@ func (controller FlavorgroupController) Retrieve(w http.ResponseWriter, r *http.
 
 	flavorGroup, err := controller.Store.Retrieve(&id)
 	if err != nil {
-		if strings.Contains(err.Error(), commErr.RecordNotFound) {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", id).Info(
 				"controllers/flavorgroup_controller:Retrieve() FlavorGroup with given ID does not exist")
 			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"FlavorGroup with given ID does not exist"}
@@ -181,7 +181,7 @@ func ValidateFlavorGroup(flavorGroup hvs.FlavorGroup) error {
 			return errors.Wrap(errs, "Valid FlavorGroup Name must be specified")
 		}
 	}
-	if flavorGroup.FlavorMatchPolicyCollection == nil || len(flavorGroup.FlavorMatchPolicyCollection.FlavorMatchPolicies) == 0  {
+	if len(flavorGroup.FlavorMatchPolicyCollection.FlavorMatchPolicies) == 0  {
 		return errors.New("Flavor Type Match Policy Collection must be specified")
 	}
 	return nil

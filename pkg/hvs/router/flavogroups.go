@@ -5,10 +5,12 @@
 package router
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 )
 
 // SetFlavorGroupRoutes registers routes for flavorgroups
@@ -19,6 +21,7 @@ func SetFlavorGroupRoutes(router *mux.Router, store *postgres.DataStore) *mux.Ro
 	flavorgroupStore := postgres.NewFlavorGroupStore(store)
 	flavorgroupController := controllers.FlavorgroupController{Store: flavorgroupStore}
 
+	flavorGroupIdExpr := fmt.Sprintf("%s%s", "/flavorgroups/", validation.IdReg)
 	router.Handle("/flavorgroups",
 		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Create),
 			[]string{constants.FlavorGroupCreate}))).Methods("POST")
@@ -27,12 +30,11 @@ func SetFlavorGroupRoutes(router *mux.Router, store *postgres.DataStore) *mux.Ro
 		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Search),
 			[]string{constants.FlavorGroupSearch}))).Methods("GET")
 
-	//TODO: Add regex for validation
-	router.Handle("/flavorgroups/{id}",
+	router.Handle(flavorGroupIdExpr,
 		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Delete),
 			[]string{constants.FlavorGroupDelete}))).Methods("DELETE")
 
-	router.Handle("/flavorgroups/{id}",
+	router.Handle(flavorGroupIdExpr,
 		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Retrieve),
 			[]string{constants.FlavorGroupRetrieve}))).Methods("GET")
 
