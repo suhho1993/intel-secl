@@ -14,7 +14,7 @@ type (
 	FlavorGroupStore interface {
 		Create(*hvs.FlavorGroup) (*hvs.FlavorGroup, error)
 		Retrieve(*uuid.UUID) (*hvs.FlavorGroup, error)
-		Search(*hvs.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error)
+		Search(*models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error)
 		Delete(*uuid.UUID) error
 	}
 
@@ -29,6 +29,15 @@ type (
 	FlavorStore interface {
 	}
 	// TODO: Define all contract methods here
+
+	// HostStatusStore specifies the DB operations that must be implemented for the Host Status API
+	HostStatusStore interface {
+		Create(*hvs.HostStatus) (*hvs.HostStatus, error)
+		Retrieve(uuid.UUID) (*hvs.HostStatus, error)
+		Search(*models.HostStatusFilterCriteria) (*hvs.HostStatusCollection, error)
+		Delete(uuid.UUID) error
+		Update(*hvs.HostStatus) error
+	}
 
 	QueueStore interface {
 		Search(*models.QueueFilterCriteria) ([]*models.Queue, error)

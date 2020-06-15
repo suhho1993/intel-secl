@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"net/http"
@@ -99,7 +100,6 @@ var _ = Describe("FlavorgroupController", func() {
 			})
 		})
 	})
-
 
 	// Specs for HTTP Get to "/flavorgroups/{flavorgroup_id}"
 	Describe("Get FlavorGroup by ID", func() {
@@ -310,7 +310,6 @@ var _ = Describe("FlavorgroupController", func() {
 		})
 	})
 
-
 	// Specs for flavorGroup validation
 	Describe("FlavorGroup Validation", func() {
 		Context("FlavorGroup with correct content", func() {
@@ -375,32 +374,32 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("FlavorGroupFilterCriteria Validation", func() {
 		Context("FlavorGroupFilterCriteria with correct/empty content", func() {
 			It("should pass FlavorGroupFilterCriteria validation", func() {
-				filterCriteria := hvs.FlavorGroupFilterCriteria{}
+				filterCriteria := models.FlavorGroupFilterCriteria{}
 				err := controllers.ValidateFgCriteria(filterCriteria)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 		})
 		Context("FlavorGroupFilterCriteria with incorrect content", func() {
 			It("should fail FlavorGroupFilterCriteria validation", func() {
-				filterCriteria := hvs.FlavorGroupFilterCriteria {
+				filterCriteria := models.FlavorGroupFilterCriteria{
 					Id: "123",
 				}
 				err := controllers.ValidateFgCriteria(filterCriteria)
 				Ω(err).Should(HaveOccurred())
 
-				filterCriteria = hvs.FlavorGroupFilterCriteria {
+				filterCriteria = models.FlavorGroupFilterCriteria{
 					HostId: "123",
 				}
 				err = controllers.ValidateFgCriteria(filterCriteria)
 				Ω(err).Should(HaveOccurred())
 
-				filterCriteria = hvs.FlavorGroupFilterCriteria {
+				filterCriteria = models.FlavorGroupFilterCriteria{
 					NameContains: "----",
 				}
 				err = controllers.ValidateFgCriteria(filterCriteria)
 				Ω(err).Should(HaveOccurred())
 
-				filterCriteria = hvs.FlavorGroupFilterCriteria {
+				filterCriteria = models.FlavorGroupFilterCriteria{
 					NameEqualTo: "----",
 				}
 				err = controllers.ValidateFgCriteria(filterCriteria)

@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
@@ -24,7 +25,7 @@ func (f *FlavorGroupStore) Create(fg *hvs.FlavorGroup) (*hvs.FlavorGroup, error)
 	defer defaultLog.Trace("postgres/flavorgroup_store:Create() Leaving")
 
 	fg.ID = uuid.New()
-	dbFlavorGroup := &flavorGroup {
+	dbFlavorGroup := &flavorGroup{
 		ID:                    fg.ID,
 		Name:                  fg.Name,
 		FlavorTypeMatchPolicy: PGFlavorMatchPolicies{fg.FlavorMatchPolicyCollection.FlavorMatchPolicies},
@@ -48,7 +49,7 @@ func (f *FlavorGroupStore) Retrieve(flavorGroupId *uuid.UUID) (*hvs.FlavorGroup,
 	return &fg, nil
 }
 
-func (f *FlavorGroupStore) Search(fgFilter *hvs.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
+func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:Search() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Search() Leaving")
 
@@ -65,7 +66,7 @@ func (f *FlavorGroupStore) Search(fgFilter *hvs.FlavorGroupFilterCriteria) (*hvs
 	}
 	defer rows.Close()
 
-	flavorgroupCollection := hvs.FlavorgroupCollection{ Flavorgroups: []*hvs.FlavorGroup{}}
+	flavorgroupCollection := hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{}}
 	for rows.Next() {
 		fg := hvs.FlavorGroup{}
 		if err := rows.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.FlavorMatchPolicyCollection)); err != nil {
@@ -91,7 +92,7 @@ func (f *FlavorGroupStore) Delete(flavorGroupId *uuid.UUID) error {
 }
 
 // helper function to build the query object for a FlavorGroup search.
-func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *hvs.FlavorGroupFilterCriteria) *gorm.DB {
+func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *models.FlavorGroupFilterCriteria) *gorm.DB {
 	defaultLog.Trace("postgres/flavorgroup_store:buildFlavorGroupSearchQuery() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:buildFlavorGroupSearchQuery() Leaving")
 

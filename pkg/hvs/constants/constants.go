@@ -7,23 +7,23 @@ package constants
 import "time"
 
 const (
-	ServiceName                    = "HVS"
-	OldServiceName                 = "mtwilson"
-	ApiVersion                     = "/v2"
-	ServiceUserName                = "hvs"
-	ServiceDir                     = "hvs/"
-	HomeDir                        = "/opt/" + ServiceDir
-	ConfigDir                      = "/etc/" + ServiceDir
-	ConfigFile                     = "config.yml"
-	ExecLinkPath                   = "/usr/bin/" + ServiceUserName
-	RunDirPath                     = "/run/" + ServiceDir
-	LogDir                         = "/var/log/" + ServiceDir
-	TrustedJWTSigningCertsDir      = ConfigDir + "certs/trustedjwt/"
-	TrustedCaCertsDir              = ConfigDir + "certs/trustedca/"
-	KeyPath                        = ConfigDir + "trusted-keys/privacy-ca-key.pem"
-	CertPath                       = TrustedCaCertsDir + "privacy-ca-cert.pem"
+	ServiceName               = "HVS"
+	OldServiceName            = "mtwilson"
+	ApiVersion                = "/v2"
+	ServiceUserName           = "hvs"
+	ServiceDir                = "hvs/"
+	HomeDir                   = "/opt/" + ServiceDir
+	ConfigDir                 = "/etc/" + ServiceDir
+	ConfigFile                = "config.yml"
+	ExecLinkPath              = "/usr/bin/" + ServiceUserName
+	RunDirPath                = "/run/" + ServiceDir
+	LogDir                    = "/var/log/" + ServiceDir
+	TrustedJWTSigningCertsDir = ConfigDir + "certs/trustedjwt/"
+	TrustedCaCertsDir         = ConfigDir + "certs/trustedca/"
+	KeyPath                   = ConfigDir + "trusted-keys/privacy-ca-key.pem"
+	CertPath                  = TrustedCaCertsDir + "privacy-ca-cert.pem"
 	//TODO remove or dont use temporary files
-	AikRequestsDir                 = HomeDir + "privacyca-aik-requests/"
+	AikRequestsDir = HomeDir + "privacyca-aik-requests/"
 	//TODO use EndorsementCA file after implementation of create_endorsement_ca setup task
 	EndorsementCAFile              = ConfigDir + "certs/endorsement/EndorsementCA-external.pem"
 	AIKCertValidity                = 1
@@ -56,18 +56,22 @@ const (
 	DefaultLogEntryMaxlength       = 300
 	DefaultDbConnRetryAttempts     = 4
 	DefaultDbConnRetryTime         = 1
+	DefaultSearchResultRowLimit    = 10000
 )
 
 //Roles and permissions
 const (
 	Administrator = "*:*:*"
 
-	FlavorGroupCreate     = "flavorgroups:create"
-	FlavorGroupRetrieve   = "flavorgroups:retrieve"
-	FlavorGroupSearch     = "flavorgroups:search"
-	FlavorGroupDelete     = "flavorgroups:delete"
+	FlavorGroupCreate   = "flavorgroups:create"
+	FlavorGroupRetrieve = "flavorgroups:retrieve"
+	FlavorGroupSearch   = "flavorgroups:search"
+	FlavorGroupDelete   = "flavorgroups:delete"
 
-	CertifyAik            = "host_aiks:certify"
+	CertifyAik = "host_aiks:certify"
+
+	HostStatusRetrieve = "host_status:retrieve"
+	HostStatusSearch   = "host_status:search"
 
 	CertifyHostSigningKey = "host_signing_key_certificates:create"
 
@@ -95,4 +99,9 @@ const (
 	Stopped State = false
 	// Running means the daemon is active
 	Running State = true
+)
+
+// Timestamp operations
+const (
+	HostStatusDateFormat = "2006-01-02 15:04:05"
 )

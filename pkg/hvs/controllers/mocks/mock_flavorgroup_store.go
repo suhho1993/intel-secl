@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -40,7 +41,7 @@ func (store *MockFlavorgroupStore) Retrieve(id *uuid.UUID) (*hvs.FlavorGroup, er
 }
 
 // Search returns all FlavorGroups
-func (store *MockFlavorgroupStore) Search(criteria *hvs.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
+func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
 	if criteria == nil {
 		return &hvs.FlavorgroupCollection{Flavorgroups: store.flavorgroupStore}, nil
 	} else if criteria.Id != "" {

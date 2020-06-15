@@ -26,11 +26,11 @@ var secLog = commLog.GetSecurityLogger()
 
 type Config struct {
 	Vendor, Host, Port, Dbname, User, Password, SslMode, SslCert string
-	ConnRetryAttempts, ConnRetryTime int
+	ConnRetryAttempts, ConnRetryTime                             int
 }
 
 type DataStore struct {
-	Db  *gorm.DB
+	Db *gorm.DB
 }
 
 // New returns a DataStore instance with the gorm.DB set with the postgres
@@ -109,11 +109,12 @@ func (ds *DataStore) ExecuteSqlFile(file string) error {
 	}
 	return nil
 }
+
 func (ds *DataStore) Migrate() error {
 	defaultLog.Trace("postgres/postgres:Migrate() Entering")
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 
-	ds.Db.AutoMigrate(flavorGroup{}, domain.Host{})
+	ds.Db.AutoMigrate(flavorGroup{}, domain.Host{}, hostStatus{})
 	return nil
 }
 

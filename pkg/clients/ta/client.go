@@ -19,19 +19,19 @@ import (
 
 type TAClient interface {
 	GetHostInfo() (taModel.HostInfo, error)
-	GetTPMQuote(nonce string, pcrList []int, pcrBankList []string) (taModel.TpmQuoteResponse, error) 
+	GetTPMQuote(nonce string, pcrList []int, pcrBankList []string) (taModel.TpmQuoteResponse, error)
 	GetAIK() ([]byte, error)
 	GetBindingKeyCertificate() ([]byte, error)
 	DeployAssetTag(hardwareUUID, tag string) error
 	DeploySoftwareManifest(manifest taModel.Manifest) error
 	GetMeasurementFromManifest(manifest taModel.Manifest) (taModel.Measurement, error)
-	GetBaseURL() (*url.URL)
+	GetBaseURL() *url.URL
 }
 
 func NewTAClient(aasApiUrl string, taApiUrl *url.URL, serviceUserName string, serviceUserPassword string,
-				 trustedCaCerts string) (TAClient, error) {
+	trustedCaCerts string) (TAClient, error) {
 
-	taClient := taClient {
+	taClient := taClient{
 		AasURL:          aasApiUrl,
 		BaseURL:         taApiUrl,
 		ServiceUsername: serviceUserName,
@@ -41,7 +41,6 @@ func NewTAClient(aasApiUrl string, taApiUrl *url.URL, serviceUserName string, se
 
 	return &taClient, nil
 }
-
 
 type taClient struct {
 	AasURL          string
@@ -174,12 +173,12 @@ func (tc *taClient) GetBindingKeyCertificate() ([]byte, error) {
 	}
 	httpRequest.Header.Set("Accept", "application/x-pem-file")
 
-	secLog.Debugf("clients/trust_agent_client:GetBindingKeyCertificate() TA Binding key certificate retrieval " +
+	secLog.Debugf("clients/trust_agent_client:GetBindingKeyCertificate() TA Binding key certificate retrieval "+
 		"GET request URL: %s", requestURL.String())
 
 	httpResponse, err := util.SendRequest(httpRequest, tc.AasURL, tc.ServiceUsername, tc.ServicePassword, tc.TrustedCaCerts)
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "client/trust_agent_client:GetBindingKeyCertificate() Error while " +
+		return []byte{}, errors.Wrap(err, "client/trust_agent_client:GetBindingKeyCertificate() Error while "+
 			"getting response  from Get Binding key certificate API")
 	}
 	log.Info("clients/trust_agent_client:GetAIK() Successfully received Binding key certificate from TA")
@@ -284,7 +283,7 @@ func (tc *taClient) GetMeasurementFromManifest(manifest taModel.Manifest) (taMod
 		return measurement, errors.Wrap(err, "client/trust_agent_client:GetMeasurementFromManifest() Error while unmarshalling"+
 			" response from Host application measurement from TA API")
 	}
-	log.Info("clients/trust_agent_client:GetMeasurementFromManifest() Successfully received meaurement for the " +
+	log.Info("clients/trust_agent_client:GetMeasurementFromManifest() Successfully received measurement for the " +
 		"provided manifest")
 	return measurement, nil
 }
