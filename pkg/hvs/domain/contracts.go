@@ -23,7 +23,7 @@ type (
 		Retrieve(uuid.UUID) (*hvs.Host, error)
 		Update(*hvs.Host) (*hvs.Host, error)
 		Delete(uuid.UUID) error
-		Search(*hvs.HostFilterCriteria) (*hvs.HostCollection, error)
+		Search(*models.HostFilterCriteria) (*hvs.HostCollection, error)
 	}
 
 	FlavorStore interface {

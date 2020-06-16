@@ -27,6 +27,14 @@ type (
 		FlavorTypeMatchPolicy PGFlavorMatchPolicies `json:"flavor_type_match_policy,omitempty" sql:"type:JSONB"`
 	}
 
+	host struct {
+		Id               uuid.UUID `gorm:"primary_key;type:uuid;index:idx_host_hostname"`
+		Name             string    `gorm:"type:varchar(255);not null"`
+		Description      string
+		ConnectionString string    `gorm:"not null"`
+		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
+	}
+
 	PGHostManifest          types.HostManifest
 	PGHostStatusInformation hvs.HostStatusInformation
 
@@ -39,7 +47,6 @@ type (
 		HostReport PGHostManifest          `gorm:"column:host_report" sql:"type:JSONB"`
 		CreatedAt  time.Time               `gorm:"column:created;not null"`
 	}
-	// Define all struct types here
 
 	queue struct {
 		Id        uuid.UUID         `json:"id,omitempty" gorm:"primary_key; unique;type:uuid"`

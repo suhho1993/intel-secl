@@ -58,3 +58,17 @@ const (
 func (req FlavorRequiredPolicy) String() string {
 	return req.String()
 }
+
+func NewFlavorMatchPolicy(fp cf.FlavorPart, mp MatchPolicy) FlavorMatchPolicy {
+	return FlavorMatchPolicy{
+		FlavorPart:  fp,
+		MatchPolicy: mp,
+	}
+}
+
+func NewMatchPolicy(mt MatchType, rp FlavorRequiredPolicy) MatchPolicy {
+	return MatchPolicy{
+		MatchType: mt,
+		Required:  rp,
+	}
+}
