@@ -20,9 +20,9 @@ type MockFlavorgroupStore struct {
 }
 
 // Delete Flavorgroup
-func (store *MockFlavorgroupStore) Delete(id *uuid.UUID) error {
+func (store *MockFlavorgroupStore) Delete(id uuid.UUID) error {
 	for i, fg := range store.flavorgroupStore {
-		if fg.ID == *id {
+		if fg.ID == id {
 			store.flavorgroupStore[i] = &hvs.FlavorGroup{}
 			return nil
 		}
@@ -31,9 +31,9 @@ func (store *MockFlavorgroupStore) Delete(id *uuid.UUID) error {
 }
 
 // Retrieve returns FlavorGroup
-func (store *MockFlavorgroupStore) Retrieve(id *uuid.UUID) (*hvs.FlavorGroup, error) {
+func (store *MockFlavorgroupStore) Retrieve(id uuid.UUID) (*hvs.FlavorGroup, error) {
 	for _, fg := range store.flavorgroupStore {
-		if fg.ID == *id {
+		if fg.ID == id {
 			return fg, nil
 		}
 	}
@@ -46,7 +46,7 @@ func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCrit
 		return &hvs.FlavorgroupCollection{Flavorgroups: store.flavorgroupStore}, nil
 	} else if criteria.Id != "" {
 		id := uuid.MustParse(criteria.Id)
-		fg, _ := store.Retrieve(&id)
+		fg, _ := store.Retrieve(id)
 		return &hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{fg}}, nil
 	} else if criteria.NameEqualTo != "" {
 		for _, fg := range store.flavorgroupStore {

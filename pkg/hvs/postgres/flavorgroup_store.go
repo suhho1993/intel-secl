@@ -37,12 +37,12 @@ func (f *FlavorGroupStore) Create(fg *hvs.FlavorGroup) (*hvs.FlavorGroup, error)
 	return fg, nil
 }
 
-func (f *FlavorGroupStore) Retrieve(flavorGroupId *uuid.UUID) (*hvs.FlavorGroup, error) {
+func (f *FlavorGroupStore) Retrieve(flavorGroupId uuid.UUID) (*hvs.FlavorGroup, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Retrieve() Leaving")
 
 	fg := hvs.FlavorGroup{}
-	row := f.Store.Db.Model(&flavorGroup{}).Where(&flavorGroup{ID: *flavorGroupId}).Row()
+	row := f.Store.Db.Model(&flavorGroup{}).Where(&flavorGroup{ID: flavorGroupId}).Row()
 	if err := row.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.FlavorMatchPolicyCollection)); err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Retrieve() failed to scan record")
 	}
@@ -78,12 +78,12 @@ func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) (*
 	return &flavorgroupCollection, nil
 }
 
-func (f *FlavorGroupStore) Delete(flavorGroupId *uuid.UUID) error {
+func (f *FlavorGroupStore) Delete(flavorGroupId uuid.UUID) error {
 	defaultLog.Trace("postgres/flavorgroup_store:Delete() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Delete() Leaving")
 
 	dbFlavorGroup := flavorGroup{
-		ID: *flavorGroupId,
+		ID: flavorGroupId,
 	}
 	if err := f.Store.Db.Delete(&dbFlavorGroup).Error; err != nil {
 		return errors.Wrap(err, "postgres/flavorgroup_store:Delete() failed to delete Flavorgroup")

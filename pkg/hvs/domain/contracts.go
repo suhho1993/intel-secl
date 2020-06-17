@@ -13,9 +13,9 @@ import (
 type (
 	FlavorGroupStore interface {
 		Create(*hvs.FlavorGroup) (*hvs.FlavorGroup, error)
-		Retrieve(*uuid.UUID) (*hvs.FlavorGroup, error)
+		Retrieve(uuid.UUID) (*hvs.FlavorGroup, error)
 		Search(*models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error)
-		Delete(*uuid.UUID) error
+		Delete(uuid.UUID) error
 	}
 
 	HostStore interface {

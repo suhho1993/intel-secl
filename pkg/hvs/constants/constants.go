@@ -20,19 +20,22 @@ const (
 	LogDir                    = "/var/log/" + ServiceDir
 	TrustedJWTSigningCertsDir = ConfigDir + "certs/trustedjwt/"
 	TrustedCaCertsDir         = ConfigDir + "certs/trustedca/"
-	KeyPath                   = ConfigDir + "trusted-keys/privacy-ca-key.pem"
-	CertPath                  = TrustedCaCertsDir + "privacy-ca-cert.pem"
+	TrustedKeysDir            = ConfigDir + "trusted-keys/"
+	TrustedRootCACertsDir     = TrustedCaCertsDir + "root/"
+	SAMLCertFile              = ConfigDir + "saml-cert.pem"
+	PrivacyCAKeyPath          = TrustedKeysDir + "privacy-ca-key.pem"
+	PrivacyCACertFile         = TrustedCaCertsDir + "privacy-ca/privacy-ca-cert.pem"
 	//TODO remove or dont use temporary files
 	AikRequestsDir = HomeDir + "privacyca-aik-requests/"
 	//TODO use EndorsementCA file after implementation of create_endorsement_ca setup task
-	EndorsementCAFile              = ConfigDir + "certs/endorsement/EndorsementCA-external.pem"
+	EndorsementCaCertFile          = ConfigDir + "certs/endorsement/EndorsementCA-external.pem"
 	AIKCertValidity                = 1
 	DefaultPrivacyCACertValidity   = 5
 	HostSigningKeyCertificateCN    = "Signing_Key_Certificate"
 	HostBindingKeyCertificateCN    = "Binding_Key_Certificate"
 	DefaultPrivacyCaIdentityIssuer = "hvs-pca-aik"
 	ServiceRemoveCmd               = "systemctl disable hvs"
-	DefaultTLSCertPath             = ConfigDir + "tls-cert.pem"
+	DefaultTLSCertFile             = ConfigDir + "tls-cert.pem"
 	DefaultTLSKeyPath              = ConfigDir + "tls.key"
 	DefaultHvsTlsCn                = "HVS TLS Certificate"
 	DefaultHvsTlsSan               = "127.0.0.1,localhost"

@@ -96,7 +96,7 @@ func (aTag *atag) DeployAssetTag(connector hc.HostConnector, tagCertDigest, host
 		return errors.New("Invalid input: tag sha384 digest and host hardware UUID must be given to deploy an asset tag")
 	}
 
-	err := connector.DeployAssetTag(tagCertDigest, hostHardwareUUID)
+	err := connector.DeployAssetTag(hostHardwareUUID, tagCertDigest)
 	if err != nil {
 		return fmt.Errorf("Error while deploying asset tag certificate on host %s: %s", hostHardwareUUID, err)
 	}

@@ -6,26 +6,21 @@ package controllers_test
 
 import (
 	"bytes"
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	wlaModel "github.com/intel-secl/intel-secl/v3/pkg/model/wlagent"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"time"
-
-	"github.com/gorilla/mux"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var (
@@ -38,30 +33,7 @@ var (
 
 var _ = BeforeSuite(func() {
 	//Generate Privacyca cert
-	caKey, pubKey, _ := crypt.GenerateKeyPair(constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
-
-	tmplt := x509.Certificate{
-		Subject: pkix.Name{
-			CommonName:   constants.DefaultPrivacyCaIdentityIssuer,
-		},
-		Issuer: pkix.Name{
-			CommonName: constants.DefaultPrivacyCaIdentityIssuer,
-		},
-		NotBefore: time.Now(),
-		NotAfter: time.Now().AddDate(1, 0, 0),
-
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, _ := rand.Int(rand.Reader, serialNumberLimit)
-
-	tmplt.SerialNumber = serialNumber
-	tmplt.SignatureAlgorithm = x509.SHA256WithRSA
-
-	caCertBytes, _ := x509.CreateCertificate(rand.Reader, &tmplt, &tmplt, pubKey, caKey)
-	key, _ := x509.MarshalPKCS8PrivateKey(caKey)
+	caCertBytes, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
 	crypt.SavePrivateKeyAsPKCS8(key, caKeyPath)
 	crypt.SavePemCert(caCertBytes, caCertPath)
 

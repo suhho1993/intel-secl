@@ -81,7 +81,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	var cacheTime, _ = time.ParseDuration(constants.JWTCertsCacheTime)
 
 	subRouter.Use(cmw.NewTokenAuth(constants.TrustedJWTSigningCertsDir,
-		constants.TrustedCaCertsDir, cfgRouter.fnGetJwtCerts,
+		constants.TrustedRootCACertsDir, cfgRouter.fnGetJwtCerts,
 		cacheTime))
 	subRouter = SetFlavorGroupRoutes(subRouter, dataStore)
 	subRouter = SetCertifyAiksRoutes(subRouter)
@@ -113,7 +113,7 @@ func (r *Router) fnGetJwtCerts() error {
 		return errors.Wrap(err, "router/router:fnGetJwtCerts() Could not create http request")
 	}
 	req.Header.Add("accept", "application/x-pem-file")
-	rootCaCertPems, err := cos.GetDirFileContents(constants.TrustedCaCertsDir, "*.pem")
+	rootCaCertPems, err := cos.GetDirFileContents(constants.TrustedRootCACertsDir, "*.pem")
 	if err != nil {
 		return errors.Wrap(err, "router/router:fnGetJwtCerts() Could not read root CA certificate")
 	}

@@ -309,7 +309,7 @@ func (a *App) Run(args []string) error {
 				setup.Download_Ca_Cert{
 					Flags:                flags,
 					CmsBaseURL:           a.Config.CMSBaseUrl,
-					CaCertDirPath:        constants.TrustedCaCertsDir,
+					CaCertDirPath:        constants.TrustedRootCACertsDir,
 					TrustedTlsCertDigest: a.Config.CmsTlsCertDigest,
 					ConsoleWriter:        os.Stdout,
 				},
@@ -325,7 +325,7 @@ func (a *App) Run(args []string) error {
 					},
 					SanList:       a.Config.CertSANList,
 					CertType:      "TLS",
-					CaCertsDir:    constants.TrustedCaCertsDir,
+					CaCertsDir:    constants.TrustedRootCACertsDir,
 					BearerToken:   "",
 					ConsoleWriter: os.Stdout,
 				},

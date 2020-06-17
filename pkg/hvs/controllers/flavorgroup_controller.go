@@ -21,7 +21,7 @@ import (
 )
 
 type FlavorgroupController struct {
-	Store domain.FlavorGroupStore
+	FlavorGroupStore domain.FlavorGroupStore
 }
 
 func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -49,7 +49,7 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	existingFlavorGroups, err := controller.Store.Search(&models.FlavorGroupFilterCriteria{
+	existingFlavorGroups, err := controller.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{
 		NameEqualTo: reqFlavorGroup.Name,
 	})
 	if existingFlavorGroups != nil && len(existingFlavorGroups.Flavorgroups) > 0 {
@@ -58,7 +58,7 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 	}
 
 	// Persistence
-	newFlavorGroup, err := controller.Store.Create(&reqFlavorGroup)
+	newFlavorGroup, err := controller.FlavorGroupStore.Create(&reqFlavorGroup)
 	if err != nil {
 		secLog.WithError(err).Error("controllers/flavorgroup_controller:Create() Flavorgroup save failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("Error while inserting a new Flavorgroup")
@@ -94,7 +94,7 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	flavorgroupCollection, err := controller.Store.Search(filter)
+	flavorgroupCollection, err := controller.FlavorGroupStore.Search(filter)
 	if err != nil {
 		secLog.WithError(err).Error("controllers/flavorgroup_controller:Search() Flavorgroup get all failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("Unable to search Flavorgroups")
@@ -119,7 +119,7 @@ func (controller FlavorgroupController) Delete(w http.ResponseWriter, r *http.Re
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid UUID format of the identifier provided"}
 	}
 
-	delFlavorGroup, err := controller.Store.Retrieve(&id)
+	delFlavorGroup, err := controller.FlavorGroupStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", id).Error(
@@ -133,7 +133,7 @@ func (controller FlavorgroupController) Delete(w http.ResponseWriter, r *http.Re
 	}
 	//TODO: Check if the flavor group is linked to any host
 
-	if err := controller.Store.Delete(&id); err != nil {
+	if err := controller.FlavorGroupStore.Delete(id); err != nil {
 		defaultLog.WithError(err).WithField("id", id).Info(
 			"controllers/flavorgroup_controller:Delete() failed to delete FlavorGroup")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete FlavorGroup"}
@@ -153,7 +153,7 @@ func (controller FlavorgroupController) Retrieve(w http.ResponseWriter, r *http.
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid UUID format of the identifier provided"}
 	}
 
-	flavorGroup, err := controller.Store.Retrieve(&id)
+	flavorGroup, err := controller.FlavorGroupStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", id).Error(

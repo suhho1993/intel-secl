@@ -28,7 +28,7 @@ var _ = Describe("FlavorgroupController", func() {
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		flavorgroupStore = mocks.NewFakeFlavorgroupStore()
-		flavorgroupController = &controllers.FlavorgroupController{Store: flavorgroupStore}
+		flavorgroupController = &controllers.FlavorgroupController{FlavorGroupStore: flavorgroupStore}
 	})
 
 	// Specs for HTTP Get to "/flavorgroups"

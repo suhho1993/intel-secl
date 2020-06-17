@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"math/big"
 	"net"
@@ -243,6 +244,45 @@ func GetCertFromPemFile(path string) (*x509.Certificate, error) {
 	}
 	return GetCertFromPem(certPem)
 }
+
+func GetSubjectCertsMapFromPemFile(path string) (map[string]x509.Certificate, error) {
+	subjectCertMap := make(map[string]x509.Certificate)
+	certsBytes, err := ioutil.ReadFile(path)
+	if err != nil{
+		return nil, err
+	}
+
+	block, rest := pem.Decode(certsBytes)
+	if block == nil {
+		return nil, fmt.Errorf("Unable to decode pem bytes")
+	}
+	certAuth, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		log.WithError(err).Warn("crypt/x509:GetSubjectCertsMapFromPemFile() Failed to parse certificate")
+	} else {
+		subjectCertMap[certAuth.Subject.CommonName] = *certAuth
+	}
+
+	// Return if no more certificates present in path file
+	if rest == nil {
+		return subjectCertMap, nil
+	}
+
+	for ;len(rest) > 1;{
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			break
+		}
+		certAuth, err = x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			log.WithError(err).Warn("crypt/x509:GetSubjectCertsMapFromPemFile() Failed to parse certificate")
+			continue
+		}
+		subjectCertMap[certAuth.Subject.CommonName] = *certAuth
+	}
+	return subjectCertMap, nil
+}
+
 
 // GetCertHashInHex returns hash of a certificate from a Pem block
 func GetCertHashInHex(cert *x509.Certificate, hashAlg crypto.Hash) (string, error) {

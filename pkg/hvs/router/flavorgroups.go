@@ -19,7 +19,7 @@ func SetFlavorGroupRoutes(router *mux.Router, store *postgres.DataStore) *mux.Ro
 	defer defaultLog.Trace("router/flavorgroups:SetFlavorGroupRoutes() Leaving")
 
 	flavorgroupStore := postgres.NewFlavorGroupStore(store)
-	flavorgroupController := controllers.FlavorgroupController{Store: flavorgroupStore}
+	flavorgroupController := controllers.FlavorgroupController{FlavorGroupStore: flavorgroupStore}
 
 	flavorGroupIdExpr := fmt.Sprintf("%s%s", "/flavorgroups/", validation.IdReg)
 	router.Handle("/flavorgroups",

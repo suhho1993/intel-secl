@@ -5,8 +5,8 @@
 package models
 
 type FlavorGroupFilterCriteria struct {
-	Id           string `json:"id"`
-	NameEqualTo  string `json:"nameEqualTo"`
-	NameContains string `json:"nameContains"`
-	HostId       string `json:"hostId"`
+	Id           string
+	NameEqualTo  string
+	NameContains string
+	HostId       string
 }

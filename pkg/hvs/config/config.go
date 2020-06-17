@@ -140,7 +140,7 @@ func (conf *Configuration) SaveConfiguration(c setup.Context) error {
 	}
 
 	if conf.TLSCertFile == "" {
-		conf.TLSCertFile = constants.DefaultTLSCertPath
+		conf.TLSCertFile = constants.DefaultTLSCertFile
 	}
 
 	tlsCertCN, err := c.GetenvString("HVS_TLS_CERT_CN", "HVS TLS Certificate Common Name")

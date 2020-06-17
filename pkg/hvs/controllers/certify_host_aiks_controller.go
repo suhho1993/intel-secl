@@ -19,7 +19,6 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"encoding/json"
-	"encoding/pem"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
@@ -54,48 +53,6 @@ func NewPrivacyCAFileStore(keyPath, certPath, eCAPath, aikRequestsDirPath string
 		eCACertPath: eCAPath,
 		aikRequestsDirPath: aikRequestsDirPath,
 	}
-}
-
-func (certifyHostAiksController *CertifyHostAiksController) getEndorsementCerts() (map[string]x509.Certificate, error){
-	defaultLog.Trace("controllers/certify_host_aiks_controller:getEndorsementCerts() Entering")
-	defer defaultLog.Trace("controllers/certify_host_aiks_controller:getEndorsementCerts() Leaving")
-
-	endorsementCerts := make(map[string]x509.Certificate)
-	endorsementCABytes, err := ioutil.ReadFile(certifyHostAiksController.Store.eCACertPath)
-	if err != nil{
-		return nil, err
-	}
-
-	block, rest := pem.Decode(endorsementCABytes)
-	if block == nil {
-		return nil, errors.New("Unable to decode pem bytes")
-	}
-	ekCertAuth, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		defaultLog.WithError(err).Warn("controllers/certify_host_aiks_controller:getEndorsementCerts() Failed to parse certificate")
-	} else {
-		endorsementCerts[ekCertAuth.Issuer.CommonName] = *ekCertAuth
-	}
-
-	// Return if no more certificates present in EndorsementCA.pem file
-	if rest == nil {
-		return endorsementCerts, nil
-	}
-
-	for ;len(rest) > 1;{
-		block, rest = pem.Decode(rest)
-		if block == nil {
-			break
-		}
-		ekCertAuth, err = x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			defaultLog.WithError(err).Warn("controllers/certify_host_aiks_controller:getEndorsementCerts() Failed to parse certificate")
-			continue
-		}
-		defaultLog.Debugf("controllers/certify_host_aiks_controller:getEndorsementCerts() Issuer :%s", ekCertAuth.Subject.String())
-		endorsementCerts[ekCertAuth.Subject.String()] = *ekCertAuth
-	}
-	return endorsementCerts, nil
 }
 
 func (certifyHostAiksController *CertifyHostAiksController) StoreEkCerts(identityRequestChallenge,  ekCertBytes []byte, identityChallengePayload taModel.IdentityChallengePayload) error{
@@ -215,16 +172,16 @@ func (certifyHostAiksController *CertifyHostAiksController) getIdentityProofRequ
 		return taModel.IdentityProofRequest{}, http.StatusBadRequest, err
 	}
 
-	endorsementCerts, err := certifyHostAiksController.getEndorsementCerts()
+	endorsementCerts, err := crypt.GetSubjectCertsMapFromPemFile(certifyHostAiksController.Store.eCACertPath)
 	if err != nil{
 		return taModel.IdentityProofRequest{}, http.StatusInternalServerError, errors.Wrap(err, "controllers/certify_host_aiks_controller:getIdentityProofRequest() Error while getting endorsement certs")
 	}
 
 	defaultLog.Debugf("controllers/certify_host_aiks_controller:getIdentityProofRequest() ekCert Issuer Name :%s", ekCert.Issuer.CommonName)
-	endorsementCertsToVerify := endorsementCerts[strings.ReplaceAll(ekCert.Issuer.String(), "\\x00","")]
+	endorsementCertsToVerify := endorsementCerts[strings.ReplaceAll(ekCert.Issuer.CommonName, "\\x00","")]
 
 	if !certifyHostAiksController.isEkCertificateVerifiedByAuthority(ekCert, endorsementCertsToVerify) {
-		secLog.Errorf("controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted, Please verify Enorsement Authority certificate is present in %s file", constants.EndorsementCAFile)
+		secLog.Errorf("controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted, Please verify Enorsement Authority certificate is present in %s file", constants.EndorsementCaCertFile)
 		return taModel.IdentityProofRequest{}, http.StatusBadRequest, errors.Wrap(err, "controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted")
 	}
 
