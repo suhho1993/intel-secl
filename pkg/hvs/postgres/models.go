@@ -48,6 +48,12 @@ type (
 		CreatedAt  time.Time               `gorm:"column:created;not null"`
 	}
 
+	esxiCluster struct {
+		Id               uuid.UUID `gorm:"primary_key;type:uuid"`
+		ConnectionString string    `gorm:"column:connection_string;not null"`
+		ClusterName      string    `gorm:"column:cluster_name;type:varchar(255);not null"`
+	}
+
 	queue struct {
 		Id        uuid.UUID         `json:"id,omitempty" gorm:"primary_key; unique;type:uuid"`
 		Action    string            `json:"action"`

@@ -112,8 +112,10 @@ func (ds *DataStore) ExecuteSqlFile(file string) error {
 func (ds *DataStore) Migrate() error {
 	defaultLog.Trace("postgres/postgres:Migrate() Entering")
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
+	//Needed to prompt gorm to not add (s) at the end of table name
+	ds.Db.SingularTable(true)
+	ds.Db.AutoMigrate(flavorGroup{}, host{}, hostStatus{}, esxiCluster{})
 
-	ds.Db.AutoMigrate(flavorGroup{}, host{}, hostStatus{})
 	return nil
 }
 

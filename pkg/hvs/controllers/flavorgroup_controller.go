@@ -149,8 +149,8 @@ func (controller FlavorgroupController) Retrieve(w http.ResponseWriter, r *http.
 	id, err := uuid.Parse(mux.Vars(r)["id"])
 	if err != nil {
 		secLog.WithError(err).WithField("id", id).Error(
-			"controllers/flavorgroup_controller:Delete() Invalid UUID format of the identifier provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid UUID format of the identifier provided"}
+			"controllers/flavorgroup_controller:Retrieve() Invalid UUID format of the identifier provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Invalid UUID format of the identifier provided"}
 	}
 
 	flavorGroup, err := controller.FlavorGroupStore.Retrieve(id)

@@ -18,6 +18,7 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
+	"io/ioutil"
 	"net/url"
 	"strings"
 )
@@ -29,29 +30,34 @@ type VMWareClient interface {
 	GetTPMAttestationReport() (*types.QueryTpmAttestationReportResponse, error)
 }
 
-const HOST_SYSTEM_PROPERTY = "HostSystem"
+const (
+	HOST_SYSTEM_PROPERTY    = "HostSystem"
+	CLUSTER_SYSTEM_PROPERTY = "ClusterComputeResource"
+)
 
-func NewVMwareClient(vcenterApiUrl *url.URL, vcenterUserName, vcenterPassword, hostName string) (VMWareClient, error) {
+func NewVMwareClient(vcenterApiUrl *url.URL, vcenterUserName, vcenterPassword, hostName, trustedCaCerts string) (VMWareClient, error) {
 
 	vmwareClient := vmwareClient{
 		BaseURL:         vcenterApiUrl,
 		HostName:        hostName,
 		vCenterUsername: vcenterUserName,
 		vCenterPassword: vcenterPassword,
+		TrustedCaCerts:  trustedCaCerts,
 	}
 	//Set username and password in the same URL struct
 	vmwareClient.BaseURL.User = url.UserPassword(vmwareClient.vCenterUsername, vmwareClient.vCenterPassword)
 
 	ctx, _ := context.WithCancel(context.Background())
 	vmwareClient.Context = ctx
+	if hostName != "" {
+		host, vCenterClient, err := getVmwareHostReference(&vmwareClient)
+		if err != nil {
+			return nil, errors.Wrap(err, "vmware/client:NewVMwareClient() Error creating Vmware client")
+		}
 
-	host, vCenterClient, err := getVmwareHostReference(&vmwareClient)
-	if err != nil {
-		return nil, errors.Wrap(err, "vmware/client:NewVMwareClient() Error creating Vmware client")
+		vmwareClient.hostReference = host
+		vmwareClient.vCenterClient = vCenterClient
 	}
-
-	vmwareClient.hostReference = host
-	vmwareClient.vCenterClient = vCenterClient
 
 	return &vmwareClient, nil
 }
@@ -61,6 +67,7 @@ type vmwareClient struct {
 	HostName        string
 	vCenterUsername string
 	vCenterPassword string
+	TrustedCaCerts  string
 	hostReference   mo.HostSystem
 	vCenterClient   *govmomi.Client
 	Context         context.Context
@@ -117,30 +124,13 @@ func (vc *vmwareClient) GetTPMAttestationReport() (*types.QueryTpmAttestationRep
 }
 
 func getVmwareHostReference(vc *vmwareClient) (mo.HostSystem, *govmomi.Client, error) {
-
 	log.Trace("vmware/client:getVmwareHostReference() Entering ")
 	defer log.Trace("vmware/client:getVmwareHostReference() Leaving ")
 
-	soapClient := soap.NewClient(vc.BaseURL, true)
-
-	vimClient, err := vim25.NewClient(vc.Context, soapClient)
+	vmwareClient, err := getGovmomiClient(vc)
 	if err != nil {
-		return mo.HostSystem{}, &govmomi.Client{}, errors.Wrap(err, "vmware/client:getVmwareHostReference() Error " +
-			"creating vim25 client")
+		return mo.HostSystem{}, vmwareClient, err
 	}
-	vmwareClient := &govmomi.Client{
-		Client:         vimClient,
-		SessionManager: session.NewManager(vimClient),
-	}
-
-	// Only login if the URL contains user information.
-	if vc.BaseURL.User != nil || vc.BaseURL.User.String() != "" {
-		err = vmwareClient.Login(vc.Context, vc.BaseURL.User)
-		if err != nil {
-			return mo.HostSystem{}, vmwareClient, err
-		}
-	}
-
 	viewManager := view.NewManager(vmwareClient.Client)
 	viewer, err := viewManager.CreateContainerView(vc.Context, vmwareClient.ServiceContent.RootFolder,
 		[]string{HOST_SYSTEM_PROPERTY}, true)
@@ -154,7 +144,7 @@ func getVmwareHostReference(vc *vmwareClient) (mo.HostSystem, *govmomi.Client, e
 	var hs []mo.HostSystem
 
 	err = viewer.Retrieve(vc.Context, []string{HOST_SYSTEM_PROPERTY}, []string{"name", "summary", "config",
-		"capability", "hardware", "runtime"}, &hs)
+		"capability", "hardware", "runtime", "parent"}, &hs)
 	if err != nil {
 		return mo.HostSystem{}, vmwareClient, err
 	}
@@ -164,6 +154,109 @@ func getVmwareHostReference(vc *vmwareClient) (mo.HostSystem, *govmomi.Client, e
 			return host, vmwareClient, nil
 		}
 	}
+
 	return mo.HostSystem{}, vmwareClient, errors.New("vmware/client:getVmwareHostReference() No host with " +
 		"hostname " + vc.HostName + " found in cluster")
+}
+
+func getVmwareClusterReference(vc *vmwareClient, clusterName string) ([]mo.HostSystem, error) {
+	log.Trace("vmware/client:getVmwareClusterReference() Entering ")
+	defer log.Trace("vmware/client:getVmwareClusterReference() Leaving ")
+
+	vmwareClient, err := getGovmomiClient(vc)
+	if err != nil {
+		return nil, errors.Wrap(err, "vmware/client:getVmwareClusterReference() Error "+
+			"creating vsphere client")
+	}
+	viewManager := view.NewManager(vmwareClient.Client)
+	viewer, err := viewManager.CreateContainerView(vc.Context, vmwareClient.ServiceContent.RootFolder,
+		[]string{CLUSTER_SYSTEM_PROPERTY}, true)
+	defer viewManager.Destroy(vc.Context)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "vmware/client:getVmwareClusterReference() Error "+
+			"creating container view from client")
+	}
+
+	var ccr []mo.ClusterComputeResource
+
+	err = viewer.Retrieve(vc.Context, []string{CLUSTER_SYSTEM_PROPERTY}, []string{"name", "host"}, &ccr)
+	if err != nil {
+		return nil, errors.Wrap(err, "vmware/client:getVmwareClusterReference() Error "+
+			"getting cluster properties")
+	}
+
+	var hostInfo []mo.HostSystem
+	for _, cluster := range ccr {
+		if cluster.Name == clusterName {
+			err := vmwareClient.Retrieve(vc.Context, cluster.Host, []string{"name", "summary", "config",
+				"capability", "hardware", "runtime", "parent"}, &hostInfo)
+			if err != nil {
+				return nil, errors.Wrap(err, "vmware/client:getVmwareClusterReference() Error "+
+					"getting hosts from cluster")
+			}
+		}
+	}
+
+	return hostInfo, nil
+}
+
+func getGovmomiClient(vc *vmwareClient) (*govmomi.Client, error) {
+	log.Trace("vmware/client:getGovmomiClient() Entering ")
+	defer log.Trace("vmware/client:getGovmomiClient() Leaving ")
+
+	appendedFilePath, err := getAppendedCACertFilePath(vc)
+	if err != nil {
+		return &govmomi.Client{}, errors.Wrap(err, "vmware/client:getGovmomiClient() Error "+
+			"getting CA cert file paths")
+	}
+	soapClient := soap.NewClient(vc.BaseURL, false)
+	err = soapClient.SetRootCAs(appendedFilePath)
+	if err != nil {
+		return &govmomi.Client{}, errors.Wrap(err, "vmware/client:getGovmomiClient() Error "+
+			"setting Root CAs for SOAP client")
+	}
+
+	vimClient, err := vim25.NewClient(vc.Context, soapClient)
+	if err != nil {
+		return &govmomi.Client{}, errors.Wrap(err, "vmware/client:getGovmomiClient() Error "+
+			"creating vim25 client")
+	}
+	vmwareClient := &govmomi.Client{
+		Client:         vimClient,
+		SessionManager: session.NewManager(vimClient),
+	}
+
+	// Only login if the URL contains user information.
+	if vc.BaseURL.User != nil || vc.BaseURL.User.String() != "" {
+		err = vmwareClient.Login(vc.Context, vc.BaseURL.User)
+		if err != nil {
+			return vmwareClient, errors.Wrap(err, "vmware/client:getGovmomiClient() Error "+
+				"creating vcenter session")
+		}
+	}
+	return vmwareClient, nil
+}
+
+//Returns each CA certificate path appended together separated by ':'
+func getAppendedCACertFilePath(vc *vmwareClient) (string, error) {
+	var appendedFilePath string
+
+	files, err := ioutil.ReadDir(vc.TrustedCaCerts)
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasSuffix(vc.TrustedCaCerts, "/") {
+		vc.TrustedCaCerts = vc.TrustedCaCerts + "/"
+	}
+
+	for index, file := range files {
+		if index == len(files)-1 {
+			appendedFilePath = vc.TrustedCaCerts + file.Name()
+		} else {
+			appendedFilePath = vc.TrustedCaCerts + file.Name() + ":"
+		}
+	}
+	return appendedFilePath, nil
 }

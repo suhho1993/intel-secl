@@ -83,6 +83,12 @@ const (
 	HostUpdate   = "hosts:store"
 	HostDelete   = "hosts:delete"
 	HostSearch   = "hosts:search"
+
+	ESXiClusterCreate     = "esxi_clusters:create"
+	ESXiClusterRetrieve   = "esxi_clusters:retrieve"
+	ESXiClusterSearch     = "esxi_clusters:search"
+	ESXiClusterDelete     = "esxi_clusters:delete"
+
 )
 
 //Postgres connection SslModes

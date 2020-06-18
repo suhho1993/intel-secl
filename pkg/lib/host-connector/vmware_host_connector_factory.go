@@ -25,7 +25,7 @@ func (vcf *VmwareConnectorFactory) GetHostConnector(vc types.VendorConnector, aa
 	}
 
 	vmwareClient, err := vmware.NewVMwareClient(parsedURL, vc.Configuration.Username, vc.Configuration.Password,
-		vc.Configuration.Hostname)
+		vc.Configuration.Hostname, trustedCaCerts)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error creating vmware client")
 	}

@@ -27,7 +27,7 @@ var (
 	hardwareuuidReg  = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
 	base64StringReg  = regexp.MustCompile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
 	xmlStringReg     = regexp.MustCompile("(^[a-zA-Z0-9-_\\/.'\",:=<>\n\\/#+?\\[\\]&; ]*$)")
-	stringReg        = regexp.MustCompile("(^[a-zA-Z0-9_\\/.-]*$)")
+	stringReg        = regexp.MustCompile("(^[a-zA-Z0-9_ \\/.-]*$)")
 	hexStringReg     = regexp.MustCompile("^[a-fA-F0-9]+$")
 	pemEncodedKeyReg = regexp.MustCompile("(^[-a-zA-Z0-9//=+ ]*$)")
 	dateReg          = regexp.MustCompile("[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]")

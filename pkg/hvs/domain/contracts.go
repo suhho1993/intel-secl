@@ -46,4 +46,11 @@ type (
 		Create(*models.Queue) (*models.Queue, error)
 		Delete(uuid.UUID) error
 	}
+
+	ESXiClusterStore interface {
+		Create(*hvs.ESXiCluster) (*hvs.ESXiCluster, error)
+		Retrieve(uuid.UUID) (*hvs.ESXiCluster, error)
+		Search(*models.ESXiClusterFilterCriteria) (*hvs.ESXiClusterCollection, error)
+		Delete(uuid.UUID) error
+	}
 )
