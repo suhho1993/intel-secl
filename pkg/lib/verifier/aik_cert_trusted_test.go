@@ -41,7 +41,6 @@ func newCertificateTemplate() (*x509.Certificate, error) {
 	}
 
 	return &template, nil
-
 }
 
 func newCACertificate() ([]byte, *rsa.PrivateKey, error) {
@@ -86,26 +85,56 @@ func newCACertificate() ([]byte, *rsa.PrivateKey, error) {
 }
 
 
-func getAikCertificateBytes(certificate *x509.Certificate, caPrivateKey *rsa.PrivateKey) ([]byte, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 999)
+func getCertificateBytes(certificate *x509.Certificate, privateKey *rsa.PrivateKey) ([]byte, error) {
+
+	// if the privateKey was not provided, generate a new one
+	if privateKey == nil {
+		generated, err := rsa.GenerateKey(rand.Reader, 999)
+		if err != nil {
+			return nil, err
+		}
+
+		privateKey = generated
+	}
+
+	certBytes, err := x509.CreateCertificate(rand.Reader, certificate, certificate, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// if the caPrivateKey was not provided, just self-sign the certificate
-	if caPrivateKey == nil {
-		caPrivateKey = privateKey
-	}
-
-	aikBytes, err := x509.CreateCertificate(rand.Reader, certificate, certificate, &privateKey.PublicKey, caPrivateKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return aikBytes, nil
+	return certBytes, nil
 }
 
-func TestAikCertificateMissingFault(t *testing.T) {
+
+func TestAikCertificateTrustedNoFault(t *testing.T) {
+
+	caPemBytes, caPrivateKey, err := newCACertificate()
+	assert.NoError(t, err)
+
+	trustedAuthorityCerts := x509.NewCertPool()
+	ok := trustedAuthorityCerts.AppendCertsFromPEM(caPemBytes)
+	assert.True(t, ok)
+
+	aikCertificate, err := newCertificateTemplate()
+	assert.NoError(t, err)
+
+	aikBytes, err := getCertificateBytes(aikCertificate, caPrivateKey)
+	assert.NoError(t, err)
+
+	hostManifest := types.HostManifest{
+		AIKCertificate : base64.StdEncoding.EncodeToString([]byte(aikBytes)),
+	}
+
+	rule, err := newAikCertificateTrusted(trustedAuthorityCerts, "PLATFORM")
+	assert.NoError(t, err)
+
+	result, err := rule.Apply(&hostManifest)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, len(result.Faults), 0)
+}
+
+func TestAikCertificateTrustedMissingFault(t *testing.T) {
 
 	// this test does not need ca certificates
 	trustedAuthorityCerts := x509.CertPool{}
@@ -126,7 +155,7 @@ func TestAikCertificateMissingFault(t *testing.T) {
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
-func TestAikCertificateExpiredFault(t *testing.T) {
+func TestAikCertificateTrustedExpiredFault(t *testing.T) {
 
 	// this test does not need ca certificates
 	trustedAuthorityCerts := x509.CertPool{}
@@ -139,7 +168,7 @@ func TestAikCertificateExpiredFault(t *testing.T) {
 	aikCertificate.NotBefore = time.Now().AddDate(-2, 0, 0)
 	aikCertificate.NotAfter = time.Now().AddDate(-1, 0, 0)
 
-	aikBytes, err := getAikCertificateBytes(aikCertificate, nil)
+	aikBytes, err := getCertificateBytes(aikCertificate, nil)
 	assert.NoError(t, err)
 	
 	hostManifest := types.HostManifest{
@@ -157,7 +186,7 @@ func TestAikCertificateExpiredFault(t *testing.T) {
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
-func TestAikCertificateNotBeforeFault(t *testing.T) {
+func TestAikCertificateTrustedNotBeforeFault(t *testing.T) {
 
 	// this test does not need ca certificates
 	trustedAuthorityCerts := x509.CertPool{}
@@ -170,7 +199,7 @@ func TestAikCertificateNotBeforeFault(t *testing.T) {
 	aikCertificate.NotBefore = time.Now().AddDate(1, 0, 0)
 	aikCertificate.NotAfter = time.Now().AddDate(2, 0, 0)
 
-	aikBytes, err := getAikCertificateBytes(aikCertificate, nil)
+	aikBytes, err := getCertificateBytes(aikCertificate, nil)
 	assert.NoError(t, err)
 
 	hostManifest := types.HostManifest{
@@ -188,7 +217,7 @@ func TestAikCertificateNotBeforeFault(t *testing.T) {
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
-func TestAikTrustedNotTrustedFault(t *testing.T) {
+func TestAikCertificateTrustedNotTrustedFault(t *testing.T) {
 
 	// without any trusted certs, we expect the "Not Trusted" fault
 	trustedAuthorityCerts := x509.CertPool{}
@@ -196,7 +225,7 @@ func TestAikTrustedNotTrustedFault(t *testing.T) {
 	aikCertificate, err := newCertificateTemplate()
 	assert.NoError(t, err)
 
-	aikBytes, err := getAikCertificateBytes(aikCertificate, nil)
+	aikBytes, err := getCertificateBytes(aikCertificate, nil)
 	assert.NoError(t, err)
 
 	hostManifest := types.HostManifest{
@@ -212,32 +241,4 @@ func TestAikTrustedNotTrustedFault(t *testing.T) {
 	assert.Equal(t, len(result.Faults), 1)
 	assert.Equal(t, result.Faults[0].Name, FaultAikCertificateNotTrusted)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
-}
-
-func TestAikTrustedValid(t *testing.T) {
-
-	caPemBytes, caPrivateKey, err := newCACertificate()
-	assert.NoError(t, err)
-
-	trustedAuthorityCerts := x509.NewCertPool()
-	ok := trustedAuthorityCerts.AppendCertsFromPEM(caPemBytes)
-	assert.True(t, ok)
-
-	aikCertificate, err := newCertificateTemplate()
-	assert.NoError(t, err)
-
-	aikBytes, err := getAikCertificateBytes(aikCertificate, caPrivateKey)
-	assert.NoError(t, err)
-
-	hostManifest := types.HostManifest{
-		AIKCertificate : base64.StdEncoding.EncodeToString([]byte(aikBytes)),
-	}
-
-	rule, err := newAikCertificateTrusted(trustedAuthorityCerts, "PLATFORM")
-	assert.NoError(t, err)
-
-	result, err := rule.Apply(&hostManifest)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, len(result.Faults), 0)
 }

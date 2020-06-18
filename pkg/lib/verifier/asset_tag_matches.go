@@ -14,17 +14,8 @@ import (
 	"encoding/base64"
 	"github.com/pkg/errors"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 )
-
-const (
-	FaultAssetTagMissing        = "com.intel.mtwilson.core.verifier.policy.rule.AssetTagMissing"
-	FaultAssetTagMismatch       = "com.intel.mtwilson.core.verifier.policy.rule.AssetTagMismatch"
-	FaultAssetTagNotProvisioned = "com.intel.mtwilson.core.verifier.policy.rule.AssetTagNotProvisioned"
-)
-
-type assetTagMatches struct {
-	expectedAssetTagDigest []byte
-}
 
 func newAssetTagMatches(expectedAssetTagDigest []byte) (rule, error) {
 
@@ -35,11 +26,16 @@ func newAssetTagMatches(expectedAssetTagDigest []byte) (rule, error) {
 	return &assetTagMatches, nil
 }
 
+type assetTagMatches struct {
+	expectedAssetTagDigest []byte
+}
+
 func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*RuleResult, error) {
 	var fault *Fault
 	result := RuleResult{}
 	result.Trusted = true 
 	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.AssetTagMatches"
+	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartAssetTag)
 
 	if len(hostManifest.AssetTagDigest) == 0 {
 		fault = &Fault{
@@ -67,7 +63,6 @@ func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*RuleResul
 
 	if fault != nil {
 		result.Faults = append(result.Faults, *fault)
-		result.Trusted = false
 	}
 
 	return &result, nil

@@ -5,7 +5,9 @@
 package verifier
 
 import (
+	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 )
 
 var (
@@ -21,13 +23,20 @@ var (
 	}
 )
 
-func newPcrEventLogEqualsExcluding(expectedEventLogEntry *types.EventLogEntry) (rule, error) {
-	rule := pcrEventLogEqualsExcluding{expectedEventLogEntry: expectedEventLogEntry}
+func newPcrEventLogEqualsExcluding(expectedEventLogEntry *types.EventLogEntry, flavorID uuid.UUID, marker common.FlavorPart) (rule, error) {
+	rule := pcrEventLogEqualsExcluding{
+		expectedEventLogEntry: expectedEventLogEntry,
+		flavorID: &flavorID,
+		marker: marker,
+	}
+
 	return &rule, nil
 }
 
 type pcrEventLogEqualsExcluding struct {
 	expectedEventLogEntry *types.EventLogEntry
+	flavorID              *uuid.UUID
+	marker                common.FlavorPart
 }
 
 // - If the PcrManifest is not present in the host manifest, raise PcrEventLogMissing fault.
@@ -39,58 +48,57 @@ type pcrEventLogEqualsExcluding struct {
 //   PcrEventLogMissingExpectedEntries fault.
 func (rule *pcrEventLogEqualsExcluding) Apply(hostManifest *types.HostManifest) (*RuleResult, error) {
 
-	var faults []Fault
 	result := RuleResult{}
 	result.Trusted = true
 	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.PcrEventLogEqualsExcluding"
+	result.Rule.ExpectedEventLogEntry = rule.expectedEventLogEntry
+	result.Rule.Markers = append(result.Rule.Markers, rule.marker)	
 
-	// KWT: Check presence of PcrManifest in the host manifest and create PcrManifestMissing fault
-
-	actualEventLog, err := hostManifest.PcrManifest.PcrEventLogMap.GetEventLog(rule.expectedEventLogEntry.PcrBank, rule.expectedEventLogEntry.PcrIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	if actualEventLog == nil {
-		faults = append(faults, *newPcrEventLogMissingFault(rule.expectedEventLogEntry.PcrIndex))
+	if hostManifest.PcrManifest.IsEmpty() {
+		result.Faults = append(result.Faults, newPcrManifestMissingFault())
 	} else {
-		// first strip all of the 'default_excludes' from actual
-		unexpectedEventLogs, err := rule.removeExcludedEvents(actualEventLog, exclude_components)
+
+		actualEventLog, err := hostManifest.PcrManifest.PcrEventLogMap.GetEventLog(rule.expectedEventLogEntry.PcrBank, rule.expectedEventLogEntry.PcrIndex)
 		if err != nil {
 			return nil, err
 		}
 
-		// also remove all events with the label '0x4fe'
-		unexpectedEventLogs, err = rule.removeEventsWithLabel(unexpectedEventLogs, "0x4fe")
-		if err != nil {
-			return nil, err
-		}
+		if actualEventLog == nil {
+			result.Faults  = append(result.Faults , newPcrEventLogMissingFault(rule.expectedEventLogEntry.PcrIndex))
+		} else {
+			// first strip all of the 'default_excludes' from actual
+			unexpectedEventLogs, err := rule.removeExcludedEvents(actualEventLog, exclude_components)
+			if err != nil {
+				return nil, err
+			}
 
-		// now subtract out 'expected'
-		unexpectedEventLogs, err = unexpectedEventLogs.Subtract(rule.expectedEventLogEntry)
-		if err != nil {
-			return nil, err
-		}
+			// also remove all events with the label '0x4fe'
+			unexpectedEventLogs, err = rule.removeEventsWithLabel(unexpectedEventLogs, "0x4fe")
+			if err != nil {
+				return nil, err
+			}
 
-		// if there are any remaining events, then there were unexpected entries...
-		if len(unexpectedEventLogs.EventLogs) > 0 {
-			faults = append(faults, *newPcrEventLogContainsUnexpectedEntries(unexpectedEventLogs))
-		}
+			// now subtract out 'expected'
+			unexpectedEventLogs, err = unexpectedEventLogs.Subtract(rule.expectedEventLogEntry)
+			if err != nil {
+				return nil, err
+			}
 
-		// now, look the other way -- find events that are in actual but not expected (i.e. missing)
-		missingEventLogs, err := rule.expectedEventLogEntry.Subtract(actualEventLog)
-		if err != nil {
-			return nil, err
-		}
+			// if there are any remaining events, then there were unexpected entries...
+			if len(unexpectedEventLogs.EventLogs) > 0 {
+				result.Faults  = append(result.Faults , newPcrEventLogContainsUnexpectedEntries(unexpectedEventLogs))
+			}
 
-		if len(missingEventLogs.EventLogs) > 0 {
-			faults = append(faults, *newPcrEventLogMissingExpectedEntries(missingEventLogs))
-		}
-	}
+			// now, look the other way -- find events that are in actual but not expected (i.e. missing)
+			missingEventLogs, err := rule.expectedEventLogEntry.Subtract(actualEventLog)
+			if err != nil {
+				return nil, err
+			}
 
-	if len(faults) > 0 {
-		result.Faults = append(result.Faults, faults...)
-		result.Trusted = false
+			if len(missingEventLogs.EventLogs) > 0 {
+				result.Faults  = append(result.Faults , newPcrEventLogMissingExpectedEntries(missingEventLogs))
+			}
+		}
 	}
 
 	return &result, nil

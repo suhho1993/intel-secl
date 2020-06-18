@@ -227,6 +227,12 @@ func (pcrManifest *PcrManifest) GetRequiredPcrValue(bank SHAAlgorithm, pcrIndex 
 	return pcrValue, nil
 }
 
+// IsEmpty returns true if both the Sha1Pcrs and Sha256Pcrs
+// are empty.
+func (pcrManifest *PcrManifest) IsEmpty() bool {
+	return len(pcrManifest.Sha1Pcrs) == 0 && len(pcrManifest.Sha256Pcrs) == 0
+}
+
 // Finds the EventLogEntry in a PcrEventLogMap provided the pcrBank and index.  Returns
 // null if not found.  Returns an error if the pcrBank is not supported
 // by intel-secl (currently supports SHA1 and SHA256).

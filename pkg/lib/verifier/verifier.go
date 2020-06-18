@@ -11,21 +11,50 @@ package verifier
 
 import (
 	"crypto/x509"
+	"github.com/pkg/errors"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 )
 
+// VerifierCertificates A collection of certificates/certificate pools that 
+// must be provide to the Verifier in NewVerifier().
 type VerifierCertificates struct {
-	PrivacyCaCertificates    *x509.CertPool
-	AssetTagCaCertificate    *x509.Certificate
+	PrivacyCACertificates    *x509.CertPool
+	AssetTagCACertificates   *x509.CertPool
 	FlavorSigningCertificate *x509.Certificate
-	FlavorCaCertificate      *x509.Certificate
+	FlavorCACertificates     *x509.CertPool
 }
 
+// Verifier The interface that exposes the verification of a host manifest
+// and signed flavor.  The 'skipFlavorsignatureVerfication' parameter can 
+// be used to disable the verification of the flavor signature.
 type Verifier interface {
-	Verify(hostManifest *types.HostManifest, signedFlavor *SignedFlavor, skipFlavorSignatureVerification bool) (*TrustReport, error)
+	Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipFlavorSignatureVerification bool) (*TrustReport, error)
 }
 
+// NewVerifier Creates a Verifier provided a valid set of VerifierCertificates.
+// An error is raised if any of the fields in VerifierCertificate is nil.
 func NewVerifier(verifierCertificates VerifierCertificates) (Verifier, error) {
-	// TODO: validate certificates
+
+	if verifierCertificates.PrivacyCACertificates == nil {
+		return nil, errors.New("The privacy CA certificates cannot be nil")
+	}
+
+	if verifierCertificates.AssetTagCACertificates == nil {
+		return nil, errors.New("The asset tag ca cannot be nil")
+	}
+
+	if verifierCertificates.FlavorSigningCertificate == nil {
+		return nil, errors.New("The flavor signing certificate cannot be nil")
+	}
+
+	if verifierCertificates.FlavorCACertificates == nil {
+		return nil, errors.New("The flavor CA certificates cannot be nil")
+	}
+
 	return &verifierImpl{verifierCertificates: verifierCertificates}, nil
 }
+
+var log = commLog.GetDefaultLogger()
+var secLog = commLog.GetSecurityLogger()

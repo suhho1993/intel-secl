@@ -14,33 +14,25 @@ import (
 	"time"
 	"github.com/pkg/errors"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 )
 
-type aikCertTrusted struct {
-	trustedAuthorityCerts *x509.CertPool
-	result                RuleResult
-	marker                string
-}
+func newAikCertificateTrusted(privacyCACertificates *x509.CertPool, marker common.FlavorPart) (rule, error) {
 
-const (
-	FaultAikCertificateMissing = "com.intel.mtwilson.core.verifier.policy.rule.AikCertificateMissing"
-	FaultAikCertificateExpired = "com.intel.mtwilson.core.verifier.policy.fault.AikCertificateExpired"
-	FaultAikCertificateNotYetValid = "com.intel.mtwilson.core.verifier.policy.fault.AikCertificateNotYetValid"
-	FaultAikCertificateNotTrusted = "com.intel.mtwilson.core.verifier.policy.fault.AikCertificateNotTrusted"
-)
-
-func newAikCertificateTrusted(trustedAuthorityCerts *x509.CertPool, marker string) (rule, error) {
-	// TODO: make sure at least one cert is profiled in the pool...
-
-	if len(marker) == 0 {
-		return nil, errors.New("The rule 'marker' must be provided")
+	if privacyCACertificates == nil {
+		return nil, errors.New("The privacy CAs cannot be nil")
 	}
 
 	rule := aikCertTrusted{
-		trustedAuthorityCerts: trustedAuthorityCerts,
+		privacyCACertificates: privacyCACertificates,
 		marker: marker,
 	}
 	return &rule, nil
+}
+
+type aikCertTrusted struct {
+	privacyCACertificates *x509.CertPool
+	marker                common.FlavorPart
 }
 
 // - if the aik is not present in the manifest, raise 'aik missing' fault
@@ -50,9 +42,10 @@ func newAikCertificateTrusted(trustedAuthorityCerts *x509.CertPool, marker strin
 func (rule *aikCertTrusted) Apply(hostManifest *types.HostManifest) (*RuleResult, error) {
 
 	var fault *Fault
-	rule.result.Trusted = true // default to true, set to false when fault encountered
-	rule.result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.AikCertificateTrusted"
-	rule.result.Rule.Markers = append(rule.result.Rule.Markers, rule.marker)
+	result := RuleResult{}
+	result.Trusted = true // default to true, set to false when fault encountered
+	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.AikCertificateTrusted"
+	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
 
 	if len(hostManifest.AIKCertificate) == 0 {
 		fault = &Fault{
@@ -78,7 +71,7 @@ func (rule *aikCertTrusted) Apply(hostManifest *types.HostManifest) (*RuleResult
 			}
 		} else {
 			opts := x509.VerifyOptions{
-				Roots: rule.trustedAuthorityCerts,
+				Roots: rule.privacyCACertificates,
 			}
 
 			_, err := aik.Verify(opts)
@@ -92,9 +85,8 @@ func (rule *aikCertTrusted) Apply(hostManifest *types.HostManifest) (*RuleResult
 	}
 
 	if fault != nil {
-		rule.result.Faults = append(rule.result.Faults, *fault)
-		rule.result.Trusted = false
+		result.Faults = append(result.Faults, *fault)
 	}
 
-	return &rule.result, nil
+	return &result, nil
 }

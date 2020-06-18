@@ -8,6 +8,7 @@ import (
 	"testing"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +27,7 @@ func TestPcrEventLogIntegrityNoFault(t *testing.T) {
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, testExpectedEventLogEntry)
 	hostManifest.PcrManifest.Sha256Pcrs = append(hostManifest.PcrManifest.Sha256Pcrs, expectedPcr)
 
-	rule, err := newPcrEventLogIntegrity(&expectedPcr)
+	rule, err := newPcrEventLogIntegrity(&expectedPcr, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -45,14 +46,25 @@ func TestPcrEventLogIntegrityPcrValueMissingFault(t *testing.T) {
 		Value: expectedCumulativeHash,
 	}
 
-	hostManifest := types.HostManifest{}
+	hostManifest := types.HostManifest{
+		PcrManifest: types.PcrManifest{
+			Sha256Pcrs : []types.Pcr {
+				{
+					Index: 1,
+					Value: PCR_VALID_256,
+					PcrBank:  types.SHA256,
+				},
+			},
+		},
+	}
+
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, testExpectedEventLogEntry)
 
 	// if the pcr is no incuded, the PcrEventLogIntegrity rule should return
 	// a PcrMissingFault
 	// hostManifest.PcrManifest.Sha256Pcrs = ...not set
 
-	rule, err := newPcrEventLogIntegrity(&expectedPcr)
+	rule, err := newPcrEventLogIntegrity(&expectedPcr, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -80,7 +92,7 @@ func TestPcrEventLogIntegrityPcrEventLogMissingFault(t *testing.T) {
 	// omit the event log from the host manifest to invoke "PcrEventLogMissing" fault...
 	//hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, eventLogEntry)
 
-	rule, err := newPcrEventLogIntegrity(&expectedPcr)
+	rule, err := newPcrEventLogIntegrity(&expectedPcr, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -127,7 +139,7 @@ func TestPcrEventLogIntegrityPcrEventLogInvalidFault(t *testing.T) {
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, invalidEventLogEntry)
 	hostManifest.PcrManifest.Sha256Pcrs = append(hostManifest.PcrManifest.Sha256Pcrs, invalidPcr)
 
-	rule, err := newPcrEventLogIntegrity(&expectedPcr)
+	rule, err := newPcrEventLogIntegrity(&expectedPcr, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)

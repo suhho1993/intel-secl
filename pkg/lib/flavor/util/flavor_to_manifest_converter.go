@@ -48,7 +48,7 @@ func (fmc FlavorToManifestConverter) getManifestFromFlavor(flavor hvs.Flavor) ta
 	manifest.Label = flavor.Meta.Description.Label
 	manifest.Uuid = flavor.Meta.ID.String()
 	// extract the manifest types from the flavor based on the measurement types
-	var allMeasurements []taModel.MeasurementType
+	var allMeasurements []taModel.FlavorMeasurement
 	for _, meT := range flavor.Software.Measurements {
 		allMeasurements = append(allMeasurements, meT)
 	}
@@ -69,29 +69,29 @@ func (fmc FlavorToManifestConverter) getManifestFromFlavor(flavor hvs.Flavor) ta
 	return manifest
 }
 
-func (fmc FlavorToManifestConverter) getManifestType(measurement taModel.MeasurementType) taModel.ManifestType {
+func (fmc FlavorToManifestConverter) getManifestType(measurement taModel.FlavorMeasurement) interface{} {
 	log.Trace("flavor/util/flavor_to_manifest_converter:getManifestType() Entering")
 	defer log.Trace("flavor/util/flavor_to_manifest_converter:getManifestType() Leaving")
-
-	var manType taModel.ManifestType
-	switch reflect.TypeOf(measurement) {
-	case reflect.TypeOf(taModel.FileMeasurementType{}):
+	
+	var manType interface{}
+	switch (measurement.Type) {
+	case taModel.MeasurementTypeFile:
 		manType = taModel.FileManifestType{
-			Path:       measurement.(taModel.FileMeasurementType).Path,
-			SearchType: measurement.(taModel.FileMeasurementType).SearchType,
+			Path:       measurement.Path,
+			SearchType: *measurement.SearchType,
 		}
-	case reflect.TypeOf(taModel.DirectoryMeasurementType{}):
+	case taModel.MeasurementTypeDir:
 		manType = taModel.DirManifestType{
-			Path:       measurement.(taModel.DirectoryMeasurementType).Path,
-			SearchType: measurement.(taModel.DirectoryMeasurementType).SearchType,
-			Include:    measurement.(taModel.DirectoryMeasurementType).Include,
-			Exclude:    measurement.(taModel.DirectoryMeasurementType).Exclude,
-			FilterType: measurement.(taModel.DirectoryMeasurementType).FilterType,
+			Path:       measurement.Path,
+			SearchType: *measurement.SearchType,
+			Include:    *measurement.Include,
+			Exclude:    *measurement.Exclude,
+			FilterType: *measurement.FilterType,
 		}
-	case reflect.TypeOf(taModel.SymlinkMeasurementType{}):
+	case taModel.MeasurementTypeSymlink:
 		manType = taModel.SymlinkManifestType{
-			Path:       measurement.(taModel.SymlinkMeasurementType).Path,
-			SearchType: measurement.(taModel.SymlinkMeasurementType).SearchType,
+			Path:       measurement.Path,
+			SearchType: *measurement.SearchType,
 		}
 	}
 	return manType

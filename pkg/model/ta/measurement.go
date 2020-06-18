@@ -22,6 +22,12 @@ type FileMeasurementType struct {
 	SearchType string `xml:"SearchType,attr,omitempty"`
 }
 
+type SymlinkMeasurementType struct {
+	Value      string `xml:",chardata"`
+	Path       string `xml:"Path,attr"`
+	SearchType string `xml:"SearchType,attr,omitempty"`
+}
+
 type Measurement struct {
 	XMLName        xml.Name                   `xml:"Measurement"`
 	File           []FileMeasurementType      `xml:"lib:wml:measurements:1.0 File"`
@@ -33,10 +39,52 @@ type Measurement struct {
 	Uuid           string                     `xml:"Uuid,attr,omitempty"`
 }
 
-type MeasurementType interface{}
+type MeasurementType string
+const (
+	MeasurementTypeFile    MeasurementType = "fileMeasurementType"
+	MeasurementTypeDir     MeasurementType = "directoryMeasurementType"
+	MeasurementTypeSymlink MeasurementType = "symlinkMeasurementType"
+)
 
-type SymlinkMeasurementType struct {
-	Value      string `xml:",chardata"`
-	Path       string `xml:"Path,attr"`
-	SearchType string `xml:"SearchType,attr,omitempty"`
+type FlavorMeasurement struct {
+	Type       MeasurementType `json:"type"`
+	Value      string          `json:"value"`
+	Path       string          `json:"Path"`
+	Include    *string         `json:"Include,omitempty"`
+	Exclude    *string         `json:"Exclude,omitempty"`
+	SearchType *string         `json:"SearchType,omitempty"`
+	FilterType *string         `json:"FilterType,omitempty"`
+}
+
+func (flavorMeasurement *FlavorMeasurement) FromFile(file FileMeasurementType) {
+	
+	*flavorMeasurement = FlavorMeasurement {
+		Type:       MeasurementTypeFile,
+		Value:      file.Value,
+		Path:       file.Path,
+		SearchType: &file.SearchType,
+	}
+}
+
+func (flavorMeasurement *FlavorMeasurement) FromDir(dir DirectoryMeasurementType) {
+
+	*flavorMeasurement = FlavorMeasurement {
+		Type:       MeasurementTypeDir,
+		Value:      dir.Value,
+		Path:       dir.Path,
+		SearchType: &dir.SearchType,
+		Include:    &dir.Include,
+		Exclude:    &dir.Exclude,
+		FilterType: &dir.FilterType,
+	}
+}
+
+func (flavorMeasurement *FlavorMeasurement) FromSymlink(symlink SymlinkMeasurementType) {
+	
+	*flavorMeasurement = FlavorMeasurement {
+		Type:       MeasurementTypeSymlink,
+		Value:      symlink.Value,
+		Path:       symlink.Path,
+		SearchType: &symlink.SearchType,
+	}
 }

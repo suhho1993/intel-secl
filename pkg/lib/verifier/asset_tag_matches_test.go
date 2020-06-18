@@ -2,9 +2,9 @@
  * Copyright (C) 2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
- package verifier
+package verifier
 
- import (
+import (
 	"testing"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/stretchr/testify/assert"

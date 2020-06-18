@@ -24,21 +24,25 @@ func (sfu SoftwareFlavorUtil) GetSoftware(measurements taModel.Measurement) cm.S
 	log.Trace("flavor/util/software_flavor_util:GetSoftware() Entering")
 	defer log.Trace("flavor/util/software_flavor_util:GetSoftware() Leaving")
 
-	measurementMap := make(map[string]taModel.MeasurementType)
+	measurementMap := make(map[string]taModel.FlavorMeasurement)
+	var flavorMeasurement taModel.FlavorMeasurement
 
 	// Cleanup Paths for Dir Measurement
 	for _, mT := range measurements.Dir {
-		measurementMap[sfu.cleanupPaths(mT.Path)] = mT
+		(&flavorMeasurement).FromDir(mT)
+		measurementMap[sfu.cleanupPaths(mT.Path)] = flavorMeasurement
 	}
 
 	// Cleanup Paths for File Measurement
 	for _, mT := range measurements.File {
-		measurementMap[sfu.cleanupPaths(mT.Path)] = mT
+		(&flavorMeasurement).FromFile(mT)
+		measurementMap[sfu.cleanupPaths(mT.Path)] = flavorMeasurement
 	}
 
 	// Cleanup Paths for Symlink Measurement
 	for _, mT := range measurements.Symlink {
-		measurementMap[sfu.cleanupPaths(mT.Path)] = mT
+		(&flavorMeasurement).FromSymlink(mT)
+		measurementMap[sfu.cleanupPaths(mT.Path)] = flavorMeasurement
 	}
 
 	var s cm.Software
