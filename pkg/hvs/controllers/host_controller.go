@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/util"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
@@ -353,7 +353,7 @@ func (hc *HostController) createNewFlavorGroup(flavorgroupName string) (*hvs.Fla
 	defaultLog.Trace("controllers/host_controller:createNewFlavorGroup() Entering")
 	defer defaultLog.Trace("controllers/host_controller:createNewFlavorGroup() Leaving")
 
-	fg := util.CreateFlavorGroupByName(flavorgroupName)
+	fg := utils.CreateFlavorGroupByName(flavorgroupName)
 	flavorgroup, err := hc.FGStore.Create(&fg)
 	if err != nil {
 		return nil, err

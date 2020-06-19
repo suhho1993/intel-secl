@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
@@ -31,7 +32,7 @@ type Router struct {
 }
 
 // InitRoutes registers all routes for the application.
-func InitRoutes(cfg *config.Configuration) *mux.Router {
+func InitRoutes(cfg *config.Configuration, certStore *models.CertificatesStore) *mux.Router {
 	defaultLog.Trace("router/router:InitRoutes() Entering")
 	defer defaultLog.Trace("router/router:InitRoutes() Leaving")
 
@@ -62,19 +63,19 @@ func InitRoutes(cfg *config.Configuration) *mux.Router {
 
 	// ISECL-8715 - Prevent potential open redirects to external URLs
 	router.SkipClean(true)
-	defineSubRoutes(router, constants.OldServiceName, cfg, dataStore)
-	defineSubRoutes(router, strings.ToLower(constants.ServiceName), cfg, dataStore)
+	defineSubRoutes(router, constants.OldServiceName, cfg, dataStore, certStore)
+	defineSubRoutes(router, strings.ToLower(constants.ServiceName), cfg, dataStore, certStore)
 	return router
 }
 
-func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore) {
+func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore) {
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
 
 	serviceApi := "/" + service + constants.ApiVersion
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
 	subRouter = SetVersionRoutes(subRouter)
-	subRouter = SetCaCertificatesRoutes(subRouter)
+	subRouter = SetCaCertificatesRoutes(subRouter, certStore)
 
 	subRouter = router.PathPrefix(serviceApi).Subrouter()
 	cfgRouter := Router{cfg: cfg}
@@ -88,6 +89,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetHostStatusRoutes(subRouter, dataStore)
 	subRouter = SetCertifyHostKeysRoutes(subRouter)
 	subRouter = SetHostRoutes(subRouter, dataStore)
+	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
 	subRouter = SetESXiClusterRoutes(subRouter, dataStore)
 }
 

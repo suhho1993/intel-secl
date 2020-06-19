@@ -22,13 +22,18 @@ const (
 	TrustedCaCertsDir         = ConfigDir + "certs/trustedca/"
 	TrustedKeysDir            = ConfigDir + "trusted-keys/"
 	TrustedRootCACertsDir     = TrustedCaCertsDir + "root/"
+	SAMLKeyFile               = TrustedKeysDir + "saml.key"
 	SAMLCertFile              = ConfigDir + "saml-cert.pem"
-	PrivacyCAKeyPath          = TrustedKeysDir + "privacy-ca-key.pem"
+	PrivacyCAKeyFile          = TrustedKeysDir + "privacy-ca.key"
 	PrivacyCACertFile         = TrustedCaCertsDir + "privacy-ca/privacy-ca-cert.pem"
+	TagCAKeyFile              = TrustedKeysDir + "tag-ca.key"
+	TagCACertFile             = TrustedCaCertsDir + "tag-ca-cert.pem"
 	//TODO remove or dont use temporary files
 	AikRequestsDir = HomeDir + "privacyca-aik-requests/"
 	//TODO use EndorsementCA file after implementation of create_endorsement_ca setup task
-	EndorsementCaCertFile          = ConfigDir + "certs/endorsement/EndorsementCA-external.pem"
+	EndorsementCAKeyFile           = TrustedKeysDir + "endorsement-ca.key"
+	EndorsementCACertDir           = ConfigDir + "certs/endorsement/"
+	EndorsementCACertFile          = EndorsementCACertDir + "EndorsementCA-external.pem"
 	AIKCertValidity                = 1
 	DefaultPrivacyCACertValidity   = 5
 	HostSigningKeyCertificateCN    = "Signing_Key_Certificate"
@@ -75,6 +80,8 @@ const (
 
 	HostStatusRetrieve = "host_status:retrieve"
 	HostStatusSearch   = "host_status:search"
+
+	CaCertificatesCreate = "cacertificates:create"
 
 	CertifyHostSigningKey = "host_signing_key_certificates:create"
 

@@ -181,7 +181,7 @@ func (certifyHostAiksController *CertifyHostAiksController) getIdentityProofRequ
 	endorsementCertsToVerify := endorsementCerts[strings.ReplaceAll(ekCert.Issuer.CommonName, "\\x00","")]
 
 	if !certifyHostAiksController.isEkCertificateVerifiedByAuthority(ekCert, endorsementCertsToVerify) {
-		secLog.Errorf("controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted, Please verify Enorsement Authority certificate is present in %s file", constants.EndorsementCaCertFile)
+		secLog.Errorf("controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted, Please verify Enorsement Authority certificate is present in %s file", constants.EndorsementCACertFile)
 		return taModel.IdentityProofRequest{}, http.StatusBadRequest, errors.Wrap(err, "controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted")
 	}
 

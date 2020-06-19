@@ -12,8 +12,10 @@ import (
 	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/tasks"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/version"
 	e "github.com/intel-secl/intel-secl/v3/pkg/lib/common/exec"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
@@ -390,6 +392,38 @@ func (a *App) Run(args []string) error {
 	return nil
 }
 
+func NewCertificatesPathStore() *models.CertificatesPathStore {
+	defaultLog.Trace("hvs/app:NewCertificatesPathStore() Entering")
+	defer defaultLog.Trace("hvs/app:NewCertificatesPathStore() Leaving")
+
+	return &models.CertificatesPathStore{
+		models.CaCertTypesRootCa.String(): models.CertLocation{
+			KeyFile:  "",
+			CertPath: constants.TrustedRootCACertsDir,
+		},
+		models.CaCertTypesEndorsementCa.String(): models.CertLocation{
+			KeyFile:  constants.EndorsementCAKeyFile,
+			CertPath: constants.EndorsementCACertDir,
+		},
+		models.CaCertTypesPrivacyCa.String(): models.CertLocation{
+			KeyFile:  constants.PrivacyCAKeyFile,
+			CertPath: constants.PrivacyCACertFile,
+		},
+		models.CaCertTypesTagCa.String(): models.CertLocation{
+			KeyFile:  constants.TagCAKeyFile,
+			CertPath: constants.TagCACertFile,
+		},
+		models.CertTypesSaml.String(): models.CertLocation{
+			KeyFile:  constants.SAMLKeyFile,
+			CertPath: constants.SAMLCertFile,
+		},
+		models.CertTypesTls.String(): models.CertLocation{
+			KeyFile:  constants.DefaultTLSKeyPath,
+			CertPath: constants.DefaultTLSCertFile,
+		},
+	}
+}
+
 func (a *App) startServer() error {
 	defaultLog.Trace("app:startServer() Entering")
 	defer defaultLog.Trace("app:startServer() Leaving")
@@ -398,8 +432,11 @@ func (a *App) startServer() error {
 
 	defaultLog.Info("Starting server")
 
+	// Load certificates
+	certStore := utils.LoadCertificates(NewCertificatesPathStore())
+
 	// Initialize routes
-	routes := router.InitRoutes(c)
+	routes := router.InitRoutes(c, certStore)
 
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,

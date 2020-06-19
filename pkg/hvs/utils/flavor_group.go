@@ -2,7 +2,7 @@
  * Copyright (C) 2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package util
+package utils
 
 import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
@@ -13,8 +13,8 @@ import (
 var defaultLog = log.GetDefaultLogger()
 
 func CreateFlavorGroupByName(flavorgroupName string) hvs.FlavorGroup {
-	defaultLog.Trace("util/flavor_group:CreateFlavorGroupByName() Entering")
-	defer defaultLog.Trace("util/flavor_group:CreateFlavorGroupByName() Leaving")
+	defaultLog.Trace("utils/flavor_group:CreateFlavorGroupByName() Entering")
+	defer defaultLog.Trace("utils/flavor_group:CreateFlavorGroupByName() Leaving")
 
 	var collection hvs.FlavorMatchPolicyCollection
 	collection.FlavorMatchPolicies = GetAutomaticFlavorMatchPolicy()
@@ -27,8 +27,8 @@ func CreateFlavorGroupByName(flavorgroupName string) hvs.FlavorGroup {
 }
 
 func GetAutomaticFlavorMatchPolicy() []hvs.FlavorMatchPolicy {
-	defaultLog.Trace("util/flavor_group:GetAutomaticFlavorMatchPolicy() Entering")
-	defer defaultLog.Trace("util/flavor_group:GetAutomaticFlavorMatchPolicy() Leaving")
+	defaultLog.Trace("utils/flavor_group:GetAutomaticFlavorMatchPolicy() Entering")
+	defer defaultLog.Trace("utils/flavor_group:GetAutomaticFlavorMatchPolicy() Leaving")
 
 	var policies []hvs.FlavorMatchPolicy
 	policies = append(policies, hvs.NewFlavorMatchPolicy(cf.FlavorPartPlatform, hvs.NewMatchPolicy(hvs.MatchTypeAnyOf, hvs.FlavorRequired)))

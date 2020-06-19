@@ -55,7 +55,7 @@ func (pCa CreatePrivacyCA) Run(c setup.Context) error {
 		}
 
 		//Store key and certificate
-		err = crypt.SavePrivateKeyAsPKCS8(key, constants.PrivacyCAKeyPath)
+		err = crypt.SavePrivateKeyAsPKCS8(key, constants.PrivacyCAKeyFile)
 		if err != nil {
 			return errors.Wrap(err, "tasks/privacyca:Run() Could not save privacyca private key")
 		}
@@ -127,7 +127,7 @@ func (pCa CreatePrivacyCA) Validate(c setup.Context) error {
 	if os.IsNotExist(err) {
 		return errors.Wrapf(err, "tasks/privacyca:Validate() %s does not exist", constants.PrivacyCACertFile)
 	}
-	_, err = os.Stat(constants.PrivacyCAKeyPath)
+	_, err = os.Stat(constants.PrivacyCAKeyFile)
 	if os.IsNotExist(err) {
 		return errors.Wrap(err, "tasks/privacyca:Validate() PrivacyCAKeyFile is not configured")
 	}
