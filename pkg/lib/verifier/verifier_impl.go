@@ -11,7 +11,7 @@ package verifier
 import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier/rules"
 	"github.com/pkg/errors"
 )
 
@@ -21,7 +21,7 @@ type verifierImpl struct {
 	overallTrust         bool
 }
 
-func (v *verifierImpl) Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipSignedFlavorVerification bool) (*TrustReport, error) {
+func (v *verifierImpl) Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipSignedFlavorVerification bool) (*hvs.TrustReport, error) {
 
 	var err error
 
@@ -38,54 +38,19 @@ func (v *verifierImpl) Verify(hostManifest *types.HostManifest, signedFlavor *hv
 	// default overall trust to true, change to falsed during rule evaluation
 	v.overallTrust = true
 
-	builder, err := getPolicyBuilder(v.verifierCertificates, hostManifest, v.signedFlavor)
+	ruleFactory := newRuleFactory(v.verifierCertificates, hostManifest, v.signedFlavor, skipSignedFlavorVerification)
+	rules, policyName, err := ruleFactory.getVerificationRules()
 	if err != nil {
 		return nil, err
 	}
 
-	trustReport, err := v.applyPolicy(builder, hostManifest, skipSignedFlavorVerification)
+	results, err := v.applyRules(rules, hostManifest)
 	if err != nil {
 		return nil, err
 	}
 
-	return trustReport, nil
-}
-
-func (v *verifierImpl) applyPolicy(builder policyBuilder, hostManifest *types.HostManifest, skipSignedFlavorVerification bool) (*TrustReport, error) {
-
-	rules, err := builder.GetTrustRules()
-	if err != nil {
-		return nil, err
-	}
-
-	// if flavor signing verification is enabled, add the FlavorTrusted rule
-	if !skipSignedFlavorVerification {
-
-		var flavorPart common.FlavorPart
-		err := (&flavorPart).Parse(v.signedFlavor.Flavor.Meta.Description.FlavorPart)
-		if err != nil {
-			return nil, errors.Wrap(err, "Could not retrieve flavor part name")
-		}
-	
-		flavorTrusted, err := newFlavorTrusted(v.signedFlavor,
-		                                       v.verifierCertificates.FlavorSigningCertificate, 
-		                                       v.verifierCertificates.FlavorCACertificates,
-		                                       flavorPart)
-
-		if err != nil {
-			return nil, err
-		}
-
-		rules = append(rules, flavorTrusted)
-	}
-
-	results, err := v.applyTrustRules(hostManifest, rules)
-	if err != nil {
-		return nil, err
-	}
-
-	trustReport := TrustReport{
-		PolicyName: builder.GetName(),
+	trustReport := hvs.TrustReport{
+		PolicyName: policyName,
 		Results:    results,
 		Trusted:    v.overallTrust,
 	}
@@ -93,10 +58,12 @@ func (v *verifierImpl) applyPolicy(builder policyBuilder, hostManifest *types.Ho
 	return &trustReport, nil
 }
 
-func (v *verifierImpl) applyTrustRules(hostManifest *types.HostManifest, rules []rule) ([]RuleResult, error) {
-	var results []RuleResult
 
-	for _, rule := range rules {
+func (v *verifierImpl) applyRules(rulesToApply []rules.Rule, hostManifest *types.HostManifest) ([]hvs.RuleResult, error) {
+
+	var results []hvs.RuleResult
+
+	for _, rule := range rulesToApply {
 
 		log.Debugf("Applying verifier rule %T", rule)
 		result, err := rule.Apply(hostManifest)

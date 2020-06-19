@@ -24,17 +24,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-const (
-	PCR_VALID_256   = "00000000000000000000"
-	PCR_INVALID_256 = "11111111111111111111"
-)
-
 func TestMockExample(t *testing.T) {
 
 	hostManifest := types.HostManifest{}
 	signedFlavor := hvs.SignedFlavor{}
 	certficates := VerifierCertificates{}
-	trustReport := TrustReport{}
+	trustReport := hvs.TrustReport{}
 
 	v, err := NewMockVerifier(certficates)
 	assert.NoError(t, err)
@@ -46,13 +41,71 @@ func TestMockExample(t *testing.T) {
 	assert.NotNil(t, report)
 }
 
-func TestVerifierIntegration(t *testing.T) {
+func TestVerifierIntegrationIntel20(t *testing.T) {
+
+	verifierCertificates, err := createVerifierCertificates(t, 
+															"test_data/intel20/PrivacyCA.pem", 
+															"test_data/intel20/flavor-signer.crt.pem", 
+															"test_data/intel20/cms-ca-cert.pem", 
+															"test_data/intel20/tag-cacerts.pem")
+	if err != nil {
+		assert.FailNowf(t, "Could not create verifier certificates for intel 2.0", "%s", err)
+	}
+
+	runVerifierIntegrationTest(t, 
+							   "test_data/intel20/host_manifest.json", 
+							   "test_data/intel20/signed_flavors.json", 
+							   "test_data/intel20/trust_report.json", 
+							   verifierCertificates)
+}
+
+func TestVerifierIntegrationVMWare12(t *testing.T) {
+
+	verifierCertificates, err := createVerifierCertificates(t, 
+															"test_data/vmware12/PrivacyCA.pem", 
+															"test_data/vmware12/flavor-signer.crt.pem", 
+															"test_data/vmware12/cms-ca-cert.pem", 
+															"test_data/vmware12/tag-cacerts.pem")
+	if err != nil {
+		assert.FailNowf(t, "Could not create verifier certificates for vmware 1.2", "%s", err)
+	}
+
+	runVerifierIntegrationTest(t, 
+							   "test_data/vmware12/host_manifest.json", 
+							   "test_data/vmware12/signed_flavors.json", 
+							   "test_data/vmware12/trust_report.json", 
+							   verifierCertificates)
+}
+
+func TestVerifierIntegrationVMWare20(t *testing.T) {
+
+	verifierCertificates, err := createVerifierCertificates(t, 
+															"test_data/vmware20/PrivacyCA.pem", 
+															"test_data/vmware20/flavor-signer.crt.pem", 
+															"test_data/vmware20/cms-ca-cert.pem", 
+															"test_data/vmware20/tag-cacerts.pem")
+	if err != nil {
+		assert.FailNowf(t, "Could not create verifier certificates for vmware 2.0", "%s", err)
+	}
+
+	runVerifierIntegrationTest(t, 
+							   "test_data/vmware20/host_manifest.json", 
+							   "test_data/vmware20/signed_flavors.json", 
+							   "test_data/vmware20/trust_report.json", 
+							   verifierCertificates)
+}
+
+func runVerifierIntegrationTest(t *testing.T, 
+								hostManifestFile string, 
+								signedFlavorsFile string, 
+								trustReportFile string, 
+								verifierCertificates VerifierCertificates) {
 
 	var hostManifest types.HostManifest
 	var signedFlavors []hvs.SignedFlavor
-	var javaTrustReports map[string]TrustReport
+	var javaTrustReports map[string]hvs.TrustReport
 
-	manifestJSON, err := ioutil.ReadFile("test_data/host_manifest.json")
+	manifestJSON, err := ioutil.ReadFile(hostManifestFile)
 	if err != nil {
 		assert.FailNowf(t, "Could not load host manifest file", "%s", err)
 	}
@@ -62,9 +115,9 @@ func TestVerifierIntegration(t *testing.T) {
 		assert.FailNowf(t, "Could not unmarshal host manifest json", "%s", err)
 	}
 
-	flavorsJSON, err := ioutil.ReadFile("test_data/signed_flavors.json")
+	flavorsJSON, err := ioutil.ReadFile(signedFlavorsFile)
 	if err != nil {
-		assert.FailNowf(t, "Could not load signed flavor file", "%s", err)
+		assert.FailNowf(t, "Could not load signed flavors file", "%s", err)
 	}
 
 	err = json.Unmarshal(flavorsJSON, &signedFlavors)
@@ -72,17 +125,12 @@ func TestVerifierIntegration(t *testing.T) {
 		assert.FailNowf(t, "Could not unmarshal host manifest json", "%s", err)
 	}
 
-	verifierCertificates, err := createVerifierCertificates(t)
-	if err != nil {
-		assert.FailNowf(t, "Could not create verifier certificates", "%s", err)
-	}
-	
 	v, err := NewVerifier(verifierCertificates)
 	if err != nil {
 		assert.FailNowf(t, "Could not unmarshal host manifest json", "%s", err)
 	}
 
-	javaTrustReportsJSON, err := ioutil.ReadFile("test_data/trust_report.json")
+	javaTrustReportsJSON, err := ioutil.ReadFile(trustReportFile)
 	if err != nil {
 		assert.FailNowf(t, "Could load test_data/trust_report.json: %s", err.Error())
 	}
@@ -129,7 +177,7 @@ func TestVerifierIntegration(t *testing.T) {
 		// sort.Sort(ResultsSort(trustReport.Results))
 		// sort.Sort(ResultsSort(expectedTrustReport.Results))
 
-		// fileName := signedFlavor.Flavor.Meta.Description.FlavorPart + "." + signedFlavor.Flavor.Meta.ID
+		// fileName := signedFlavor.Flavor.Meta.Description.FlavorPart + "." + signedFlavor.Flavor.Meta.ID.String()
 
 		// expectedTrustReportJSON, err := json.MarshalIndent(expectedTrustReport, "", "  ")
 		// assert.NoError(t, err)
@@ -141,20 +189,24 @@ func TestVerifierIntegration(t *testing.T) {
 	}
 }
 
-func createVerifierCertificates(t *testing.T) (VerifierCertificates, error) {
+func createVerifierCertificates(t *testing.T, 
+								privacyCAFile string, 
+								flavorSignerCertFile string, 
+								cmsCAsFile string, 
+								tagCertsFile string) (VerifierCertificates, error) {
 
 	//
 	// Privacy CA
 	//
-	privacyCAsPemBytes, err := ioutil.ReadFile("test_data/PrivacyCA.pem")
+	privacyCAsPemBytes, err := ioutil.ReadFile(privacyCAFile)
 	if err != nil {
-		assert.FailNowf(t, "Could parse test_data/PrivacyCA.pem: %s", err.Error())
+		assert.FailNowf(t, "Could parse privacy file '%s': %s", privacyCAFile, err.Error())
 	}
 
 	privacyCACertificates := x509.NewCertPool()
 	ok := privacyCACertificates.AppendCertsFromPEM(privacyCAsPemBytes)
 	if !ok {
-		assert.FailNow(t, "Error loading asset tag certs")
+		assert.FailNow(t, "Error loading privacy CA")
 	}
 
 	//
@@ -169,9 +221,9 @@ func createVerifierCertificates(t *testing.T) (VerifierCertificates, error) {
 	//
 	// The following code parses those files...
 
-	flavorSigningPemBytes, err := ioutil.ReadFile("test_data/flavor-signer.crt.pem")
+	flavorSigningPemBytes, err := ioutil.ReadFile(flavorSignerCertFile)
 	if err != nil {
-		assert.FailNowf(t, "Could load test_data/cflavor-signer.crt.pem: %s", err.Error())
+		assert.FailNowf(t, "Could load flavor sining cert '%s': %s", flavorSignerCertFile, err.Error())
 	}
 
 	flavorSigningCertificate, flavorCACertificates, err := crypt.GetCertAndChainFromPem(flavorSigningPemBytes)
@@ -179,9 +231,9 @@ func createVerifierCertificates(t *testing.T) (VerifierCertificates, error) {
 		assert.FailNowf(t, "Error building flavor signing certificate: %s", err.Error())
 	}
 
-	flavorCAsPemBytes, err := ioutil.ReadFile("test_data/cms-ca-cert.pem")
+	flavorCAsPemBytes, err := ioutil.ReadFile(cmsCAsFile)
 	if err != nil {
-		assert.FailNowf(t, "Could load test_data/cms-ca-cert.pem: %s", err.Error())
+		assert.FailNowf(t, "Could load cms CA file '%s': %s", cmsCAsFile, err.Error())
 	}
 
 	ok = flavorCACertificates.AppendCertsFromPEM(flavorCAsPemBytes)
@@ -192,9 +244,9 @@ func createVerifierCertificates(t *testing.T) (VerifierCertificates, error) {
 	//
 	// Asset Tags
 	//
-	assetTagPemBytes, err := ioutil.ReadFile("test_data/tag-cacerts.pem")
+	assetTagPemBytes, err := ioutil.ReadFile(tagCertsFile)
 	if err != nil {
-		assert.FailNowf(t, "Could load test/tag-cacerts.pem: %s", err.Error())
+		assert.FailNowf(t, "Could load tag certs file '%s': %s", tagCertsFile, err.Error())
 	}
 
 	assetTagCACertificates := x509.NewCertPool()
@@ -224,16 +276,16 @@ func NewMockVerifier(certificates VerifierCertificates) (*MockVerifier, error) {
 	return &MockVerifier{certificates: certificates}, nil
 }
 
-func (v *MockVerifier) Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipFlavorSignatureVerification bool) (*TrustReport, error) {
+func (v *MockVerifier) Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipFlavorSignatureVerification bool) (*hvs.TrustReport, error) {
 	args := v.Called(hostManifest, signedFlavor, skipFlavorSignatureVerification)
-	return args.Get(0).(*TrustReport), args.Error(1)
+	return args.Get(0).(*hvs.TrustReport), args.Error(1)
 }
 
 //-------------------------------------------------------------------------------------------------
 // R E S U L T S   S O R T
 //-------------------------------------------------------------------------------------------------
 
-type ResultsSort []RuleResult
+type ResultsSort []hvs.RuleResult
 
 func (results ResultsSort) Len() int {
 	return len(results) 

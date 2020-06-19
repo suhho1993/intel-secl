@@ -30,7 +30,7 @@ type VerifierCertificates struct {
 // and signed flavor.  The 'skipFlavorsignatureVerfication' parameter can 
 // be used to disable the verification of the flavor signature.
 type Verifier interface {
-	Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipFlavorSignatureVerification bool) (*TrustReport, error)
+	Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipFlavorSignatureVerification bool) (*hvs.TrustReport, error)
 }
 
 // NewVerifier Creates a Verifier provided a valid set of VerifierCertificates.
