@@ -8,13 +8,18 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
+	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	model "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"net/http"
 	"strings"
@@ -51,8 +56,13 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
 	}
 
+	if reqHost.HostName == "" || reqHost.ConnectionString == "" {
+		secLog.Error("controllers/host_controller:Create() Host connection string and host name must be specified")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Host connection string and host name must be specified"}
+	}
+
 	if err := validateHostCreateCriteria(reqHost); err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:Create() Invalid create criteria")
+		secLog.WithError(err).Error("controllers/host_controller:Create() Invalid host data")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
@@ -69,18 +79,51 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Host with this name already exist"}
 	}
 
-	//TODO: connect to the host and retrieve the host manifest
-
-	var flavorgroupNames []string
-	if len(reqHost.FlavorgroupNames) != 0 {
-		flavorgroupNames = reqHost.FlavorgroupNames
-	} else {
-		flavorgroupNames = append(flavorgroupNames, models.FlavorGroupsAutomatic.String())
+	connectionString, err := utils.GenerateConnectionString(reqHost.ConnectionString)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:Create() Could not generate formatted connection string")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	//TODO: Link to default software and workload groups if host is linux
+	defaultLog.Debugf("Connecting to host to get the host manifest and the hardware UUID of the host : %s", reqHost.HostName)
+	// connect to the host and retrieve the host manifest
+	hostInfo, err := getHostInfo(connectionString)
+	if err != nil {
+		var hostState string
+		//TODO: Determine host-state
+		defaultLog.Warnf("Could not connect to host, hardware UUID and host manifest will not be set: %s", hostState)
+	}
 
-	//TODO: remove credentials from connection string for host table storage
+	var hwUuid uuid.UUID
+	if hostInfo != nil && hostInfo.HardwareUUID != "" {
+		hwid, err := uuid.Parse(hostInfo.HardwareUUID)
+		if err == nil {
+			hwUuid = hwid
+		}
+	}
+
+	var fgNames []string
+	if len(reqHost.FlavorgroupNames) != 0 {
+		fgNames = reqHost.FlavorgroupNames
+	} else {
+		fgNames = append(fgNames, models.FlavorGroupsAutomatic.String())
+	}
+
+	// Link to default software and workload groups if host is linux
+	if hostInfo != nil && isLinuxHost(hostInfo) {
+		for _, component := range hostInfo.InstalledComponents {
+			if component == types.HostComponentTagent.String() {
+				fgNames = append(fgNames, models.FlavorGroupsPlatformSoftware.String())
+			} else if component == types.HostComponentWlagent.String() {
+				fgNames = append(fgNames, models.FlavorGroupsWorkloadSoftware.String())
+			}
+		}
+	}
+
+	reqHost.HardwareUuid = hwUuid
+	reqHost.FlavorgroupNames = fgNames
+	// remove credentials from connection string for host table storage
+	reqHost.ConnectionString = utils.GetConnectionStringWithoutCredentials(connectionString)
 
 	createdHost, err := hc.HStore.Create(&reqHost)
 	if err != nil {
@@ -90,7 +133,7 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 
 	//TODO: create credential
 
-	if err := hc.linkFlavorgroupsToHost(flavorgroupNames, createdHost.Id); err != nil {
+	if err := hc.linkFlavorgroupsToHost(fgNames, createdHost.Id); err != nil {
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to associate Host with flavorgroups"}
 	}
 
@@ -124,6 +167,26 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	defaultLog.Trace("controllers/host_controller:Update() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Update() Leaving")
 
+	if r.ContentLength == 0 {
+		secLog.Error("controllers/host_controller:Update() The request body was not provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body was not provided"}
+	}
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	var reqHost hvs.Host
+	err := dec.Decode(&reqHost)
+	if err != nil {
+		secLog.WithError(err).Errorf("controllers/host_controller:Update() %s :  Failed to decode request body as Host", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
+	}
+
+	if err := validateHostCreateCriteria(reqHost); err != nil {
+		secLog.WithError(err).Error("controllers/host_controller:Update() Invalid host data")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
+
 	id := uuid.MustParse(mux.Vars(r)["id"])
 	host, err := hc.HStore.Retrieve(id)
 	if err != nil {
@@ -134,21 +197,6 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 			secLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Update() Host retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host"}
 		}
-	}
-
-	if r.ContentLength == 0 {
-		secLog.Error("controllers/host_controller:Update() The request body was not provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body was not provided"}
-	}
-
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-
-	var reqHost hvs.Host
-	err = dec.Decode(&reqHost)
-	if err != nil {
-		secLog.WithError(err).Errorf("controllers/host_controller:Update() %s :  Failed to decode request body as Host", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
 	}
 
 	if reqHost.HostName != "" {
@@ -164,7 +212,16 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	}
 
 	if reqHost.ConnectionString != "" {
-		//TODO: remove credentials from connection string for host table storage
+		connectionString, err := utils.GenerateConnectionString(reqHost.ConnectionString)
+		if err != nil {
+			defaultLog.WithError(err).Error("controllers/host_controller:Update() Could not generate formatted connection string")
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		}
+
+		// remove credentials from connection string for host table storage
+		host.ConnectionString = utils.GetConnectionStringWithoutCredentials(connectionString)
+
+		//TODO: update credential
 	}
 
 	updatedHost, err := hc.HStore.Update(host)
@@ -172,8 +229,6 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 		secLog.WithError(err).Error("controllers/host_controller:Update() Host update failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host"}
 	}
-
-	//TODO: update credential
 
 	if len(reqHost.FlavorgroupNames) != 0 {
 		if err := hc.linkFlavorgroupsToHost(reqHost.FlavorgroupNames, updatedHost.Id); err != nil {
@@ -266,16 +321,14 @@ func validateHostCreateCriteria(host hvs.Host) error {
 	defaultLog.Trace("controllers/host_controller:validateHostCreateCriteria() Entering")
 	defer defaultLog.Trace("controllers/host_controller:validateHostCreateCriteria() Leaving")
 
-	if host.HostName == "" || host.ConnectionString == "" {
-		return errors.New("Host connection string and host name must be specified")
+	if host.HostName != "" {
+		if err := validation.ValidateHostname(host.HostName); err != nil {
+			return errors.Wrap(err, "Valid Host Name must be specified")
+		}
 	}
-
-	if err := validation.ValidateHostname(host.HostName); err != nil {
-		return errors.Wrap(err, "Valid Host Name must be specified")
+	if host.ConnectionString != "" {
+		//TODO: Add validation for Connection String
 	}
-
-	//TODO: Add validation for Connection String
-
 	return nil
 }
 
@@ -316,6 +369,34 @@ func validateHostFilterCriteria(criteria *models.HostFilterCriteria) error {
 	return nil
 }
 
+func getHostInfo(cs string) (*model.HostInfo, error) {
+	defaultLog.Trace("controllers/host_controller:getHostInfo() Entering")
+	defer defaultLog.Trace("controllers/host_controller:getHostInfo() Leaving")
+
+	conf := config.Global()
+	hc, err := hostconnector.NewHostConnector(cs, conf.AASApiUrl, constants.TrustedCaCertsDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not instantiate host connector")
+	}
+
+	hostInfo, err := hc.GetHostDetails()
+	return &hostInfo, err
+}
+
+func isLinuxHost(hostInfo *model.HostInfo) bool {
+	defaultLog.Trace("controllers/host_controller:isLinuxHost() Entering")
+	defer defaultLog.Trace("controllers/host_controller:isLinuxHost() Leaving")
+
+	osName := strings.ToUpper(strings.TrimSpace(hostInfo.OSName))
+	// true when running on a linux host that is not a docker container
+	if osName != types.OsWindows.String() && osName != types.OsWindows2k16.String() &&
+		osName != types.OsWindows2k16dc.String() && osName != types.OsVMware.String() &&
+		!hostInfo.IsDockerEnvironment {
+		return true
+	}
+	return false
+}
+
 func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, hostId uuid.UUID) error {
 	defaultLog.Trace("controllers/host_controller:linkFlavorgroupsToHost() Entering")
 	defer defaultLog.Trace("controllers/host_controller:linkFlavorgroupsToHost() Leaving")
@@ -325,6 +406,7 @@ func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, host
 		existingFlavorGroups, _ := hc.FGStore.Search(&models.FlavorGroupFilterCriteria{
 			NameEqualTo: flavorgroupName,
 		})
+
 		if existingFlavorGroups != nil && len(existingFlavorGroups.Flavorgroups) > 0 {
 			flavorgroupIds = append(flavorgroupIds, existingFlavorGroups.Flavorgroups[0].ID)
 		} else {
@@ -345,7 +427,6 @@ func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, host
 			//TODO: Link host with flavorgroup
 		}
 	}
-
 	return nil
 }
 

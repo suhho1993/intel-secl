@@ -24,8 +24,9 @@ func (hs *HostStore) Create(h *hvs.Host) (*hvs.Host, error) {
 	defaultLog.Trace("postgres/host_store:Create() Entering")
 	defer defaultLog.Trace("postgres/host_store:Create() Leaving")
 
+	h.Id = uuid.New()
 	dbHost := host{
-		Id:               uuid.New(),
+		Id:               h.Id,
 		Name:             h.HostName,
 		Description:      h.Description,
 		ConnectionString: h.ConnectionString,
@@ -33,7 +34,7 @@ func (hs *HostStore) Create(h *hvs.Host) (*hvs.Host, error) {
 	}
 
 	if err := hs.Store.Db.Create(&dbHost).Error; err != nil {
-		return h, errors.Wrap(err, "postgres/host_store:Create() failed to create Host")
+		return nil, errors.Wrap(err, "postgres/host_store:Create() failed to create Host")
 	}
 	return h, nil
 }
@@ -63,7 +64,7 @@ func (hs *HostStore) Update(h *hvs.Host) (*hvs.Host, error) {
 	}
 
 	if err := hs.Store.Db.Save(&dbHost).Error; err != nil {
-		return h, errors.Wrap(err, "postgres/host_store:Update() failed to update Host")
+		return nil, errors.Wrap(err, "postgres/host_store:Update() failed to update Host")
 	}
 	return h, nil
 }
