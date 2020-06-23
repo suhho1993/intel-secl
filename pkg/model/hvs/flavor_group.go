@@ -45,7 +45,7 @@ const (
 )
 
 func (mt MatchType) String() string {
-	return mt.String()
+	return string(mt)
 }
 
 type FlavorRequiredPolicy string
@@ -56,7 +56,7 @@ const (
 )
 
 func (req FlavorRequiredPolicy) String() string {
-	return req.String()
+	return string(req)
 }
 
 func NewFlavorMatchPolicy(fp cf.FlavorPart, mp MatchPolicy) FlavorMatchPolicy {

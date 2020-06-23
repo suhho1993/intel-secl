@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
@@ -26,11 +26,11 @@ import (
 )
 
 type HostController struct {
-	HStore  *postgres.HostStore
-	FGStore *postgres.FlavorGroupStore
+	HStore  domain.HostStore
+	FGStore domain.FlavorGroupStore
 }
 
-func NewHostController(hs *postgres.HostStore, fgs *postgres.FlavorGroupStore) *HostController {
+func NewHostController(hs domain.HostStore, fgs domain.FlavorGroupStore) *HostController {
 	return &HostController{
 		HStore:  hs,
 		FGStore: fgs,
@@ -106,11 +106,13 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 	if len(reqHost.FlavorgroupNames) != 0 {
 		fgNames = reqHost.FlavorgroupNames
 	} else {
+		defaultLog.Debug("Flavorgroup names not present in request, associating with default ones")
 		fgNames = append(fgNames, models.FlavorGroupsAutomatic.String())
 	}
 
 	// Link to default software and workload groups if host is linux
 	if hostInfo != nil && isLinuxHost(hostInfo) {
+		defaultLog.Debug("Host is linux, associating with default software flavorgroups")
 		for _, component := range hostInfo.InstalledComponents {
 			if component == types.HostComponentTagent.String() {
 				fgNames = append(fgNames, models.FlavorGroupsPlatformSoftware.String())
@@ -120,10 +122,13 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 		}
 	}
 
+	// remove credentials from connection string for host table storage
+	csWithoutCredentials := utils.GetConnectionStringWithoutCredentials(connectionString)
+	defaultLog.Debugf("connection string without credentials : %s", csWithoutCredentials)
+
 	reqHost.HardwareUuid = hwUuid
 	reqHost.FlavorgroupNames = fgNames
-	// remove credentials from connection string for host table storage
-	reqHost.ConnectionString = utils.GetConnectionStringWithoutCredentials(connectionString)
+	reqHost.ConnectionString = csWithoutCredentials
 
 	createdHost, err := hc.HStore.Create(&reqHost)
 	if err != nil {
@@ -133,6 +138,7 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 
 	//TODO: create credential
 
+	defaultLog.Debugf("Associating host %s with flavorgroups %+q", reqHost.HostName, fgNames)
 	if err := hc.linkFlavorgroupsToHost(fgNames, createdHost.Id); err != nil {
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to associate Host with flavorgroups"}
 	}
@@ -219,7 +225,10 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 		}
 
 		// remove credentials from connection string for host table storage
-		host.ConnectionString = utils.GetConnectionStringWithoutCredentials(connectionString)
+		csWithoutCredentials := utils.GetConnectionStringWithoutCredentials(connectionString)
+		defaultLog.Debugf("connection string without credentials : %s", csWithoutCredentials)
+
+		host.ConnectionString = csWithoutCredentials
 
 		//TODO: update credential
 	}
@@ -231,6 +240,7 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	}
 
 	if len(reqHost.FlavorgroupNames) != 0 {
+		defaultLog.Debugf("Associating host %s with flavorgroups : %+q", host.HostName, reqHost.FlavorgroupNames)
 		if err := hc.linkFlavorgroupsToHost(reqHost.FlavorgroupNames, updatedHost.Id); err != nil {
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to associate Host with flavorgroups"}
 		}
@@ -327,7 +337,7 @@ func validateHostCreateCriteria(host hvs.Host) error {
 		}
 	}
 	if host.ConnectionString != "" {
-		//TODO: Add validation for Connection String
+		return utils.ValidateConnectionString(host.ConnectionString)
 	}
 	return nil
 }
@@ -342,22 +352,22 @@ func validateHostFilterCriteria(criteria *models.HostFilterCriteria) error {
 		}
 	}
 	if criteria.Key != "" {
-		if err := validation.ValidateNameString(criteria.Key); err != nil {
+		if err := validation.ValidateStrings([]string{criteria.Key}); err != nil {
 			return errors.Wrap(err, "Valid contents for key must be specified")
 		}
 	}
 	if criteria.Value != "" {
-		if err := validation.ValidateNameString(criteria.Value); err != nil {
+		if err := validation.ValidateStrings([]string{criteria.Value}); err != nil {
 			return errors.Wrap(err, "Valid contents for value must be specified")
 		}
 	}
 	if criteria.NameEqualTo != "" {
-		if err := validation.ValidateNameString(criteria.NameEqualTo); err != nil {
+		if err := validation.ValidateHostname(criteria.NameEqualTo); err != nil {
 			return errors.Wrap(err, "Valid contents for nameEqualTo must be specified")
 		}
 	}
 	if criteria.NameContains != "" {
-		if err := validation.ValidateNameString(criteria.NameContains); err != nil {
+		if err := validation.ValidateHostname(criteria.NameContains); err != nil {
 			return errors.Wrap(err, "Valid contents for nameContains must be specified")
 		}
 	}

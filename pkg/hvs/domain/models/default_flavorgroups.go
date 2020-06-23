@@ -14,5 +14,5 @@ const (
 )
 
 func (dfg FlavorGroups) String() string {
-	return dfg.String()
+	return string(dfg)
 }

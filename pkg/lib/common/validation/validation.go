@@ -32,6 +32,9 @@ var (
 	pemEncodedKeyReg = regexp.MustCompile("(^[-a-zA-Z0-9//=+ ]*$)")
 	dateReg          = regexp.MustCompile("[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]")
 	uuidReg          = regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
+	portReg          = regexp.MustCompile("(?:([0-9]{1,5}))")
+	defaultReg       = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")
+	passwordReg      = regexp.MustCompile("(?:([a-zA-Z0-9_\\\\.\\\\, @!#$%^+=>?:{}()\\[\\]\\\"|;~`'*-/]+))")
 )
 
 // ValidateEnvList can check if all environment variables in input slice exist
@@ -113,10 +116,10 @@ func ValidateEmailString(email string) error {
 	return errors.New("Invalid input for email")
 }
 
-// ValidatePasswordString validate password. For not we are only checking if this is empty
+// ValidatePasswordString method is used to validate the password string.
 func ValidatePasswordString(pwd string) error {
 
-	if pwd != "" && len(pwd) < 256 {
+	if len(pwd) < 256 && passwordReg.MatchString(pwd) {
 		return nil
 	}
 	return errors.New("Invalid input for password")
@@ -130,6 +133,15 @@ func ValidateHostname(hostname string) error {
 		return nil
 	}
 	return errors.New("Invalid hostname or ip")
+}
+
+// ValidatePort method is used to validate the port number
+func ValidatePort(port string) error {
+
+	if portReg.MatchString(port) {
+		return nil
+	}
+	return errors.New("Invalid port number")
 }
 
 // ValidateIdentifier method is used to validate an identifier value

@@ -28,8 +28,8 @@ type (
 	}
 
 	host struct {
-		Id               uuid.UUID `gorm:"primary_key;type:uuid;index:idx_host_hostname"`
-		Name             string    `gorm:"type:varchar(255);not null"`
+		Id               uuid.UUID `gorm:"primary_key;type:uuid"`
+		Name             string    `gorm:"type:varchar(255);not null;index:idx_host_hostname"`
 		Description      string
 		ConnectionString string    `gorm:"not null"`
 		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
