@@ -27,8 +27,11 @@ type (
 	}
 
 	FlavorStore interface {
+		Create(*hvs.SignedFlavor) (*hvs.SignedFlavor, error)
+		Retrieve(uuid.UUID) (*hvs.SignedFlavor, error)
+		Search(*models.FlavorFilterCriteria) ([]*hvs.SignedFlavor, error)
+		Delete(uuid.UUID) error
 	}
-	// TODO: Define all contract methods here
 
 	// HostStatusStore specifies the DB operations that must be implemented for the Host Status API
 	HostStatusStore interface {

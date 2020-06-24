@@ -24,6 +24,10 @@ type SignedFlavor struct {
 	Signature string `json:"signature"`
 }
 
+type SignedFlavorCollection struct {
+	SignedFlavors []*SignedFlavor `json:"signed_flavors" xml:"signed_flavors"`
+}
+
 // NewSignedFlavorFromJSON returns an instance of SignedFlavor from an JSON string
 func NewSignedFlavorFromJSON(sfstring string) (*SignedFlavor, error) {
 	var sf SignedFlavor

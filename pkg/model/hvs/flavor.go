@@ -30,6 +30,10 @@ type Flavor struct {
 	flavorDigest []byte 						// internal variable that stores the orignating flavor json digest used in 'SignedFlavor.Verify()'
 }
 
+type FlavorCollection struct {
+	Flavors []*Flavor `json:"flavors" xml:"flavors"`
+}
+
 // NewFlavor returns a new instance of Flavor
 func NewFlavor(meta *model.Meta, bios *model.Bios, hardware *model.Hardware, pcrs map[crypt.DigestAlgorithm]map[types.PcrIndex]model.PcrEx, external *model.External, software *model.Software) *Flavor {
 	// Since maps are hard to marshal as JSON, let's try to convert the DigestAlgorithm and PcrIndex to strings

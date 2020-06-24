@@ -20,11 +20,23 @@ import (
 type (
 	PGJsonStrMap          map[string]interface{}
 	PGFlavorMatchPolicies hvs.FlavorMatchPolicyCollection
+	PGHostManifest          types.HostManifest
+	PGHostStatusInformation hvs.HostStatusInformation
+	PGFlavorContent hvs.Flavor
 
 	flavorGroup struct {
 		ID                    uuid.UUID             `json:"id" gorm:"primary_key;type:uuid"`
 		Name                  string                `json:"name"`
 		FlavorTypeMatchPolicy PGFlavorMatchPolicies `json:"flavor_type_match_policy,omitempty" sql:"type:JSONB"`
+	}
+
+	flavor struct {
+		ID         uuid.UUID       `json:"id" gorm:"primary_key;type:uuid"`
+		Content    PGFlavorContent `json:"flavor" sql:"type:JSONB"`
+		CreatedAt  time.Time       `json:"created"`
+		Label      string          `gorm:"unique;not null"`
+		FlavorPart string		   `json:"flavor_part"`
+		Signature  string 		   `json:"signature"`
 	}
 
 	host struct {
@@ -34,9 +46,6 @@ type (
 		ConnectionString string    `gorm:"not null"`
 		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
 	}
-
-	PGHostManifest          types.HostManifest
-	PGHostStatusInformation hvs.HostStatusInformation
 
 	// hostStatus holds all the hostStatus records for VS-attested hosts
 	hostStatus struct {
@@ -118,3 +127,16 @@ func (fmp *PGFlavorMatchPolicies) Scan(value interface{}) error {
 	}
 	return json.Unmarshal(b, &fmp)
 }
+
+func (fl PGFlavorContent) Value() (driver.Value, error) {
+	return json.Marshal(fl)
+}
+
+func (fl *PGFlavorContent) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("postgres/models:PGFlavorContent_Scan() - type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &fl)
+}
+
