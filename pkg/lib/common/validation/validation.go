@@ -18,6 +18,7 @@ const (
 
 var (
 	nameReg          = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
+	issuerDN         = regexp.MustCompile("(^[a-zA-Z0-9-_,.=#+?&;)( ]*$)")
 	unameReg         = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
 	userorEmailReg   = regexp.MustCompile("^[a-zA-Z0-9.-_]+@?[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 	emailReg         = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
@@ -151,6 +152,15 @@ func ValidateIdentifier(idf string) error {
 		return nil
 	}
 	return errors.New("Invalid identifier")
+}
+
+// ValidateIssuer method is used to validate an issuer value especially in certificates
+func ValidateIssuer(isf string) error {
+
+	if issuerDN.MatchString(isf) {
+		return nil
+	}
+	return errors.New("Invalid issuer string")
 }
 
 // ValidateStrings method is used to validate input strings

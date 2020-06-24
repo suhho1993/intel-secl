@@ -112,12 +112,7 @@ func (controller FlavorgroupController) Delete(w http.ResponseWriter, r *http.Re
 	defaultLog.Trace("controllers/flavorgroup_controller:Delete() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:Delete() Leaving")
 
-	id, err := uuid.Parse(mux.Vars(r)["id"])
-	if err != nil {
-		secLog.WithError(err).WithField("id", id).Error(
-			"controllers/flavorgroup_controller:Delete() Invalid UUID format of the identifier provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid UUID format of the identifier provided"}
-	}
+	id := uuid.MustParse(mux.Vars(r)["id"])
 
 	delFlavorGroup, err := controller.FlavorGroupStore.Retrieve(id)
 	if err != nil {
@@ -146,12 +141,7 @@ func (controller FlavorgroupController) Retrieve(w http.ResponseWriter, r *http.
 	defaultLog.Trace("controllers/flavorgroup_controller:Retrieve() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:Retrieve() Leaving")
 
-	id, err := uuid.Parse(mux.Vars(r)["id"])
-	if err != nil {
-		secLog.WithError(err).WithField("id", id).Error(
-			"controllers/flavorgroup_controller:Retrieve() Invalid UUID format of the identifier provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Invalid UUID format of the identifier provided"}
-	}
+	id := uuid.MustParse(mux.Vars(r)["id"])
 
 	flavorGroup, err := controller.FlavorGroupStore.Retrieve(id)
 	if err != nil {

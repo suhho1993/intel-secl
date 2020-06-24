@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 )
 
 func SetCertifyHostKeysRoutes(router *mux.Router) *mux.Router {
@@ -23,13 +24,14 @@ func SetCertifyHostKeysRoutes(router *mux.Router) *mux.Router {
 	return router
 }
 
-func SetCertifyAiksRoutes(router *mux.Router) *mux.Router {
+func SetCertifyAiksRoutes(router *mux.Router, store *postgres.DataStore) *mux.Router {
 	defaultLog.Trace("router/certify_host_aiks:SetCertifyAiksRoutes() Entering")
 	defer defaultLog.Trace("router/certify_host_aiks:SetCertifyAiksRoutes() Leaving")
 
+	tpmEndorsementStore := postgres.NewTpmEndorsementStore(store)
 	fStore := controllers.NewPrivacyCAFileStore(consts.PrivacyCAKeyFile, consts.PrivacyCACertFile, consts.EndorsementCACertFile, consts.AikRequestsDir)
 
-	certifyHostAiksController := controllers.CertifyHostAiksController{Store: fStore}
+	certifyHostAiksController := controllers.NewCertifyHostAiksController(fStore, tpmEndorsementStore)
 	router.Handle("/privacyca/identity-challenge-request", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge),
 		[]string{consts.CertifyAik}))).Methods("POST")
 	router.Handle("/privacyca/identity-challenge-response", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse),

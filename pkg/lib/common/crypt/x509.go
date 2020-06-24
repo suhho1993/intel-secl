@@ -261,6 +261,7 @@ func GetSubjectCertsMapFromPemFile(path string) (map[string]x509.Certificate, er
 		log.WithError(err).Warn("crypt/x509:GetSubjectCertsMapFromPemFile() Failed to parse certificate")
 	} else {
 		subjectCertMap[certAuth.Subject.CommonName] = *certAuth
+		log.Debugf("Issuer CommonName %s", certAuth.Subject.CommonName)
 	}
 
 	// Return if no more certificates present in path file

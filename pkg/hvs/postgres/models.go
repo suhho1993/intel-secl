@@ -73,6 +73,14 @@ type (
 		Message   string            `json:"message,omitempty"`
 	}
 
+	tpmEndorsement struct {
+		ID           uuid.UUID `gorm:"id,omitempty" gorm:"primary_key;type:uuid"`
+		HardwareUUID uuid.UUID `gorm:"hardware_uuid;not null"`
+		Issuer       string    `gorm:"issuer;not null"`
+		Revoked      bool      `gorm:"revoked,omitempty" `
+		Certificate  string    `gorm:"certificate;not null"`
+		Comment      string    `gorm:"comment,omitempty"`
+	}
 	tagCertificate struct {
 		ID uuid.UUID `gorm:"primary_key; type:uuid"`
 		// TODO: Do we need to link this to Host.Hardware_UUID?

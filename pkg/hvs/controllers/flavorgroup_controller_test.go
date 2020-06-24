@@ -113,16 +113,6 @@ var _ = Describe("FlavorgroupController", func() {
 				Expect(w.Code).To(Equal(200))
 			})
 		})
-		Context("Try to retrieve FlavorGroup by incorrect ID from data store", func() {
-			It("Should fail to retrieve FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
-				req, err := http.NewRequest("GET", "/flavorgroups/ee37c360-7eae-4250-a677", nil)
-				Expect(err).NotTo(HaveOccurred())
-				w = httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(400))
-			})
-		})
 		Context("Try to retrieve FlavorGroup by invalid ID from data store", func() {
 			It("Should fail to retrieve FlavorGroup", func() {
 				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
@@ -147,16 +137,7 @@ var _ = Describe("FlavorgroupController", func() {
 				Expect(w.Code).To(Equal(204))
 			})
 		})
-		Context("Delete FlavorGroup by incorrect ID from data store", func() {
-			It("Should fail to delete FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE", "/flavorgroups/73755fda-c910-46be-821f", nil)
-				Expect(err).NotTo(HaveOccurred())
-				w = httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(400))
-			})
-		})
+
 		Context("Delete FlavorGroup by invalid ID from data store", func() {
 			It("Should fail to delete FlavorGroup", func() {
 				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Delete))).Methods("DELETE")

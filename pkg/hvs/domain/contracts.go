@@ -33,6 +33,15 @@ type (
 		Delete(uuid.UUID) error
 	}
 
+	TpmEndorsementStore interface {
+		Create(*hvs.TpmEndorsement) (*hvs.TpmEndorsement, error)
+		Update(*hvs.TpmEndorsement) (*hvs.TpmEndorsement, error)
+		Retrieve(uuid.UUID) (*hvs.TpmEndorsement, error)
+		Search(*models.TpmEndorsementFilterCriteria) (*hvs.TpmEndorsementCollection, error)
+		Delete(uuid.UUID) error
+	}
+	// TODO: Define all contract methods here
+
 	// HostStatusStore specifies the DB operations that must be implemented for the Host Status API
 	HostStatusStore interface {
 		Create(*hvs.HostStatus) (*hvs.HostStatus, error)

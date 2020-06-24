@@ -30,6 +30,10 @@ type CertifyHostKeysController struct {
 	Store *PrivacyCAFileStore
 }
 
+func NewCertifyHostKeysController(store *PrivacyCAFileStore) *CertifyHostKeysController  {
+	return &CertifyHostKeysController{Store: store}
+}
+
 func (certifyHostKeysController *CertifyHostKeysController) CertifySigningKey(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/certify_host_keys_controller:Certify_host_keys() Entering")
 	defer defaultLog.Trace("controllers/certify_host_keys_controller:Certify_host_keys() Leaving")

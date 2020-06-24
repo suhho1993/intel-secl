@@ -92,6 +92,12 @@ const (
 	HostDelete   = "hosts:delete"
 	HostSearch   = "hosts:search"
 
+	TpmEndorsementCreate   = "tpm_endorsements:create"
+	TpmEndorsementStore    = "tpm_endorsements:store"
+	TpmEndorsementRetrieve = "tpm_endorsements:retrieve"
+	TpmEndorsementSearch   = "tpm_endorsements:search"
+	TpmEndorsementDelete   = "tpm_endorsements:delete"
+
 	ESXiClusterCreate   = "esxi_clusters:create"
 	ESXiClusterRetrieve = "esxi_clusters:retrieve"
 	ESXiClusterSearch   = "esxi_clusters:search"

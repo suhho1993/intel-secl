@@ -251,9 +251,12 @@ func encryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
 	defaultLog.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Entering")
 	defer defaultLog.Trace("privacyca/tpm2utils/utils:encryptSymCBC() Leaving")
 	mode := cipher.NewCBCEncrypter(block, iv)
+	padding := block.BlockSize() - len(payload)%block.BlockSize()
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	withPadding := append(payload, padtext...)
 
-	encryptedBytes := make([]byte, len(payload))
-	mode.CryptBlocks(encryptedBytes, payload)
+	encryptedBytes := make([]byte, len(withPadding))
+	mode.CryptBlocks(encryptedBytes, withPadding)
 
 	return encryptedBytes
 }
@@ -299,6 +302,10 @@ func decryptSymCBC(payload []byte, block cipher.Block, iv []byte) []byte{
 	mode := cipher.NewCBCDecrypter(block, iv)
 	decryptedBytes := make([]byte, len(payload))
 	mode.CryptBlocks(decryptedBytes, payload)
+
+	length := len(decryptedBytes)
+	unpadding := int(decryptedBytes[length-1])
+	decryptedBytes = decryptedBytes[:(length - unpadding)]
 
 	return decryptedBytes
 }

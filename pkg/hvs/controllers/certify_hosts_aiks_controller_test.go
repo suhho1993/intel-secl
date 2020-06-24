@@ -44,7 +44,7 @@ var _ = Describe("CertifyHostAiksController", func() {
 		Context("Provide valid data in request", func() {
 			It("Return Identity Proof request", func() {
 				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{Store: pCAFileStore}
+				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
 				router.Handle("/privacyca/identity-challenge-request", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge))).Methods("POST")
 
 				// Mock TA Flow for generating data for identityChallengeRequest
@@ -78,14 +78,14 @@ var _ = Describe("CertifyHostAiksController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(201))
+				Expect(w.Code).To(Equal(200))
 			})
 		})
 
 		Context("Provide invalid ekcert in request", func() {
 			It("Should get HTTP Status: 400", func() {
 				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{Store: pCAFileStore}
+				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
 				router.Handle("/privacyca/identity-challenge-request", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge))).Methods("POST")
 
 				//// Mock TA Flow for generating data for identityChallengeRequest
@@ -128,7 +128,7 @@ var _ = Describe("CertifyHostAiksController", func() {
 		Context("Provide valid data in request", func() {
 			It("Return Identity Proof request response", func() {
 				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{Store: pCAFileStore}
+				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
 				router.Handle("/privacyca/identity-challenge-response", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse))).Methods("POST")
 
 				// Mock TA Flow for generating data for identityChallengeRequestReponse
@@ -166,14 +166,14 @@ var _ = Describe("CertifyHostAiksController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(201))
+				Expect(w.Code).To(Equal(200))
 			})
 		})
 
 		Context("Provide invalid ekcert in request", func() {
 			It("Should get HTTP Status: 400", func() {
 				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{Store: pCAFileStore}
+				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
 				router.Handle("/privacyca/identity-challenge-response", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse))).Methods("POST")
 
 				// Mock TA Flow for generating data for identityChallengeRequestReponse
