@@ -5,12 +5,12 @@
 package main
 
 import (
+	_ "github.com/intel-secl/intel-secl/v3/docs/shared/hvs"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"os"
 	"os/user"
 	"strconv"
-	_ "github.com/intel-secl/intel-secl/v3/docs/shared/hvs"
 )
 
 var defaultLog = commLog.GetDefaultLogger()

@@ -5,9 +5,11 @@
 package domain
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	tamodel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 )
 
 type (
@@ -72,5 +74,38 @@ type (
 		Retrieve(uuid.UUID) (*hvs.TagCertificate, error)
 		Delete(uuid.UUID) error
 		Search(*models.TagCertificateFilterCriteria) ([]*hvs.TagCertificate, error)
+	}
+
+	HostTrustManager interface {
+		// Verify the trust of the a host.
+		//Returns the host trust report. For now marking this as interface since we have not defined the report structure
+		VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (interface{}, error)
+
+		// This method is an ansychrounous method meant to do the verify the trust of the host
+		// asynchronously. The request are persisted to Store in case the server is taken down.
+		// Parameters:
+		// hostIds - slice of hosts id whose trust should be verified
+		// fetchHostData - Fetch a new Manifest/Data from the host.
+		// preferHashMatch - Can attempt to do match a cumulative hash from the Host Manifest/ Data rather than
+		//                   doing a full report.
+		VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error
+	}
+
+	HostDataReceiver interface {
+		ProcessHostData(context.Context, hvs.Host, *tamodel.Manifest, error) error
+	}
+
+	HostDataFetcher interface {
+		// Synchronous method that blocks till the data is retrieved from the host.
+		Retrieve(context.Context, hvs.Host) (*tamodel.Manifest, error)
+
+		// Asynchronous method to be used to fetch data from hosts. As soon as the request is registered,
+		// the method returns. The result is returned individually as they are processed.
+		// We need the single host method a there is a need to cancel individual host fetch
+		// using the context
+		RetriveAsync(context.Context, hvs.Host, ...HostDataReceiver) error
+
+		// TODO: ? Do we need a method that can use used to pass in a list rather than one at a time
+		// RetriveMultipleAsync(context.Context, []*hvs.Host, rcvrs ...HostDataReceiver) error
 	}
 )
