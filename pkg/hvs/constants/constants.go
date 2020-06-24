@@ -36,6 +36,7 @@ const (
 	EndorsementCACertFile          = EndorsementCACertDir + "EndorsementCA-external.pem"
 	AIKCertValidity                = 1
 	DefaultPrivacyCACertValidity   = 5
+	DefaultTagCertValiditySeconds  = 60 * 60 * 24 * 365
 	HostSigningKeyCertificateCN    = "Signing_Key_Certificate"
 	HostBindingKeyCertificateCN    = "Binding_Key_Certificate"
 	DefaultPrivacyCaIdentityIssuer = "hvs-pca-aik"
@@ -91,11 +92,20 @@ const (
 	HostDelete   = "hosts:delete"
 	HostSearch   = "hosts:search"
 
-	ESXiClusterCreate     = "esxi_clusters:create"
-	ESXiClusterRetrieve   = "esxi_clusters:retrieve"
-	ESXiClusterSearch     = "esxi_clusters:search"
-	ESXiClusterDelete     = "esxi_clusters:delete"
+	ESXiClusterCreate   = "esxi_clusters:create"
+	ESXiClusterRetrieve = "esxi_clusters:retrieve"
+	ESXiClusterSearch   = "esxi_clusters:search"
+	ESXiClusterDelete   = "esxi_clusters:delete"
 
+	// AssetTagAPI
+
+	TagCertificateCreate = "tag_certificates:create"
+	TagCertificateDelete = "tag_certificates:delete"
+	TagCertificateSearch = "tag_certificates:search"
+	TagCertificateDeploy = "tag_certificates:deploy"
+
+	// Tag Certificates Requests API
+	TagCertificateRequestsStore = "tag_certificate_requests:store"
 )
 
 //Postgres connection SslModes
@@ -119,5 +129,5 @@ const (
 
 // Timestamp operations
 const (
-	HostStatusDateFormat = "2006-01-02 15:04:05"
+	HVSParamDateFormat = "2006-01-02 15:04:05"
 )

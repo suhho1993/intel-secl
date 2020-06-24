@@ -24,6 +24,7 @@ import (
 	"time"
 )
 
+// HostStatusController contains logic for handling HostStatus API requests
 type HostStatusController struct {
 	Store domain.HostStatusStore
 }
@@ -142,7 +143,7 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	// fromDate
 	fromDate := strings.TrimSpace(params.Get("fromDate"))
 	if fromDate != "" {
-		pTime, err := time.Parse(constants.HostStatusDateFormat, fromDate)
+		pTime, err := time.Parse(constants.HVSParamDateFormat, fromDate)
 		if err != nil {
 			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for FromDate must be specified")
 		}
@@ -152,7 +153,7 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	// toDate
 	toDate := strings.TrimSpace(params.Get("toDate"))
 	if toDate != "" {
-		pTime, err := time.Parse(constants.HostStatusDateFormat, toDate)
+		pTime, err := time.Parse(constants.HVSParamDateFormat, toDate)
 		if err != nil {
 			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ToDate must be specified")
 		}

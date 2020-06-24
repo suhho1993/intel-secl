@@ -72,6 +72,17 @@ type (
 		State     models.QueueState `json:"state"`
 		Message   string            `json:"message,omitempty"`
 	}
+
+	tagCertificate struct {
+		ID uuid.UUID `gorm:"primary_key; type:uuid"`
+		// TODO: Do we need to link this to Host.Hardware_UUID?
+		HardwareUUID uuid.UUID `gorm:"not null; type:uuid; column:hardware_uuid"`
+		Certificate  []byte    `gorm:"not null; type:bytea"`
+		Subject      string    `gorm:"not null"`
+		Issuer       string    `gorm:"not null"`
+		NotBefore    time.Time `gorm:"not null; column:notbefore"`
+		NotAfter     time.Time `gorm:"not null; column:notafter"`
+	}
 )
 
 func (qp PGJsonStrMap) Value() (driver.Value, error) {

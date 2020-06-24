@@ -33,7 +33,13 @@ type MockHostStatusStore struct {
 	HostStatusStore []*hvs.HostStatus
 }
 
-// Retrieve returns HostStatus
+// Create inserts a HostStatus
+func (store *MockHostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) {
+	store.HostStatusStore = append(store.HostStatusStore, hs)
+	return hs, nil
+}
+
+// Retrieve returns a single HostStatus record from the store
 func (store *MockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, error) {
 	for _, hs := range store.HostStatusStore {
 		if hs.ID == id {
@@ -43,7 +49,30 @@ func (store *MockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, error
 	return nil, errors.New(commErr.RowsNotFound)
 }
 
-// Delete delete HostStatus from the store
+// Updates updates an existing HostStatus
+func (store *MockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
+	if updatedHSS.ID == uuid.Nil {
+		return errors.New("HostStatus Update Failed: ID is invalid")
+	}
+
+	var isUpdated = false
+
+	for _, hs := range store.HostStatusStore {
+		if hs.ID == updatedHSS.ID {
+			hs.HostID = updatedHSS.HostID
+			hs.HostStatusInformation = updatedHSS.HostStatusInformation
+			hs.HostManifest = updatedHSS.HostManifest
+			isUpdated = true
+		}
+	}
+
+	if !isUpdated {
+		return errors.New("HostStatus Update Failed: Non-existent ID")
+	}
+	return nil
+}
+
+// Delete deletes HostStatus from the store per hostStatusId
 func (store *MockHostStatusStore) Delete(hostStatusId uuid.UUID) error {
 	for _, hs := range store.HostStatusStore {
 		if hs.ID == hostStatusId {
@@ -173,35 +202,6 @@ func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriter
 	}
 
 	return &hvs.HostStatusCollection{HostStatuses: hsc}, nil
-}
-
-// Create inserts a HostStatus
-func (store *MockHostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) {
-	store.HostStatusStore = append(store.HostStatusStore, hs)
-	return hs, nil
-}
-
-// Updates updates an existing HostStatus
-func (store *MockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
-	if updatedHSS.ID == uuid.Nil {
-		return errors.New("HostStatus Update Failed: ID is invalid")
-	}
-
-	var isUpdated = false
-
-	for _, hs := range store.HostStatusStore {
-		if hs.ID == updatedHSS.ID {
-			hs.HostID = updatedHSS.HostID
-			hs.HostStatusInformation = updatedHSS.HostStatusInformation
-			hs.HostManifest = updatedHSS.HostManifest
-			isUpdated = true
-		}
-	}
-
-	if !isUpdated {
-		return errors.New("HostStatus Update Failed: Non-existent ID")
-	}
-	return nil
 }
 
 // NewFakeHostStatusStore loads dummy data into MockHostStatusStore

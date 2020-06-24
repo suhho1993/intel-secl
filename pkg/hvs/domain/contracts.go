@@ -56,4 +56,12 @@ type (
 		Search(*models.ESXiClusterFilterCriteria) (*hvs.ESXiClusterCollection, error)
 		Delete(uuid.UUID) error
 	}
+
+	// TagCertificateStore enumerates the operations expected to be performed on a TagCertificate backend
+	TagCertificateStore interface {
+		Create(*hvs.TagCertificate) (*hvs.TagCertificate, error)
+		Retrieve(uuid.UUID) (*hvs.TagCertificate, error)
+		Delete(uuid.UUID) error
+		Search(*models.TagCertificateFilterCriteria) ([]*hvs.TagCertificate, error)
+	}
 )
