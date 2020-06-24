@@ -5,111 +5,168 @@
 package tasks
 
 import (
-	"flag"
 	"fmt"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
+	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
-	"io"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 )
 
-type Database struct {
-	Flags         []string
-	Config        *config.Configuration
+type DBSetup struct {
+	// embedded structure for holding new configuation
+	commConfig.DBConfig
+	SSLCertSource string
+
+	// the pointer to configuration structure
+	DBConfigPtr   *commConfig.DBConfig
 	ConsoleWriter io.Writer
+
+	envPrefix   string
+	commandName string
 }
 
-func (db Database) Run(c setup.Context) error {
-	defaultLog.Trace("tasks/database:Run() Entering")
-	defer defaultLog.Trace("tasks/database:Run() Leaving")
+// this is only used here, better don't put in constants package
+const defaultSSLCertFilePath = constants.ConfigDir + "hvsdbsslcert.pem"
 
-	fmt.Fprintln(db.ConsoleWriter, "Running database setup...")
+const dbEnvHelpPrompt = "Following environment variables are required for Database setup:"
 
-	envHost, _ := c.GetenvString("HVS_DB_HOSTNAME", "Database Hostname")
-	envPort, _ := c.GetenvInt("HVS_DB_PORT", "Database Port")
-	envUser, _ := c.GetenvString("HVS_DB_USERNAME", "Database Username")
-	envPass, _ := c.GetenvSecret("HVS_DB_PASSWORD", "Database Password")
-	envDB, _ := c.GetenvString("HVS_DB_NAME", "Database Name")
-	envDBSSLMode, _ := c.GetenvString("HVS_DB_SSLMODE", "Database SSLMode")
-	envDBSSLCert, _ := c.GetenvString("HVS_DB_SSLCERT", "Database SSL Certificate")
-	envDBSSLCertSrc, _ := c.GetenvString("HVS_DB_SSLCERTSRC", "Database SSL Cert file source file")
+var dbEnvHelp = map[string]string{
+	"DATABASE_VENDOR":              "Vendor of database",
+	"DATABASE_HOST":                "Database host name",
+	"DATABASE_PORT":                "Database port",
+	"DATABASE_DB_NAME":             "Database name",
+	"DATABASE_USERNAME":            "Database username",
+	"DATABASE_PASSWORD":            "Database password",
+	"DATABASE_SSL_MODE":            "Database SSL mode",
+	"DATABASE_SSL_CERT":            "Database SSL certificate",
+	"DATABASE_SSL_CERT_SOURCE":     "Database SSL certificate to be copied from",
+	"DATABASE_CONN_RETRY_ATTEMPTS": "Database connection retry attempts",
+	"DATABASE_CONN_RETRY_TIME":     "Database connection retry time",
+}
 
-	fs := flag.NewFlagSet("database", flag.ContinueOnError)
-	fs.StringVar(&db.Config.Postgres.Hostname, "db-host", envHost, "Database Hostname")
-	fs.IntVar(&db.Config.Postgres.Port, "db-port", envPort, "Database Port")
-	fs.StringVar(&db.Config.Postgres.Username, "db-user", envUser, "Database Username")
-	fs.StringVar(&db.Config.Postgres.Password, "db-pass", envPass, "Database Password")
-	fs.StringVar(&db.Config.Postgres.DBName, "db-name", envDB, "Database Name")
-	fs.StringVar(&db.Config.Postgres.SSLMode, "db-sslmode", envDBSSLMode, "SSL mode of connection to database")
-	fs.StringVar(&db.Config.Postgres.SSLCert, "db-sslcert", envDBSSLCert, "SSL certificate of database")
-	fs.StringVar(&envDBSSLCertSrc, "db-sslcertsrc", envDBSSLCertSrc, "DB SSL certificate to be copied from")
-	err := fs.Parse(db.Flags)
-	if err != nil {
-		return errors.Wrap(err, "setup database: failed to parse cmd flags")
+func (t *DBSetup) Run() error {
+	// populates the configuration structure
+	if t.DBConfigPtr == nil {
+		return errors.New("Pointer to configuration structure can not be nil")
 	}
+	// validate input values
+	if t.Vendor == "" {
+		return errors.New("DATABASE_VENDOR is not set")
+	}
+	if t.Host == "" {
+		return errors.New("DATABASE_HOST is not set")
+	}
+	if t.Port == "" {
+		return errors.New("DATABASE_PORT is not set")
+	}
+	if t.DBName == "" {
+		return errors.New("DATABASE_DB_NAME is not set")
+	}
+	if t.Username == "" {
+		return errors.New("DATABASE_USERNAME is not set")
+	}
+	if t.Password == "" {
+		return errors.New("DATABASE_PASSWORD is not set")
+	}
+	if t.SSLMode == "" {
+		t.SSLMode = constants.SslModeAllow
+	}
+	if t.ConnectionRetryAttempts < 0 {
+		return errors.New("DATABASE_CONN_RETRY_ATTEMPTS is not valid")
+	}
+	if t.ConnectionRetryTime < 0 {
+		return errors.New("DATABASE_CONN_RETRY_TIME is not valid")
+	}
+	// set to default value
+	if t.SSLCert == "" {
+		t.SSLCert = defaultSSLCertFilePath
+	}
+	t.DBConfigPtr.Vendor = t.Vendor
+	t.DBConfigPtr.Host = t.Host
+	t.DBConfigPtr.Port = t.Port
+	t.DBConfigPtr.DBName = t.DBName
+	t.DBConfigPtr.Username = t.Username
+	t.DBConfigPtr.Password = t.Password
+
+	t.DBConfigPtr.ConnectionRetryAttempts = t.ConnectionRetryAttempts
+	t.DBConfigPtr.ConnectionRetryTime = t.ConnectionRetryTime
 
 	var validErr error
-
-	validErr = validation.ValidateHostname(db.Config.Postgres.Hostname)
+	validErr = validation.ValidateHostname(t.DBConfig.Host)
 	if validErr != nil {
-		return errors.Wrap(validErr, "setup database: Validation fail")
+		return errors.Wrap(validErr, "setup database: Validation failed on db host")
 	}
-	validErr = validation.ValidateAccount(db.Config.Postgres.Username, db.Config.Postgres.Password)
+	validErr = validation.ValidateAccount(t.DBConfig.Username, t.DBConfig.Password)
 	if validErr != nil {
-		return errors.Wrap(validErr, "setup database: Validation fail")
+		return errors.Wrap(validErr, "setup database: Validation failed on db credentials")
 	}
-	validErr = validation.ValidateIdentifier(db.Config.Postgres.DBName)
+	validErr = validation.ValidateIdentifier(t.DBConfig.DBName)
 	if validErr != nil {
-		return errors.Wrap(validErr, "setup database: Validation fail")
-	}
-
-	db.Config.Postgres.SSLMode, db.Config.Postgres.SSLCert, validErr = configureDBSSLParams(
-		db.Config.Postgres.SSLMode, envDBSSLCertSrc,
-		db.Config.Postgres.SSLCert)
-	if validErr != nil {
-		return errors.Wrap(validErr, "setup database: Validation fail")
+		return errors.Wrap(validErr, "setup database: Validation failed on db name")
 	}
 
-	db.Config.Postgres.ConnRetryAttempts = constants.DefaultDbConnRetryAttempts
-	db.Config.Postgres.ConnRetryTime = constants.DefaultDbConnRetryTime
-	pg := db.Config.Postgres
-	p, err := router.NewDataStore(&postgres.Config{
-		Vendor:            constants.DBTypePostgres,
-		Host:              pg.Hostname,
-		Port:              strconv.Itoa(pg.Port),
-		Dbname:            pg.DBName,
-		User:              pg.Username,
-		Password:          pg.Password,
-		SslMode:           pg.SSLMode,
-		SslCert:           pg.SSLCert,
-		ConnRetryAttempts: pg.ConnRetryAttempts,
-		ConnRetryTime:     pg.ConnRetryTime,
-	})
-	if err != nil {
-		return errors.Wrap(err, "setup database: failed to open database")
-	}
-	p.Migrate()
-
-	err = db.Config.Save()
-	if err != nil {
-		return errors.Wrap(err, "setup database: failed to save config")
+	t.DBConfigPtr.SSLMode, t.DBConfigPtr.SSLCert, validErr = configureDBSSLParams(
+		t.SSLMode, t.SSLCertSource, t.SSLCert)
+	if validErr != nil {
+		return errors.Wrap(validErr, "setup database: Validation failed on ssl settings")
 	}
 	return nil
 }
 
-func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, error) {
-	defaultLog.Trace("tasks/database:configureDBSSLParams() Entering")
-	defer defaultLog.Trace("tasks/database:configureDBSSLParams() Leaving")
+func (t *DBSetup) Validate() error {
+	// check if SSL certificate exists
+	if t.DBConfigPtr == nil {
+		return errors.New("Pointer to configuration structure can not be nil")
+	}
+	if t.DBConfigPtr.SSLMode == constants.SslModeVerifyCa ||
+		t.DBConfigPtr.SSLMode == constants.SslModeVerifyFull {
+		_, err := os.Stat(t.SSLCert)
+		return err
+	}
+	// Create conf for DBTypePostgres
+	conf := postgres.Config{
+		Vendor:            constants.DBTypePostgres,
+		Host:              t.Host,
+		Port:              t.Port,
+		User:              t.Username,
+		Password:          t.Password,
+		Dbname:            t.DBName,
+		SslMode:           t.SSLMode,
+		SslCert:           t.SSLCert,
+		ConnRetryAttempts: t.ConnectionRetryAttempts,
+		ConnRetryTime:     t.ConnectionRetryTime,
+	}
+	// test connection and create schemas
+	dataStore, err := postgres.New(&conf)
+	if err != nil {
+		return errors.Wrap(err, "Failed to connect database")
+	}
+	err = dataStore.Migrate()
+	if err != nil {
+		return errors.Wrap(err, "Failed to create database tables")
+	}
+	return nil
+}
 
+func (t *DBSetup) PrintHelp(w io.Writer) {
+	setup.PrintEnvHelp(w, dbEnvHelpPrompt, t.envPrefix, dbEnvHelp)
+	fmt.Fprintln(w, "")
+}
+
+func (t *DBSetup) SetName(n, e string) {
+	t.commandName = n
+	t.envPrefix = prefixUnderscroll(e)
+}
+
+func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, error) {
 	sslMode = strings.TrimSpace(strings.ToLower(sslMode))
 	sslCert = strings.TrimSpace(sslCert)
 	sslCertSrc = strings.TrimSpace(sslCertSrc)
@@ -136,7 +193,7 @@ func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, 
 		}
 		// at this point if sslCert destination is not passed it, lets set to default
 		if sslCert == "" {
-			sslCert = constants.DefaultSSLCertFilePath
+			sslCert = defaultSSLCertFilePath
 		}
 		// lets try to copy the file now. If copy does not succeed return the file copy error
 		if err := cos.Copy(sslCertSrc, sslCert); err != nil {
@@ -150,24 +207,10 @@ func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, 
 	return sslMode, sslCert, nil
 }
 
-func (db Database) Validate(c setup.Context) error {
-	defaultLog.Trace("tasks/database:Validate() Entering")
-	defer defaultLog.Trace("tasks/database:Validate() Leaving")
-
-	if db.Config.Postgres.Hostname == "" {
-		return errors.New("Hostname is not set")
+func prefixUnderscroll(e string) string {
+	if e != "" &&
+		!strings.HasSuffix(e, "_") {
+		e += "_"
 	}
-	if db.Config.Postgres.Port == 0 {
-		return errors.New("Port is not set")
-	}
-	if db.Config.Postgres.Username == "" {
-		return errors.New("Username is not set")
-	}
-	if db.Config.Postgres.Password == "" {
-		return errors.New("Password is not set")
-	}
-	if db.Config.Postgres.DBName == "" {
-		return errors.New("Schema is not set")
-	}
-	return nil
+	return e
 }

@@ -1,0 +1,46 @@
+package constants
+
+//Roles and permissions
+const (
+	Administrator = "*:*:*"
+
+	FlavorGroupCreate   = "flavorgroups:create"
+	FlavorGroupRetrieve = "flavorgroups:retrieve"
+	FlavorGroupSearch   = "flavorgroups:search"
+	FlavorGroupDelete   = "flavorgroups:delete"
+
+	CertifyAik = "host_aiks:certify"
+
+	HostStatusRetrieve = "host_status:retrieve"
+	HostStatusSearch   = "host_status:search"
+
+	CaCertificatesCreate = "cacertificates:create"
+
+	CertifyHostSigningKey = "host_signing_key_certificates:create"
+
+	HostCreate   = "hosts:create"
+	HostRetrieve = "hosts:retrieve"
+	HostUpdate   = "hosts:store"
+	HostDelete   = "hosts:delete"
+	HostSearch   = "hosts:search"
+
+	ESXiClusterCreate   = "esxi_clusters:create"
+	ESXiClusterRetrieve = "esxi_clusters:retrieve"
+	ESXiClusterSearch   = "esxi_clusters:search"
+	ESXiClusterDelete   = "esxi_clusters:delete"
+
+	TpmEndorsementCreate   = "tpm_endorsements:create"
+	TpmEndorsementStore    = "tpm_endorsements:store"
+	TpmEndorsementRetrieve = "tpm_endorsements:retrieve"
+	TpmEndorsementSearch   = "tpm_endorsements:search"
+	TpmEndorsementDelete   = "tpm_endorsements:delete"
+
+	// AssetTagAPI
+	TagCertificateCreate = "tag_certificates:create"
+	TagCertificateDelete = "tag_certificates:delete"
+	TagCertificateSearch = "tag_certificates:search"
+	TagCertificateDeploy = "tag_certificates:deploy"
+
+	// Tag Certificates Requests API
+	TagCertificateRequestsStore = "tag_certificate_requests:store"
+)

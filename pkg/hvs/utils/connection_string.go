@@ -6,12 +6,13 @@ package utils
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcUtil "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 // GenerateConnectionString creates a formatted connection string. If the username and password are not specified, then it would retrieve it
@@ -29,7 +30,7 @@ func GenerateConnectionString(cs string) (string, error) {
 	var username, password, credential string
 
 	if vc.Vendor != hcConstants.VMWARE {
-		username = "u=" + conf.HVS.User
+		username = "u=" + conf.HVS.Username
 		password = "p=" + conf.HVS.Password
 		credential = fmt.Sprintf("%s;%s", username, password)
 	} else {

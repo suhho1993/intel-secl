@@ -1,57 +1,73 @@
-/*
- * Copyright (C) 2019 Intel Corporation
- * SPDX-License-Identifier: BSD-3-Clause
- */
-package setup
+package setup_test
 
 import (
-	"fmt"
-	"os"
+	"io"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
+	"github.com/pkg/errors"
 )
 
-func TestSomething(t *testing.T) {
-
-	var a string = "Hello"
-	var b string = "Hello"
-
-	assert.Equal(t, a, b, "The two words should be the same.")
-
+var testConfigMap = map[string]string{
+	"TEST_ARG_KEY_ONE": "test-arg-val-one",
+	"TEST_ARG_KEY_TWO": "test-arg-val-two",
 }
 
-func TestOverrideValueFromEnvVarStringVals(t *testing.T) {
-	ctx := Context{
-		askInput: false,
+type testTaskOne struct {
+	Arg string
+
+	hasConfig bool
+	hasRun    bool
+}
+
+func (t *testTaskOne) Run() error {
+	t.hasRun = true
+	return nil
+}
+
+func (t *testTaskOne) Validate() error {
+	if t.hasRun &&
+		t.Arg == "test-arg-val-one" {
+		return nil
 	}
+	return errors.New("validation failed")
+}
 
-	user := "Hello"
-	os.Unsetenv("TRUSTAGENT_USER")
+type testTaskTwo struct {
+	Arg string
 
-	ctx.OverrideValueFromEnvVar("TRUSTAGENT_USER", &user, "trust agent username", false)
-	assert.Equal(t, user, "Hello", "there is no env value - so we shoud get the currently set value")
+	hasConfig bool
+	hasRun    bool
+}
 
-	os.Setenv("TRUSTAGENT_USER", "tagent")
-	ctx.OverrideValueFromEnvVar("TRUSTAGENT_USER", &user, "trust agent username", false)
-	assert.Equal(t, "tagent", user, "reading from env variable - should get value from env variable")
+func (t *testTaskTwo) Run() error {
+	t.hasRun = true
+	return nil
+}
 
-	os.Unsetenv("TRUSTAGENT_USER")
-	ctx.OverrideValueFromEnvVar("TRUSTAGENT_USER", &user, "trust agent username", false)
-	assert.Equal(t, "tagent", user, "there is no env value - so we shoud get the currently set value")
+func (t *testTaskTwo) Validate() error {
+	if t.hasRun &&
+		t.Arg == "test-arg-val-two" {
+		return nil
+	}
+	return errors.New("validation failed")
+}
 
-	user = "newuser"
-	ctx.OverrideValueFromEnvVar("TRUSTAGENT_USER", &user, "trust agent username", false)
-	assert.Equal(t, "newuser", user, "there is no env value - so we shoud get the newly set value")
+func (t *testTaskOne) PrintHelp(w io.Writer) {}
+func (t *testTaskTwo) PrintHelp(w io.Writer) {}
 
-	os.Setenv("TRUSTAGENT_USER", "")
-	ctx.OverrideValueFromEnvVar("TRUSTAGENT_USER", &user, "trust agent username", true)
-	assert.Equal(t, "", user, "there is no env value - so we shoud get the newly set value")
+func (t *testTaskOne) SetName(string, string) {}
+func (t *testTaskTwo) SetName(string, string) {}
 
-	_, _, err := ctx.OverrideValueFromEnvVar("TRUSTAGENT_USER", &user, "trust agent username", false)
-	assert.EqualError(t, err, "env var TRUSTAGENT_USER cannot be empty")
-
-	os.Unsetenv("TRUSTAGENT_USER")
-	
-	fmt.Println("done")
+func TestSetupRunner(t *testing.T) {
+	runner := setup.NewRunner()
+	runner.AddTask("task-1", "", &testTaskOne{
+		Arg: testConfigMap["TEST_ARG_KEY_ONE"],
+	})
+	runner.AddTask("task-1", "", &testTaskTwo{
+		Arg: testConfigMap["TEST_ARG_KEY_TWO"],
+	})
+	if err := runner.RunAll(true); err != nil {
+		t.Error("Failed to run all tasks:", err.Error())
+	}
 }

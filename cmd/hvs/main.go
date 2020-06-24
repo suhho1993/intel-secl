@@ -5,15 +5,13 @@
 package main
 
 import (
-	_ "github.com/intel-secl/intel-secl/v3/docs/shared/hvs"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs"
-	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	"fmt"
 	"os"
 	"os/user"
 	"strconv"
-)
 
-var defaultLog = commLog.GetDefaultLogger()
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs"
+)
 
 func openLogFiles() (logFile *os.File, httpLogFile *os.File, secLogFile *os.File, err error) {
 
@@ -37,37 +35,31 @@ func openLogFiles() (logFile *os.File, httpLogFile *os.File, secLogFile *os.File
 
 	hvsUser, err := user.Lookup(ServiceUserName)
 	if err != nil {
-		defaultLog.Errorf("Could not find user '%s'", ServiceUserName)
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("Could not find user '%s'", ServiceUserName)
 	}
 
 	uid, err := strconv.Atoi(hvsUser.Uid)
 	if err != nil {
-		defaultLog.Errorf("Could not parse hvs user uid '%s'", hvsUser.Uid)
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("Could not parse hvs user uid '%s'", hvsUser.Uid)
 	}
 
 	gid, err := strconv.Atoi(hvsUser.Gid)
 	if err != nil {
-		defaultLog.Errorf("Could not parse hvs user gid '%s'", hvsUser.Gid)
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("Could not parse hvs user gid '%s'", hvsUser.Gid)
 	}
 
 	err = os.Chown(HttpLogFile, uid, gid)
 	if err != nil {
-		defaultLog.Errorf("Could not change file ownership for file: '%s'", HttpLogFile)
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("Could not change file ownership for file: '%s'", HttpLogFile)
 	}
 	err = os.Chown(SecurityLogFile, uid, gid)
 	if err != nil {
-		defaultLog.Errorf("Could not change file ownership for file: '%s'", SecurityLogFile)
+		return nil, nil, nil, fmt.Errorf("Could not change file ownership for file: '%s'", SecurityLogFile)
 	}
 	err = os.Chown(LogFile, uid, gid)
 	if err != nil {
-		defaultLog.Errorf("Could not change file ownership for file: '%s'", LogFile)
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("Could not change file ownership for file: '%s'", LogFile)
 	}
-
 	return
 }
 
@@ -91,6 +83,7 @@ func main() {
 
 	err = app.Run(os.Args)
 	if err != nil {
+		fmt.Println("Application returned with error:", err.Error())
 		os.Exit(1)
 	}
 }

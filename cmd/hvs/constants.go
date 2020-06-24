@@ -5,10 +5,10 @@
 package main
 
 const (
-	ServiceUserName               = "hvs"
-	ServiceDir                    = "hvs/"
-	LogDir                        = "/var/log/" + ServiceDir
-	LogFile                       = LogDir + ServiceUserName + ".log"
-	HttpLogFile                   = LogDir + ServiceUserName + "-http.log"
-	SecurityLogFile               = LogDir + ServiceUserName + "-security.log"
+	ServiceUserName = "hvs"
+	ServiceDir      = "hvs/"
+	LogDir          = "/var/log/" + ServiceDir
+	LogFile         = LogDir + ServiceUserName + ".log"
+	HttpLogFile     = LogDir + ServiceUserName + "-http.log"
+	SecurityLogFile = LogDir + ServiceUserName + "-security.log"
 )

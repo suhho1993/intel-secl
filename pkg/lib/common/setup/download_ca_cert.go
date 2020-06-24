@@ -8,139 +8,68 @@ import (
 	"crypto"
 	"crypto/tls"
 	"encoding/pem"
-	"errors"
-	"flag"
 	"fmt"
-	errorLog "github.com/pkg/errors"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	"github.com/pkg/errors"
 )
 
-type Download_Ca_Cert struct {
-	Flags                []string
-	CmsBaseURL           string
-	CaCertDirPath        string
-	TrustedTlsCertDigest string
-	ConsoleWriter        io.Writer
+type DownloadCMSCert struct {
+	CaCertDirPath string
+
+	CmsBaseURL    string
+	TlsCertDigest string
+
+	ConsoleWriter io.Writer
+
+	commandName string
 }
 
-func DownloadRootCaCertificate(cmsBaseUrl string, dirPath string, trustedTlsCertDigest string) (err error) {
-	if !strings.HasSuffix(cmsBaseUrl, "/") {
-		cmsBaseUrl = cmsBaseUrl + "/"
-	}
+const downloadCMSCertEnvHelpPrompt = "Following environment variables are required for "
 
-	url, err := url.Parse(cmsBaseUrl)
+var downloadCMSCertEnvHelp = map[string]string{
+	"CMS_BASE_URL":        "CMS base URL in the format https://{{cms}}:{{cms_port}}/cms/v1/",
+	"CMS_TLS_CERT_SHA384": "SHA384 hash value of CMS TLS certificate",
+}
+
+func (cc *DownloadCMSCert) Run() error {
+	printToWriter(cc.ConsoleWriter, cc.commandName, "Start downloading CMS CA certificate")
+	err := downloadRootCaCertificate(cc.CmsBaseURL, cc.CaCertDirPath, cc.TlsCertDigest)
 	if err != nil {
-		fmt.Println("Configured CMS URL is malformed: ", err)
-		return fmt.Errorf("CA certificate setup: %v", err)
-	}
-	certificates, _ := url.Parse("ca-certificates")
-	endpoint := url.ResolveReference(certificates)
-	req, err := http.NewRequest("GET", endpoint.String(), nil)
-	if err != nil {
-		fmt.Println("Failed to instantiate http request to CMS")
-		return fmt.Errorf("CA certificate setup: %v", err)
-	}
-	req.Header.Set("Accept", "application/x-pem-file")
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Failed to perform HTTP request to CMS")
-		return fmt.Errorf("CA certificate setup: %v", err)
-	}
-	defer resp.Body.Close()
-	// PEM encode the certificate (this is a standard TLS encoding)
-	pemBlock := pem.Block{Type: "CERTIFICATE", Bytes: resp.TLS.PeerCertificates[0].Raw}
-	certPEM := pem.EncodeToMemory(&pemBlock)
-	tlsCertDigest, err := crypt.GetCertHashFromPemInHex(certPEM, crypto.SHA384)
-	if err != nil {
-		return errorLog.Wrap(err, "setup/download_ca_cert:DownloadRootCaCertificate() CA certificate setup error")
-	}
-	if resp.StatusCode != http.StatusOK {
-		text, _ := ioutil.ReadAll(resp.Body)
-		errStr := fmt.Sprintf("CMS request failed to download CA certificate (HTTP Status Code: %d)\nMessage: %s", resp.StatusCode, string(text))
-		fmt.Println(errStr)
-		return fmt.Errorf("CA certificate setup: %v", err)
-	}
-	if tlsCertDigest == "" || tlsCertDigest != trustedTlsCertDigest {
-		errStr := "CMS TLS Certificate is not trusted"
-		return errorLog.Wrap(errors.New(errStr), "setup/download_ca_cert:DownloadRootCaCertificate() CA certificate setup error")
-	}
-	tlsResp, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Failed to read CMS response body")
-		return fmt.Errorf("CA certificate setup: %v", err)
-	}
-	if tlsResp != nil {
-		err = crypt.SavePemCertWithShortSha1FileName(tlsResp, dirPath)
-		if err != nil {
-			fmt.Println("Could not save CA certificate")
-			return fmt.Errorf("CA certificate setup: %v", err)
-		}
-	} else {
-		fmt.Println("Invalid response from Download CA Certificate")
-		return fmt.Errorf("Invalid response from Download CA Certificate")
+		printToWriter(cc.ConsoleWriter, cc.commandName, "CMS CA certificate download setup failed")
+		return err
 	}
 	return nil
 }
 
-func (cc Download_Ca_Cert) Run(c Context) error {
-	var cmsBaseUrl string
-	fmt.Fprintln(cc.ConsoleWriter, "Running CA certificate download setup...")
-	fs := flag.NewFlagSet("ca", flag.ContinueOnError)
-	force := fs.Bool("force", false, "force recreation, will overwrite any existing certificate")
-
-	err := fs.Parse(cc.Flags)
+func (cc *DownloadCMSCert) Validate() error {
+	ok, err := isDirEmpty(cc.CaCertDirPath)
 	if err != nil {
-		fmt.Println("CA certificate setup: Unable to parse flags")
-		return fmt.Errorf("CA certificate setup: Unable to parse flags")
-	}
-	if cc.CmsBaseURL != "" {
-		cmsBaseUrl = cc.CmsBaseURL
-	} else {
-		cmsBaseUrl, err = c.GetenvString("CMS_BASE_URL", "CMS base URL in https://{{cms}}:{{cms_port}}/cms/v1/")
-		if err != nil || cmsBaseUrl == "" {
-			fmt.Println("CMS_BASE_URL not found in environment for Download CA Certificate")
-			return fmt.Errorf("CMS_BASE_URL not found in environment for Download CA Certificate")
-		}
-	}
-
-	if *force || cc.Validate(c) != nil {
-		err = DownloadRootCaCertificate(cmsBaseUrl, cc.CaCertDirPath, cc.TrustedTlsCertDigest)
-		if err != nil {
-			fmt.Println("Failed to Download CA Certificate")
-			return err
-		}
-	} else {
-		fmt.Println("CA certificate already downloaded, skipping")
-	}
-	return nil
-}
-
-func (cc Download_Ca_Cert) Validate(c Context) error {
-	fmt.Fprintln(cc.ConsoleWriter, "Validating CA certificate download setup...")
-	ok, err := IsDirEmpty(cc.CaCertDirPath)
-	if err != nil {
-		return errors.New("Error opening CA certificate directory")
+		return errors.New("Error opening CMS CA certificate directory")
 	}
 	if ok == true {
-		return errors.New("CA certificate is not downloaded")
+		return errors.New("CMS CA certificate is not downloaded")
 	}
+	printToWriter(cc.ConsoleWriter, cc.commandName, "CMS CA certificate download setup validated")
 	return nil
 }
 
-func IsDirEmpty(name string) (bool, error) {
+func (t *DownloadCMSCert) PrintHelp(w io.Writer) {
+	PrintEnvHelp(w, downloadCMSCertEnvHelpPrompt+t.commandName, "", downloadCMSCertEnvHelp)
+	fmt.Fprintln(w, "")
+}
+
+func (t *DownloadCMSCert) SetName(n, e string) {
+	t.commandName = n
+}
+
+func isDirEmpty(name string) (bool, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return false, err
@@ -152,4 +81,60 @@ func IsDirEmpty(name string) (bool, error) {
 		return true, nil
 	}
 	return false, err
+}
+
+func downloadRootCaCertificate(cmsBaseUrl string, dirPath string, trustedTlsCertDigest string) (err error) {
+	if !strings.HasSuffix(cmsBaseUrl, "/") {
+		cmsBaseUrl = cmsBaseUrl + "/"
+	}
+	url, err := url.Parse(cmsBaseUrl)
+	if err != nil {
+		return errors.Wrap(err, "Failed to parse CMS URL")
+	}
+	certificates, _ := url.Parse("ca-certificates")
+	endpoint := url.ResolveReference(certificates)
+	req, err := http.NewRequest("GET", endpoint.String(), nil)
+	if err != nil {
+		return errors.Wrap(err, "Failed to instantiate http request to CMS")
+	}
+	req.Header.Set("Accept", "application/x-pem-file")
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "Failed to perform HTTP request to CMS")
+	}
+	defer resp.Body.Close()
+	// PEM encode the certificate (this is a standard TLS encoding)
+	pemBlock := pem.Block{Type: "CERTIFICATE", Bytes: resp.TLS.PeerCertificates[0].Raw}
+	certPEM := pem.EncodeToMemory(&pemBlock)
+	tlsCertDigest, err := crypt.GetCertHashFromPemInHex(certPEM, crypto.SHA384)
+	if err != nil {
+		return errors.Wrap(err, "crypt.GetCertHashFromPemInHex failed")
+	}
+	if resp.StatusCode != http.StatusOK {
+		text, _ := ioutil.ReadAll(resp.Body)
+		reqErr := fmt.Errorf("Status %d: %s", resp.StatusCode, string(text))
+		return errors.Wrap(reqErr, "CMS request failed to download CA Certificate")
+	}
+	if tlsCertDigest == "" || tlsCertDigest != trustedTlsCertDigest {
+		return errors.New("CMS TLS Certificate digest not match")
+	}
+	tlsResp, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "Failed to read CMS response body")
+	}
+	if tlsResp == nil {
+		return errors.Wrap(err, "Invalid response from Download CA Certificate")
+	}
+	err = crypt.SavePemCertWithShortSha1FileName(tlsResp, dirPath)
+	if err != nil {
+		return errors.Wrap(err, "crypt.SavePemCertWithShortSha1FileName failed")
+	}
+	return nil
 }

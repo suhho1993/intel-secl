@@ -7,6 +7,11 @@ package router
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"io/ioutil"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
@@ -17,11 +22,6 @@ import (
 	cmw "github.com/intel-secl/intel-secl/v3/pkg/lib/common/middleware"
 	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var defaultLog = log.GetDefaultLogger()
@@ -39,15 +39,15 @@ func InitRoutes(cfg *config.Configuration, certStore *models.CertificatesStore) 
 	// Create conf for DBTypePostgres
 	conf := postgres.Config{
 		Vendor:            constants.DBTypePostgres,
-		Host:              cfg.Postgres.Hostname,
-		Port:              strconv.Itoa(cfg.Postgres.Port),
-		User:              cfg.Postgres.Username,
-		Password:          cfg.Postgres.Password,
-		Dbname:            cfg.Postgres.DBName,
-		SslMode:           cfg.Postgres.SSLMode,
-		SslCert:           cfg.Postgres.SSLCert,
-		ConnRetryAttempts: cfg.Postgres.ConnRetryAttempts,
-		ConnRetryTime:     cfg.Postgres.ConnRetryTime,
+		Host:              cfg.DB.Host,
+		Port:              cfg.DB.Port,
+		User:              cfg.DB.Username,
+		Password:          cfg.DB.Password,
+		Dbname:            cfg.DB.DBName,
+		SslMode:           cfg.DB.SSLMode,
+		SslCert:           cfg.DB.SSLCert,
+		ConnRetryAttempts: cfg.DB.ConnectionRetryAttempts,
+		ConnRetryTime:     cfg.DB.ConnectionRetryTime,
 	}
 
 	// Creates a DBTypePostgres DB instance

@@ -10,65 +10,145 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"errors"
-	"flag"
 	"fmt"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
-	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
+	"github.com/pkg/errors"
 )
 
-type Download_Cert struct {
-	Flags              []string
+type DownloadCert struct {
 	KeyFile            string
 	CertFile           string
 	KeyAlgorithm       string
 	KeyAlgorithmLength int
-	CmsBaseURL         string
 	Subject            pkix.Name
-	SanList            string
 	CertType           string
-	CaCertsDir         string
-	BearerToken        string
-	ConsoleWriter      io.Writer
+	CaCertDirPath      string
+
+	CmsBaseURL  string
+	SanList     string
+	BearerToken string
+
+	ConsoleWriter io.Writer
+
+	envPrefix   string
+	commandName string
 }
 
-func GetCertificateFromCMS(certType string, keyAlg string, keyLen int, cmsBaseUrl string, subject pkix.Name, hosts string, caCertsDir string, bearerToken string) (key []byte, cert []byte, err error) {
+const downloadCAEnvHelpPrompt = "Following environment variables are used in "
+
+var downloadCAEnvHelp = map[string]string{
+	"CERT_FILE":     "The file to which certificate is created",
+	"KEY_FILE":      "The file to which private key is created",
+	"COMMON_NAME":   "The common name of signed certificate",
+	"SAN_LIST":      "Comma separated list of hostnames to add to Certificate, including IP addresses and dns names",
+	"ISSUER":        "The issuer of signed certificate",
+	"VALIDITY_DAYS": "The validity time in days of signed certificate",
+}
+
+const downloadCAEnvHelpPrompt2 = "Following environment variables are required in "
+
+var downloadCAEnvHelp2 = map[string]string{
+	"CMS_BASE_URL": "CMS base URL in the format https://{{cms}}:{{cms_port}}/cms/v1/",
+	"BEARER_TOKEN": "Bearer token for accessing CMS api",
+}
+
+func (dc *DownloadCert) Run() error {
+	// validate host names
+	// this should be moved to crypt.CreateKeyPairAndCertificateRequest
+	// or change crypt.CreateKeyPairAndCertificateRequest that it takes in hosts as slice of strings
+	hosts := strings.Split(dc.SanList, ",")
+	for _, h := range hosts {
+		valid_err := validation.ValidateHostname(h)
+		if valid_err != nil {
+			return errors.Wrap(valid_err, "Failed to validate hostname or ip")
+		}
+	}
+	printToWriter(dc.ConsoleWriter, dc.commandName, "Start downloading certificate")
+	key, cert, err := getCertificateFromCMS(dc.CertType, dc.KeyAlgorithm, dc.KeyAlgorithmLength, dc.CmsBaseURL, dc.Subject, dc.SanList, dc.CaCertDirPath, dc.BearerToken)
+	if err != nil {
+		printToWriter(dc.ConsoleWriter, dc.commandName, "Failed to download certificate")
+		return err
+	}
+	err = crypt.SavePrivateKeyAsPKCS8(key, dc.KeyFile)
+	if err != nil {
+		return errors.Wrap(err, "crypt.SavePrivateKeyAsPKCS8 failed")
+	}
+
+	fi, err := os.Stat(dc.CertFile)
+	if err != nil || fi.Mode().IsRegular() {
+		err = ioutil.WriteFile(dc.CertFile, cert, 0644)
+		if err != nil {
+			printToWriter(dc.ConsoleWriter, dc.commandName, "Failed to save certificate")
+			return errors.Wrap(err, "Could not store Certificate")
+		}
+		os.Chmod(dc.CertFile, 0644)
+	} else if fi.Mode().IsDir() {
+		err = crypt.SavePemCertWithShortSha1FileName(cert, dc.CertFile)
+		if err != nil {
+			printToWriter(dc.ConsoleWriter, dc.commandName, "Failed to save certificate")
+			return errors.Wrap(err, "Could not store Certificate")
+		}
+	}
+	printToWriter(dc.ConsoleWriter, dc.commandName, "Certificate downloaded")
+	return nil
+}
+
+func (dc *DownloadCert) Validate() error {
+	_, err := os.Stat(dc.KeyFile)
+	if os.IsNotExist(err) {
+		return errors.New("KeyFile is not configured")
+	}
+	printToWriter(dc.ConsoleWriter, dc.commandName, "Certificate download setup validated")
+	return nil
+}
+
+func (t *DownloadCert) PrintHelp(w io.Writer) {
+	PrintEnvHelp(w, downloadCAEnvHelpPrompt2+t.commandName, "", downloadCAEnvHelp2)
+	PrintEnvHelp(w, downloadCAEnvHelpPrompt+t.commandName, t.envPrefix, downloadCAEnvHelp)
+	fmt.Fprintln(w, "")
+}
+
+func (t *DownloadCert) SetName(n, e string) {
+	t.commandName = n
+	t.envPrefix = prefixUnderscroll(e)
+}
+
+func getCertificateFromCMS(certType string, keyAlg string, keyLen int, cmsBaseUrl string, subject pkix.Name, hosts string, CaCertDirPath string, bearerToken string) (key []byte, cert []byte, err error) {
 	//TODO: use CertType for TLS or Signing cert
 	csrData, key, err := crypt.CreateKeyPairAndCertificateRequest(subject, hosts, keyAlg, keyLen)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Certificate setup: %v", err)
+		return nil, nil, errors.Wrap(err, "crypt.CreateKeyPairAndCertificateRequest failed")
 	}
 	if !strings.HasSuffix(cmsBaseUrl, "/") {
 		cmsBaseUrl = cmsBaseUrl + "/"
 	}
-
 	url, err := url.Parse(cmsBaseUrl)
 	if err != nil {
-		fmt.Println("Configured CMS URL is malformed: ", err)
-		return nil, nil, fmt.Errorf("Certificate setup: %v", err)
+		return nil, nil, errors.Wrap(err, "Failed to parse CMS URL")
 	}
 	certificates, _ := url.Parse("certificates?certType=" + certType)
 	endpoint := url.ResolveReference(certificates)
 	csrPemBytes := pem.EncodeToMemory(&pem.Block{Type: "BEGIN CERTIFICATE REQUEST", Bytes: csrData})
 	req, err := http.NewRequest("POST", endpoint.String(), bytes.NewBuffer(csrPemBytes))
 	if err != nil {
-		fmt.Println("Failed to instantiate http request to CMS")
-		return nil, nil, fmt.Errorf("Certificate setup: %v", err)
+		return nil, nil, errors.Wrap(err, "Failed to instantiate http request to CMS")
 	}
 	req.Header.Set("Accept", "application/x-pem-file")
 	req.Header.Set("Content-Type", "application/x-pem-file")
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
 
-	rootCaCertPems, err := cos.GetDirFileContents(caCertsDir, "*.pem")
+	rootCaCertPems, err := cos.GetDirFileContents(CaCertDirPath, "*.pem")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "cos.GetDirFileContents failed")
 	}
 
 	rootCAs, _ := x509.SystemCertPool()
@@ -77,7 +157,7 @@ func GetCertificateFromCMS(certType string, keyAlg string, keyLen int, cmsBaseUr
 	}
 	for _, rootCACert := range rootCaCertPems {
 		if ok := rootCAs.AppendCertsFromPEM(rootCACert); !ok {
-			return nil, nil, err
+			return nil, nil, errors.New("AppendCertsFromPEM failed on cert pool")
 		}
 	}
 
@@ -91,123 +171,17 @@ func GetCertificateFromCMS(certType string, keyAlg string, keyLen int, cmsBaseUr
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Failed to perform HTTP request to CMS")
-		return nil, nil, fmt.Errorf("Certificate setup: %v", err)
+		return nil, nil, errors.Wrap(err, "Failed to perform HTTP request to CMS")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		text, _ := ioutil.ReadAll(resp.Body)
-		errStr := fmt.Sprintf("CMS request failed to download Certificate (HTTP Status Code: %d)\nMessage: %s", resp.StatusCode, string(text))
-		fmt.Println(errStr)
-		return nil, nil, fmt.Errorf("Certificate setup: %v", err)
+		reqErr := fmt.Errorf("Status %d: %s", resp.StatusCode, string(text))
+		return nil, nil, errors.Wrap(reqErr, "CMS request failed to download Certificate")
 	}
 	cert, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Failed to read CMS response body")
-		return nil, nil, fmt.Errorf("Certificate setup: %v", err)
+		return nil, nil, errors.Wrap(err, "Failed to read CMS response body")
 	}
 	return
-}
-
-func (tc Download_Cert) Run(c Context) error {
-	var cmsBaseUrl string
-	fmt.Fprintln(tc.ConsoleWriter, "Running Certificate download setup...")
-	fs := flag.NewFlagSet("download_cert", flag.ContinueOnError)
-	force := fs.Bool("force", false, "force recreation, will overwrite any existing certificate")
-	certType := fs.String("cert", tc.CertType, "type of the certificate")
-
-	err := fs.Parse(tc.Flags)
-	if err != nil {
-		return errors.New("Certificate setup: Unable to parse flags")
-	}
-	fmt.Println("Certificate Type :" + *certType)
-	if tc.CmsBaseURL != "" {
-		cmsBaseUrl = tc.CmsBaseURL
-	} else {
-		cmsBaseUrl, err = c.GetenvString("CMS_BASE_URL", "CMS base URL in https://{{cms}}:{{cms_port}}/cms/v1/")
-		if err != nil || cmsBaseUrl == "" {
-			return errors.New("Certificate setup: CMS_BASE_URL not found in environment for Download Certificate")
-		}
-	}
-
-	keyFile, err := c.GetenvString("KEY_PATH", "Path of file where key needs to be stored")
-	if err == nil {
-		tc.KeyFile = keyFile
-	}
-
-	certPath, err := c.GetenvString("CERT_PATH", "Path of file/directory where certificate needs to be stored")
-	if err == nil {
-		tc.CertFile = certPath
-	}
-
-	if tc.Subject.CommonName == "" {
-		return errors.New("Certificate setup: Common name not found in environment/config.yml for Download Certificate")
-	}
-
-	defaultHostname, err := c.GetenvString("SAN_LIST", "Comma separated list of hostnames to add to Certificate")
-	if err != nil {
-		defaultHostname = tc.SanList
-	}
-	host := fs.String("host_names", defaultHostname, "Comma separated list of hostnames to add to Certificate")
-
-	bearerToken := tc.BearerToken
-	tokenFromEnv, err := c.GetenvSecret("BEARER_TOKEN", "bearer token")
-	if err == nil {
-		bearerToken = tokenFromEnv
-	}
-	if bearerToken == "" {
-		return errors.New("Certificate setup: BEARER_TOKEN not found in environment for Download Certificate")
-	}
-
-	if *force || tc.Validate(c) != nil {
-		if *host == "" {
-			return errors.New("Certificate setup: no SAN hostnames specified")
-		}
-		hosts := strings.Split(*host, ",")
-
-		// validate host names
-		for _, h := range hosts {
-			valid_err := validation.ValidateHostname(h)
-			if valid_err != nil {
-				return valid_err
-			}
-		}
-		key, cert, err := GetCertificateFromCMS(tc.CertType, tc.KeyAlgorithm, tc.KeyAlgorithmLength, cmsBaseUrl, tc.Subject, *host, tc.CaCertsDir, bearerToken)
-		if err != nil {
-			return fmt.Errorf("Certificate setup: %v", err)
-		}
-		err = crypt.SavePrivateKeyAsPKCS8(key, tc.KeyFile)
-		if err != nil {
-			return fmt.Errorf("Certificate setup: %v", err)
-		}
-
-		fi, err := os.Stat(tc.CertFile)
-		if err != nil || fi.Mode().IsRegular() {
-			err = ioutil.WriteFile(tc.CertFile, cert, 0644)
-			if err != nil {
-				fmt.Println("Could not store Certificate")
-				return fmt.Errorf("Certificate setup: %v", err)
-			}
-			os.Chmod(tc.CertFile, 0644)
-		} else if fi.Mode().IsDir() {
-			err = crypt.SavePemCertWithShortSha1FileName(cert, tc.CertFile)
-			if err != nil {
-				fmt.Println("Could not store Certificate")
-				return fmt.Errorf("Certificate setup: %v", err)
-			}
-		}
-	} else {
-		fmt.Println("Certificate already downloaded, skipping")
-	}
-	return nil
-}
-
-func (tc Download_Cert) Validate(c Context) error {
-	fmt.Fprintln(tc.ConsoleWriter, "Validating Certificate download setup...")
-
-	_, err := os.Stat(tc.KeyFile)
-	if os.IsNotExist(err) {
-		return errors.New("KeyFile is not configured")
-	}
-	return nil
 }
