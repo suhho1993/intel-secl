@@ -5,7 +5,9 @@
 
 package models
 
+import "github.com/google/uuid"
+
 type ESXiClusterFilterCriteria struct {
-	Id          string
+	Id          uuid.UUID
 	ClusterName string
 }

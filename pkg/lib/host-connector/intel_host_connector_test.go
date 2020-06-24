@@ -7,6 +7,7 @@ package host_connector
 
 import (
 	"encoding/json"
+	"encoding/pem"
 	"encoding/xml"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/ta"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
@@ -37,10 +38,9 @@ func TestGetHostDetails(t *testing.T) {
 
 	hostInfo, err = intelConnector.GetHostDetails()
 	assert.NoError(t, err)
-	assert.Equal(t, "RedHatEnterprise", hostInfo.OSName )
+	assert.Equal(t, "RedHatEnterprise", hostInfo.OSName)
 	assert.Equal(t, "Intel Corporation", hostInfo.BiosName)
 }
-
 
 func TestCreateHostManifestFromSampleData(t *testing.T) {
 
@@ -64,13 +64,14 @@ func TestCreateHostManifestFromSampleData(t *testing.T) {
 	mockTAClient.On("GetHostInfo").Return(hostInfo, nil)
 
 	// read the aik that will be returned by the mock
-	aik, err := ioutil.ReadFile("./test/aik.der")
+	aikBytes, err := ioutil.ReadFile("./test/aik.pem")
+	aikDer, _ := pem.Decode(aikBytes)
 	assert.NoError(t, err)
-	mockTAClient.On("GetAIK").Return(aik, nil)
+	mockTAClient.On("GetAIK").Return(aikDer.Bytes, nil)
 
 	// the sample data in ./test was collected from 168.63 -- this is needed
 	// for the nonce to verify...
-	baseUrl, err := url.Parse("http://10.105.168.63:1443/")
+	baseUrl, err := url.Parse("http://127.0.0.1:1443/")
 	assert.NoError(t, err)
 	mockTAClient.On("GetBaseURL").Return(baseUrl, nil)
 
@@ -83,7 +84,7 @@ func TestCreateHostManifestFromSampleData(t *testing.T) {
 	}
 
 	// the sample data in ./test used this nonce which needs to be provided to GetHostManifest...
-	nonce := "3FvsK0fpHg5qtYuZHn1MriTMOxc="
+	nonce := "tHgfRQED1+pYgEZpq3dZC9ONmBCZKdx10LErTZs1k/k="
 
 	hostManifest, err := intelConnector.GetHostManifest(nonce, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}, []string{"SHA1", "SHA256"})
 	assert.NoError(t, err)

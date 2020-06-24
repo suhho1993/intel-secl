@@ -107,7 +107,7 @@ func buildESXiClusterSearchQuery(tx *gorm.DB, criteria *models.ESXiClusterFilter
 		return tx
 	}
 
-	if criteria.Id != "" {
+	if criteria.Id != uuid.Nil {
 		tx = tx.Where("id = ?", criteria.Id)
 	} else if criteria.ClusterName != "" {
 		tx = tx.Where("cluster_name = ?", criteria.ClusterName)

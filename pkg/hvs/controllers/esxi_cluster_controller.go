@@ -9,22 +9,23 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 type ESXiClusterController struct {
-	ECStore *postgres.ESXiClusterStore
+	ECStore domain.ESXiClusterStore
 }
 
-func NewESXiClusterController(ec *postgres.ESXiClusterStore) *ESXiClusterController {
+func NewESXiClusterController(ec domain.ESXiClusterStore) *ESXiClusterController {
 	return &ESXiClusterController{
 		ECStore: ec,
 	}
@@ -70,7 +71,7 @@ func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Re
 	newESXiCluster, err := controller.ECStore.Create(reqESXiCluster)
 	if err != nil {
 		secLog.WithError(err).Error("controllers/esxi_cluster_controller:Create() ESXi cluster registration failed")
-		return nil, http.StatusInternalServerError, errors.Errorf("Error while registering a new ESXi cluster")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while registering a new ESXi cluster"}
 	}
 	secLog.WithField("Cluster Name", newESXiCluster.ClusterName).Infof("%s: ESXi cluster registered by: %s",
 		commLogMsg.PrivilegeModified, r.RemoteAddr)
@@ -83,28 +84,21 @@ func (controller ESXiClusterController) Search(w http.ResponseWriter, r *http.Re
 	defaultLog.Trace("controllers/esxi_cluster_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/esxi_cluster_controller:Search() Leaving")
 
+	var filter *models.ESXiClusterFilterCriteria = nil
+	var err error
+
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("Query ESXi cluster")
-	id := r.URL.Query().Get("id")
-	clusterName := r.URL.Query().Get("clusterName")
 
-	var filter *models.ESXiClusterFilterCriteria = nil
-
-	if id != "" || clusterName != "" {
-		filter = &models.ESXiClusterFilterCriteria{
-			Id:          id,
-			ClusterName: clusterName,
-		}
-		if err := validateECCriteria(*filter); err != nil {
-			secLog.Errorf("controllers/esxi_cluster_controller:Search()  %s", err.Error())
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid search criteria provided"}
-		}
+	if filter, err = getECCriteria(r.URL.Query()); err != nil {
+		secLog.Errorf("controllers/esxi_cluster_controller:Search()  %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid search criteria provided"}
 	}
 
 	esxiClusterCollection, err := controller.ECStore.Search(filter)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/esxi_cluster_controller:Search() ESXi cluster search failed")
-		return nil, http.StatusInternalServerError, errors.Errorf("Unable to search ESXi cluster")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to search ESXi cluster"}
 	}
 
 	//TODO : Get the list of hosts from host table
@@ -180,19 +174,26 @@ func validateESXiClusterRequest(esxiCluster hvs.ESXiCluster) error {
 	return nil
 }
 
-func validateECCriteria(filterCriteria models.ESXiClusterFilterCriteria) error {
+func getECCriteria(params url.Values) (*models.ESXiClusterFilterCriteria, error) {
 	defaultLog.Trace("controllers/esxi_cluster_controller:ValidateECCriteria() Entering")
 	defer defaultLog.Trace("controllers/esxi_cluster_controller:ValidateECCriteria() Leaving")
 
-	if filterCriteria.Id != "" {
-		if _, err := uuid.Parse(filterCriteria.Id); err != nil {
-			return errors.New("Invalid UUID format of the ESXi cluster Identifier")
+	ecfc := models.ESXiClusterFilterCriteria{}
+
+	if strings.TrimSpace(params.Get("id")) != "" {
+		parsedId, err := uuid.Parse(params.Get("id"))
+		if err != nil {
+			secLog.WithError(err).Error("controllers/esxi_cluster_controller:Search() Invalid UUID provided " +
+				"in search criteria")
+			return nil, errors.Wrap(err, "Invalid UUID provided in search criteria")
 		}
-	}
-	if filterCriteria.ClusterName != "" {
-		if err := validation.ValidateStrings([]string{filterCriteria.ClusterName}); err != nil {
-			return errors.Wrap(err, "Valid contents for Cluster name must be specified")
+		ecfc.Id = parsedId
+	} else if strings.TrimSpace(params.Get("clusterName")) != "" {
+		if err := validation.ValidateStrings([]string{params.Get("clusterName")}); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for Cluster name must be specified")
 		}
+		ecfc.ClusterName = params.Get("clusterName")
 	}
-	return nil
+
+	return &ecfc, nil
 }
