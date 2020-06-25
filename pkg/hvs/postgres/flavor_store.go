@@ -23,6 +23,7 @@ func NewFlavorStore(store *DataStore) *FlavorStore {
 	return &FlavorStore{store}
 }
 
+// create flavors
 func (f *FlavorStore) Create(signedFlavor *hvs.SignedFlavor) (*hvs.SignedFlavor, error) {
 	defaultLog.Trace("postgres/flavor_store:Create() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:Create() Leaving")
@@ -33,12 +34,12 @@ func (f *FlavorStore) Create(signedFlavor *hvs.SignedFlavor) (*hvs.SignedFlavor,
 	fId := uuid.New()
 	signedFlavor.Flavor.Meta.ID = fId
 	dbf := flavor{
-		ID:         fId,
-		Content:    PGFlavorContent(signedFlavor.Flavor),
-		CreatedAt:  time.Time{},
-		Label:      signedFlavor.Flavor.Meta.Description.Label,
+		ID:        fId,
+		Content:   PGFlavorContent(signedFlavor.Flavor),
+		CreatedAt: time.Time{},
+		Label:     signedFlavor.Flavor.Meta.Description.Label,
 		FlavorPart: signedFlavor.Flavor.Meta.Description.FlavorPart,
-		Signature:  signedFlavor.Signature,
+		Signature: signedFlavor.Signature,
 	}
 
 	if err := f.Store.Db.Create(&dbf).Error; err != nil {
@@ -99,6 +100,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, hostManifes
 	return tx
 }
 
+// helper function used to create a map of all the flavor parts for which latest flavors has to be picked up
 func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []string) (map[string]bool, error) {
 	flavorPartWithLatest := make(map[string]bool)
 	if len(flavorParts) >= 1 {
@@ -115,6 +117,7 @@ func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []string) (map[stri
 	return flavorPartWithLatest, nil
 }
 
+// helper function used to query through flavor description with a given key-value pair
 func findFlavorByKeyValue(tx *gorm.DB, key, value string) *gorm.DB {
 	defaultLog.Trace("postgres/flavor_store:findFlavorByKeyValue() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:findFlavorByKeyValue() Leaving")
@@ -126,6 +129,7 @@ func findFlavorByKeyValue(tx *gorm.DB, key, value string) *gorm.DB {
 	return tx
 }
 
+// retrieve flavors
 func (f *FlavorStore) Retrieve(flavorId uuid.UUID) (*hvs.SignedFlavor, error) {
 	defaultLog.Trace("postgres/flavor_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:Retrieve() Leaving")
@@ -138,6 +142,7 @@ func (f *FlavorStore) Retrieve(flavorId uuid.UUID) (*hvs.SignedFlavor, error) {
 	return &sf, nil
 }
 
+// delete flavors
 func (f *FlavorStore) Delete(flavorId uuid.UUID) error {
 	defaultLog.Trace("postgres/flavor_store:Delete() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:Delete() Leaving")
@@ -145,7 +150,7 @@ func (f *FlavorStore) Delete(flavorId uuid.UUID) error {
 	dbFlavor := flavor{
 		ID: flavorId,
 	}
-	if err := f.Store.Db.Delete(&dbFlavor).Error; err != nil {
+	if err := f.Store.Db.Where(&dbFlavor).Delete(&dbFlavor).Error; err != nil {
 		return errors.Wrap(err, "postgres/flavor_store:Delete() failed to delete Flavor")
 	}
 	return nil

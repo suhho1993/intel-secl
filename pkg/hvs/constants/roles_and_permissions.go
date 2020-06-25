@@ -24,6 +24,11 @@ const (
 	HostDelete   = "hosts:delete"
 	HostSearch   = "hosts:search"
 
+	FlavorCreate   = "flavors:create"
+	FlavorRetrieve = "flavors:retrieve"
+	FlavorSearch   = "flavors:search"
+	FlavorDelete   = "flavors:delete"
+
 	ESXiClusterCreate   = "esxi_clusters:create"
 	ESXiClusterRetrieve = "esxi_clusters:retrieve"
 	ESXiClusterSearch   = "esxi_clusters:search"
