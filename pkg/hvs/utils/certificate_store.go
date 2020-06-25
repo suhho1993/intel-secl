@@ -29,8 +29,10 @@ func LoadCertificates(certificatePaths *models.CertificatesPathStore) *models.Ce
 	for _, certType := range models.GetUniqueCertTypes()  {
 		defaultLog.Debugf("Certificates loaded for type - %s", certType)
 		certStore := certificateStore[certType]
-		for name, _ := range certStore.Certificates {
-			defaultLog.Debugf("Certificate CN - %s", name)
+		if certStore != nil && certStore.Certificates != nil {
+			for name, _ := range certStore.Certificates {
+				defaultLog.Debugf("Certificate CN - %s", name)
+			}
 		}
 	}
 	return &certificateStore

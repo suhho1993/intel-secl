@@ -53,7 +53,7 @@ func (ca CaCertificatesController) Create(w http.ResponseWriter, r *http.Request
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to store certificate"}
 	}
 	secLog.WithField("Name", caCertificate.Name).Infof("%s: CA certificate created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
-	return &caCertificate, http.StatusOK, nil
+	return &caCertificate, http.StatusCreated, nil
 }
 
 // Retrieve returns an existing Ca certificate from the stored location
@@ -130,8 +130,8 @@ func ReadCertificates(certType string, certStore *models.CertificatesStore)  (*h
 	}
 
 	cs := (*certStore)[certType]
-	if len(cs.Certificates) == 0 {
-		return nil, errors.Errorf(certType + " %s Certificates have not been loaded")
+	if cs == nil || cs.Certificates == nil || len(cs.Certificates) == 0 {
+		return nil, errors.Errorf("%s Certificates have not been loaded", certType)
 	}
 	for _, cert := range cs.Certificates {
 		certificate := hvs.CaCertificate {
