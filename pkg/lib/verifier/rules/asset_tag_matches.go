@@ -12,10 +12,10 @@ package rules
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/pkg/errors"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/pkg/errors"
 )
 
 func NewAssetTagMatches(expectedAssetTagDigest []byte) (Rule, error) {

@@ -35,6 +35,10 @@ const (
 	TpmEndorsementSearch   = "tpm_endorsements:search"
 	TpmEndorsementDelete   = "tpm_endorsements:delete"
 
+	ReportCreate   = "reports:create"
+	ReportRetrieve = "reports:retrieve"
+	ReportSearch   = "reports:search"
+
 	// AssetTagAPI
 	TagCertificateCreate = "tag_certificates:create"
 	TagCertificateDelete = "tag_certificates:delete"

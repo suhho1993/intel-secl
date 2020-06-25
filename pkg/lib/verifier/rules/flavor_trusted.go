@@ -9,9 +9,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 )
 
 func NewFlavorTrusted(signedFlavor *hvs.SignedFlavor, flavorSigningCertificate *x509.Certificate, flavorCaCertificates *x509.CertPool, marker common.FlavorPart) (Rule, error) {

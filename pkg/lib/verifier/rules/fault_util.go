@@ -17,7 +17,7 @@ import (
 )
 
 func newPcrValueMissingFault(bank types.SHAAlgorithm, pcrIndex types.PcrIndex) hvs.Fault {
-	return hvs.Fault {
+	return hvs.Fault{
 		Name:        FaultPcrValueMissing,
 		Description: fmt.Sprintf("Host report does not include required PCR %d, bank %s", pcrIndex, bank),
 		PcrIndex:    &pcrIndex,
@@ -84,7 +84,7 @@ func newFlavorSignatureVerificationFailed(flavorId uuid.UUID) hvs.Fault {
 }
 
 func newXmlMeasurementLogInvalidFault() hvs.Fault {
-	return hvs.Fault {
+	return hvs.Fault{
 		Name: FaultXmlMeasurementLogInvalid,
 		Description: "Unable to parse one of the measurements present in HostManifest",
 	}

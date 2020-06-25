@@ -5,9 +5,9 @@
 package model
 
 type CBNT struct {
-	Enabled bool `json:"enabled,string"`
+	Enabled bool `json:"enabled"`
 	Meta struct {
-		ForceBit bool `json:"force_bit,string"`
+		ForceBit bool `json:"force_bit"`
 		Profile string `json:"profile"`
 		MSR string `json:"msr"`
 	} `json:"meta"`

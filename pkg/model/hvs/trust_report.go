@@ -10,22 +10,23 @@ package hvs
 
 import (
 	"github.com/google/uuid"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 )
 
 type TrustReport struct {
-	PolicyName string       `json:"policy_name"`
-	Results    []RuleResult `json:"rules"`
-	Trusted    bool         `json:"trust"`
+	PolicyName string               `json:"policy_name"`
+	Results    []RuleResult         `json:"results"`
+	Trusted    bool                 `json:"trusted"`
+	HostManifest types.HostManifest `json:"host_manifest"`
 }
 
 type RuleResult struct {
-	Rule     RuleInfo   `json:"rule"`
-	FlavorId uuid.UUID  `json:"flavor_id,omitempty"`
-	Faults   []Fault    `json:"faults,omitempty"`
-	Trusted  bool       `json:"trusted"`
+	Rule     RuleInfo  `json:"rule"`
+	FlavorId uuid.UUID `json:"flavor_id,omitempty"`
+	Faults   []Fault   `json:"faults,omitempty"`
+	Trusted  bool      `json:"trusted"`
 }
 
 type RuleInfo struct {
@@ -57,4 +58,52 @@ type Fault struct {
 	MeasurementId          *string                  `json:"measurement_id,omitempty"`
 	FlavorDigestAlg        *string                  `json:"flavor_digest_alg,omitempty"`
 	MeasurementDigestAlg   *string                  `json:"measurement_digest_alg,omitempty"`
+}
+
+func NewTrustReport(report TrustReport) *TrustReport {
+	return &TrustReport{PolicyName: report.PolicyName, Results: report.Results, Trusted: report.Trusted}
+}
+
+func (t *TrustReport) IsTrusted() bool {
+	return t.isTrustedForResults(t.Results)
+}
+
+func (t *TrustReport) IsTrustedForMarker(marker string) bool {
+	return t.isTrustedForResults(t.GetResultsForMarker(marker))
+}
+func (t *TrustReport) isTrustedForResults(ruleResults []RuleResult) bool {
+	if len(ruleResults) == 0 {
+		return false // empty policy is not trusted;  like RequireAllEmptySet fault.
+	}
+
+	trusted := true
+
+	for _, result := range ruleResults{
+		trusted = trusted && result.Trusted
+	}
+
+	return trusted
+}
+
+
+func (t *TrustReport) GetResultsForMarker(marker string) []RuleResult {
+	var ruleResults []RuleResult
+	for _, result := range t.Results{
+		markers := result.Rule.Markers
+		if markers != nil{
+			if find(markers, marker){
+				ruleResults = append(ruleResults, result)
+			}
+		}
+	}
+	return ruleResults
+}
+
+func find(slice []common.FlavorPart, val string) bool {
+	for _, item := range slice {
+		if item.String() == val {
+			return true
+		}
+	}
+	return false
 }

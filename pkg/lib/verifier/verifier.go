@@ -11,10 +11,10 @@ package verifier
 
 import (
 	"crypto/x509"
-	"github.com/pkg/errors"
+	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	"github.com/pkg/errors"
 )
 
 // VerifierCertificates A collection of certificates/certificate pools that 

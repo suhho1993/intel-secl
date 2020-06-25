@@ -10,8 +10,8 @@ package verifier
 
 import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier/rules"
+	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 )
 
@@ -53,11 +53,11 @@ func (v *verifierImpl) Verify(hostManifest *types.HostManifest, signedFlavor *hv
 		PolicyName: policyName,
 		Results:    results,
 		Trusted:    v.overallTrust,
+		HostManifest: *hostManifest,
 	}
 
 	return &trustReport, nil
 }
-
 
 func (v *verifierImpl) applyRules(rulesToApply []rules.Rule, hostManifest *types.HostManifest) ([]hvs.RuleResult, error) {
 

@@ -7,11 +7,11 @@ package rules
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"github.com/pkg/errors"
 )
 
 func NewXmlMeasurementLogEquals(softwareFlavor *hvs.Flavor) (Rule, error) {

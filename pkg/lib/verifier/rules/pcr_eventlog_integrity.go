@@ -6,10 +6,10 @@ package rules
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/pkg/errors"
 )
 
 func NewPcrEventLogIntegrity(expectedPcr *types.Pcr, marker common.FlavorPart) (Rule, error) {

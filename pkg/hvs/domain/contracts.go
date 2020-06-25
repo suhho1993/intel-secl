@@ -61,6 +61,13 @@ type (
 		Delete(uuid.UUID) error
 	}
 
+	ReportStore interface {
+		Search(*models.ReportFilterCriteria) ([]*models.HVSReport, error)
+		Retrieve(uuid.UUID) (*models.HVSReport, error)
+		Create(*models.HVSReport) (*models.HVSReport, error)
+		Update(*models.HVSReport) (*models.HVSReport, error)
+	}
+
 	ESXiClusterStore interface {
 		Create(*hvs.ESXiCluster) (*hvs.ESXiCluster, error)
 		Retrieve(uuid.UUID) (*hvs.ESXiCluster, error)

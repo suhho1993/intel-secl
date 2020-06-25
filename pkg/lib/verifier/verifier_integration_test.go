@@ -15,13 +15,13 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"io/ioutil"
-	//"sort"
-	"testing"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	//"sort"
+	"testing"
 )
 
 func TestMockExample(t *testing.T) {

@@ -67,12 +67,21 @@ type (
 		Id        uuid.UUID         `json:"id,omitempty" gorm:"primary_key; unique;type:uuid"`
 		Action    string            `json:"action"`
 		Params    PGJsonStrMap      `json:"-" sql:"type:JSONB NOT NULL DEFAULT '{}'::JSONB"`
-		CreatedAt time.Time         `json:"created" `
+		CreatedAt time.Time         `json:"created"`
 		UpdatedAt time.Time         `json:"updated"`
 		State     models.QueueState `json:"state"`
 		Message   string            `json:"message,omitempty"`
 	}
 
+	PGTrustReport         hvs.TrustReport
+	report struct {
+		ID          uuid.UUID     `gorm:"id,omitempty" gorm:"primary_key;"`
+		HostID      uuid.UUID     `gorm:"host_id" gorm:"unique;type:uuid;not null;index:idx_report_host_id"`
+		TrustReport PGTrustReport `gorm:"column:trust_report; not null" sql:"type:JSONB"`
+		CreatedAt   time.Time     `gorm:"column:created;not null"`
+		Expiration  time.Time     `gorm:"column:expiration;not null"`
+		Saml        string        `gorm:"column:saml;not null"`
+	}
 	tpmEndorsement struct {
 		ID           uuid.UUID `gorm:"id,omitempty" gorm:"primary_key;type:uuid"`
 		HardwareUUID uuid.UUID `gorm:"hardware_uuid;not null"`
@@ -101,7 +110,7 @@ func (qp *PGJsonStrMap) Scan(value interface{}) error {
 	// no trace comments here as it is a high frequency function.
 	b, ok := value.([]byte)
 	if !ok {
-		return errors.New("postgres/queue_store:PGJsonStrMap_Scan() - type assertion to []byte failed")
+		return errors.New("postgres/models:PGJsonStrMap_Scan() - type assertion to []byte failed")
 	}
 
 	return json.Unmarshal(b, &qp)
@@ -129,7 +138,7 @@ func (hm *PGHostStatusInformation) Scan(value interface{}) error {
 	// no trace comments here as it is a high frequency function.
 	b, ok := value.([]byte)
 	if !ok {
-		return errors.New("postgres/queue_store:PGHostStatusInformation_Scan() - type assertion to []byte failed")
+		return errors.New("postgres/models:PGHostStatusInformation_Scan() - type assertion to []byte failed")
 	}
 
 	return json.Unmarshal(b, &hm)
@@ -142,9 +151,21 @@ func (fmp PGFlavorMatchPolicies) Value() (driver.Value, error) {
 func (fmp *PGFlavorMatchPolicies) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
-		return errors.New("postgres/queue_store:PGFlavorMatchPolicies_Scan() - type assertion to []byte failed")
+		return errors.New("postgres/models:PGFlavorMatchPolicies_Scan() - type assertion to []byte failed")
 	}
 	return json.Unmarshal(b, &fmp)
+}
+
+func (trp PGTrustReport) Value() (driver.Value, error) {
+	return json.Marshal(trp)
+}
+
+func (trp *PGTrustReport) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("postgres/models:PGTrustReport_Scan() - type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &trp)
 }
 
 func (fl PGFlavorContent) Value() (driver.Value, error) {
@@ -158,4 +179,3 @@ func (fl *PGFlavorContent) Scan(value interface{}) error {
 	}
 	return json.Unmarshal(b, &fl)
 }
-
