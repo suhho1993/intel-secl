@@ -23,7 +23,7 @@ func NewReportStore(store *DataStore) *ReportStore {
 	return &ReportStore{store}
 }
 
-// Retrieve method fetches report for a given criteria either hostId or Id report specified in ReportLocator
+// Retrieve method fetches report for a given Id
 func (r *ReportStore) Retrieve(reportId uuid.UUID) (*models.HVSReport, error) {
 	defaultLog.Trace("postgres/report_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/report_store:Retrieve() Leaving")
@@ -185,6 +185,17 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 	}
 
 	return reports, nil
+}
+
+// Delete method deletes report for a given Id
+func (r *ReportStore) Delete(reportId uuid.UUID) error {
+	defaultLog.Trace("postgres/report_store:Delete() Entering")
+	defer defaultLog.Trace("postgres/report_store:Delete() Leaving")
+
+	if err := r.Store.Db.Delete(&report{ID: reportId}).Error; err != nil {
+		return errors.Wrap(err, "postgres/report_store:Delete() failed to delete Report")
+	}
+	return nil
 }
 
 // buildReportSearchQuery is a helper function to build the query object for a report search.

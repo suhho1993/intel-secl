@@ -4,11 +4,14 @@
  */
 package models
 
+import "github.com/google/uuid"
+
 type HostFilterCriteria struct {
-	Id               string
-	HostHardwareId   string
+	Id               uuid.UUID
+	HostHardwareId   uuid.UUID
 	NameEqualTo      string
 	NameContains     string
 	Key              string
 	Value            string
+	IdList           []uuid.UUID
 }

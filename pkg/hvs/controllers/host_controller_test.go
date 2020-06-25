@@ -23,15 +23,18 @@ var _ = Describe("HostController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
 	var hostStore *mocks.MockHostStore
-	var flavorgroupStore *mocks.MockFlavorgroupStore
+	var hostStatusStore *mocks.MockHostStatusStore
+	var flavorGroupStore *mocks.MockFlavorgroupStore
 	var hostController *controllers.HostController
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		hostStore = mocks.NewMockHostStore()
-		flavorgroupStore = mocks.NewFakeFlavorgroupStore()
+		hostStatusStore = mocks.NewFakeHostStatusStore()
+		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
 		hostController = &controllers.HostController{
 			HStore:  hostStore,
-			FGStore: flavorgroupStore,
+			HSStore: hostStatusStore,
+			FGStore: flavorGroupStore,
 		}
 	})
 

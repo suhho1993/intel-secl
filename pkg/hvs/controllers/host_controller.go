@@ -22,18 +22,23 @@ import (
 	model "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 type HostController struct {
 	HStore  domain.HostStore
+	RStore  domain.ReportStore
+	HSStore domain.HostStatusStore
 	FGStore domain.FlavorGroupStore
 	HCStore domain.HostCredentialStore
 }
 
-func NewHostController(hs domain.HostStore, fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore) *HostController {
+func NewHostController(hs domain.HostStore, rs domain.ReportStore, hss domain.HostStatusStore, fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore) *HostController {
 	return &HostController{
 		HStore:  hs,
+		RStore:  rs,
+		HSStore: hss,
 		FGStore: fgs,
 		HCStore: hcs,
 	}
@@ -72,7 +77,7 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 		NameEqualTo: reqHost.HostName,
 	})
 	if err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:Create() Host search failed")
+		defaultLog.WithError(err).Error("controllers/host_controller:Create() Host search failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to create Host"}
 	}
 
@@ -134,7 +139,7 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 
 	createdHost, err := hc.HStore.Create(&reqHost)
 	if err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:Create() Host create failed")
+		defaultLog.WithError(err).Error("controllers/host_controller:Create() Host create failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to create Host"}
 	}
 
@@ -159,10 +164,10 @@ func (hc *HostController) Retrieve(w http.ResponseWriter, r *http.Request) (inte
 	host, err := hc.HStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			secLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Retrieve() Host with specified ID could not be located")
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Retrieve() Host with specified ID could not be located")
 			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
 		} else {
-			secLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Retrieve() Host retrieve failed")
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Retrieve() Host retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host"}
 		}
 	}
@@ -196,27 +201,15 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	}
 
 	id := uuid.MustParse(mux.Vars(r)["id"])
-	host, err := hc.HStore.Retrieve(id)
+	_, err = hc.HStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			secLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Update() Host with specified id could not be located")
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Update() Host with specified id could not be located")
 			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
 		} else {
-			secLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Update() Host retrieve failed")
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Update() Host retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host"}
 		}
-	}
-
-	if reqHost.HostName != "" {
-		host.HostName = reqHost.HostName
-	}
-
-	if reqHost.HardwareUuid != uuid.Nil {
-		host.HardwareUuid = reqHost.HardwareUuid
-	}
-
-	if reqHost.Description != "" {
-		host.Description = reqHost.Description
 	}
 
 	if reqHost.ConnectionString != "" {
@@ -230,19 +223,20 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 		csWithoutCredentials := utils.GetConnectionStringWithoutCredentials(connectionString)
 		defaultLog.Debugf("connection string without credentials : %s", csWithoutCredentials)
 
-		host.ConnectionString = csWithoutCredentials
+		reqHost.ConnectionString = csWithoutCredentials
 
 		//TODO: update credential
 	}
 
-	updatedHost, err := hc.HStore.Update(host)
+	reqHost.Id = id
+	updatedHost, err := hc.HStore.Update(&reqHost)
 	if err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:Update() Host update failed")
+		defaultLog.WithError(err).Error("controllers/host_controller:Update() Host update failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host"}
 	}
 
 	if len(reqHost.FlavorgroupNames) != 0 {
-		defaultLog.Debugf("Associating host %s with flavorgroups : %+q", host.HostName, reqHost.FlavorgroupNames)
+		defaultLog.Debugf("Associating host %s with flavorgroups : %+q", updatedHost.HostName, reqHost.FlavorgroupNames)
 		if err := hc.linkFlavorgroupsToHost(reqHost.FlavorgroupNames, updatedHost.Id); err != nil {
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to associate Host with flavorgroups"}
 		}
@@ -264,10 +258,10 @@ func (hc *HostController) Delete(w http.ResponseWriter, r *http.Request) (interf
 	host, err := hc.HStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			secLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete()  Host with specified id could not be located")
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete()  Host with specified id could not be located")
 			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
 		} else {
-			secLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete() Host retrieve failed")
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete() Host retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Host"}
 		}
 	}
@@ -295,33 +289,24 @@ func (hc *HostController) Search(w http.ResponseWriter, r *http.Request) (interf
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("query hosts")
-	id := r.URL.Query().Get("id")
-	key := r.URL.Query().Get("key")
-	value := r.URL.Query().Get("value")
-	nameEqualTo := r.URL.Query().Get("nameEqualTo")
-	nameContains := r.URL.Query().Get("nameContains")
-	hostHardwareId := r.URL.Query().Get("hostHardwareId")
-
-	var filter *models.HostFilterCriteria = nil
-	if id != "" || key != "" || value != "" || nameEqualTo != "" || nameContains != "" || hostHardwareId != "" {
-		filter = &models.HostFilterCriteria{
-			Id:             id,
-			Key:            key,
-			Value:          value,
-			NameEqualTo:    nameEqualTo,
-			NameContains:   nameContains,
-			HostHardwareId: hostHardwareId,
-		}
-
-		if err := validateHostFilterCriteria(filter); err != nil {
-			secLog.WithError(err).Error("controllers/host_controller:Search() Invalid filter criteria")
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
-		}
+	criteria, err := populateHostFilterCriteria(r.URL.Query())
+	if err != nil {
+		secLog.WithError(err).Error("controllers/host_controller:Search() Invalid filter criteria")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	hosts, err := hc.HStore.Search(filter)
+	if criteria.Key != "" {
+		hostIds, err := hc.HSStore.FindHostIdsByKeyValue(criteria.Key, criteria.Value)
+		if err != nil {
+			defaultLog.WithError(err).Error("controllers/host_controller:Search() HostStatus FindHostIdsByKeyValue failed")
+			return nil, http.StatusInternalServerError, errors.Errorf("Failed to search Hosts")
+		}
+		criteria.IdList = hostIds
+	}
+
+	hosts, err := hc.HStore.Search(criteria)
 	if err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:Search() Host search failed")
+		defaultLog.WithError(err).Error("controllers/host_controller:Search() Host search failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("Failed to search Hosts")
 	}
 
@@ -344,41 +329,51 @@ func validateHostCreateCriteria(host hvs.Host) error {
 	return nil
 }
 
-func validateHostFilterCriteria(criteria *models.HostFilterCriteria) error {
-	defaultLog.Trace("controllers/host_controller:validateHostFilterCriteria() Entering")
-	defer defaultLog.Trace("controllers/host_controller:validateHostFilterCriteria() Leaving")
+func populateHostFilterCriteria(params url.Values) (*models.HostFilterCriteria, error) {
+	defaultLog.Trace("controllers/host_controller:populateHostFilterCriteria() Entering")
+	defer defaultLog.Trace("controllers/host_controller:populateHostFilterCriteria() Leaving")
 
-	if criteria.Id != "" {
-		if _, err := uuid.Parse(criteria.Id); err != nil {
-			return errors.New("Invalid id query param value, must be UUIDv4")
+	var criteria models.HostFilterCriteria
+
+	if params.Get("id") != "" {
+		id, err := uuid.Parse(params.Get("id"))
+		if err != nil {
+			return nil, errors.New("Invalid id query param value, must be UUID")
 		}
-	}
-	if criteria.Key != "" {
-		if err := validation.ValidateStrings([]string{criteria.Key}); err != nil {
-			return errors.Wrap(err, "Valid contents for key must be specified")
+		criteria.Id = id
+
+	} else if params.Get("nameEqualTo") != "" {
+		name := params.Get("nameEqualTo")
+		if err := validation.ValidateHostname(name); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for nameEqualTo must be specified")
 		}
-	}
-	if criteria.Value != "" {
-		if err := validation.ValidateStrings([]string{criteria.Value}); err != nil {
-			return errors.Wrap(err, "Valid contents for value must be specified")
+		criteria.NameEqualTo = name
+
+	} else if params.Get("nameContains") != "" {
+		name := params.Get("nameContains")
+		if err := validation.ValidateHostname(name); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for nameContains must be specified")
 		}
-	}
-	if criteria.NameEqualTo != "" {
-		if err := validation.ValidateHostname(criteria.NameEqualTo); err != nil {
-			return errors.Wrap(err, "Valid contents for nameEqualTo must be specified")
+		criteria.NameContains = name
+
+	} else if params.Get("hostHardwareId") != "" {
+		hwid, err := uuid.Parse(params.Get("hostHardwareId"))
+		if err != nil {
+			return nil, errors.New("Invalid hostHardwareId query param value, must be UUID")
 		}
-	}
-	if criteria.NameContains != "" {
-		if err := validation.ValidateHostname(criteria.NameContains); err != nil {
-			return errors.Wrap(err, "Valid contents for nameContains must be specified")
+		criteria.HostHardwareId = hwid
+
+	} else if params.Get("key") != "" && params.Get("value") != "" {
+		key := params.Get("key")
+		value := params.Get("value")
+		if err := validation.ValidateStrings([]string{key, value}); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for key and value must be specified")
 		}
+		criteria.Key = key
+		criteria.Value = value
 	}
-	if criteria.HostHardwareId != "" {
-		if err := validation.ValidateHardwareUUID(criteria.HostHardwareId); err != nil {
-			return errors.New("Invalid hostHardwareId query param value, must be UUID")
-		}
-	}
-	return nil
+
+	return &criteria, nil
 }
 
 func getHostInfo(cs string) (*model.HostInfo, error) {

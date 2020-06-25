@@ -60,6 +60,7 @@ type (
 		Search(*models.HostStatusFilterCriteria) (*hvs.HostStatusCollection, error)
 		Delete(uuid.UUID) error
 		Update(*hvs.HostStatus) error
+		FindHostIdsByKeyValue(key, value string) ([]uuid.UUID, error)
 	}
 
 	QueueStore interface {
@@ -75,6 +76,7 @@ type (
 		Retrieve(uuid.UUID) (*models.HVSReport, error)
 		Create(*models.HVSReport) (*models.HVSReport, error)
 		Update(*models.HVSReport) (*models.HVSReport, error)
+		Delete(uuid.UUID) error
 	}
 
 	ESXiClusterStore interface {

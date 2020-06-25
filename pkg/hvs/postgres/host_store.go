@@ -10,6 +10,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"reflect"
 )
 
 type HostStore struct {
@@ -116,20 +117,20 @@ func buildHostSearchQuery(tx *gorm.DB, criteria *models.HostFilterCriteria) *gor
 	}
 
 	tx = tx.Model(&host{})
-	if criteria == nil {
+	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFilterCriteria{}) {
 		return tx
 	}
 
-	if criteria.Id != "" {
+	if criteria.Id != uuid.Nil {
 		tx = tx.Where("id = ?", criteria.Id)
 	} else if criteria.NameEqualTo != "" {
 		tx = tx.Where("name = ?", criteria.NameEqualTo)
 	} else if criteria.NameContains != "" {
 		tx = tx.Where("name like ? ", "%"+criteria.NameContains+"%")
-	} else if criteria.HostHardwareId != "" {
+	} else if criteria.HostHardwareId != uuid.Nil {
 		tx = tx.Where("hardware_uuid = ?", criteria.HostHardwareId)
-	} else if criteria.Key != "" && criteria.Value != "" {
-		//TODO: fetch host ids from host_status table
+	} else if criteria.IdList != nil {
+		tx = tx.Where("id IN (?)", criteria.IdList)
 	}
 
 	return tx

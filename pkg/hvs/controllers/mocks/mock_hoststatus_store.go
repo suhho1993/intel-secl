@@ -49,7 +49,7 @@ func (store *MockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, error
 	return nil, errors.New(commErr.RowsNotFound)
 }
 
-// Updates updates an existing HostStatus
+// Update updates an existing HostStatus
 func (store *MockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
 	if updatedHSS.ID == uuid.Nil {
 		return errors.New("HostStatus Update Failed: ID is invalid")
@@ -202,6 +202,14 @@ func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriter
 	}
 
 	return &hvs.HostStatusCollection{HostStatuses: hsc}, nil
+}
+
+// FindHostIdsByKeyValue returns host ids for records having key value pair in HostInfo
+func (store *MockHostStatusStore) FindHostIdsByKeyValue(key, value string) ([]uuid.UUID, error) {
+
+	var ids []uuid.UUID
+	// TODO: Need to convert HostInfo to map and search for key and value
+	return ids, nil
 }
 
 // NewFakeHostStatusStore loads dummy data into MockHostStatusStore

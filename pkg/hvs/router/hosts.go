@@ -19,9 +19,11 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, dek []byte) *m
 	defer defaultLog.Trace("router/hosts:SetHostRoutes() Leaving")
 
 	hostStore := postgres.NewHostStore(store)
+	reportStore := postgres.NewReportStore(store)
+	hostStatusStore := postgres.NewHostStatusStore(store)
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	hostCredentialStore := postgres.NewHostCredentialStore(store, dek)
-	hostController := controllers.NewHostController(hostStore, flavorGroupStore, hostCredentialStore)
+	hostController := controllers.NewHostController(hostStore, reportStore, hostStatusStore, flavorGroupStore, hostCredentialStore)
 
 	hostIdExpr := fmt.Sprintf("%s%s", "/hosts/", validation.IdReg)
 

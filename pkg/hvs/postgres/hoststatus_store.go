@@ -131,6 +131,27 @@ func (hss *HostStatusStore) Delete(hostStatusId uuid.UUID) error {
 	return nil
 }
 
+func (hss *HostStatusStore) FindHostIdsByKeyValue(key, value string) ([]uuid.UUID, error) {
+	defaultLog.Trace("postgres/hoststatus_store:FindHostIdsByKeyValue() Entering")
+	defer defaultLog.Trace("postgres/hoststatus_store:FindHostIdsByKeyValue() Leaving")
+
+	rows, err := hss.Store.Db.Raw("SELECT host_id FROM mw_host_status WHERE host_report::text != 'null' AND host_report -> 'host_info' ->> ? = ?", key, value).Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/hoststatus_store:FindHostIdsByKeyValue() failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		id := uuid.UUID{}
+		if err := rows.Scan(&id); err != nil {
+			return nil, errors.Wrap(err, "postgres/hoststatus_store:FindHostIdsByKeyValue() failed to scan record")
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
 // buildHostStatusSearchQuery is a helper function to build the query object for a hostStatus search.
 func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCriteria) *gorm.DB {
 	defaultLog.Trace("postgres/hoststatus_store:buildHostStatusSearchQuery() Entering")

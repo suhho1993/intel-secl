@@ -9,6 +9,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	"reflect"
 	"strings"
 )
 
@@ -57,19 +58,17 @@ func (store *MockHostStore) Delete(id uuid.UUID)  error {
 
 // Search returns a collection of Hosts filtered as per HostFilterCriteria
 func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) (*hvs.HostCollection, error) {
-	if criteria == nil {
+	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFilterCriteria{}) {
 		return &hvs.HostCollection{Hosts: store.hostStore}, nil
 	}
 
 	var hosts []*hvs.Host
-	if criteria.Id != "" {
-		id := uuid.MustParse(criteria.Id)
-		t, _ := store.Retrieve(id)
+	if criteria.Id != uuid.Nil {
+		t, _ := store.Retrieve(criteria.Id)
 		hosts = append(hosts, t)
-	}  else if criteria.HostHardwareId != "" {
-		hwid := uuid.MustParse(criteria.HostHardwareId)
+	}  else if criteria.HostHardwareId != uuid.Nil {
 		for _, t := range store.hostStore {
-			if t.HardwareUuid == hwid {
+			if t.HardwareUuid == criteria.HostHardwareId {
 				hosts =  append(hosts, t)
 			}
 		}

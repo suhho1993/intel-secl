@@ -70,24 +70,15 @@ func (hs *hostStore) Delete(uuid uuid.UUID) error {
 }
 
 func (hs *hostStore) Search(criteria *models.HostFilterCriteria) (*hvs.HostCollection, error) {
-	var critId uuid.UUID
-	var err error
-	if criteria.Id == "" {
-		critId = uuid.UUID{}
-	} else {
-		if critId, err = uuid.Parse(criteria.Id); err != nil {
-			return nil, err
-		}
-	}
-	if critId == uuid.Nil {
+	if criteria.Id == uuid.Nil {
 		result := make([]*hvs.Host, 0, len(hs.m))
 		for _, v := range hs.m {
 			result = append(result, &v)
 		}
 		return &hvs.HostCollection{result}, nil
 	}
-	if _, ok := hs.m[critId]; ok {
-		cp := hs.m[critId]
+	if _, ok := hs.m[criteria.Id]; ok {
+		cp := hs.m[criteria.Id]
 		return &hvs.HostCollection{[]*hvs.Host{&cp}}, nil
 	}
 	return nil, errors.New("No Records fouund")
