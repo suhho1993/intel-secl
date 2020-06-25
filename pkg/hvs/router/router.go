@@ -7,6 +7,7 @@ package router
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -72,6 +73,16 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
 
+	dekBase64 := cfg.HVS.Dek
+	if dekBase64 == "" {
+		defaultLog.Warn("Data encryption key is not defined")
+	}
+
+	dek, err := base64.StdEncoding.DecodeString(dekBase64)
+	if err != nil {
+		defaultLog.WithError(err).Warn("Data encryption key is not base64 encoded")
+	}
+
 	serviceApi := "/" + service + constants.ApiVersion
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
 	subRouter = SetVersionRoutes(subRouter)
@@ -89,7 +100,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetCertifyAiksRoutes(subRouter, dataStore)
 	subRouter = SetHostStatusRoutes(subRouter, dataStore)
 	subRouter = SetCertifyHostKeysRoutes(subRouter)
-	subRouter = SetHostRoutes(subRouter, dataStore)
+	subRouter = SetHostRoutes(subRouter, dataStore, dek)
 	subRouter = SetReportRoutes(subRouter, dataStore)
 	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
 	subRouter = SetESXiClusterRoutes(subRouter, dataStore)

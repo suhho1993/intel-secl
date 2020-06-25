@@ -17,6 +17,7 @@ import (
 type HVSConfig struct {
 	Username string `yaml:"username" mapstructure:"username"`
 	Password string `yaml:"password" mapstructure:"password"`
+	Dek      string `yaml:"data-encryption-key" mapstructure:"data-encryption-key"`
 }
 
 type Configuration struct {

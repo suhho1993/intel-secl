@@ -47,6 +47,15 @@ type (
 		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
 	}
 
+	hostCredential struct {
+		Id           uuid.UUID `gorm:"primary_key;type:uuid"`
+		HostId       uuid.UUID `gorm:"type:uuid;index:idx_host_credential_host_id"`
+		HostName     string    `gorm:"type:varchar(255);index:idx_host_credential_hostname"`
+		HardwareUuid uuid.UUID `gorm:"type:uuid;index:idx_host_credential_hardware_uuid"`
+		Credential   string
+		CreatedTs    time.Time
+	}
+
 	// hostStatus holds all the hostStatus records for VS-attested hosts
 	hostStatus struct {
 		// TODO: do we need to associate with Host table using foreign_key?

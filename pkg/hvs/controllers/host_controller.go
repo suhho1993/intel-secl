@@ -28,12 +28,14 @@ import (
 type HostController struct {
 	HStore  domain.HostStore
 	FGStore domain.FlavorGroupStore
+	HCStore domain.HostCredentialStore
 }
 
-func NewHostController(hs domain.HostStore, fgs domain.FlavorGroupStore) *HostController {
+func NewHostController(hs domain.HostStore, fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore) *HostController {
 	return &HostController{
 		HStore:  hs,
 		FGStore: fgs,
+		HCStore: hcs,
 	}
 }
 

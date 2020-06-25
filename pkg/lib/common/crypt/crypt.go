@@ -7,6 +7,8 @@ package crypt
 import (
 	"bytes"
 	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
@@ -18,6 +20,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/big"
 	"net/url"
@@ -228,4 +231,64 @@ func RetrieveValidatedPeerCert(baseUrl string, trustFirstCert bool, trustedThumb
 
 	return peerCert, nil
 
+}
+
+// AesEncrypt encrypts plain bytes using AES key passed as param
+func AesEncrypt(data, key []byte) ([]byte, error){
+	// generate a new aes cipher using key
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// gcm or Galois/Counter Mode, is a mode of operation
+	// for symmetric key cryptographic block ciphers
+	// - https://en.wikipedia.org/wiki/Galois/Counter_Mode
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	// creates a new byte array the size of the nonce
+	// which must be passed to Seal
+	nonce := make([]byte, gcm.NonceSize())
+	// populates our nonce with a cryptographically secure
+	// random sequence
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+
+	// here we encrypt data using the Seal function
+	return gcm.Seal(nonce, nonce, data, nil), nil
+}
+
+// AesDecrypt decrypts cipher bytes using AES key passed as param
+func AesDecrypt(data, key []byte) ([]byte, error) {
+	// generate a new aes cipher using key
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// gcm or Galois/Counter Mode, is a mode of operation
+	// for symmetric key cryptographic block ciphers
+	// - https://en.wikipedia.org/wiki/Galois/Counter_Mode
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(data) < nonceSize {
+		return nil, fmt.Errorf("cipher text length cannot be less than %d bytes", nonceSize)
+	}
+
+	nonce, data := data[:nonceSize], data[nonceSize:]
+	// here we decrypt data using the Open function
+	plaintext, err := gcm.Open(nil, nonce, data, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return plaintext, nil
 }

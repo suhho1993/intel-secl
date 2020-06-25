@@ -14,13 +14,14 @@ import (
 )
 
 // SetHostRoutes registers routes for hosts
-func SetHostRoutes(router *mux.Router, store *postgres.DataStore) *mux.Router {
+func SetHostRoutes(router *mux.Router, store *postgres.DataStore, dek []byte) *mux.Router {
 	defaultLog.Trace("router/hosts:SetHostRoutes() Entering")
 	defer defaultLog.Trace("router/hosts:SetHostRoutes() Leaving")
 
 	hostStore := postgres.NewHostStore(store)
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
-	hostController := controllers.NewHostController(hostStore, flavorGroupStore)
+	hostCredentialStore := postgres.NewHostCredentialStore(store, dek)
+	hostController := controllers.NewHostController(hostStore, flavorGroupStore, hostCredentialStore)
 
 	hostIdExpr := fmt.Sprintf("%s%s", "/hosts/", validation.IdReg)
 

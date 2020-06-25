@@ -28,6 +28,15 @@ type (
 		Search(*models.HostFilterCriteria) (*hvs.HostCollection, error)
 	}
 
+	HostCredentialStore interface {
+		Create(*models.HostCredential) (*models.HostCredential, error)
+		Retrieve(uuid.UUID) (*models.HostCredential, error)
+		Update(*models.HostCredential) (*models.HostCredential, error)
+		Delete(uuid.UUID) error
+		FindByHostId(uuid.UUID) (*models.HostCredential, error)
+		FindByHostName(string) (*models.HostCredential, error)
+	}
+
 	FlavorStore interface {
 		Create(*hvs.SignedFlavor) (*hvs.SignedFlavor, error)
 		Retrieve(uuid.UUID) (*hvs.SignedFlavor, error)
