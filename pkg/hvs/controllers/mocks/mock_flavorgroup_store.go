@@ -79,21 +79,19 @@ func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	store.Create(&hvs.FlavorGroup{
 		ID:   uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		Name: "hvs_flavorgroup_test1",
-		FlavorMatchPolicyCollection: hvs.FlavorMatchPolicyCollection{
-			FlavorMatchPolicies: []hvs.FlavorMatchPolicy{
-				{
-					FlavorPart: cf.FlavorPartOs,
-					MatchPolicy: hvs.MatchPolicy{
-						MatchType: hvs.MatchTypeAllOf,
-						Required:  hvs.FlavorRequired,
-					},
+		MatchPolicies: []hvs.FlavorMatchPolicy{
+			{
+				FlavorPart: cf.FlavorPartOs,
+				MatchPolicy: hvs.MatchPolicy{
+					MatchType: hvs.MatchTypeAllOf,
+					Required:  hvs.FlavorRequired,
 				},
-				{
-					FlavorPart: cf.FlavorPartPlatform,
-					MatchPolicy: hvs.MatchPolicy{
-						MatchType: hvs.MatchTypeAnyOf,
-						Required:  hvs.FlavorRequiredIfDefined,
-					},
+			},
+			{
+				FlavorPart: cf.FlavorPartPlatform,
+				MatchPolicy: hvs.MatchPolicy{
+					MatchType: hvs.MatchTypeAnyOf,
+					Required:  hvs.FlavorRequiredIfDefined,
 				},
 			},
 		},
@@ -102,14 +100,12 @@ func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	store.Create(&hvs.FlavorGroup{
 		ID:   uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
 		Name: "hvs_flavorgroup_test2",
-		FlavorMatchPolicyCollection: hvs.FlavorMatchPolicyCollection{
-			FlavorMatchPolicies: []hvs.FlavorMatchPolicy{
-				{
-					FlavorPart: cf.FlavorPartHostUnique,
-					MatchPolicy: hvs.MatchPolicy{
-						MatchType: hvs.MatchTypeAllOf,
-						Required:  hvs.FlavorRequired,
-					},
+		MatchPolicies: []hvs.FlavorMatchPolicy{
+			{
+				FlavorPart: cf.FlavorPartHostUnique,
+				MatchPolicy: hvs.MatchPolicy{
+					MatchType: hvs.MatchTypeAllOf,
+					Required:  hvs.FlavorRequired,
 				},
 			},
 		},

@@ -28,7 +28,7 @@ func (f *FlavorGroupStore) Create(fg *hvs.FlavorGroup) (*hvs.FlavorGroup, error)
 	dbFlavorGroup := &flavorGroup{
 		ID:                    fg.ID,
 		Name:                  fg.Name,
-		FlavorTypeMatchPolicy: PGFlavorMatchPolicies{fg.FlavorMatchPolicyCollection.FlavorMatchPolicies},
+		FlavorTypeMatchPolicy: PGFlavorMatchPolicies(fg.MatchPolicies),
 	}
 
 	if err := f.Store.Db.Create(&dbFlavorGroup).Error; err != nil {
@@ -43,7 +43,7 @@ func (f *FlavorGroupStore) Retrieve(flavorGroupId uuid.UUID) (*hvs.FlavorGroup, 
 
 	fg := hvs.FlavorGroup{}
 	row := f.Store.Db.Model(&flavorGroup{}).Where(&flavorGroup{ID: flavorGroupId}).Row()
-	if err := row.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.FlavorMatchPolicyCollection)); err != nil {
+	if err := row.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.MatchPolicies)); err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:Retrieve() failed to scan record")
 	}
 	return &fg, nil
@@ -69,7 +69,7 @@ func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) (*
 	flavorgroupCollection := hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{}}
 	for rows.Next() {
 		fg := hvs.FlavorGroup{}
-		if err := rows.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.FlavorMatchPolicyCollection)); err != nil {
+		if err := rows.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.MatchPolicies)); err != nil {
 			return nil, errors.Wrap(err, "postgres/flavorgroup_store:Search() failed to scan record")
 		}
 		flavorgroupCollection.Flavorgroups = append(flavorgroupCollection.Flavorgroups, &fg)
@@ -126,7 +126,7 @@ func toDbFlavorGroup(fg *hvs.FlavorGroup) (*flavorGroup, error) {
 	dbFlavorGroup := flavorGroup{
 		ID:                    fg.ID,
 		Name:                  fg.Name,
-		FlavorTypeMatchPolicy: PGFlavorMatchPolicies{fg.FlavorMatchPolicyCollection.FlavorMatchPolicies},
+		FlavorTypeMatchPolicy: PGFlavorMatchPolicies(fg.MatchPolicies),
 	}
 	return &dbFlavorGroup, nil
 }

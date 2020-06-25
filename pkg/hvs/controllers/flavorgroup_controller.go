@@ -172,7 +172,7 @@ func ValidateFlavorGroup(flavorGroup hvs.FlavorGroup) error {
 			return errors.Wrap(errs, "Valid FlavorGroup Name must be specified")
 		}
 	}
-	if len(flavorGroup.FlavorMatchPolicyCollection.FlavorMatchPolicies) == 0 {
+	if len(flavorGroup.MatchPolicies) == 0 {
 		return errors.New("Flavor Type Match Policy Collection must be specified")
 	}
 	return nil

@@ -18,11 +18,11 @@ import (
 
 // Define all struct types here
 type (
-	PGJsonStrMap          map[string]interface{}
-	PGFlavorMatchPolicies hvs.FlavorMatchPolicyCollection
+	PGJsonStrMap            map[string]interface{}
+	PGFlavorMatchPolicies   hvs.FlavorMatchPolicies
 	PGHostManifest          types.HostManifest
 	PGHostStatusInformation hvs.HostStatusInformation
-	PGFlavorContent hvs.Flavor
+	PGFlavorContent         hvs.Flavor
 
 	flavorGroup struct {
 		ID                    uuid.UUID             `json:"id" gorm:"primary_key;type:uuid"`
@@ -35,8 +35,8 @@ type (
 		Content    PGFlavorContent `json:"flavor" sql:"type:JSONB"`
 		CreatedAt  time.Time       `json:"created"`
 		Label      string          `gorm:"unique;not null"`
-		FlavorPart string		   `json:"flavor_part"`
-		Signature  string 		   `json:"signature"`
+		FlavorPart string          `json:"flavor_part"`
+		Signature  string          `json:"signature"`
 	}
 
 	host struct {

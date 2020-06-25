@@ -344,7 +344,7 @@ var _ = Describe("FlavorgroupController", func() {
 				Ω(err).Should(HaveOccurred())
 
 				flavorGroup.Name = "test"
-				flavorGroup.FlavorMatchPolicyCollection = hvs.FlavorMatchPolicyCollection{}
+				flavorGroup.MatchPolicies = hvs.FlavorMatchPolicies{}
 				err = controllers.ValidateFlavorGroup(flavorGroup)
 				Ω(err).Should(HaveOccurred())
 			})
