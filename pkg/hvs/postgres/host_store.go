@@ -80,7 +80,7 @@ func (hs *HostStore) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (hs *HostStore) Search(criteria *models.HostFilterCriteria) (*hvs.HostCollection, error) {
+func (hs *HostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, error) {
 	defaultLog.Trace("postgres/host_store:Search() Entering")
 	defer defaultLog.Trace("postgres/host_store:Search() Leaving")
 
@@ -96,15 +96,15 @@ func (hs *HostStore) Search(criteria *models.HostFilterCriteria) (*hvs.HostColle
 	}
 	defer rows.Close()
 
-	hostCollection := hvs.HostCollection{}
+	var hosts []*hvs.Host
 	for rows.Next() {
 		host := hvs.Host{}
 		if err := rows.Scan(&host.Id, &host.HostName, &host.Description, &host.ConnectionString, &host.HardwareUuid); err != nil {
 			return nil, errors.Wrap(err, "postgres/host_store:Search() failed to scan record")
 		}
-		hostCollection.Hosts = append(hostCollection.Hosts, &host)
+		hosts = append(hosts, &host)
 	}
-	return &hostCollection, nil
+	return hosts, nil
 }
 
 // helper function to build the query object for a Host search.

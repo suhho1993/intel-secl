@@ -69,17 +69,17 @@ func (hs *hostStore) Delete(uuid uuid.UUID) error {
 	return errors.New("Record not found")
 }
 
-func (hs *hostStore) Search(criteria *models.HostFilterCriteria) (*hvs.HostCollection, error) {
+func (hs *hostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, error) {
 	if criteria.Id == uuid.Nil {
 		result := make([]*hvs.Host, 0, len(hs.m))
 		for _, v := range hs.m {
 			result = append(result, &v)
 		}
-		return &hvs.HostCollection{result}, nil
+		return result, nil
 	}
 	if _, ok := hs.m[criteria.Id]; ok {
 		cp := hs.m[criteria.Id]
-		return &hvs.HostCollection{[]*hvs.Host{&cp}}, nil
+		return []*hvs.Host{&cp}, nil
 	}
 	return nil, errors.New("No Records fouund")
 }

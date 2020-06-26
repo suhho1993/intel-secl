@@ -134,7 +134,7 @@ func (hss *HostStatusStore) FindHostIdsByKeyValue(key, value string) ([]uuid.UUI
 	defaultLog.Trace("postgres/hoststatus_store:FindHostIdsByKeyValue() Entering")
 	defer defaultLog.Trace("postgres/hoststatus_store:FindHostIdsByKeyValue() Leaving")
 
-	rows, err := hss.Store.Db.Raw("SELECT host_id FROM mw_host_status WHERE host_report::text != 'null' AND host_report -> 'host_info' ->> ? = ?", key, value).Rows()
+	rows, err := hss.Store.Db.Raw("SELECT host_id FROM host_status WHERE host_report::text != 'null' AND host_report -> 'host_info' ->> ? = ?", key, value).Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/hoststatus_store:FindHostIdsByKeyValue() failed to retrieve records from db")
 	}

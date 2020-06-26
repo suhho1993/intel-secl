@@ -57,9 +57,9 @@ func (store *MockHostStore) Delete(id uuid.UUID)  error {
 }
 
 // Search returns a collection of Hosts filtered as per HostFilterCriteria
-func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) (*hvs.HostCollection, error) {
+func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, error) {
 	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFilterCriteria{}) {
-		return &hvs.HostCollection{Hosts: store.hostStore}, nil
+		return store.hostStore, nil
 	}
 
 	var hosts []*hvs.Host
@@ -86,7 +86,7 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) (*hvs.Ho
 		}
 	}
 
-	return &hvs.HostCollection{Hosts: hosts}, nil
+	return hosts, nil
 }
 
 // NewMockHostStore provides two dummy data for Hosts

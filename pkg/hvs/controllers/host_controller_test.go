@@ -164,7 +164,7 @@ var _ = Describe("HostController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(http.StatusCreated))
+				Expect(w.Code).To(Equal(http.StatusOK))
 			})
 		})
 		Context("Provide a Host data that contains malformed connection string", func() {
