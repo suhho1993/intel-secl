@@ -101,6 +101,7 @@ func (r *Runner) Run(taskName string, force bool) error {
 		return errors.Wrap(err, "Failed to run setup task "+taskName)
 	}
 	if err := task.Validate(); err != nil {
+		r.PrintHelp(taskName)
 		return errors.Wrap(err, "Failed to validate setup task "+taskName)
 	}
 	return nil

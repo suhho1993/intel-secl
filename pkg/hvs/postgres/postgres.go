@@ -6,15 +6,16 @@ package postgres
 
 import (
 	"fmt"
+	"io/ioutil"
+	"strings"
+	"time"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
-	"time"
 
 	// Import driver for GORM
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -61,6 +62,9 @@ func New(cfg *Config) (*DataStore, error) {
 	var db *gorm.DB
 	var dbErr error
 	numAttempts := cfg.ConnRetryAttempts
+	if numAttempts < 1 {
+		numAttempts = constants.DefaultDbConnRetryAttempts
+	}
 	for i := 0; i < numAttempts; i = i + 1 {
 		retryTime := time.Duration(cfg.ConnRetryTime)
 		db, dbErr = gorm.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s cfg.SslMode=%s%s",

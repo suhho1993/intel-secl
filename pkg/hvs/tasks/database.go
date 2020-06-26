@@ -80,10 +80,10 @@ func (t *DBSetup) Run() error {
 		t.SSLMode = constants.SslModeAllow
 	}
 	if t.ConnectionRetryAttempts < 0 {
-		return errors.New("DATABASE_CONN_RETRY_ATTEMPTS is not valid")
+		t.ConnectionRetryAttempts = constants.DefaultDbConnRetryAttempts
 	}
 	if t.ConnectionRetryTime < 0 {
-		return errors.New("DATABASE_CONN_RETRY_TIME is not valid")
+		t.ConnectionRetryTime = constants.DefaultDbConnRetryTime
 	}
 	// set to default value
 	if t.SSLCert == "" {

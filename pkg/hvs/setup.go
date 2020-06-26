@@ -79,7 +79,13 @@ func init() {
 	viper.SetDefault("server-max-header-bytes", constants.DefaultMaxHeaderBytes)
 
 	// set default for database ssl certificate
+	viper.SetDefault("database-db-name", "hvs_db")
+	viper.SetDefault("database-username", "hvsdbuser")
+	viper.SetDefault("database-password", "hvsdbpass")
+	viper.SetDefault("database-ssl-mode", constants.SslModeAllow)
 	viper.SetDefault("database-ssl-cert", constants.ConfigDir+"hvsdbsslcert.pem")
+	viper.SetDefault("database-conn-retry-attempts", constants.DefaultDbConnRetryAttempts)
+	viper.SetDefault("database-conn-retry-time", constants.DefaultDbConnRetryTime)
 }
 
 // input string slice should start with setup
@@ -103,19 +109,6 @@ func (a *App) setup(args []string) error {
 			force = true
 		}
 	}
-	// Load configuration
-	// use default config if failed
-	var err error
-	defaultConfigLoaded := false
-	a.Config, err = config.LoadConfiguration()
-	if err != nil {
-		// if the default config is loaded,
-		// it should force to take in env variables if there is any
-		defaultConfigLoaded = true
-		a.Config = defaultConfig()
-	}
-	defer a.Config.Save(path.Join(a.configDir(), "config.yaml"))
-
 	// dump answer file to env
 	if ansFile != "" {
 		err := setup.ReadAnswerFileToEnv(ansFile)
@@ -127,16 +120,17 @@ func (a *App) setup(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer a.Config.Save(path.Join(a.configDir(), "config.yaml"))
 	cmd := args[1]
 	if cmd == "all" {
+		// for preventing excessive complexity,
+		// load everything from env when setup all
 		if err = runner.RunAll(force); err != nil {
 			fmt.Fprintln(a.errorWriter(), "Failed to run all setup task")
 			fmt.Fprintln(a.errorWriter(), "Please make sure following requirements are met")
-			runner.PrintAllHelp()
 			return errors.Wrap(err, "Failed to run all tasks")
 		}
 	} else {
-		force = defaultConfigLoaded
 		if err = runner.Run(cmd, force); err != nil {
 			fmt.Fprintln(a.errorWriter(), "Failed to run setup task", cmd)
 			fmt.Fprintln(a.errorWriter(), "Please make sure following requirements are met")
@@ -154,6 +148,11 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 
+	var err error
+	a.Config, err = config.LoadConfiguration()
+	if err != nil {
+		a.Config = defaultConfig()
+	}
 	runner := setup.NewRunner()
 	runner.ConsoleWriter = a.consoleWriter()
 	runner.ErrorWriter = a.errorWriter()
@@ -272,6 +271,14 @@ func (a *App) selfSignTask(name string) setup.Task {
 
 func defaultConfig() *config.Configuration {
 	return &config.Configuration{
+		AASApiUrl:        viper.GetString("aas-base-url"),
+		CMSBaseURL:       viper.GetString("cms-base-url"),
+		CmsTlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
+		HVS: config.HVSConfig{
+			Username: viper.GetString("hvs-username"),
+			Password: viper.GetString("hvs-password"),
+			Dek:      viper.GetString("hvs-data-encryption-key"),
+		},
 		TLS: commConfig.CertConfig{
 			CertFile:     viper.GetString("tls-cert-file"),
 			KeyFile:      viper.GetString("tls-key-file"),
