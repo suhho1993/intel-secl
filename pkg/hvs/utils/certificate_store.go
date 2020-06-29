@@ -25,13 +25,13 @@ func LoadCertificates(certificatePaths *models.CertificatesPathStore) *models.Ce
 			certificateStore[certType] = loadCertificatesFromFile(&certloc)
 		}
 	}
-	defaultLog.Debug("Loaded certificates")
+	defaultLog.Debug("utils/certificate_store:LoadCertificates() Loaded certificates")
 	for _, certType := range models.GetUniqueCertTypes()  {
-		defaultLog.Debugf("Certificates loaded for type - %s", certType)
+		defaultLog.Debugf("utils/certificate_store:LoadCertificates() Certificates loaded for type - %s", certType)
 		certStore := certificateStore[certType]
 		if certStore != nil && certStore.Certificates != nil {
-			for name, _ := range certStore.Certificates {
-				defaultLog.Debugf("Certificate CN - %s", name)
+			for _, cert := range certStore.Certificates {
+				defaultLog.Debugf("utils/certificate_store:LoadCertificates() Certificate CN - %s", cert.Subject.CommonName)
 			}
 		}
 	}
@@ -64,15 +64,16 @@ func loadCertificatesFromDir(certLocation *models.CertLocation) *models.Certific
 		defaultLog.WithError(err).Errorf("utils/certificate_store:loadCertificatesFromDir() Error while reading certs from dir - " + certLocation.CertPath)
 		return nil
 	}
-	certificates := make(map[string]x509.Certificate)
+	var certificates []x509.Certificate
 	for _, certFile := range files {
 		certFilePath := certLocation.CertPath + certFile.Name()
 		certs, err := crypt.GetSubjectCertsMapFromPemFile(certFilePath)
 		if err != nil {
 			defaultLog.WithError(err).Errorf("utils/certificate_store:loadCertificatesFromDir() Error while reading certs from dir - " + certFilePath)
 		}
-		for k, v := range certs {
-			certificates[k] = v
+
+		for _, v := range certs {
+			certificates = append(certificates, v)
 		}
 	}
 

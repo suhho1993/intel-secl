@@ -22,7 +22,7 @@ type CertificatesStore map[string]*CertificateStore
 type CertificateStore struct {
 	Key          *crypto.PrivateKey
 	CertPath     string
-	Certificates map[string]x509.Certificate //certificate name and certificate map
+	Certificates []x509.Certificate
 }
 
 // CertificatesPathStore
@@ -51,7 +51,35 @@ func (cs *CertificatesStore) AddCertificatesToStore(certType, certFile string, c
 	}
 
 	// Add certificate to store
-	certStore.Certificates[certificate.Subject.CommonName] = *certificate
+	certStore.Certificates = append(certStore.Certificates, *certificate)
 
 	return nil
+}
+
+func (cs *CertificatesStore) GetCertificates(certType string) ([]x509.Certificate, error) {
+	defaultLog.Trace("models/certificate_store:GetCertificates() Entering")
+	defer defaultLog.Trace("models/certificate_store:GetCertificates() Leaving")
+
+	certStore := (*cs)[certType]
+	if certStore != nil {
+		return certStore.Certificates, nil
+	}
+	return nil, nil
+}
+
+// This function expects CN to be unique, use this only in that scenario
+func (cs *CertificatesStore) RetrieveCertificate(certType, commonName string) (*x509.Certificate, error) {
+	defaultLog.Trace("models/certificate_store:RetrieveCertificate() Entering")
+	defer defaultLog.Trace("models/certificate_store:RetrieveCertificate() Leaving")
+
+	certStore := (*cs)[certType]
+	if certStore != nil {
+		for _, cert := range certStore.Certificates {
+			if cert.Issuer.CommonName == strings.ReplaceAll(commonName, "\\x00","") {
+				return &cert, nil
+			}
+		}
+	}
+
+	return nil, nil
 }

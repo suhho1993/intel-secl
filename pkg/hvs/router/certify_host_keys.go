@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 )
 
@@ -24,7 +25,7 @@ func SetCertifyHostKeysRoutes(router *mux.Router) *mux.Router {
 	return router
 }
 
-func SetCertifyAiksRoutes(router *mux.Router, store *postgres.DataStore) *mux.Router {
+func SetCertifyAiksRoutes(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore) *mux.Router {
 	defaultLog.Trace("router/certify_host_aiks:SetCertifyAiksRoutes() Entering")
 	defer defaultLog.Trace("router/certify_host_aiks:SetCertifyAiksRoutes() Leaving")
 

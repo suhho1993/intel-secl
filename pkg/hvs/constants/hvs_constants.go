@@ -59,9 +59,10 @@ const (
 	//TODO remove or dont use temporary files
 	AikRequestsDir = HomeDir + "privacyca-aik-requests/"
 	//TODO use EndorsementCA file after implementation of create_endorsement_ca setup task
-	EndorsementCACertDir  = ConfigDir + "certs/endorsement/"
-	EndorsementCACertFile = EndorsementCACertDir + "EndorsementCA-external.pem"
-	EndorsementCAKeyFile  = TrustedKeysDir + "endorsement-ca.key"
+	EndorsementCACertDir      = ConfigDir + "certs/endorsement/"
+	EndorsementCACertFile     = EndorsementCACertDir + "EndorsementCA-external.pem" //External ECA
+	SelfEndorsementCACertFile = EndorsementCACertDir + "EndorsementCA.pem" //Self signed ECA
+	EndorsementCAKeyFile      = TrustedKeysDir + "endorsement-ca.key"
 
 	TagCACertFile = TrustedCaCertsDir + "tag-ca-cert.pem"
 	TagCAKeyFile  = TrustedKeysDir + "tag-ca.key"

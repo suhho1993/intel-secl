@@ -47,7 +47,7 @@ func init() {
 	viper.SetDefault("privacy-ca-issuer", constants.DefaultCertIssuer)
 	viper.SetDefault("privacy-ca-validity-days", constants.DefaultCertValidity)
 
-	viper.SetDefault("endorsement-ca-cert-file", constants.EndorsementCACertFile)
+	viper.SetDefault("endorsement-ca-cert-file", constants.SelfEndorsementCACertFile)
 	viper.SetDefault("endorsement-ca-key-file", constants.EndorsementCAKeyFile)
 	viper.SetDefault("endorsement-ca-common-name", constants.DefaultCN)
 	viper.SetDefault("endorsement-ca-san-list", constants.DefaultSANList)

@@ -245,8 +245,9 @@ func GetCertFromPemFile(path string) (*x509.Certificate, error) {
 	return GetCertFromPem(certPem)
 }
 
-func GetSubjectCertsMapFromPemFile(path string) (map[string]x509.Certificate, error) {
-	subjectCertMap := make(map[string]x509.Certificate)
+func GetSubjectCertsMapFromPemFile(path string) ([]x509.Certificate, error) {
+	log.Debugf("crypt/x509:GetSubjectCertsMapFromPemFile() Loading certificates from  %s", path)
+	var certificates []x509.Certificate
 	certsBytes, err := ioutil.ReadFile(path)
 	if err != nil{
 		return nil, err
@@ -260,13 +261,13 @@ func GetSubjectCertsMapFromPemFile(path string) (map[string]x509.Certificate, er
 	if err != nil {
 		log.WithError(err).Warn("crypt/x509:GetSubjectCertsMapFromPemFile() Failed to parse certificate")
 	} else {
-		subjectCertMap[certAuth.Subject.CommonName] = *certAuth
-		log.Debugf("Issuer CommonName %s", certAuth.Subject.CommonName)
+		certificates = append(certificates, *certAuth)
+		log.Debugf("crypt/x509:GetSubjectCertsMapFromPemFile() CommonName %s", certAuth.Subject.CommonName)
 	}
 
 	// Return if no more certificates present in path file
 	if rest == nil {
-		return subjectCertMap, nil
+		return certificates, nil
 	}
 
 	for ;len(rest) > 1;{
@@ -279,9 +280,10 @@ func GetSubjectCertsMapFromPemFile(path string) (map[string]x509.Certificate, er
 			log.WithError(err).Warn("crypt/x509:GetSubjectCertsMapFromPemFile() Failed to parse certificate")
 			continue
 		}
-		subjectCertMap[certAuth.Subject.CommonName] = *certAuth
+		certificates = append(certificates, *certAuth)
+		log.Debugf("crypt/x509:GetSubjectCertsMapFromPemFile() CommonName %s", certAuth.Subject.CommonName)
 	}
-	return subjectCertMap, nil
+	return certificates, nil
 }
 
 

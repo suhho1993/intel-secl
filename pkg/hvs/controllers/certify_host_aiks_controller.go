@@ -182,7 +182,12 @@ func (certifyHostAiksController *CertifyHostAiksController) getIdentityProofRequ
 	}
 	defaultLog.Debugf("controllers/certify_host_aiks_controller:getIdentityProofRequest() ekCert Issuer Name :%s", ekCert.Issuer.CommonName)
 	var endorsementCertsToVerify x509.Certificate
-	endorsementCertsToVerify = endorsementCerts[strings.ReplaceAll(ekCert.Issuer.CommonName, "\\x00","")]
+	for _, cert := range endorsementCerts {
+		if cert.Issuer.CommonName == strings.ReplaceAll(ekCert.Issuer.CommonName, "\\x00","") {
+			endorsementCertsToVerify = cert
+			break
+		}
+	}
 	if !certifyHostAiksController.isEkCertificateVerifiedByAuthority(ekCert, &endorsementCertsToVerify) && !certifyHostAiksController.isEkCertificateVerifiedByAnyAuthority(ekCert, endorsementCerts) && !certifyHostAiksController.isEkCertRegistered(ekCert){
 		secLog.Errorf("controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted, Please verify Endorsement Authority certificate is present in %s file or ekcert is not registered with hvs", constants.EndorsementCACertFile)
 		return taModel.IdentityProofRequest{}, http.StatusBadRequest, errors.Wrap(err, "controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted")
@@ -393,7 +398,7 @@ func (certifyHostAiksController *CertifyHostAiksController) isEkCertRegistered(c
 	return false
 }
 
-func (certifyHostAiksController *CertifyHostAiksController) isEkCertificateVerifiedByAnyAuthority(cert *x509.Certificate, certs map[string]x509.Certificate) bool {
+func (certifyHostAiksController *CertifyHostAiksController) isEkCertificateVerifiedByAnyAuthority(cert *x509.Certificate, certs []x509.Certificate) bool {
 	defaultLog.Trace("controllers/certify_host_aiks_controller:isEkCertificateVerifiedByAnyAuthority() Entering")
 	defer defaultLog.Trace("controllers/certify_host_aiks_controller:isEkCertificateVerifiedByAnyAuthority() Leaving")
 
