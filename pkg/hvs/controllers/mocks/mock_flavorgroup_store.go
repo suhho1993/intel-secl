@@ -72,6 +72,21 @@ func (store *MockFlavorgroupStore) Create(flavorgroup *hvs.FlavorGroup) (*hvs.Fl
 	return flavorgroup, nil
 }
 
+func (store *MockFlavorgroupStore) AddFlavors(fgId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error) {
+	// TODO: to be implemented
+	return nil, nil
+}
+
+func (store *MockFlavorgroupStore) RemoveFlavors(fgId uuid.UUID, fId []uuid.UUID) error {
+	// TODO: to be implemented
+	return nil
+}
+
+func (store *MockFlavorgroupStore) SearchFlavors(fgId uuid.UUID) ([]uuid.UUID, error) {
+	// TODO: to be implemented
+	return nil, nil
+}
+
 // NewFakeFlavorgroupStore provides two dummy data for Flavorgroups
 func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	store := &MockFlavorgroupStore{}
@@ -110,6 +125,7 @@ func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 			},
 		},
 	})
+
 
 	return store
 }

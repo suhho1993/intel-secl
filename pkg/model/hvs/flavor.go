@@ -7,10 +7,10 @@ package hvs
 import (
 	"crypto/sha512"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/pkg/errors"
 )
 
 /**
@@ -31,8 +31,9 @@ type Flavor struct {
 }
 
 type FlavorCollection struct {
-	Flavors []*Flavor `json:"flavors" xml:"flavors"`
+	Flavors []Flavor `json:"flavors" xml:"flavors"`
 }
+
 
 // NewFlavor returns a new instance of Flavor
 func NewFlavor(meta *model.Meta, bios *model.Bios, hardware *model.Hardware, pcrs map[crypt.DigestAlgorithm]map[types.PcrIndex]model.PcrEx, external *model.External, software *model.Software) *Flavor {

@@ -23,7 +23,7 @@ type MockFlavorStore struct {
 var flavor = ` {
             "flavor": {
                 "meta": {
-                    "id": "f916c386-aef0-404c-948f-bf5ed0dea632",
+                    "id": "c36b5412-8c02-4e08-8a74-8bfa40425cf3",
                     "description": {
                         "flavor_part": "PLATFORM",
                         "source": "Purley21",

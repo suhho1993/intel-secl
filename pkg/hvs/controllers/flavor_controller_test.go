@@ -49,7 +49,7 @@ var _ = Describe("FlavorController", func() {
 		Context("When filtered by Flavor id", func() {
 			It("Should get a single flavor entry", func() {
 				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/flavors?id=f916c386-aef0-404c-948f-bf5ed0dea632", nil)
+				req, err := http.NewRequest("GET", "/flavors?id=c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -83,7 +83,7 @@ var _ = Describe("FlavorController", func() {
 		Context("Retrieve Flavor by valid ID from data store", func() {
 			It("Should retrieve Flavor", func() {
 				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Retrieve))).Methods("GET")
-				req, err := http.NewRequest("GET", "/flavors/f916c386-aef0-404c-948f-bf5ed0dea632", nil)
+				req, err := http.NewRequest("GET", "/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -112,7 +112,7 @@ var _ = Describe("FlavorController", func() {
 		Context("Delete Flavor by ID from data store", func() {
 			It("Should delete Flavor", func() {
 				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Delete))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE", "/flavors/f916c386-aef0-404c-948f-bf5ed0dea632", nil)
+				req, err := http.NewRequest("DELETE", "/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)

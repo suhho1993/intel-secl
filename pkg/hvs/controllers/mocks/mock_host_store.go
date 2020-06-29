@@ -89,6 +89,23 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 	return hosts, nil
 }
 
+
+func (store *MockHostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error){
+	// TODO: to be implemented
+	return nil, nil
+}
+
+func (store *MockHostStore) RemoveTrustCacheFlavors(hId uuid.UUID, fId []uuid.UUID) (error) {
+	// TODO: to be implemented
+	return nil
+}
+
+func (store *MockHostStore) RetrieveTrustCacheFlavors(hId ,fgId uuid.UUID) ([]uuid.UUID, error) {
+	// TODO: to be implemented
+	return nil, nil
+}
+
+
 // NewMockHostStore provides two dummy data for Hosts
 func NewMockHostStore() *MockHostStore {
 	store := &MockHostStore{}

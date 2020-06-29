@@ -73,16 +73,25 @@ func (controller FlavorController) Search(w http.ResponseWriter, r *http.Request
 	var filterCriteria *dm.FlavorFilterCriteria = nil
 
 	if id != "" || key != "" || value != "" || flavorgroupId != "" || len(flavorParts) > 0 {
-		filterId, _ := uuid.Parse(id)
-		filterFlavorgroupId, _ := uuid.Parse(flavorgroupId)
+		var flavorPartsFilter []fc.FlavorPart
+		var err error
+		fId, _ := uuid.Parse(id)
+		fgId, _ := uuid.Parse(flavorgroupId)
+		if len(flavorParts) > 0 {
+			flavorPartsFilter, err = parseFlavorParts(flavorParts)
+			if err != nil {
+				secLog.Errorf("controllers/flavor_controller:Search()  %s", err.Error())
+				return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+			}
+		}
 		filterCriteria = &dm.FlavorFilterCriteria{
-			Id:            filterId,
+			Id:            fId,
 			Key:           key,
 			Value:         value,
-			FlavorGroupID: filterFlavorgroupId,
-			FlavorParts:   flavorParts,
+			FlavorGroupID: fgId,
+			FlavorParts:   flavorPartsFilter,
 		}
-		if err := ValidateFlavorFilterCriteria(*filterCriteria); err != nil {
+		if err := validateFlavorFilterCriteria(*filterCriteria); err != nil {
 			secLog.Errorf("controllers/flavor_controller:Search()  %s", err.Error())
 			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 		}
@@ -145,9 +154,9 @@ func (controller FlavorController) Retrieve(w http.ResponseWriter, r *http.Reque
 	return flavor, http.StatusOK, nil
 }
 
-func ValidateFlavorFilterCriteria(filter dm.FlavorFilterCriteria) error {
-	defaultLog.Trace("controllers/flavor_controller:ValidateFlavorFilterCriteria() Entering")
-	defer defaultLog.Trace("controllers/flavor_controller:ValidateFlavorFilterCriteria() Leaving")
+func validateFlavorFilterCriteria(filter dm.FlavorFilterCriteria) error {
+	defaultLog.Trace("controllers/flavor_controller:validateFlavorFilterCriteria() Entering")
+	defer defaultLog.Trace("controllers/flavor_controller:validateFlavorFilterCriteria() Leaving")
 
 	if filter.Id.String() != "" {
 		if _, errs := uuid.Parse(filter.Id.String()); errs != nil {
@@ -170,11 +179,6 @@ func ValidateFlavorFilterCriteria(filter dm.FlavorFilterCriteria) error {
 		}
 	}
 
-	if len(filter.FlavorParts) > 0 {
-		if err := validateFlavorParts(filter.FlavorParts); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -191,7 +195,7 @@ func validateFlavorCreateCriteria(criteria dm.FlavorCreateCriteria) error {
 		}
 	}
 	if len(criteria.FlavorParts) > 0 {
-		if err := validateFlavorParts(criteria.FlavorParts); err != nil {
+		if _, err := parseFlavorParts(criteria.FlavorParts); err != nil {
 			return err
 		}
 	}
@@ -204,13 +208,15 @@ func validateFlavorCreateCriteria(criteria dm.FlavorCreateCriteria) error {
 	return nil
 }
 
-func validateFlavorParts(flavorParts []string) error {
-	// validate if the given flavor parts are valid
+func parseFlavorParts(flavorParts []string) ([]fc.FlavorPart, error) {
+	// validate if the given flavor parts are valid and convert it to FlavorPart type
+	var validFlavorParts []fc.FlavorPart
 	for _, flavorPart := range flavorParts {
 		var fp fc.FlavorPart
 		if err := (&fp).Parse(flavorPart); err != nil {
-			return errors.New("Valid FlavorPart as a filter must be specified")
+			return nil, errors.New("Valid FlavorPart as a filter must be specified")
 		}
+		validFlavorParts = append(validFlavorParts, fp)
 	}
-	return nil
+	return validFlavorParts, nil
 }

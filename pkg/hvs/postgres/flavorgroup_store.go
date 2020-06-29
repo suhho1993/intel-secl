@@ -5,11 +5,13 @@
 package postgres
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 type FlavorGroupStore struct {
@@ -116,17 +118,80 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *models.FlavorGroupFilter
 	return tx
 }
 
-func toDbFlavorGroup(fg *hvs.FlavorGroup) (*flavorGroup, error) {
-	defaultLog.Trace("postgres/flavorgroup_store:toDbFlavorGroup() Entering")
-	defer defaultLog.Trace("postgres/flavorgroup_store:toDbFlavorGroup() Leaving")
-	if fg == nil {
-		return nil, nil
+// create flavorgroup-flavor association
+func (f *FlavorGroupStore) AddFlavors(fgId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error) {
+	defaultLog.Trace("postgres/flavorgroup_store:AddFlavors() Entering")
+	defer defaultLog.Trace("postgres/flavorgroup_store:AddFlavors() Leaving")
+	if len(fIds) <= 0 || fgId == uuid.Nil {
+		return nil, errors.New("postgres/flavorgroup_store:AddFlavors()- invalid input : must have flavorId and flavorgroupId to associate flavorgroup with the flavor")
 	}
 
-	dbFlavorGroup := flavorGroup{
-		ID:                    fg.ID,
-		Name:                  fg.Name,
-		FlavorTypeMatchPolicy: PGFlavorMatchPolicies(fg.MatchPolicies),
+	fgfValues := []string{}
+	fgfValueArgs := []interface{}{}
+	for _, fId := range fIds {
+		fgfValues = append(fgfValues, "(?, ?)")
+		fgfValueArgs = append(fgfValueArgs, fgId)
+		fgfValueArgs = append(fgfValueArgs, fId)
 	}
-	return &dbFlavorGroup, nil
+
+	insertQuery := fmt.Sprintf("INSERT INTO flavorgroup_flavors VALUES %s", strings.Join(fgfValues, ","))
+	err := f.Store.Db.Model(flavorgroupFlavors{}).AddForeignKey("flavor_id", "flavors(id)", "RESTRICT", "RESTRICT").AddForeignKey("flavorgroup_id", "flavor_groups(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, fgfValueArgs...).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:AddFlavors() failed to create flavorgroup-flavor association")
+	}
+	return fIds, nil
+}
+
+// delete flavorgroup-flavor association
+func (f *FlavorGroupStore) RemoveFlavors(fgId uuid.UUID, fIds []uuid.UUID) error {
+	defaultLog.Trace("postgres/flavorgroup_store:RemoveFlavors() Entering")
+	defer defaultLog.Trace("postgres/flavorgroup_store:RemoveFlavors() Leaving")
+
+	if (fgId == uuid.Nil && len(fIds) <=0) {
+		return errors.New("postgres/flavorgroup_store:RemoveFlavors()- invalid input : must have flavorId or flavorgroupId to delete flavorgroup-flavor association")
+	}
+	tx := f.Store.Db
+	if fgId != uuid.Nil {
+		tx = tx.Where("flavorgroup_id = ?", fgId)
+	}
+
+	if len(fIds) >=1 {
+		tx = tx.Where("flavor_id IN (?)", fIds)
+	}
+
+	if err := tx.Delete(&flavorgroupFlavors{}).Error ; err != nil {
+		return errors.Wrap(err, "postgres/flavorgroup_store:RemoveFlavors() failed to delete flavorgroup-flavor association")
+	}
+	return nil
+}
+
+// search flavorgroup-flavor association
+func (f *FlavorGroupStore) SearchFlavors(fgId uuid.UUID) ([]uuid.UUID, error) {
+	defaultLog.Trace("postgres/flavorgroup_store:SearchFlavors() Entering")
+	defer defaultLog.Trace("postgres/flavorgroup_store:SearchFlavors() Leaving")
+
+	if fgId == uuid.Nil {
+		return nil, errors.New("postgres/flavorgroup_store:SearchFlavors() Flavorgroup ID must be set to search through flavorgroup-flavor association")
+	}
+
+	dbfgfl := flavorgroupFlavors{
+		FlavorgroupId: fgId,
+	}
+
+	rows, err := f.Store.Db.Model(&flavorgroupFlavors{}).Select("flavor_id").Where(&dbfgfl).Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:SearchFlavors() failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	flavorIds := []uuid.UUID{}
+
+	for rows.Next() {
+		flavorId := uuid.UUID{}
+		if err := rows.Scan(&flavorId); err != nil {
+			return nil, errors.Wrap(err, "postgres/flavorgroup_store:SearchFlavors() failed to scan record")
+		}
+		flavorIds = append(flavorIds, flavorId)
+	}
+	return flavorIds, nil
 }

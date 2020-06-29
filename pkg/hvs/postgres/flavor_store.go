@@ -7,6 +7,7 @@ package postgres
 import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
@@ -95,14 +96,14 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorFilterCriteria) ([]*hvs.
 	return signedFlavors, nil
 }
 
-func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, hostManifest *hcTypes.HostManifest, flavorPartsWithLatest map[string]bool) *gorm.DB {
+func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, hostManifest *hcTypes.HostManifest, flavorPartsWithLatest map[cf.FlavorPart]bool) *gorm.DB {
 	// TODO: to be implemented
 	return tx
 }
 
 // helper function used to create a map of all the flavor parts for which latest flavors has to be picked up
-func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []string) (map[string]bool, error) {
-	flavorPartWithLatest := make(map[string]bool)
+func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error) {
+	flavorPartWithLatest := make(map[cf.FlavorPart]bool)
 	if len(flavorParts) >= 1 {
 		for _, flavorPart := range flavorParts {
 			flavorPartWithLatest[flavorPart] = false

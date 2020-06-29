@@ -39,6 +39,7 @@ type MatchPolicy struct {
 	Required  FlavorRequiredPolicy `json:"required,omitempty"`
 }
 
+
 type MatchType string
 
 const (

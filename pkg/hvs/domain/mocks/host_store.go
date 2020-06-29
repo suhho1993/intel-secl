@@ -83,3 +83,18 @@ func (hs *hostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, e
 	}
 	return nil, errors.New("No Records fouund")
 }
+
+func (hs *hostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error){
+	// TODO: to be implemented
+	return nil, nil
+}
+
+func (hs *hostStore) RemoveTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) (error) {
+	// TODO: to be implemented
+	return nil
+}
+
+func (hs *hostStore) RetrieveTrustCacheFlavors(hId , fgId uuid.UUID) ([]uuid.UUID, error) {
+	// TODO: to be implemented
+	return nil, nil
+}

@@ -47,6 +47,16 @@ type (
 		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
 	}
 
+	flavorgroupFlavors struct {
+		FlavorgroupId uuid.UUID   `gorm:"primary_key;not null"`
+		FlavorId      uuid.UUID   `gorm:"primary_key;not null"`
+	}
+
+	trustCache struct {
+		FlavorId uuid.UUID `gorm:"primary_key;not null"`
+		HostId   uuid.UUID `gorm:"primary_key;not null"`
+	}
+
 	hostCredential struct {
 		Id           uuid.UUID `gorm:"primary_key;type:uuid"`
 		HostId       uuid.UUID `gorm:"type:uuid;index:idx_host_credential_host_id"`
@@ -111,6 +121,10 @@ type (
 		NotAfter     time.Time `gorm:"not null; column:notafter"`
 	}
 )
+
+func (trustCache) TableName() string {
+	return "trust_cache"
+}
 
 func (qp PGJsonStrMap) Value() (driver.Value, error) {
 	return json.Marshal(qp)

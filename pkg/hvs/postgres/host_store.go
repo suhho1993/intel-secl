@@ -5,11 +5,13 @@
 package postgres
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"strings"
 	"reflect"
 )
 
@@ -134,4 +136,82 @@ func buildHostSearchQuery(tx *gorm.DB, criteria *models.HostFilterCriteria) *gor
 	}
 
 	return tx
+}
+
+// create trust cache
+func (hs *HostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error) {
+	defaultLog.Trace("postgres/host_store:AddTrustCacheFlavors() Entering")
+	defer defaultLog.Trace("postgres/host_store:AddTrustCacheFlavors() Leaving")
+	if len(fIds)  <=0 || hId == uuid.Nil {
+		return nil, errors.New("postgres/host_store:AddTrustCacheFlavors()- invalid input : must have flavorId and hostId to create the trust cache")
+	}
+
+	trustCacheValues := []string{}
+	trustCacheValueArgs := []interface{}{}
+	for _, fId := range fIds {
+		trustCacheValues = append(trustCacheValues, "(?, ?, ?)")
+		trustCacheValueArgs = append(trustCacheValueArgs, uuid.New())
+		trustCacheValueArgs = append(trustCacheValueArgs, fId)
+		trustCacheValueArgs = append(trustCacheValueArgs, hId)
+	}
+
+	insertQuery := fmt.Sprintf("INSERT INTO trust_cache VALUES %s", strings.Join(trustCacheValues, ","))
+	err := hs.Store.Db.Model(trustCache{}).AddForeignKey("flavor_id", "flavors(id)", "RESTRICT", "RESTRICT").AddForeignKey("host_id", "hosts(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, trustCacheValueArgs...).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/host_store:AddTrustCacheFlavors() failed to create trust cache")
+	}
+	return fIds, nil
+}
+
+// delete from trust cache
+func (hs *HostStore) RemoveTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) (error) {
+	defaultLog.Trace("postgres/host_store:RemoveTrustCacheFlavors() Entering")
+	defer defaultLog.Trace("postgres/host_store:RemoveTrustCacheFlavors() Leaving")
+
+	if (hId == uuid.Nil && len(fIds) <=0) {
+		return errors.New("postgres/flavorgroup_store:RemoveTrustCacheFlavors()- invalid input : must have flavorId or hostId to delete from the trust cache")
+	}
+
+	tx := hs.Store.Db
+	if hId != uuid.Nil {
+		fmt.Println(hId.String())
+		tx = tx.Where("host_id = ?", hId)
+	}
+
+	if len(fIds) >=1 {
+		fmt.Println(fIds)
+		tx = tx.Where("flavor_id IN (?)", fIds)
+	}
+
+	if err := tx.Delete(&trustCache{}).Error ; err != nil {
+		return errors.Wrap(err, "postgres/host_store:RemoveTrustCacheFlavors() failed to delete from trust cache")
+	}
+	return nil
+}
+
+// RetrieveTrustCacheFlavors function return a list of flavor ID's belonging to a host and flavorgroup
+func (hs *HostStore) RetrieveTrustCacheFlavors(hId, fgId uuid.UUID ) ([]uuid.UUID, error) {
+	defaultLog.Trace("postgres/host_store:RetrieveTrustCacheFlavors() Entering")
+	defer defaultLog.Trace("postgres/host_store:RetrieveTrustCacheFlavors() Leaving")
+
+	if hId == uuid.Nil || fgId == uuid.Nil {
+		return nil, errors.New("postgres/host_store:RetrieveTrustCacheFlavors() Host ID and Flavorgroup ID must be set to get the list of flavors for a host belonging to a flavorgroup ID")
+	}
+
+	rows, err := hs.Store.Db.Model(&trustCache{}).Select("trust_cache.flavor_id").Joins("INNER JOIN flavorgroup_flavors ON trust_cache.flavor_id = flavorgroup_flavors.flavor_id").Where("flavorgroup_flavors.flavorgroup_id = ? AND trust_cache.host_id = ?", fgId, hId).Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/host_store:RetrieveTrustCacheFlavors() failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	flavorIds := []uuid.UUID{}
+
+	for rows.Next() {
+		flavorId := uuid.UUID{}
+		if err := rows.Scan(&flavorId); err != nil {
+			return nil, errors.Wrap(err, "postgres/host_store:RetrieveTrustCacheFlavors() failed to scan record")
+		}
+		flavorIds = append(flavorIds, flavorId)
+	}
+	return flavorIds, nil
 }
