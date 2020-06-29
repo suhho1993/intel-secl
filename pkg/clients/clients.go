@@ -8,10 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -37,29 +34,10 @@ func HTTPClientTLSNoVerify() *http.Client {
 	}
 }
 
-func HTTPClientWithCADir(caDir string) (*http.Client, error) {
-	rootCAs, _ := x509.SystemCertPool()
-	if rootCAs == nil {
-		rootCAs = x509.NewCertPool()
-	}
-	var err error
-	var allCA []string
-	err = filepath.Walk(caDir, func(path string, info os.FileInfo, err error) error {
-		allCA = append(allCA, path)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, caFile := range allCA {
-		ca, err := ioutil.ReadFile(caFile)
-		if err == nil {
-			rootCAs.AppendCertsFromPEM(ca)
-		}
-	}
+func HTTPClientWithCA(caCertificates []x509.Certificate) (*http.Client, error) {
 	config := &tls.Config{
 		InsecureSkipVerify: false,
-		RootCAs:            rootCAs,
+		RootCAs:            GetCertPool(caCertificates),
 	}
 	tr := &http.Transport{TLSClientConfig: config}
 
@@ -78,4 +56,18 @@ func ResolvePath(baseURL, path string) string {
 		path = path[1:]
 	}
 	return baseURL + "/" + path
+}
+
+func GetCertPool(trustedCACerts []x509.Certificate) *x509.CertPool{
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+	for _, rootCA := range trustedCACerts {
+		//This is needed since we provide reference to AddCert(). Otherwise it would append the
+		//same address to the cert pool and the last cert appended will be the only one available
+		tempStoreCA := rootCA
+		rootCAs.AddCert(&tempStoreCA)
+	}
+	return rootCAs
 }

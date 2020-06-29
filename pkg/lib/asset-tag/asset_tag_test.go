@@ -150,7 +150,8 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 
 func TestAtag_DeployAssetTag(t *testing.T) {
 	newTag := NewAssetTag()
-	connector, err := hc.NewHostConnector("","","")
+	var trustedCAcerts []x509.Certificate
+	connector, err := hc.NewHostConnector("","",trustedCAcerts)
 	assert.NoError(t, err)
 	dtErr := newTag.DeployAssetTag(connector, "0966d97d182ee8fac40bee16018e762ae46a026f0bb437600e029a755f8745a9a6bb8b3da152ea37ef52f0d855b6622f\n", "803f6068-06da-e811-906e-00163566263e")
 	assert.NotNil(t, dtErr)

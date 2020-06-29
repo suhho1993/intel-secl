@@ -6,6 +6,7 @@ package ta
 
 import (
 	"bytes"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
@@ -28,8 +29,8 @@ type TAClient interface {
 	GetBaseURL() *url.URL
 }
 
-func NewTAClient(aasApiUrl string, taApiUrl *url.URL, serviceUserName string, serviceUserPassword string,
-	trustedCaCerts string) (TAClient, error) {
+func NewTAClient(aasApiUrl string, taApiUrl *url.URL, serviceUserName, serviceUserPassword string,
+	trustedCaCerts []x509.Certificate) (TAClient, error) {
 
 	taClient := taClient{
 		AasURL:          aasApiUrl,
@@ -47,7 +48,7 @@ type taClient struct {
 	BaseURL         *url.URL
 	ServiceUsername string
 	ServicePassword string
-	TrustedCaCerts  string
+	TrustedCaCerts  []x509.Certificate
 }
 
 var log = commLog.GetDefaultLogger()

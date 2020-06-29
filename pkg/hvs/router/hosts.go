@@ -9,12 +9,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 )
 
 // SetHostRoutes registers routes for hosts
-func SetHostRoutes(router *mux.Router, store *postgres.DataStore, dek []byte) *mux.Router {
+func SetHostRoutes(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore, dek []byte) *mux.Router {
 	defaultLog.Trace("router/hosts:SetHostRoutes() Entering")
 	defer defaultLog.Trace("router/hosts:SetHostRoutes() Leaving")
 
@@ -23,7 +24,8 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, dek []byte) *m
 	hostStatusStore := postgres.NewHostStatusStore(store)
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	hostCredentialStore := postgres.NewHostCredentialStore(store, dek)
-	hostController := controllers.NewHostController(hostStore, reportStore, hostStatusStore, flavorGroupStore, hostCredentialStore)
+	hostController := controllers.NewHostController(hostStore, reportStore, hostStatusStore, flavorGroupStore,
+		hostCredentialStore, certStore)
 
 	hostIdExpr := fmt.Sprintf("%s%s", "/hosts/", validation.IdReg)
 

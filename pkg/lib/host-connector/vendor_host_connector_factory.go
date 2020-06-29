@@ -4,8 +4,11 @@
  */
 package host_connector
 
-import "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+import (
+	"crypto/x509"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+)
 
 type VendorHostConnectorFactory interface {
-	GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl, trustedCaCerts string) (HostConnector, error)
+	GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string, trustedCaCerts []x509.Certificate) (HostConnector, error)
 }

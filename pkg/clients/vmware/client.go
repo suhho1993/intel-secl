@@ -7,6 +7,8 @@ package vmware
 
 import (
 	"context"
+	"crypto/x509"
+	"github.com/intel-secl/intel-secl/v3/pkg/clients"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
@@ -18,7 +20,6 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
-	"io/ioutil"
 	"net/url"
 	"strings"
 )
@@ -35,7 +36,7 @@ const (
 	CLUSTER_SYSTEM_PROPERTY = "ClusterComputeResource"
 )
 
-func NewVMwareClient(vcenterApiUrl *url.URL, vcenterUserName, vcenterPassword, hostName, trustedCaCerts string) (VMWareClient, error) {
+func NewVMwareClient(vcenterApiUrl *url.URL, vcenterUserName, vcenterPassword, hostName string, trustedCaCerts []x509.Certificate) (VMWareClient, error) {
 
 	vmwareClient := vmwareClient{
 		BaseURL:         vcenterApiUrl,
@@ -67,7 +68,7 @@ type vmwareClient struct {
 	HostName        string
 	vCenterUsername string
 	vCenterPassword string
-	TrustedCaCerts  string
+	TrustedCaCerts  []x509.Certificate
 	hostReference   mo.HostSystem
 	vCenterClient   *govmomi.Client
 	Context         context.Context
@@ -181,6 +182,7 @@ func getVmwareClusterReference(vc *vmwareClient, clusterName string) ([]mo.HostS
 	var ccr []mo.ClusterComputeResource
 
 	err = viewer.Retrieve(vc.Context, []string{CLUSTER_SYSTEM_PROPERTY}, []string{"name", "host"}, &ccr)
+	defer viewer.Destroy(vc.Context)
 	if err != nil {
 		return nil, errors.Wrap(err, "vmware/client:getVmwareClusterReference() Error "+
 			"getting cluster properties")
@@ -205,17 +207,8 @@ func getGovmomiClient(vc *vmwareClient) (*govmomi.Client, error) {
 	log.Trace("vmware/client:getGovmomiClient() Entering ")
 	defer log.Trace("vmware/client:getGovmomiClient() Leaving ")
 
-	appendedFilePath, err := getAppendedCACertFilePath(vc)
-	if err != nil {
-		return &govmomi.Client{}, errors.Wrap(err, "vmware/client:getGovmomiClient() Error "+
-			"getting CA cert file paths")
-	}
 	soapClient := soap.NewClient(vc.BaseURL, false)
-	err = soapClient.SetRootCAs(appendedFilePath)
-	if err != nil {
-		return &govmomi.Client{}, errors.Wrap(err, "vmware/client:getGovmomiClient() Error "+
-			"setting Root CAs for SOAP client")
-	}
+	soapClient.DefaultTransport().TLSClientConfig.RootCAs = clients.GetCertPool(vc.TrustedCaCerts)
 
 	vimClient, err := vim25.NewClient(vc.Context, soapClient)
 	if err != nil {
@@ -236,27 +229,4 @@ func getGovmomiClient(vc *vmwareClient) (*govmomi.Client, error) {
 		}
 	}
 	return vmwareClient, nil
-}
-
-//Returns each CA certificate path appended together separated by ':'
-func getAppendedCACertFilePath(vc *vmwareClient) (string, error) {
-	var appendedFilePath string
-
-	files, err := ioutil.ReadDir(vc.TrustedCaCerts)
-	if err != nil {
-		return "", err
-	}
-
-	if !strings.HasSuffix(vc.TrustedCaCerts, "/") {
-		vc.TrustedCaCerts = vc.TrustedCaCerts + "/"
-	}
-
-	for index, file := range files {
-		if index == len(files)-1 {
-			appendedFilePath = vc.TrustedCaCerts + file.Name()
-		} else {
-			appendedFilePath = vc.TrustedCaCerts + file.Name() + ":"
-		}
-	}
-	return appendedFilePath, nil
 }

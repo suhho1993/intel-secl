@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
@@ -26,20 +25,23 @@ import (
 )
 
 type HostController struct {
-	HStore  domain.HostStore
-	RStore  domain.ReportStore
-	HSStore domain.HostStatusStore
-	FGStore domain.FlavorGroupStore
-	HCStore domain.HostCredentialStore
+	HStore    domain.HostStore
+	RStore    domain.ReportStore
+	HSStore   domain.HostStatusStore
+	FGStore   domain.FlavorGroupStore
+	HCStore   domain.HostCredentialStore
+	CertStore *models.CertificatesStore
 }
 
-func NewHostController(hs domain.HostStore, rs domain.ReportStore, hss domain.HostStatusStore, fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore) *HostController {
+func NewHostController(hs domain.HostStore, rs domain.ReportStore, hss domain.HostStatusStore,
+	fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore, certStore *models.CertificatesStore) *HostController {
 	return &HostController{
-		HStore:  hs,
-		RStore:  rs,
-		HSStore: hss,
-		FGStore: fgs,
-		HCStore: hcs,
+		HStore:    hs,
+		RStore:    rs,
+		HSStore:   hss,
+		FGStore:   fgs,
+		HCStore:   hcs,
+		CertStore: certStore,
 	}
 }
 
@@ -49,7 +51,7 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/host_controller:Create() The request body was not provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body was not provided"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body was not provided"}
 	}
 
 	dec := json.NewDecoder(r.Body)
@@ -59,7 +61,7 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 	err := dec.Decode(&reqHost)
 	if err != nil {
 		secLog.WithError(err).Errorf("controllers/host_controller:Create() %s :  Failed to decode request body as Host", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	createdHost, status, err := hc.CreateHost(reqHost)
@@ -227,7 +229,7 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 
 	defaultLog.Debugf("Connecting to host to get the host manifest and the hardware UUID of the host : %s", reqHost.HostName)
 	// connect to the host and retrieve the host manifest
-	hostInfo, err := getHostInfo(connectionString)
+	hostInfo, err := hc.getHostInfo(connectionString)
 	if err != nil {
 		var hostState string
 		//TODO: Determine host-state
@@ -448,16 +450,20 @@ func populateHostFilterCriteria(params url.Values) (*models.HostFilterCriteria, 
 	return &criteria, nil
 }
 
-func getHostInfo(cs string) (*model.HostInfo, error) {
+func (hc *HostController) getHostInfo(cs string) (*model.HostInfo, error) {
 	defaultLog.Trace("controllers/host_controller:getHostInfo() Entering")
 	defer defaultLog.Trace("controllers/host_controller:getHostInfo() Leaving")
 
+	certList, err := hc.CertStore.GetCertificates(models.CaCertTypesRootCa.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "Error getting list of CA certificates from Certificate store")
+	}
 	conf := config.Global()
-	hc, err := hostconnector.NewHostConnector(cs, conf.AASApiUrl, constants.TrustedCaCertsDir)
+	hconnector, err := hostconnector.NewHostConnector(cs, conf.AASApiUrl, certList)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not instantiate host connector")
 	}
 
-	hostInfo, err := hc.GetHostDetails()
+	hostInfo, err := hconnector.GetHostDetails()
 	return &hostInfo, err
 }

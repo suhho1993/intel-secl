@@ -31,10 +31,12 @@ var _ = Describe("HostController", func() {
 		hostStore = mocks.NewMockHostStore()
 		hostStatusStore = mocks.NewFakeHostStatusStore()
 		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
+		certStore := mocks.NewFakeCertificatesStore()
 		hostController = &controllers.HostController{
-			HStore:  hostStore,
-			HSStore: hostStatusStore,
-			FGStore: flavorGroupStore,
+			HStore:    hostStore,
+			HSStore:   hostStatusStore,
+			FGStore:   flavorGroupStore,
+			CertStore: certStore,
 		}
 	})
 
@@ -212,7 +214,7 @@ var _ = Describe("HostController", func() {
 		Context("Delete Host by ID", func() {
 			It("Should delete a Host", func() {
 				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE","/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2",nil)
+				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -222,7 +224,7 @@ var _ = Describe("HostController", func() {
 		Context("Delete Host by non-existent ID", func() {
 			It("Should fail to delete Host", func() {
 				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE","/hosts/73755fda-c910-46be-821f-e8ddeab189e9",nil)
+				req, err := http.NewRequest("DELETE", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)

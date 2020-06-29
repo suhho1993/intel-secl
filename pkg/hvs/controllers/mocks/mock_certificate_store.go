@@ -38,3 +38,44 @@ func NewFakeCertificatesPathStore() *models.CertificatesPathStore {
 	}
 }
 
+func NewFakeCertificatesStore() *models.CertificatesStore {
+	// For ECA, to read list of certificates from directory
+	ecCaPath := "../dist/linux/"
+	// Mock path to create new certificate
+	rootCaPath := "../controllers/mocks/"
+	//Path for any certificate containing file, so instead of creating new use existing one
+	caCertPath := "../dist/linux/EndorsementCA-external.pem"
+
+	return &models.CertificatesStore{
+		models.CaCertTypesRootCa.String(): &models.CertificateStore{
+			Key:          nil,
+			CertPath:     rootCaPath,
+			Certificates: nil,
+		},
+		models.CaCertTypesEndorsementCa.String(): &models.CertificateStore{
+			Key:          nil,
+			CertPath:     ecCaPath,
+			Certificates: nil,
+		},
+		models.CaCertTypesPrivacyCa.String(): &models.CertificateStore{
+			Key:          nil,
+			CertPath:     caCertPath,
+			Certificates: nil,
+		},
+		models.CaCertTypesTagCa.String(): &models.CertificateStore{
+			Key:          nil,
+			CertPath:     caCertPath,
+			Certificates: nil,
+		},
+		models.CertTypesSaml.String(): &models.CertificateStore{
+			Key:          nil,
+			CertPath:     caCertPath,
+			Certificates: nil,
+		},
+		models.CertTypesTls.String(): &models.CertificateStore{
+			Key:          nil,
+			CertPath:     caCertPath,
+			Certificates: nil,
+		},
+	}
+}

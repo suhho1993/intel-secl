@@ -5,6 +5,7 @@
 package host_connector
 
 import (
+	"crypto/x509"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
@@ -14,7 +15,7 @@ import (
 var log = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
-func NewHostConnector(connectionString, aasApiUrl, trustedCaCerts string) (HostConnector, error) {
+func NewHostConnector(connectionString, aasApiUrl string, trustedCaCerts []x509.Certificate) (HostConnector, error) {
 
 	log.Trace("host_connector/host_connector_factory:NewHostConnector() Entering")
 	defer log.Trace("host_connector/host_connector_factory:NewHostConnector() Leaving")

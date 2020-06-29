@@ -5,6 +5,7 @@
 package host_connector
 
 import (
+	"crypto/x509"
 	client "github.com/intel-secl/intel-secl/v3/pkg/clients/ta"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/pkg/errors"
@@ -16,7 +17,8 @@ type IntelConnectorFactory struct {
 
 }
 
-func (icf *IntelConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl, trustedCaCerts string) (HostConnector, error) {
+func (icf *IntelConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string,
+	trustedCaCerts []x509.Certificate) (HostConnector, error) {
 
 	log.Trace("intel_host_connector_factory:GetHostConnector() Entering")
 	defer log.Trace("intel_host_connector_factory:GetHostConnector() Leaving")
