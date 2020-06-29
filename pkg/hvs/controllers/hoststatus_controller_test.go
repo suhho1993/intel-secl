@@ -319,6 +319,38 @@ var _ = Describe("HostStatusController", func() {
 				Expect(hsCollection).To(BeNil())
 			})
 		})
+
+		Context("When searching for a valid HostName", func() {
+			It("Should get a filtered list of HostStatuses filtered by HostName and 200 response code", func() {
+				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostStatusController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/host-status?hostName=computepurley1", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hsCollection *hvs.HostStatusCollection
+				err = json.Unmarshal(w.Body.Bytes(), &hsCollection)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(hsCollection.HostStatuses)).To(Equal(2))
+			})
+		})
+
+		Context("When searching for an invalid HostName", func() {
+			It("Should return 400 error", func() {
+				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostStatusController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/host-status?hostName=A^#$XX&#$$$$$$", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+
+				var hsCollection *hvs.HostStatusCollection
+				err = json.Unmarshal(w.Body.Bytes(), &hsCollection)
+				Expect(err).To(HaveOccurred())
+				Expect(hsCollection).To(BeNil())
+			})
+		})
 	})
 
 	// Specs for HTTP Get to "/host-status/{hoststatus_id}"
@@ -356,6 +388,56 @@ var _ = Describe("HostStatusController", func() {
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+	})
+})
+
+///////////------------------DB ERROR TESTS
+var _ = Describe("HostStatusControllerDBUnavailableTests", func() {
+	var router *mux.Router
+	var w *httptest.ResponseRecorder
+	var hostStatusController *controllers.HostStatusController
+	BeforeEach(func() {
+		router = mux.NewRouter()
+		hostStatusStore := mocks.BadMockHostStatusStore{}
+		hostStatusController = &controllers.HostStatusController{Store: &hostStatusStore}
+	})
+
+	// Specs for HTTP Get to "/host-status"
+	Describe("Search HostStatus when Backend is unavailable", func() {
+		Context("When no filter arguments are passed", func() {
+			It("500 response code is received", func() {
+				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostStatusController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/host-status", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusInternalServerError))
+
+				var hsCollection *hvs.HostStatusCollection
+				err = json.Unmarshal(w.Body.Bytes(), &hsCollection)
+				Expect(err).To(HaveOccurred())
+				Expect(hsCollection).To(BeNil())
+			})
+		})
+	})
+
+	// Specs for HTTP Get to "/host-status/{hoststatus_id}"
+	Describe("Retrieve HostStatus when Backend is unavailable", func() {
+		Context("Retrieve HostStatus by valid ID from data store", func() {
+			It("500 response code is received", func() {
+				router.Handle("/host-status/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostStatusController.Retrieve))).Methods("GET")
+				req, err := http.NewRequest("GET", "/host-status/afed7372-18c3-42af-bd9a-70b7f44c11ad", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusInternalServerError))
+
+				var hsCollection *hvs.HostStatusCollection
+				err = json.Unmarshal(w.Body.Bytes(), &hsCollection)
+				Expect(err).To(HaveOccurred())
+				Expect(hsCollection).To(BeNil())
 			})
 		})
 	})

@@ -30,21 +30,24 @@ var (
 
 // MockHostStatusStore provides a mocked implementation of interface hvs.HostStatusStore
 type MockHostStatusStore struct {
-	HostStatusStore []*hvs.HostStatus
+	HostStatusStore map[uuid.UUID]hvs.HostStatus
+}
+
+// BadMockHostStatusStore is used to provide an invalid response to the HostStatusController
+type BadMockHostStatusStore struct {
+	HostStatusStore map[uuid.UUID]hvs.HostStatus
 }
 
 // Create inserts a HostStatus
 func (store *MockHostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) {
-	store.HostStatusStore = append(store.HostStatusStore, hs)
+	store.HostStatusStore[hs.ID] = *hs
 	return hs, nil
 }
 
 // Retrieve returns a single HostStatus record from the store
 func (store *MockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, error) {
-	for _, hs := range store.HostStatusStore {
-		if hs.ID == id {
-			return hs, nil
-		}
+	if hs, found := store.HostStatusStore[id]; found {
+		return &hs, nil
 	}
 	return nil, errors.New(commErr.RowsNotFound)
 }
@@ -55,20 +58,14 @@ func (store *MockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
 		return errors.New("HostStatus Update Failed: ID is invalid")
 	}
 
-	var isUpdated = false
-
-	for _, hs := range store.HostStatusStore {
-		if hs.ID == updatedHSS.ID {
-			hs.HostID = updatedHSS.HostID
-			hs.HostStatusInformation = updatedHSS.HostStatusInformation
-			hs.HostManifest = updatedHSS.HostManifest
-			isUpdated = true
-		}
+	if hs, err := store.Retrieve(updatedHSS.ID); err == nil {
+		hs.HostID = updatedHSS.HostID
+		hs.HostStatusInformation = updatedHSS.HostStatusInformation
+		hs.HostManifest = updatedHSS.HostManifest
+	} else {
+		return errors.New(commErr.RowsNotFound)
 	}
 
-	if !isUpdated {
-		return errors.New("HostStatus Update Failed: Non-existent ID")
-	}
 	return nil
 }
 
@@ -83,22 +80,22 @@ func (store *MockHostStatusStore) Delete(hostStatusId uuid.UUID) error {
 }
 
 // Search returns a filtered list of HostStatuses per the provided HostStatusFilterCriteria
-func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriteria) (*hvs.HostStatusCollection, error) {
+func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriteria) ([]hvs.HostStatus, error) {
 
 	var hsc []hvs.HostStatus
-	// HostStatus filter
-	if criteria == nil {
-		return &hvs.HostStatusCollection{HostStatuses: hsc}, nil
-	}
-
 	// start with all rows
 	for _, hs := range store.HostStatusStore {
-		hsc = append(hsc, *hs)
+		hsc = append(hsc, hs)
+	}
+
+	// HostStatus filter
+	if criteria == nil || reflect.DeepEqual(*criteria, models.HostStatusFilterCriteria{}) {
+		return hsc, nil
 	}
 
 	// return all entries
 	if reflect.DeepEqual(*criteria, models.HostStatusFilterCriteria{}) {
-		return &hvs.HostStatusCollection{HostStatuses: hsc}, nil
+		return hsc, nil
 	}
 
 	// HostStatus ID filter
@@ -139,17 +136,6 @@ func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriter
 		var hscFiltered []hvs.HostStatus
 		for _, hs := range hsc {
 			if uuid.MustParse(hs.HostManifest.HostInfo.HardwareUUID) == criteria.HostHardwareId {
-				hscFiltered = append(hscFiltered, hs)
-			}
-		}
-		hsc = hscFiltered
-	}
-
-	// AikCert filter
-	if criteria.AikCertificate != "" {
-		var hscFiltered []hvs.HostStatus
-		for _, hs := range hsc {
-			if hs.HostManifest.AIKCertificate == criteria.AikCertificate {
 				hscFiltered = append(hscFiltered, hs)
 			}
 		}
@@ -201,7 +187,7 @@ func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriter
 		}
 	}
 
-	return &hvs.HostStatusCollection{HostStatuses: hsc}, nil
+	return hsc, nil
 }
 
 // FindHostIdsByKeyValue returns host ids for records having key value pair in HostInfo
@@ -215,6 +201,7 @@ func (store *MockHostStatusStore) FindHostIdsByKeyValue(key, value string) ([]uu
 // NewFakeHostStatusStore loads dummy data into MockHostStatusStore
 func NewFakeHostStatusStore() *MockHostStatusStore {
 	store := &MockHostStatusStore{}
+	store.HostStatusStore = make(map[uuid.UUID]hvs.HostStatus)
 
 	// unmarshal the fixed host status
 	var hs1, hs2, hs3, hs4 hvs.HostStatus
@@ -230,4 +217,35 @@ func NewFakeHostStatusStore() *MockHostStatusStore {
 	store.Create(&hs4)
 
 	return store
+}
+
+//--------------------BADMOCKSTATUSRESPONSES----------------
+// Create inserts a HostStatus
+func (store *BadMockHostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) {
+	return nil, commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+}
+
+// Retrieve returns a single HostStatus record from the store
+func (store *BadMockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, error) {
+	return nil, commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+}
+
+// Updates updates an existing HostStatus
+func (store *BadMockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
+	return commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+}
+
+// Delete deletes HostStatus from the store per hostStatusId
+func (store *BadMockHostStatusStore) Delete(hostStatusId uuid.UUID) error {
+	return commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+}
+
+// Search returns a filtered list of HostStatuses per the provided HostStatusFilterCriteria
+func (store *BadMockHostStatusStore) Search(criteria *models.HostStatusFilterCriteria) ([]hvs.HostStatus, error) {
+	return nil, commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+}
+
+// FindHostIdsByKeyValue returns host ids for records having key value pair in HostInfo
+func (store *BadMockHostStatusStore) FindHostIdsByKeyValue(key, value string) ([]uuid.UUID, error) {
+	return nil, nil
 }

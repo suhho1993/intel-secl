@@ -58,9 +58,8 @@ type (
 
 	// hostStatus holds all the hostStatus records for VS-attested hosts
 	hostStatus struct {
-		// TODO: do we need to associate with Host table using foreign_key?
 		ID         uuid.UUID               `gorm:"primary_key;type:uuid"`
-		HostID     uuid.UUID               `gorm:"type:uuid;not null"`
+		HostID     uuid.UUID               `sql:"type:uuid REFERENCES hosts(Id)"`
 		Status     PGHostStatusInformation `gorm:"column:status" sql:"type:JSONB"`
 		HostReport PGHostManifest          `gorm:"column:host_report" sql:"type:JSONB"`
 		CreatedAt  time.Time               `gorm:"column:created;not null"`
@@ -91,6 +90,7 @@ type (
 		Expiration  time.Time     `gorm:"column:expiration;not null"`
 		Saml        string        `gorm:"column:saml;not null"`
 	}
+
 	tpmEndorsement struct {
 		ID           uuid.UUID `gorm:"id,omitempty" gorm:"primary_key;type:uuid"`
 		HardwareUUID uuid.UUID `gorm:"hardware_uuid;not null"`
@@ -99,6 +99,7 @@ type (
 		Certificate  string    `gorm:"certificate;not null"`
 		Comment      string    `gorm:"comment,omitempty"`
 	}
+
 	tagCertificate struct {
 		ID uuid.UUID `gorm:"primary_key; type:uuid"`
 		// TODO: Do we need to link this to Host.Hardware_UUID?

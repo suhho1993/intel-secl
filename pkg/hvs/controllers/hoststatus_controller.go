@@ -10,7 +10,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
-	commCrypt "github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
@@ -48,7 +47,7 @@ func (controller HostStatusController) Search(w http.ResponseWriter, r *http.Req
 	}
 
 	secLog.Infof("%s: Return Host Status Search query to: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
-	return hostStatusCollection, http.StatusOK, nil
+	return hvs.HostStatusCollection{HostStatuses: hostStatusCollection}, http.StatusOK, nil
 }
 
 // Retrieve returns an existing HostStatus entry from the HostStatusStore
@@ -129,15 +128,6 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 			return nil, errors.New("Valid contents for HostStatus must be specified")
 		}
 		hfc.HostStatus = hostState
-	}
-
-	// TODO: AIKCertificate - Check if this filter is needed - issue has been raised to track this
-	aikCertificate := strings.TrimSpace(params.Get("aikCertificate"))
-	if aikCertificate != "" {
-		if _, err := commCrypt.GetCertFromPem([]byte(aikCertificate)); err != nil {
-			return nil, errors.Wrap(err, "Valid AIKCertificate must be specified")
-		}
-		hfc.AikCertificate = aikCertificate
 	}
 
 	// fromDate

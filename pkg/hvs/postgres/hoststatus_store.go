@@ -61,7 +61,7 @@ func (hss *HostStatusStore) Retrieve(hostStatusId uuid.UUID) (*hvs.HostStatus, e
 }
 
 // Search retrieves a HostStatusCollection pertaining to a user-provided HostStatusFilterCriteria
-func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) (*hvs.HostStatusCollection, error) {
+func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) ([]hvs.HostStatus, error) {
 	defaultLog.Trace("postgres/hoststatus_store:Search() Entering")
 	defer defaultLog.Trace("postgres/hoststatus_store:Search() Leaving")
 
@@ -78,8 +78,7 @@ func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) (*
 	}
 	defer rows.Close()
 
-	hsCollection := hvs.HostStatusCollection{}
-	hsCollection.HostStatuses = []hvs.HostStatus{}
+	var hsc []hvs.HostStatus
 
 	for rows.Next() {
 		result := hvs.HostStatus{}
@@ -87,9 +86,9 @@ func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) (*
 		if err := rows.Scan(&result.ID, &result.HostID, (*PGHostStatusInformation)(&result.HostStatusInformation), (*PGHostManifest)(&result.HostManifest), &result.Created); err != nil {
 			return nil, errors.Wrap(err, "postgres/hoststatus_store:Search() failed to scan record")
 		}
-		hsCollection.HostStatuses = append(hsCollection.HostStatuses, result)
+		hsc = append(hsc, result)
 	}
-	return &hsCollection, nil
+	return hsc, nil
 }
 
 func (hss *HostStatusStore) Update(hs *hvs.HostStatus) error {
@@ -188,12 +187,6 @@ func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCr
 	// HWUUID
 	if hsFilter.HostHardwareId != uuid.Nil {
 		tx = tx.Where(`host_report @> '{"host_info": {"hardware_uuid": "` + hsFilter.HostHardwareId.String() + `"}}'`)
-	}
-
-	// AIK Cert
-	if hsFilter.AikCertificate != "" {
-		tx = tx.Where(`host_report @> '{"aik_certificate": "` + hsFilter.AikCertificate + `"}'`)
-
 	}
 
 	// HostName

@@ -57,7 +57,7 @@ type (
 	HostStatusStore interface {
 		Create(*hvs.HostStatus) (*hvs.HostStatus, error)
 		Retrieve(uuid.UUID) (*hvs.HostStatus, error)
-		Search(*models.HostStatusFilterCriteria) (*hvs.HostStatusCollection, error)
+		Search(*models.HostStatusFilterCriteria) ([]hvs.HostStatus, error)
 		Delete(uuid.UUID) error
 		Update(*hvs.HostStatus) error
 		FindHostIdsByKeyValue(key, value string) ([]uuid.UUID, error)

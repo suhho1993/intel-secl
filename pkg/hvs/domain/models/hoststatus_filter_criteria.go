@@ -16,7 +16,6 @@ type HostStatusFilterCriteria struct {
 	HostHardwareId uuid.UUID
 	HostName       string
 	HostStatus     string
-	AikCertificate string
 	FromDate       time.Time
 	ToDate         time.Time
 	LatestPerHost  bool
