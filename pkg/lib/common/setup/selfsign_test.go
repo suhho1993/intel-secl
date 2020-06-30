@@ -11,14 +11,13 @@ func TestSign(t *testing.T) {
 		CertFile: "test.crt",
 	}
 	if err := testSign.Run(); err != nil {
-		t.Error("Failed to generate selfsigned key and cert", err.Error())
+		t.Error("Failed to generate self-signed key and cert", err.Error())
 	}
 	if err := testSign.Validate(); err != nil {
-		t.Error("Failed to validate selfsigned key and cert", err.Error())
+		t.Error("Failed to validate self-signed key and cert", err.Error())
 	}
-	// t.Cleanup is go 1.14 only
-	t.Cleanup(func() {
-		os.Remove("test.pem")
-		os.Remove("test.crt")
-	})
+
+	// cleanup
+	_ = os.Remove("test.pem")
+	_ = os.Remove("test.crt")
 }

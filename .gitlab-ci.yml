@@ -3,31 +3,58 @@ default:
 
 variables:
   http_proxy: "${HTTP_PROXY}"
-  https_proxy: "${HTTPS_PROXY}" 
+  https_proxy: "${HTTPS_PROXY}"
   no_proxy: "${NO_PROXY}"
-  
-stages:
-  - build
-  - test
 
-build:go-build:
-  stage: build
+stages:
+  - go1.13
+  - go1.14
+
+go-1.13-build:
+  stage: go1.13
   tags:
     - k8s
-  image: golang:latest
+  image: golang:1.13
   before_script:
     - git config --global http."https://${GITLAB_SERVER}".proxy ""
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
     - cd $CI_PROJECT_DIR
   script:
-    - echo "This is the CI job that builds monorepo"
+    - echo "This is the CI job that builds monorepo using go 1.13"
     - go build ./...
 
-test:go-unit-tests:
-  stage: test
+go-1.14-build:
+  stage: go1.14
   tags:
     - k8s
-  image: golang:latest
+  image: golang:1.14
+  before_script:
+    - git config --global http."https://${GITLAB_SERVER}".proxy ""
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
+    - cd $CI_PROJECT_DIR
+  script:
+    - echo "This is the CI job that builds monorepo using go 1.14"
+    - go build ./...
+
+go-unit-tests-1.13:
+  stage: go1.13
+  tags:
+    - k8s
+  image: golang:1.13
+  before_script:
+    - git config --global http."https://${GITLAB_SERVER}".proxy ""
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
+    - cd $CI_PROJECT_DIR
+  script:
+    - echo "This is the CI job that runs all unit tests"
+    - go test ./... -coverprofile=cover.out
+    - go tool cover -func cover.out
+
+go-unit-tests-1.14:
+  stage: go1.14
+  tags:
+    - k8s
+  image: golang:1.14
   before_script:
     - git config --global http."https://${GITLAB_SERVER}".proxy ""
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
