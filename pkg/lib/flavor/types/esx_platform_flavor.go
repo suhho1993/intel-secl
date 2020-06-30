@@ -223,7 +223,7 @@ func (esxpf ESXPlatformFlavor) getPlatformFlavor() ([]string, error) {
 	log.Debugf("flavor/types/esx_platform_flavor:getPlatformFlavor() New Hardware Section: %v", *newHW)
 
 	// Assemble the Platform Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, newHW, flavorPcrs, nil, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, newHW, flavorPcrs, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" JSON marshal failure")
 	}
@@ -265,7 +265,7 @@ func (esxpf ESXPlatformFlavor) getOsFlavor() ([]string, error) {
 	log.Debugf("flavor/types/esx_platform_flavor:getOsFlavor() New Bios Section: %v", *newBios)
 
 	// Assemble the OS Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" JSON marshal failure")
 	}
@@ -308,7 +308,7 @@ func (esxpf ESXPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
 	log.Debugf("flavor/types/esx_platform_flavor:getHostUniqueFlavor() New Bios Section: %v", *newBios)
 
 	// Assemble the HOST_UNIQUE Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, flavorPcrs, nil, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, nil, flavorPcrs, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" JSON marshal failure")
 	}
@@ -365,7 +365,7 @@ func (esxpf ESXPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	log.Debugf("flavor/types/esx_platform_flavor:getAssetTagFlavor() New External Section: %v", *newExtConfig)
 
 	// Assemble the ASSET_TAG Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, pcrDetails, newExtConfig, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, nil, pcrDetails, newExtConfig, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" JSON marshal failure")
 	}

@@ -12,7 +12,6 @@ import (
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/util"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"strings"
@@ -235,7 +234,7 @@ func (rhelpf LinuxPlatformFlavor) getPlatformFlavor() ([]string, error) {
 	log.Debugf("flavor/types/linux_platform_flavor:getPlatformFlavor() New Hardware Section: %v", *newHW)
 
 	// Assemble the Platform Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, newHW, filteredPcrDetails, nil, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, newHW, filteredPcrDetails, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
@@ -275,7 +274,7 @@ func (rhelpf LinuxPlatformFlavor) getOsFlavor() ([]string, error) {
 	log.Debugf("flavor/types/linux_platform_flavor:getOsFlavor() New Bios Section: %v", *newBios)
 
 	// Assemble the OS Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
@@ -316,7 +315,7 @@ func (rhelpf LinuxPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
 	log.Debugf("flavor/types/linux_platform_flavor:getHostUniqueFlavor() New Bios Section: %v", *newBios)
 
 	// Assemble the Host Unique Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, nil, filteredPcrDetails, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
@@ -362,7 +361,7 @@ func (rhelpf LinuxPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	log.Debugf("flavor/types/linux_platform_flavor:getAssetTagFlavor() New External Section: %v", *newExt)
 
 	// Assemble the Asset Tag Flavor
-	fj, err := hvs.NewFlavorToJson(newMeta, newBios, nil, nil, newExt, nil)
+	fj, err := cm.NewFlavorToJson(newMeta, newBios, nil, nil, newExt, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - JSON marshal failure")
 	}
@@ -425,7 +424,7 @@ func (rhelpf LinuxPlatformFlavor) getDefaultMeasurement() ([]string, error) {
 
 // GetFlavorPart extracts the details of the flavor part requested by the caller from
 // the host report used during the creation of the PlatformFlavor instance and it's corresponding signature.
-func (rhelpf LinuxPlatformFlavor) GetFlavorPart(part cf.FlavorPart, flavorSigningPrivateKey *rsa.PrivateKey) ([]hvs.SignedFlavor, error) {
+func (rhelpf LinuxPlatformFlavor) GetFlavorPart(part cf.FlavorPart, flavorSigningPrivateKey *rsa.PrivateKey) ([]cm.SignedFlavor, error) {
 	log.Trace("flavor/types/linux_platform_flavor:GetFlavorPart() Entering")
 	defer log.Trace("flavor/types/linux_platform_flavor:GetFlavorPart() Leaving")
 

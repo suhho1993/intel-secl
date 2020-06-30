@@ -78,7 +78,7 @@ func (gpf GenericPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	log.Debugf("flavor/types/generic_platform_flavor:getAssetTagFlavor() New External Section: %v", *newExt)
 
 	// Create flavor and
-	var flavor = *hvs.NewFlavor(newMeta, nil, nil, nil, newExt, nil)
+	var flavor = *cm.NewFlavor(newMeta, nil, nil, nil, newExt, nil)
 
 	// serialize it
 	fj, err := json.Marshal(flavor)

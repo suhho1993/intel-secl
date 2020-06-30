@@ -8,20 +8,22 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	flavormodel "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
+	"reflect"
 )
 
 func NewXmlMeasurementLogEquals(softwareFlavor *hvs.Flavor) (Rule, error) {
 
 	meta := softwareFlavor.Meta
-	if meta == nil {
+	if reflect.DeepEqual(meta, flavormodel.Meta{}) {
 		return nil, errors.New("'Meta' was not provided in the software flavor")
 	}
 
-	if meta.Description == nil {
+	if reflect.DeepEqual(meta.Description, flavormodel.Description{}) {
 		return nil, errors.New("'Meta.Description' was not provided in the software flavor")
 	}
 
@@ -34,19 +36,19 @@ func NewXmlMeasurementLogEquals(softwareFlavor *hvs.Flavor) (Rule, error) {
 	}
 
 	rule := xmlMeasurementLogEquals{
-		flavorID: meta.ID,
+		flavorID:    meta.ID,
 		flavorLabel: meta.Description.Label,
 	}
 
-	for _, measurement := range(softwareFlavor.Software.Measurements) {
+	for _, measurement := range softwareFlavor.Software.Measurements {
 		if measurement.Type == ta.MeasurementTypeFile {
 			rule.expectedFileMeasurements = append(rule.expectedFileMeasurements, measurement)
-		} else	if measurement.Type == ta.MeasurementTypeDir {
+		} else if measurement.Type == ta.MeasurementTypeDir {
 			rule.expectedDirMeasurements = append(rule.expectedDirMeasurements, measurement)
-		} else	if measurement.Type == ta.MeasurementTypeSymlink {
+		} else if measurement.Type == ta.MeasurementTypeSymlink {
 			rule.expectedSymlinkMeasurements = append(rule.expectedSymlinkMeasurements, measurement)
 		} else {
-			return nil , errors.Errorf("Unknown measurement type '%s'", measurement.Type)
+			return nil, errors.Errorf("Unknown measurement type '%s'", measurement.Type)
 		}
 	}
 
@@ -75,7 +77,7 @@ func (rule *xmlMeasurementLogEquals) Apply(hostManifest *types.HostManifest) (*h
 	result.Rule.FlavorName = &rule.flavorLabel
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartSoftware)
 	result.Rule.FlavorID = &rule.flavorID
-	
+
 	result.Rule.ExpectedMeasurements = append(result.Rule.ExpectedMeasurements, rule.expectedFileMeasurements...)
 	result.Rule.ExpectedMeasurements = append(result.Rule.ExpectedMeasurements, rule.expectedDirMeasurements...)
 	result.Rule.ExpectedMeasurements = append(result.Rule.ExpectedMeasurements, rule.expectedSymlinkMeasurements...)
@@ -83,7 +85,7 @@ func (rule *xmlMeasurementLogEquals) Apply(hostManifest *types.HostManifest) (*h
 	if hostManifest.MeasurementXmls == nil || len(hostManifest.MeasurementXmls) == 0 {
 		result.Faults = append(result.Faults, newXmlEventLogMissingFault(rule.flavorID))
 	} else {
-		actualMeasurements, _, err := getMeasurementAssociatedWithFlavor(hostManifest, rule.flavorID, rule.flavorLabel);
+		actualMeasurements, _, err := getMeasurementAssociatedWithFlavor(hostManifest, rule.flavorID, rule.flavorLabel)
 		if err != nil {
 			result.Faults = append(result.Faults, newXmlMeasurementLogInvalidFault())
 		} else if actualMeasurements == nil {
@@ -100,7 +102,6 @@ func (rule *xmlMeasurementLogEquals) Apply(hostManifest *types.HostManifest) (*h
 
 	return &result, nil
 }
-
 
 // Compare the 'expected' File/Dir/SymLink mesaurements against the 'actual' measurements.
 // If the measurement's 'Path' is the same, but the 'Value' is not, generate a 'mismatch' fault.
@@ -126,26 +127,26 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 	actualSymlinkIndex := createMeasurementIndex(rule.symlinksToFlavorMeasurements(actualMeasurements.Symlink))
 
 	// group all of the indexes in an array to interate over
-	allIndexes := [][]map[string]ta.FlavorMeasurement {
-		{ expectedFileIndex, actualFileIndex, },
-		{ expectedDirIndex, actualDirIndex, },
-		{ expectedSymlinkIndex, actualSymlinkIndex, },
+	allIndexes := [][]map[string]ta.FlavorMeasurement{
+		{expectedFileIndex, actualFileIndex},
+		{expectedDirIndex, actualDirIndex},
+		{expectedSymlinkIndex, actualSymlinkIndex},
 	}
 
 	// iterate over 'allIndexes' and add measurements to the lists of
-	// 'missing', 'mismatch' or 'unexepected' 
-	for _, indexesToCompare := range(allIndexes) {
+	// 'missing', 'mismatch' or 'unexepected'
+	for _, indexesToCompare := range allIndexes {
 		expectedIndex := indexesToCompare[0]
 		actualIndex := indexesToCompare[1]
 
-		for expectedPath, expectedFileMeasurement := range(expectedIndex) {
+		for expectedPath, expectedFileMeasurement := range expectedIndex {
 			if actualFileMeasurement, ok := actualIndex[expectedPath]; ok {
 				if actualFileMeasurement.Value != expectedFileMeasurement.Value {
 					// the path matches but the measurement is different --> "mismatch"
 					mismatchMeasurements = append(mismatchMeasurements, expectedFileMeasurement)
 				} // else ok, it matches --> no fault
 
-				// remove the item from the index so that any remainders after this loop will be 
+				// remove the item from the index so that any remainders after this loop will be
 				// considered 'unexpected'
 				delete(actualIndex, expectedPath)
 			} else {
@@ -155,17 +156,17 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 		}
 
 		// any remainders in 'actual' are 'unexpected'
-		for _, remainingActualMeasurement := range(actualIndex) {
+		for _, remainingActualMeasurement := range actualIndex {
 			unexpectedMeasurements = append(unexpectedMeasurements, remainingActualMeasurement)
 		}
 	}
 
 	// roll up all of the missing measurements into a single fault
 	if len(missingMeasurements) > 0 {
-		fault := hvs.Fault {
-			Name: FaultXmlMeasurementLogMissingExpectedEntries,
-			Description: fmt.Sprintf("XML measurement log for flavor %s missing %d expected entries.", rule.flavorID, len(missingMeasurements)),
-			FlavorId: &rule.flavorID,
+		fault := hvs.Fault{
+			Name:                FaultXmlMeasurementLogMissingExpectedEntries,
+			Description:         fmt.Sprintf("XML measurement log for flavor %s missing %d expected entries.", rule.flavorID, len(missingMeasurements)),
+			FlavorId:            &rule.flavorID,
 			MissingMeasurements: missingMeasurements,
 		}
 
@@ -174,10 +175,10 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 
 	// roll up all of the unexpected measurements into a single fault
 	if len(unexpectedMeasurements) > 0 {
-		fault := hvs.Fault {
-			Name: FaultXmlMeasurementLogContainsUnexpectedEntries,
-			Description: fmt.Sprintf("XML measurement log of flavor %s contains %d unexpected entries.", rule.flavorID, len(unexpectedMeasurements)),
-			FlavorId: &rule.flavorID,
+		fault := hvs.Fault{
+			Name:                   FaultXmlMeasurementLogContainsUnexpectedEntries,
+			Description:            fmt.Sprintf("XML measurement log of flavor %s contains %d unexpected entries.", rule.flavorID, len(unexpectedMeasurements)),
+			FlavorId:               &rule.flavorID,
 			UnexpectedMeasurements: unexpectedMeasurements,
 		}
 
@@ -186,16 +187,16 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 
 	// roll up all of the mismatched measurements into a single fault
 	if len(mismatchMeasurements) > 0 {
-		fault := hvs.Fault {
-			Name: FaultXmlMeasurementLogValueMismatchEntries384,
-			Description: fmt.Sprintf("XML measurement log for flavor %s contains %d entries for which the values are modified.", rule.flavorID, len(mismatchMeasurements)),
-			FlavorId: &rule.flavorID,
+		fault := hvs.Fault{
+			Name:                 FaultXmlMeasurementLogValueMismatchEntries384,
+			Description:          fmt.Sprintf("XML measurement log for flavor %s contains %d entries for which the values are modified.", rule.flavorID, len(mismatchMeasurements)),
+			FlavorId:             &rule.flavorID,
 			MismatchMeasurements: mismatchMeasurements,
 		}
 
 		faults = append(faults, fault)
 	}
-	
+
 	return faults, nil
 }
 
@@ -203,7 +204,7 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 func createMeasurementIndex(flavorMeasurements []ta.FlavorMeasurement) map[string]ta.FlavorMeasurement {
 	comparisonIndex := make(map[string]ta.FlavorMeasurement, len(flavorMeasurements))
 
-	for _, flavorMeasurement := range(flavorMeasurements) {
+	for _, flavorMeasurement := range flavorMeasurements {
 		comparisonIndex[flavorMeasurement.Path] = flavorMeasurement
 	}
 
@@ -211,11 +212,11 @@ func createMeasurementIndex(flavorMeasurements []ta.FlavorMeasurement) map[strin
 }
 
 // convert FileMeasurementType to ta.FlavorMeasurementType
-func (rule *xmlMeasurementLogEquals) filesToFlavorMeasurements(fileMeasurements []ta.FileMeasurementType) ([]ta.FlavorMeasurement) {
+func (rule *xmlMeasurementLogEquals) filesToFlavorMeasurements(fileMeasurements []ta.FileMeasurementType) []ta.FlavorMeasurement {
 	flavorMeasurements := make([]ta.FlavorMeasurement, len(fileMeasurements))
 	var flavorMeasurement ta.FlavorMeasurement
 
-	for i, fileMeasurementType := range(fileMeasurements) {
+	for i, fileMeasurementType := range fileMeasurements {
 		(&flavorMeasurement).FromFile(fileMeasurementType)
 		flavorMeasurements[i] = flavorMeasurement
 	}
@@ -224,11 +225,11 @@ func (rule *xmlMeasurementLogEquals) filesToFlavorMeasurements(fileMeasurements 
 }
 
 // convert DirectoryMeasurementType to ta.FlavorMeasurementType
-func (rule *xmlMeasurementLogEquals) dirsToFlavorMeasurements(dirMeasurements []ta.DirectoryMeasurementType) ([]ta.FlavorMeasurement) {
-	flavorMeasurements:= make([]ta.FlavorMeasurement, len(dirMeasurements))
+func (rule *xmlMeasurementLogEquals) dirsToFlavorMeasurements(dirMeasurements []ta.DirectoryMeasurementType) []ta.FlavorMeasurement {
+	flavorMeasurements := make([]ta.FlavorMeasurement, len(dirMeasurements))
 	var flavorMeasurement ta.FlavorMeasurement
 
-	for i, dirMeasurementType := range(dirMeasurements) {
+	for i, dirMeasurementType := range dirMeasurements {
 		(&flavorMeasurement).FromDir(dirMeasurementType)
 		flavorMeasurements[i] = flavorMeasurement
 	}
@@ -237,11 +238,11 @@ func (rule *xmlMeasurementLogEquals) dirsToFlavorMeasurements(dirMeasurements []
 }
 
 // convert SymlinkMeasurementType to ta.FlavorMeasurementType
-func (rule *xmlMeasurementLogEquals) symlinksToFlavorMeasurements(symlinkMeasurements []ta.SymlinkMeasurementType) ([]ta.FlavorMeasurement) {
+func (rule *xmlMeasurementLogEquals) symlinksToFlavorMeasurements(symlinkMeasurements []ta.SymlinkMeasurementType) []ta.FlavorMeasurement {
 	flavorMeasurements := make([]ta.FlavorMeasurement, len(symlinkMeasurements))
 	var flavorMeasurement ta.FlavorMeasurement
 
-	for i, symlinkMeasurementType := range(symlinkMeasurements) {
+	for i, symlinkMeasurementType := range symlinkMeasurements {
 		(&flavorMeasurement).FromSymlink(symlinkMeasurementType)
 		flavorMeasurements[i] = flavorMeasurement
 	}

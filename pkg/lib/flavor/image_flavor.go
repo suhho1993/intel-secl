@@ -35,7 +35,7 @@ func GetImageFlavor(label string, encryptionRequired bool, keyURL string, digest
 
 	meta := model.Meta{
 		ID:          uuid.New(),
-		Description: &description,
+		Description: description,
 	}
 
 	if encryptionRequired {
@@ -74,7 +74,7 @@ func GetContainerImageFlavor(label string, encryptionRequired bool, keyURL strin
 
 	meta := model.Meta{
 		ID:          uuid.New(),
-		Description: &description,
+		Description: description,
 	}
 
 	encryption = &model.Encryption{

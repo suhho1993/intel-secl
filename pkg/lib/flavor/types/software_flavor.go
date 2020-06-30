@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 )
@@ -49,7 +49,7 @@ func (sf *SoftwareFlavor) GetSoftwareFlavor() (string, error) {
 	}
 	log.Debugf("flavor/types/software_flavor:GetSoftwareFlavor() New Meta Section: %v", *newMeta)
 
-	f := hvs.NewFlavor(newMeta, nil, nil, nil, nil, &software)
+	f := cm.NewFlavor(newMeta, nil, nil, nil, nil, &software)
 	strf, err := json.Marshal(f)
 	if err != nil {
 		return "", errors.Wrapf(err, "Error marshalling SoftwareFlavor: %s", err)

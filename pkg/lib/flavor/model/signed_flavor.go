@@ -2,7 +2,7 @@
  * Copyright (C) 2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package hvs
+package model
 
 import (
 	"crypto"
@@ -22,10 +22,6 @@ import (
 type SignedFlavor struct {
 	Flavor    Flavor `json:"flavor"`
 	Signature string `json:"signature"`
-}
-
-type SignedFlavorCollection struct {
-	SignedFlavors []*SignedFlavor `json:"signed_flavors" xml:"signed_flavors"`
 }
 
 // NewSignedFlavorFromJSON returns an instance of SignedFlavor from an JSON string
@@ -60,9 +56,9 @@ func NewSignedFlavor(flavor *Flavor, privateKey *rsa.PrivateKey) (*SignedFlavor,
 		return nil, errors.Wrap(err, "An error occurrred while signing the flavor")
 	}
 
-	return &SignedFlavor {
-		Flavor:     *flavor,
-		Signature:  base64.StdEncoding.EncodeToString(signature),
+	return &SignedFlavor{
+		Flavor:    *flavor,
+		Signature: base64.StdEncoding.EncodeToString(signature),
 	}, nil
 }
 

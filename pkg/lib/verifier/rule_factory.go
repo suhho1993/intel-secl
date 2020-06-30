@@ -5,12 +5,14 @@
 package verifier
 
 import (
-	"strings"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	flavormodel "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier/rules"
+	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	"reflect"
+	"strings"
 )
 
 // A ruleBuilder creates flavor specific rules for a particular
@@ -34,12 +36,12 @@ type ruleFactory struct {
 	skipSignedFlavorVerification bool
 }
 
-func newRuleFactory(verifierCertificates VerifierCertificates, 
-					hostManifest *types.HostManifest, 
-					signedFlavor *hvs.SignedFlavor, 
-					skipSignedFlavorVerification bool) *ruleFactory{
+func newRuleFactory(verifierCertificates VerifierCertificates,
+	hostManifest *types.HostManifest,
+	signedFlavor *hvs.SignedFlavor,
+	skipSignedFlavorVerification bool) *ruleFactory {
 
-	return &ruleFactory {
+	return &ruleFactory{
 		verifierCertificates:         verifierCertificates,
 		hostManifest:                 hostManifest,
 		signedFlavor:                 signedFlavor,
@@ -57,7 +59,7 @@ func (factory *ruleFactory) getVerificationRules() ([]rules.Rule, string, error)
 		return nil, "", errors.Wrap(err, "Could not retrieve rule builder")
 	}
 
-	if factory.signedFlavor.Flavor.Meta.Description == nil {
+	if reflect.DeepEqual(factory.signedFlavor.Flavor.Meta.Description, flavormodel.Description{}) {
 		return nil, "", errors.New("The flavor's description cannot be nil")
 	}
 
@@ -66,7 +68,7 @@ func (factory *ruleFactory) getVerificationRules() ([]rules.Rule, string, error)
 		return nil, "", errors.Wrap(err, "Could not retrieve flavor part name")
 	}
 
-	switch(flavorPart) {
+	switch flavorPart {
 	case common.FlavorPartPlatform:
 		results, err = ruleBuilder.GetPlatformRules()
 	case common.FlavorPartAssetTag:
@@ -75,8 +77,8 @@ func (factory *ruleFactory) getVerificationRules() ([]rules.Rule, string, error)
 		results, err = ruleBuilder.GetOsRules()
 	case common.FlavorPartHostUnique:
 		results, err = ruleBuilder.GetHostUniqueRules()
-	case common.FlavorPartSoftware: 
-	results, err = ruleBuilder.GetSoftwareRules()
+	case common.FlavorPartSoftware:
+		results, err = ruleBuilder.GetSoftwareRules()
 	default:
 		return nil, "", errors.Errorf("Cannot build rules for unknown flavor part %s", flavorPart)
 	}
@@ -93,11 +95,11 @@ func (factory *ruleFactory) getVerificationRules() ([]rules.Rule, string, error)
 		if err != nil {
 			return nil, "", errors.Wrap(err, "Could not retrieve flavor part name")
 		}
-	
+
 		flavorTrusted, err := rules.NewFlavorTrusted(factory.signedFlavor,
-			                                         factory.verifierCertificates.FlavorSigningCertificate, 
-											         factory.verifierCertificates.FlavorCACertificates,
-											         flavorPart)
+			factory.verifierCertificates.FlavorSigningCertificate,
+			factory.verifierCertificates.FlavorCACertificates,
+			flavorPart)
 
 		if err != nil {
 			return nil, "", errors.Wrap(err, "Error creating the flavor trusted rule")
@@ -126,7 +128,7 @@ func (factory *ruleFactory) getRuleBuilder() (ruleBuilder, error) {
 		return nil, errors.Wrap(err, "The verifier could not determine the vendor")
 	}
 
-	switch(vendor) {
+	switch vendor {
 	case VendorIntel:
 		builder, err = newRuleBuilderIntelTpm20(factory.verifierCertificates, factory.hostManifest, factory.signedFlavor)
 		if err != nil {
@@ -142,18 +144,18 @@ func (factory *ruleFactory) getRuleBuilder() (ruleBuilder, error) {
 			builder, err = newRuleBuilderVMWare12(factory.verifierCertificates, factory.hostManifest, factory.signedFlavor)
 			if err != nil {
 				return nil, errors.Wrap(err, "There was an error creating the VMWare 1.2 verification rule builder")
-			}	
+			}
 		} else if tpmVersionString == "2.0" {
 			builder, err = newRuleBuilderVMWare20(factory.verifierCertificates, factory.hostManifest, factory.signedFlavor)
 			if err != nil {
 				return nil, errors.Wrap(err, "There was an error creating the VMWare 1.2 verification rule builder")
-			}	
+			}
 		} else {
 			return nil, errors.Errorf("Unknown TPM version '%s'", tpmVersionString)
 		}
 
 	default:
-		return nil, errors.Errorf("Vendor '%s' is not currently supported", string(vendor)) 
+		return nil, errors.Errorf("Vendor '%s' is not currently supported", string(vendor))
 	}
 
 	return builder, nil
@@ -170,15 +172,15 @@ const (
 )
 
 // FromString This function will take in a string and attempts to map
-// it to a VendorName. It accepts values typically found in flavors 
-// (i.e. Flavor.Meta.Vendor) and os names found in host manifests (i.e. 
+// it to a VendorName. It accepts values typically found in flavors
+// (i.e. Flavor.Meta.Vendor) and os names found in host manifests (i.e.
 // HostManifest.HostInfo.OSName).
 func (vendorName *VendorName) FromString(vendorString string) error {
 
 	vendor := VendorUnknown
-	var err error 
+	var err error
 
-	switch (strings.ToUpper(vendorString)) {
+	switch strings.ToUpper(vendorString) {
 	case "WINDOWS", "MICROSOFT WINDOWS SERVER 2016 DATACENTER", "MICROSOFT WINDOWS SERVER 2016 STANDARD":
 		vendor = VendorMicrosoft
 	case "VMWARE", "VMWARE ESXI":
@@ -189,11 +191,11 @@ func (vendorName *VendorName) FromString(vendorString string) error {
 		// TODO:  The application manifest flavor (SOFTWARE) does not
 		// have a vendor, but we know it's INTEL -- use that for now
 		// to avoid errors (this should be fixed in HVS).  This should
-		// be fixed in flavor conversion. 
+		// be fixed in flavor conversion.
 		log.Debugf("Encountered empty vendor string, providing value 'INTEL'")
 		vendor = VendorIntel
 	default:
-  		err = errors.Errorf("Could not determine vendor name from value '%s'", vendorString)
+		err = errors.Errorf("Could not determine vendor name from value '%s'", vendorString)
 	}
 
 	*vendorName = vendor

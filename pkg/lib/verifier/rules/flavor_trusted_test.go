@@ -1,19 +1,19 @@
 /*
  * Copyright (C) 2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
-*/
+ */
 package rules
 
 import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
-	"testing"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestFlavorTrustedNoFault(t *testing.T) {
@@ -23,13 +23,13 @@ func TestFlavorTrustedNoFault(t *testing.T) {
 	assert.NoError(t, err)
 
 	// create a valid flavor and signed flavor
-	flavor := hvs.Flavor {
-		Meta: &model.Meta {
+	flavor := hvs.Flavor{
+		Meta: model.Meta{
 			ID: testUuid,
 		},
 	}
 
-	signedFlavor, err := hvs.NewSignedFlavor(&flavor, privateKey)
+	signedFlavor, err := model.NewSignedFlavor(&flavor, privateKey)
 	assert.NoError(t, err)
 
 	// create the rule
@@ -60,7 +60,7 @@ func TestFlavorTrustedNoFaultFromJSON(t *testing.T) {
 	err = json.Unmarshal([]byte(flavorJSON), &flavor)
 	assert.NoError(t, err)
 
-	signedFlavor, err := hvs.NewSignedFlavor(&flavor, privateKey)
+	signedFlavor, err := model.NewSignedFlavor(&flavor, privateKey)
 	assert.NoError(t, err)
 
 	// create the rule
@@ -81,17 +81,17 @@ func TestFlavorTrustedFlavorSignatureMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 
 	// create a valid flavor and signed flavor
-	flavor := hvs.Flavor {
-		Meta: &model.Meta {
+	flavor := hvs.Flavor{
+		Meta: model.Meta{
 			ID: testUuid,
 		},
 	}
 
-	signedFlavor, err := hvs.NewSignedFlavor(&flavor, privateKey)
+	signedFlavor, err := model.NewSignedFlavor(&flavor, privateKey)
 	assert.NoError(t, err)
 
 	// now remove the signature to invoke FaultFlavorSignatureMissing
-	signedFlavor.Signature = "" 
+	signedFlavor.Signature = ""
 
 	// create the rule
 	rule, err := NewFlavorTrusted(signedFlavor, flavorSigningCertificate, flavorCaCertificates, common.FlavorPartPlatform)
@@ -108,22 +108,22 @@ func TestFlavorTrustedFlavorSignatureMissingFault(t *testing.T) {
 
 func TestFlavorTrustedMissingFlavorSigningCertificate(t *testing.T) {
 
-	// create all of the certs, private keys, CAs etc. to test the rule 
+	// create all of the certs, private keys, CAs etc. to test the rule
 	// the FlavorSigningCertificate will not be used in this test
 	_, flavorCaCertificates, privateKey, err := createCryptoResources()
 	assert.NoError(t, err)
 
 	// create a valid flavor and signed flavor
-	flavor := hvs.Flavor {
-		Meta: &model.Meta {
+	flavor := hvs.Flavor{
+		Meta: model.Meta{
 			ID: testUuid,
 		},
 	}
 
-	signedFlavor, err := hvs.NewSignedFlavor(&flavor, privateKey)
+	signedFlavor, err := model.NewSignedFlavor(&flavor, privateKey)
 	assert.NoError(t, err)
 
-	// create the rule without the flavorSigningCertificate to invoke 
+	// create the rule without the flavorSigningCertificate to invoke
 	// FaultFlavorSignatureVerificationFailed
 	rule, err := NewFlavorTrusted(signedFlavor, nil, flavorCaCertificates, common.FlavorPartPlatform)
 	assert.NoError(t, err)
@@ -139,22 +139,22 @@ func TestFlavorTrustedMissingFlavorSigningCertificate(t *testing.T) {
 
 func TestFlavorTrustedMissingCACertificates(t *testing.T) {
 
-	// create all of the certs, private keys, CAs etc. to test the rule 
+	// create all of the certs, private keys, CAs etc. to test the rule
 	// the CAs will not be used in this test
 	flavorSigningCertificate, _, privateKey, err := createCryptoResources()
 	assert.NoError(t, err)
 
 	// create a valid flavor and signed flavor
-	flavor := hvs.Flavor {
-		Meta: &model.Meta {
+	flavor := hvs.Flavor{
+		Meta: model.Meta{
 			ID: testUuid,
 		},
 	}
 
-	signedFlavor, err := hvs.NewSignedFlavor(&flavor, privateKey)
+	signedFlavor, err := model.NewSignedFlavor(&flavor, privateKey)
 	assert.NoError(t, err)
 
-	// create the rule without the CA certs to invoke 
+	// create the rule without the CA certs to invoke
 	// FaultFlavorSignatureVerificationFailed
 	rule, err := NewFlavorTrusted(signedFlavor, flavorSigningCertificate, nil, common.FlavorPartPlatform)
 	assert.NoError(t, err)
@@ -170,7 +170,7 @@ func TestFlavorTrustedMissingCACertificates(t *testing.T) {
 
 func TestFlavorTrustedInvalidRootCA(t *testing.T) {
 
-	// create all of the certs, private keys, CAs etc. to test the rule 
+	// create all of the certs, private keys, CAs etc. to test the rule
 	// the CAs will not be used in this test
 	flavorSigningCertificate, _, privateKey, err := createCryptoResources()
 	assert.NoError(t, err)
@@ -183,13 +183,13 @@ func TestFlavorTrustedInvalidRootCA(t *testing.T) {
 	_ = invalidCaCertificates.AppendCertsFromPEM(caPemBytes)
 
 	// create a valid flavor and signed flavor
-	flavor := hvs.Flavor {
-		Meta: &model.Meta {
+	flavor := hvs.Flavor{
+		Meta: model.Meta{
 			ID: testUuid,
 		},
 	}
 
-	signedFlavor, err := hvs.NewSignedFlavor(&flavor, privateKey)
+	signedFlavor, err := model.NewSignedFlavor(&flavor, privateKey)
 	assert.NoError(t, err)
 
 	// create the rule without the CA certs to invoke the
@@ -213,13 +213,13 @@ func TestFlavorTrustedForceSignatureVerificationToFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	// create a valid flavor and signed flavor
-	flavor := hvs.Flavor {
-		Meta: &model.Meta {
+	flavor := hvs.Flavor{
+		Meta: model.Meta{
 			ID: testUuid,
 		},
 	}
 
-	signedFlavor, err := hvs.NewSignedFlavor(&flavor, privateKey)
+	signedFlavor, err := model.NewSignedFlavor(&flavor, privateKey)
 	assert.NoError(t, err)
 
 	// now change the signature to force verification to fail
@@ -255,7 +255,7 @@ func createCryptoResources() (*x509.Certificate, *x509.CertPool, *rsa.PrivateKey
 		return nil, nil, nil, err
 	}
 
-	// now get the bytes for the flavor sining certificate
+	// now get the bytes for the flavor signing certificate
 	flavorSigningCertificateBytes, err := getCertificateBytes(flavorSigningTemplate, privateKey)
 	if err != nil {
 		return nil, nil, nil, err
