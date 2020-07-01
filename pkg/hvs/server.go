@@ -3,8 +3,17 @@ package hvs
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
+	hostfetcher "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/host-fetcher"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier"
 	"net/http"
 	"os"
 	"os/signal"
@@ -38,12 +47,20 @@ func (a *App) startServer() error {
 	if err := a.configureLogs(c.Log.EnableStdout, true); err != nil {
 		return err
 	}
-	defaultLog.Info("Starting server")
+
+	// Initialize Database
+	dataStore := postgres.InitDatabase(c)
+
+	// Load Certificates
+	certStore := utils.LoadCertificates(a.loadCertPathStore())
+
+	// Initialize Host trust manager
+	hostTrustManager := initHostTrustManager(c, dataStore, certStore)
 
 	// Initialize routes
-	certStore := utils.LoadCertificates(a.certPathStore())
-	routes := router.InitRoutes(c, certStore)
+	routes := router.InitRoutes(c, dataStore, certStore, hostTrustManager)
 
+	defaultLog.Info("Starting server")
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
 		CipherSuites: []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
@@ -90,9 +107,66 @@ func (a *App) startServer() error {
 	return nil
 }
 
-func (a *App) certPathStore() *models.CertificatesPathStore {
+func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore) domain.HostTrustManager {
+	defaultLog.Trace("server:InitHostTrustManager() Entering")
+	defer defaultLog.Trace("server:InitHostTrustManager() Leaving")
+
+	//Load store
+	hs := postgres.NewHostStore(dataStore)
+	fs := postgres.NewFlavorStore(dataStore)
+	fgs := postgres.NewFlavorGroupStore(dataStore)
+	qs := postgres.NewDBQueueStore(dataStore)
+	hss := postgres.NewHostStatusStore(dataStore)
+
+	//Load certificates
+	//TODO: Add flavor signing certificate
+	verifierCerts := verifier.VerifierCertificates{
+		PrivacyCACertificates:    loadCertPool(models.CaCertTypesPrivacyCa.String(), certStore),
+		AssetTagCACertificates:   loadCertPool(models.CaCertTypesTagCa.String(), certStore),
+		FlavorSigningCertificate: nil,
+		FlavorCACertificates:     loadCertPool(models.CaCertTypesRootCa.String(), certStore),
+	}
+	libVerifier, _ := verifier.NewVerifier(verifierCerts)
+
+	htv := domain.HostTrustVerifierConfig{
+		FlavorStore:      fs,
+		FlavorGroupStore: fgs,
+		HostStore:        hs,
+		FlavorVerifier:   libVerifier,
+		CertsStore:       *certStore,
+	}
+
+	// Initialize Host Fetcher service
+	// TODO: Read Workers from config
+	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]
+	htcFactory := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
+
+	c := domain.HostDataFetcherConfig{HostConnectorFactory: *htcFactory}
+	_, hf, _ := hostfetcher.NewService(c, 5)
+
+	// Initialize Host Trust service
+	// TODO: Read Verifiers from config
+	_, htm, _ := hosttrust.NewService(domain.HostTrustMgrConfig{
+		PersistStore: qs,
+		HostStore:    hs,
+		HostStatusStore: hss,
+		HostFetcher:  hf,
+		Verifiers:    5,
+		HostTrustVerifier: hosttrust.NewVerifier(htv),
+	})
+
+	return htm
+}
+func loadCertPool(certType string, certStore *models.CertificatesStore) *x509.CertPool {
+	certs := (*certStore)[certType]
+	if certs == nil || certs.Certificates == nil || len(certs.Certificates) == 0{
+		return nil
+	}
+	return crypt.GetCertPool(certs.Certificates)
+}
+func (a *App) loadCertPathStore() *models.CertificatesPathStore {
 	// constants are used somewhere else in the repo
-	// change it into the configured pathes after fixing all of them
+	// change it into the configured paths after fixing all of them
 	// currently used constants:
 	//     TrustedRootCACertsDir, PrivacyCAKeyFile, PrivacyCACertFile
 	return &models.CertificatesPathStore{

@@ -29,5 +29,5 @@ type HostTrustMgrConfig struct {
 }
 
 type HostDataFetcherConfig struct {
-	HostConnector host_connector.HostConnector
+	HostConnectorFactory host_connector.HostConnectorFactory
 }

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"net/http"
@@ -26,6 +27,7 @@ var _ = Describe("HostController", func() {
 	var hostStatusStore *mocks.MockHostStatusStore
 	var flavorGroupStore *mocks.MockFlavorgroupStore
 	var hostController *controllers.HostController
+	var hostTrustManager *smocks.MockHostTrustManager
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		hostStore = mocks.NewMockHostStore()
@@ -37,6 +39,7 @@ var _ = Describe("HostController", func() {
 			HSStore:   hostStatusStore,
 			FGStore:   flavorGroupStore,
 			CertStore: certStore,
+			HTManager: hostTrustManager,
 		}
 	})
 

@@ -15,7 +15,16 @@ import (
 var log = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
-func NewHostConnector(connectionString, aasApiUrl string, trustedCaCerts []x509.Certificate) (HostConnector, error) {
+type HostConnectorFactory struct {
+	aasApiUrl        string
+	trustedCaCerts   []x509.Certificate
+}
+
+func NewHostConnectorFactory(aasApiUrl string, trustedCaCerts []x509.Certificate) *HostConnectorFactory {
+	return &HostConnectorFactory{aasApiUrl, trustedCaCerts}
+}
+
+func (htcFactory *HostConnectorFactory) NewHostConnector(connectionString string) (HostConnector, error) {
 
 	log.Trace("host_connector/host_connector_factory:NewHostConnector() Entering")
 	defer log.Trace("host_connector/host_connector_factory:NewHostConnector() Leaving")
@@ -35,5 +44,5 @@ func NewHostConnector(connectionString, aasApiUrl string, trustedCaCerts []x509.
 	default:
 		return nil, errors.New("host_connector_factory:NewHostConnector() Vendor not supported yet: " + vendorConnector.Vendor)
 	}
-	return connectorFactory.GetHostConnector(vendorConnector, aasApiUrl, trustedCaCerts)
+	return connectorFactory.GetHostConnector(vendorConnector, htcFactory.aasApiUrl, htcFactory.trustedCaCerts)
 }

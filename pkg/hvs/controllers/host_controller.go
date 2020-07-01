@@ -31,17 +31,20 @@ type HostController struct {
 	FGStore   domain.FlavorGroupStore
 	HCStore   domain.HostCredentialStore
 	CertStore *models.CertificatesStore
+	HTManager domain.HostTrustManager
 }
 
 func NewHostController(hs domain.HostStore, rs domain.ReportStore, hss domain.HostStatusStore,
-	fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore, certStore *models.CertificatesStore) *HostController {
+	fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore, cs *models.CertificatesStore,
+	htm domain.HostTrustManager) *HostController {
 	return &HostController{
 		HStore:    hs,
 		RStore:    rs,
 		HSStore:   hss,
 		FGStore:   fgs,
 		HCStore:   hcs,
-		CertStore: certStore,
+		CertStore: cs,
+		HTManager: htm,
 	}
 }
 
@@ -123,7 +126,12 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 		return nil, status, err
 	}
 
-	//TODO: Since the host has been updated, add it to the verify queue
+	// Since the host has been updated, add it to the verify queue
+	err = hc.HTManager.VerifyHostsAsync([]uuid.UUID{reqHost.Id}, true, false)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host to Flavor Verify Queue addition failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
+	}
 
 	secLog.WithField("host", updatedHost).Infof("%s: Host updated by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	return updatedHost, status, nil
@@ -277,10 +285,18 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 
 	defaultLog.Debugf("Associating host %s with flavorgroups %+q", reqHost.HostName, fgNames)
 	if err := hc.linkFlavorgroupsToHost(fgNames, createdHost.Id); err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host FlavorGroup association failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to associate Host with flavorgroups"}
 	}
 
-	//TODO: Add host to flavor-verify queue
+	defaultLog.Debugf("Adding host %s to flavor-verify queue", reqHost.HostName)
+	// Since we are adding a new host, the forceUpdate flag should be set to true so that
+	// we connect to the host and get the latest host manifest to verify against.
+	err = hc.HTManager.VerifyHostsAsync([]uuid.UUID{createdHost.Id}, true, false)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host to Flavor Verify Queue addition failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
+	}
 
 	return createdHost, http.StatusCreated, nil
 }
@@ -459,7 +475,8 @@ func (hc *HostController) getHostInfo(cs string) (*model.HostInfo, error) {
 		return nil, errors.Wrap(err, "Error getting list of CA certificates from Certificate store")
 	}
 	conf := config.Global()
-	hconnector, err := hostconnector.NewHostConnector(cs, conf.AASApiUrl, certList)
+	htcFactory := hostconnector.NewHostConnectorFactory(conf.AASApiUrl, certList)
+	hconnector, err := htcFactory.NewHostConnector(cs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not instantiate host connector")
 	}

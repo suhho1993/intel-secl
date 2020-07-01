@@ -39,7 +39,7 @@ func TestHostTrustManagerNewService(t *testing.T) {
 	cfg := domain.HostDataFetcherConfig{}
 	_, f, _ := hostfetcher.NewService(cfg, 5)
 
-	fv, _ := NewVerifier(domain.HostTrustVerifierConfig{})
+	fv := NewVerifier(domain.HostTrustVerifierConfig{})
 	_, ht, _ := NewService(domain.HostTrustMgrConfig{
 		PersistStore:      qs,
 		HostStore:         hs,

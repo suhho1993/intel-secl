@@ -48,8 +48,7 @@ type Service struct {
 	quit        chan struct{}
 	serviceDone bool
 
-	// pointer to object that implement host connector interface
-	hc hc.HostConnector
+	hcf hc.HostConnectorFactory
 }
 
 func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain.HostDataFetcher, error) {
@@ -62,7 +61,7 @@ func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain
 	// this way, go routine can start work as soon as a current work is done
 	svc := &Service{workMap: make(map[uuid.UUID][]*fetchRequest),
 		quit: make(chan struct{}),
-		hc:   cfg.HostConnector,
+		hcf:   cfg.HostConnectorFactory,
 	}
 
 	svc.Fetcher = svc

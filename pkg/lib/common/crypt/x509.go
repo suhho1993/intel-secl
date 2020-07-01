@@ -424,3 +424,11 @@ func SavePemCertChain(certFilePath string, certs ...[]byte) error {
 	}
 	return nil
 }
+
+func GetCertPool(certs []x509.Certificate) *x509.CertPool{
+	certPool := x509.NewCertPool()
+	for _, cert := range certs {
+		certPool.AddCert(&cert)
+	}
+	return certPool
+}

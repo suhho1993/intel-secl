@@ -29,14 +29,14 @@ type verifier struct {
 	certsStore       models.CertificatesStore
 }
 
-func NewVerifier(cfg domain.HostTrustVerifierConfig) (domain.HostTrustVerifier, error) {
+func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
 	return &verifier{
 		flavorStore:      cfg.FlavorStore,
 		flavorGroupStore: cfg.FlavorGroupStore,
 		hostStore:        cfg.HostStore,
 		flavorVerifier:   cfg.FlavorVerifier,
 		certsStore:       cfg.CertsStore,
-	}, nil
+	}
 
 }
 

@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -33,43 +34,21 @@ type Router struct {
 }
 
 // InitRoutes registers all routes for the application.
-func InitRoutes(cfg *config.Configuration, certStore *models.CertificatesStore) *mux.Router {
+func InitRoutes(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager) *mux.Router {
 	defaultLog.Trace("router/router:InitRoutes() Entering")
 	defer defaultLog.Trace("router/router:InitRoutes() Leaving")
-
-	// Create conf for DBTypePostgres
-	conf := postgres.Config{
-		Vendor:            constants.DBTypePostgres,
-		Host:              cfg.DB.Host,
-		Port:              cfg.DB.Port,
-		User:              cfg.DB.Username,
-		Password:          cfg.DB.Password,
-		Dbname:            cfg.DB.DBName,
-		SslMode:           cfg.DB.SSLMode,
-		SslCert:           cfg.DB.SSLCert,
-		ConnRetryAttempts: cfg.DB.ConnectionRetryAttempts,
-		ConnRetryTime:     cfg.DB.ConnectionRetryTime,
-	}
-
-	// Creates a DBTypePostgres DB instance
-	dataStore, err := NewDataStore(&conf)
-	if err != nil {
-		panic(err)
-	}
-	defaultLog.Trace("Migrating Database")
-	dataStore.Migrate()
 
 	// Create public routes that does not need any authentication
 	router := mux.NewRouter()
 
 	// ISECL-8715 - Prevent potential open redirects to external URLs
 	router.SkipClean(true)
-	defineSubRoutes(router, constants.OldServiceName, cfg, dataStore, certStore)
-	defineSubRoutes(router, strings.ToLower(constants.ServiceName), cfg, dataStore, certStore)
+	defineSubRoutes(router, constants.OldServiceName, cfg, dataStore, certStore, hostTrustManager)
+	defineSubRoutes(router, strings.ToLower(constants.ServiceName), cfg, dataStore, certStore, hostTrustManager)
 	return router
 }
 
-func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore) {
+func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager) {
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
 
@@ -100,18 +79,11 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetCertifyAiksRoutes(subRouter, dataStore, certStore)
 	subRouter = SetHostStatusRoutes(subRouter, dataStore)
 	subRouter = SetCertifyHostKeysRoutes(subRouter)
-	subRouter = SetHostRoutes(subRouter, dataStore, certStore, dek)
+	subRouter = SetHostRoutes(subRouter, dataStore, certStore, hostTrustManager, dek)
 	subRouter = SetReportRoutes(subRouter, dataStore)
 	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
 	subRouter = SetESXiClusterRoutes(subRouter, dataStore)
 	subRouter = SetTagCertificateRoutes(subRouter, certStore, dataStore)
-}
-
-func NewDataStore(config *postgres.Config) (*postgres.DataStore, error) {
-	if config.Vendor == constants.DBTypePostgres {
-		return postgres.New(config)
-	}
-	return nil, errors.Errorf("Unsupported database vendor")
 }
 
 // Fetch JWT certificate from AAS
