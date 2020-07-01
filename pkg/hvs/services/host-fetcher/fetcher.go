@@ -11,10 +11,10 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/chnlworkq"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	hc "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	tamodel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"sync"
@@ -52,7 +52,7 @@ type Service struct {
 	hc hc.HostConnector
 }
 
-func NewService(cfg models.HostDataFetcherConfig, workers int) (*Service, domain.HostDataFetcher, error) {
+func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain.HostDataFetcher, error) {
 	defaultLog.Trace("hostfetcher/Service:New() Entering")
 	defer defaultLog.Trace("hostfetcher/Service:New() Leaving")
 
@@ -157,7 +157,7 @@ func (svc *Service) doWork() {
 	}
 }
 
-func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*tamodel.Manifest, error) {
+func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostManifest, error) {
 	return nil, errors.New("Not implemented")
 }
 
@@ -187,8 +187,13 @@ func (svc *Service) FetchDataAndRespond(frs []*fetchRequest) {
 		default:
 		}
 		for _, rcv := range fr.rcvrs {
-			rcv.ProcessHostData(fr.ctx, fr.host, &tamodel.Manifest{
-				Text: "This is a simple text from manifest",
+			rcv.ProcessHostData(fr.ctx, fr.host, &types.HostManifest{
+				// Todo - remove test data.
+				HostInfo: tamodel.HostInfo{
+					OSName:   "Redhat Linux",
+					HostName: "test-host",
+					BiosName: "test bios",
+				},
 			}, nil)
 		}
 	}

@@ -14,8 +14,8 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models/taskstage"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/chnlworkq"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	tamodel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"sync"
 )
@@ -35,7 +35,7 @@ type verifyTrustJob struct {
 type newHostFetch struct {
 	ctx    context.Context
 	hostId uuid.UUID
-	data   *tamodel.Manifest
+	data   *types.HostManifest
 }
 
 type Service struct {
@@ -54,9 +54,11 @@ type Service struct {
 	// mutex for map
 	mapmtx sync.RWMutex
 	//
-	prstStor  domain.QueueStore
-	hdFetcher domain.HostDataFetcher
-	hostStore domain.HostStore
+	prstStor        domain.QueueStore
+	hdFetcher       domain.HostDataFetcher
+	hostStore       domain.HostStore
+	verifier        domain.HostTrustVerifier
+	hostStatusStore domain.HostStatusStore
 	// waitgroup used to wait for workers to finish up when signal for shutdown comes in
 	wg          sync.WaitGroup
 	quit        chan struct{}
@@ -65,10 +67,12 @@ type Service struct {
 
 func NewService(cfg domain.HostTrustMgrConfig) (*Service, domain.HostTrustManager, error) {
 	svc := &Service{prstStor: cfg.PersistStore,
-		hdFetcher: cfg.HostFetcher,
-		hostStore: cfg.HostStore,
-		quit:      make(chan struct{}),
-		hosts:     make(map[uuid.UUID]*verifyTrustJob),
+		hdFetcher:       cfg.HostFetcher,
+		hostStore:       cfg.HostStore,
+		verifier:        cfg.HostTrustVerifier,
+		hostStatusStore: cfg.HostStatusStore,
+		quit:            make(chan struct{}),
+		hosts:           make(map[uuid.UUID]*verifyTrustJob),
 	}
 	var err error
 	nw := cfg.Verifiers
@@ -234,7 +238,6 @@ func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData
 // In the first case, the host data has to be retrieved from the store.
 // second case, the host data is already available in the work channel - so there is no
 // need to fetch from the store.
-
 func (svc *Service) doWork() {
 
 	defer svc.wg.Done()
@@ -242,49 +245,66 @@ func (svc *Service) doWork() {
 	// receive id of queued work over the channel.
 	// Fetch work context from the map.
 	for {
+		var hostId uuid.UUID
+		var hostData *types.HostManifest
+		newData := false
+
 		select {
+
 		case <-svc.quit:
 			// we have received a quit. Don't process anymore items - just return
 			return
+
 		case id := <-svc.workChan:
-			hId, ok := id.(uuid.UUID)
-			if !ok {
+			if hId, ok := id.(uuid.UUID); ok {
 				defaultLog.Error("hosttrust:doWork:expecting uuid from channel - but got different type")
-			} else if svc.continueWork(hId) {
-				fmt.Println("Starting flavor verification for ", hId, "using data from store")
+				return
+			} else if status, err := svc.hostStatusStore.Retrieve(hId); err != nil {
+				defaultLog.Error("hosttrust:doWork: - could not retrieve host data from store - error :", err)
+				return
+			} else {
+				hostId = hId
+				hostData = &status.HostManifest
 			}
 
 		case data := <-svc.hfWorkChan:
-			hData, ok := data.(newHostFetch)
-			if !ok {
+			if hData, ok := data.(newHostFetch); !ok {
 				defaultLog.Error("hosttrust:doWork:expecting newHostFetch type from channel - but got different one")
-			} else if svc.continueWork(hData.hostId) {
-				fmt.Println("Starting flavor verification for ", hData.hostId, " with new data from host")
+				return
+			} else {
+				hostId = hData.hostId
+				hostData = hData.data
+				newData = true
 			}
+
 		}
+		svc.verifyHostData(hostId, hostData, newData)
 	}
 }
 
-// This function just consolidates otherwise repeated work in doWork
-func (svc *Service) continueWork(hId uuid.UUID) bool {
+// This function kicks of the verification process given a manifest
+func (svc *Service) verifyHostData(hostId uuid.UUID, data *types.HostManifest, newData bool) {
+	//check if the job has not already been cancelled
 	svc.mapmtx.Lock()
-	vtj := svc.hosts[hId]
+	vtj := svc.hosts[hostId]
 	select {
 	// remove the requests that have already been cancelled.
 	case <-vtj.ctx.Done():
+		fmt.Println("Host Flavor verification is cancelled for host id", hostId, "...continuing to next one")
 		svc.mapmtx.Unlock()
-		fmt.Println("This job is cancelled...just move onto next one")
-		return false
+		return
 	default:
 		taskstage.StoreInContext(vtj.ctx, taskstage.FlavorVerifyStarted)
-		svc.mapmtx.Unlock()
 	}
-	return true
+	svc.mapmtx.Unlock()
+
+	svc.verifier.Verify(hostId, data, newData)
+
 }
 
 // This function is the implementation of the HostDataReceiver interface method. Just create a new request
 // to process the newly obtained data and it will be submitted to the verification queue
-func (svc *Service) ProcessHostData(ctx context.Context, host hvs.Host, data *tamodel.Manifest, err error) error {
+func (svc *Service) ProcessHostData(ctx context.Context, host hvs.Host, data *types.HostManifest, err error) error {
 	select {
 	case <-ctx.Done():
 		return nil

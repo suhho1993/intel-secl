@@ -19,14 +19,14 @@ import (
 	"testing"
 )
 
-func TestHostTrustManagetNewService(t *testing.T) {
+func TestHostTrustManagerNewService(t *testing.T) {
 
 	qs := mocks.NewQueueStore()
 	hs := mocks.NewHostStore()
 	newHost, err := hs.Create(&hvs.Host{
-		HostName:         "10.105.245.85",
-		Description:      "Host at 10.105.245.85",
-		ConnectionString: "intel://10.105.245.85/ta",
+		HostName:         "test.domain.com",
+		Description:      "Host at test.domain.com",
+		ConnectionString: "intel://test.domain.com/ta",
 		HardwareUuid:     uuid.New(),
 	})
 	assert.NoError(t, err)
@@ -36,14 +36,16 @@ func TestHostTrustManagetNewService(t *testing.T) {
 
 	//qs.Create(&models.Queue{})
 
-	cfg := models.HostDataFetcherConfig{}
+	cfg := domain.HostDataFetcherConfig{}
 	_, f, _ := hostfetcher.NewService(cfg, 5)
 
+	fv, _ := NewVerifier(domain.HostTrustVerifierConfig{})
 	_, ht, _ := NewService(domain.HostTrustMgrConfig{
-		PersistStore: qs,
-		HostStore:    hs,
-		HostFetcher:  f,
-		Verifiers:    5,
+		PersistStore:      qs,
+		HostStore:         hs,
+		HostFetcher:       f,
+		Verifiers:         5,
+		HostTrustVerifier: fv,
 	})
 
 	err = ht.VerifyHostsAsync([]uuid.UUID{newHost.Id}, true, false)

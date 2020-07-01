@@ -189,7 +189,7 @@ func validateFlavorCreateCriteria(criteria dm.FlavorCreateCriteria) error {
 	}
 	if criteria.ConnectionString != "" {
 		err := utils.ValidateConnectionString(criteria.ConnectionString)
-		if err != nil  {
+		if err != nil {
 			secLog.Error("controllers/flavor_controller: validateFlavorCreateCriteria() Invalid host connection string")
 			return errors.New("Invalid host connection string")
 		}

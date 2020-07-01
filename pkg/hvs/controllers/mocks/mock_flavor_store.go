@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
+	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	"reflect"
@@ -360,10 +361,11 @@ var flavor = ` {
             },
             "signature": "EyuFK0QurCblcI8uRjzpn21gxvBdR99qtLDC1MEVuZ0bqLG4GC9qz27IjBO3Laniuu6e8RaVTkl6T2abnv3N+93VpSYHPKxM/ly7pM16fZmnIq1vQf0cC84tP4udL32mkq2l7riYxl8TupVrjMH9cc39Nd5JW8aRfLMcqqG6V3AHJD4mFdi0FAGDRMIlVq7WMjkZbZ8scVMH0ytJymRAq53Z8/ontdcWbXy3i1Lwrh9yrQufQ67g05UDjQJQTv+YXW9s0wR55O1I+RaZaxb3+lsBbtt7O21oT1+9CwIHN6gPP9L8OP3UDRPFN3mUA8rSHu3btnH1K1gEO1Dz+TnXIZ9puattdvOUTLjIIOMJcH/Y4ED0R3Bhln0PpRPxcgaD/Ku2dZxZWdhYHAkvIA5d8HquuAw6SkVoA5CH8DUkihSrbdQszbfpXWhFiTamfj7wpQLcacNsXES9IWvHD14GytBBfZ5lJhZ2I7OLF9QSivZh9P489upgH8rdV3qxY1jj"
         }`
+
 // Delete Flavor
 func (store *MockFlavorStore) Delete(id uuid.UUID) error {
 	for i, f := range store.flavorStore {
-		if  f.Flavor.Meta.ID == id {
+		if f.Flavor.Meta.ID == id {
 			store.flavorStore[i] = &hvs.SignedFlavor{}
 			return nil
 		}
@@ -416,6 +418,14 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorFilterCriteria) ([]*
 func (store *MockFlavorStore) Create(sf *hvs.SignedFlavor) (*hvs.SignedFlavor, error) {
 	store.flavorStore = append(store.flavorStore, sf)
 	return sf, nil
+}
+
+func (store *MockFlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error) {
+	panic("implement me")
+}
+
+func (store *MockFlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool, error) {
+	panic("implement me")
 }
 
 // NewFakeFlavorStore loads dummy data into MockFlavorStore

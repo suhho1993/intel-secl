@@ -46,7 +46,7 @@ func (store *MockHostStore) Update(host *hvs.Host) (*hvs.Host, error) {
 }
 
 // Delete deletes Host
-func (store *MockHostStore) Delete(id uuid.UUID)  error {
+func (store *MockHostStore) Delete(id uuid.UUID) error {
 	for i, t := range store.hostStore {
 		if t.Id == id {
 			store.hostStore = append(store.hostStore[:i], store.hostStore[i+1:]...)
@@ -81,7 +81,7 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 	} else if criteria.NameContains != "" {
 		for _, t := range store.hostStore {
 			if strings.Contains(t.HostName, criteria.NameContains) {
-				hosts =  append(hosts, t)
+				hosts = append(hosts, t)
 			}
 		}
 	}
@@ -111,14 +111,14 @@ func NewMockHostStore() *MockHostStore {
 	store := &MockHostStore{}
 
 	store.Create(&hvs.Host{
-		Id: uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
+		Id:               uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		HostName:         "localhost1",
 		ConnectionString: "intel:https://ta.ip.com:1443",
 		Description:      "Intel Host",
 	})
 
 	store.Create(&hvs.Host{
-		Id: uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
+		Id:               uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
 		HostName:         "localhost2",
 		ConnectionString: "vmware:https://vsphere.com:443/sdk;h=hostName;u=admin.local;p=password",
 		Description:      "Vmware Host",

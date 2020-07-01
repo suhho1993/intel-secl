@@ -8,8 +8,9 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	tamodel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 )
 
 type (
@@ -46,6 +47,9 @@ type (
 	}
 
 	FlavorStore interface {
+		GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error)
+		GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool, error)
+
 		Create(*hvs.SignedFlavor) (*hvs.SignedFlavor, error)
 		Retrieve(uuid.UUID) (*hvs.SignedFlavor, error)
 		Search(*models.FlavorFilterCriteria) ([]*hvs.SignedFlavor, error)
@@ -119,12 +123,12 @@ type (
 	}
 
 	HostDataReceiver interface {
-		ProcessHostData(context.Context, hvs.Host, *tamodel.Manifest, error) error
+		ProcessHostData(context.Context, hvs.Host, *types.HostManifest, error) error
 	}
 
 	HostDataFetcher interface {
 		// Synchronous method that blocks till the data is retrieved from the host.
-		Retrieve(context.Context, hvs.Host) (*tamodel.Manifest, error)
+		Retrieve(context.Context, hvs.Host) (*types.HostManifest, error)
 
 		// Asynchronous method to be used to fetch data from hosts. As soon as the request is registered,
 		// the method returns. The result is returned individually as they are processed.
@@ -134,5 +138,9 @@ type (
 
 		// TODO: ? Do we need a method that can use used to pass in a list rather than one at a time
 		// RetriveMultipleAsync(context.Context, []*hvs.Host, rcvrs ...HostDataReceiver) error
+	}
+
+	HostTrustVerifier interface {
+		Verify(uuid.UUID, *types.HostManifest, bool) error
 	}
 )

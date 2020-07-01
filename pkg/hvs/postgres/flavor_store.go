@@ -35,12 +35,12 @@ func (f *FlavorStore) Create(signedFlavor *hvs.SignedFlavor) (*hvs.SignedFlavor,
 	fId := uuid.New()
 	signedFlavor.Flavor.Meta.ID = fId
 	dbf := flavor{
-		ID:        fId,
-		Content:   PGFlavorContent(signedFlavor.Flavor),
-		CreatedAt: time.Time{},
-		Label:     signedFlavor.Flavor.Meta.Description.Label,
+		ID:         fId,
+		Content:    PGFlavorContent(signedFlavor.Flavor),
+		CreatedAt:  time.Time{},
+		Label:      signedFlavor.Flavor.Meta.Description.Label,
 		FlavorPart: signedFlavor.Flavor.Meta.Description.FlavorPart,
-		Signature: signedFlavor.Signature,
+		Signature:  signedFlavor.Signature,
 	}
 
 	if err := f.Store.Db.Create(&dbf).Error; err != nil {
@@ -155,4 +155,12 @@ func (f *FlavorStore) Delete(flavorId uuid.UUID) error {
 		return errors.Wrap(err, "postgres/flavor_store:Delete() failed to delete Flavor")
 	}
 	return nil
+}
+
+func (f *FlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error) {
+	panic("implement me")
+}
+
+func (f *FlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool, error) {
+	panic("implement me")
 }
