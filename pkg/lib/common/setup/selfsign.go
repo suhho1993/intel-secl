@@ -21,7 +21,7 @@ const defaultRSAKeylength = 3072
 const defaultIssuer = "intel"
 const defaultValidityDays = 365
 
-const selfSignEnvHelpPrompt = "Following environment variables are used in "
+const selfSignEnvHelpPrompt = "Following environment variables are optionally used in "
 
 var selfSignEnvHelp = map[string]string{
 	"CERT_FILE":     "The file to which certificate is created",

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package hvs
 
 import (
@@ -22,42 +26,31 @@ func init() {
 	viper.SetDefault("tls-key-file", constants.DefaultTLSKeyFile)
 	viper.SetDefault("tls-common-name", constants.DefaultHvsTlsCn)
 	viper.SetDefault("tls-san-list", constants.DefaultHvsTlsSan)
-	viper.SetDefault("tls-issuer", constants.NAString)
-	viper.SetDefault("tls-validity-days", 0)
 
 	// set default values for all other certs
 	viper.SetDefault("saml-cert-file", constants.SAMLCertFile)
 	viper.SetDefault("saml-key-file", constants.SAMLKeyFile)
 	viper.SetDefault("saml-common-name", constants.DefaultCN)
-	viper.SetDefault("saml-san-list", constants.DefaultSANList)
-	viper.SetDefault("saml-issuer", constants.NAString)
-	viper.SetDefault("saml-validity-days", 0)
 
 	viper.SetDefault("flavor-signing-cert-file", constants.FlavorSigningCertFile)
 	viper.SetDefault("flavor-signing-key-file", constants.FlavorSigningKeyFile)
 	viper.SetDefault("flavor-signing-common-name", constants.DefaultCN)
-	viper.SetDefault("flavor-signing-san-list", constants.DefaultSANList)
-	viper.SetDefault("flavor-signing-issuer", constants.NAString)
-	viper.SetDefault("flavor-signing-validity-days", 0)
 
 	viper.SetDefault("privacy-ca-cert-file", constants.PrivacyCACertFile)
 	viper.SetDefault("privacy-ca-key-file", constants.PrivacyCAKeyFile)
 	viper.SetDefault("privacy-ca-common-name", constants.DefaultCN)
-	viper.SetDefault("privacy-ca-san-list", constants.DefaultSANList)
 	viper.SetDefault("privacy-ca-issuer", constants.DefaultCertIssuer)
 	viper.SetDefault("privacy-ca-validity-days", constants.DefaultCertValidity)
 
 	viper.SetDefault("endorsement-ca-cert-file", constants.SelfEndorsementCACertFile)
 	viper.SetDefault("endorsement-ca-key-file", constants.EndorsementCAKeyFile)
 	viper.SetDefault("endorsement-ca-common-name", constants.DefaultCN)
-	viper.SetDefault("endorsement-ca-san-list", constants.DefaultSANList)
 	viper.SetDefault("endorsement-ca-issuer", constants.DefaultCertIssuer)
 	viper.SetDefault("endorsement-ca-validity-days", constants.DefaultCertValidity)
 
 	viper.SetDefault("tag-ca-cert-file", constants.TagCACertFile)
 	viper.SetDefault("tag-ca-key-file", constants.TagCAKeyFile)
 	viper.SetDefault("tag-ca-common-name", constants.DefaultCN)
-	viper.SetDefault("tag-ca-san-list", constants.DefaultSANList)
 	viper.SetDefault("tag-ca-issuer", constants.DefaultCertIssuer)
 	viper.SetDefault("tag-ca-validity-days", constants.DefaultCertValidity)
 
@@ -79,9 +72,10 @@ func init() {
 	viper.SetDefault("server-max-header-bytes", constants.DefaultMaxHeaderBytes)
 
 	// set default for database ssl certificate
+	viper.SetDefault("database-db-vendor", "postgres")
+	viper.SetDefault("database-db-host", "localhost")
+	viper.SetDefault("database-db-port", "5432")
 	viper.SetDefault("database-db-name", "hvs_db")
-	viper.SetDefault("database-username", "hvsdbuser")
-	viper.SetDefault("database-password", "hvsdbpass")
 	viper.SetDefault("database-ssl-mode", constants.SslModeAllow)
 	viper.SetDefault("database-ssl-cert", constants.ConfigDir+"hvsdbsslcert.pem")
 	viper.SetDefault("database-conn-retry-attempts", constants.DefaultDbConnRetryAttempts)
@@ -126,13 +120,15 @@ func (a *App) setup(args []string) error {
 		// for preventing excessive complexity,
 		// load everything from env when setup all
 		if err = runner.RunAll(force); err != nil {
-			fmt.Fprintln(a.errorWriter(), "Failed to run all setup task")
+			errCmd := runner.LastFailedCommand()
+			fmt.Fprintln(a.errorWriter(), "Setup command "+errCmd+" failed")
 			fmt.Fprintln(a.errorWriter(), "Please make sure following requirements are met")
+			runner.PrintHelp(errCmd)
 			return errors.Wrap(err, "Failed to run all tasks")
 		}
 	} else {
 		if err = runner.Run(cmd, force); err != nil {
-			fmt.Fprintln(a.errorWriter(), "Failed to run setup task", cmd)
+			fmt.Fprintln(a.errorWriter(), "Setup command "+cmd+" failed")
 			fmt.Fprintln(a.errorWriter(), "Please make sure following requirements are met")
 			runner.PrintHelp(cmd)
 			return errors.Wrap(err, "Failed to run setup task: "+cmd)
@@ -148,9 +144,7 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 
-	var err error
-	a.Config, err = config.LoadConfiguration()
-	if err != nil {
+	if a.configuration() == nil {
 		a.Config = defaultConfig()
 	}
 	runner := setup.NewRunner()
@@ -193,7 +187,21 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 		CmsBaseURL:    viper.GetString("cms-base-url"),
 		TlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
 	})
-	runner.AddTask("download-cert-tls", "tls", a.downloadCertTask("tls"))
+	runner.AddTask("download-cert-tls", "tls", &setup.DownloadCert{
+		KeyFile:            viper.GetString("tls-key-file"),
+		CertFile:           viper.GetString("tls-cert-file"),
+		KeyAlgorithm:       constants.DefaultKeyAlgorithm,
+		KeyAlgorithmLength: constants.DefaultKeyAlgorithmLength,
+		Subject: pkix.Name{
+			CommonName: viper.GetString("tls-common-name"),
+		},
+		SanList:       viper.GetString("tls-san-list"),
+		CertType:      "tls",
+		CaCertDirPath: constants.TrustedCaCertsDir,
+		ConsoleWriter: a.consoleWriter(),
+		CmsBaseURL:    viper.GetString("cms-base-url"),
+		BearerToken:   viper.GetString("bearer-token"),
+	})
 	runner.AddTask("download-cert-saml", "saml", a.downloadCertTask("saml"))
 	runner.AddTask("download-cert-flavor-signing", "flavor-signing", a.downloadCertTask("flavor-signing"))
 
@@ -205,23 +213,18 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 }
 
 func (a *App) downloadCertTask(certType string) setup.Task {
-	var updateConfig *commConfig.CertConfig
 	certTypeReq := certType
+	var updateConfig *commConfig.SigningCertConfig
 	switch certType {
-	case "tls":
-		updateConfig = &a.configuration().TLS
 	case "saml":
 		updateConfig = &a.configuration().SAML
 		certTypeReq = "signing"
 	case "flavor-signing":
 		updateConfig = &a.configuration().FlavorSigning
 	}
-	if updateConfig != nil {
-		updateConfig.KeyFile = viper.GetString(certType + "-key-file")
-		updateConfig.CertFile = viper.GetString(certType + "-cert-file")
-		updateConfig.CommonName = viper.GetString(certType + "-common-name")
-		updateConfig.SANList = viper.GetString(certType + "-san-list")
-	}
+	updateConfig.KeyFile = viper.GetString(certType + "-key-file")
+	updateConfig.CertFile = viper.GetString(certType + "-cert-file")
+	updateConfig.CommonName = viper.GetString(certType + "-common-name")
 	return &setup.DownloadCert{
 		KeyFile:            viper.GetString(certType + "-key-file"),
 		CertFile:           viper.GetString(certType + "-cert-file"),
@@ -230,7 +233,6 @@ func (a *App) downloadCertTask(certType string) setup.Task {
 		Subject: pkix.Name{
 			CommonName: viper.GetString(certType + "-common-name"),
 		},
-		SanList:       viper.GetString(certType + "-san-list"),
 		CertType:      certTypeReq,
 		CaCertDirPath: constants.TrustedCaCertsDir,
 		ConsoleWriter: a.consoleWriter(),
@@ -240,7 +242,7 @@ func (a *App) downloadCertTask(certType string) setup.Task {
 }
 
 func (a *App) selfSignTask(name string) setup.Task {
-	var updateConfig *commConfig.CertConfig
+	var updateConfig *commConfig.SelfSignedCertConfig
 	switch name {
 	case "privacy-ca":
 		updateConfig = &a.configuration().PrivacyCA
@@ -253,7 +255,6 @@ func (a *App) selfSignTask(name string) setup.Task {
 		updateConfig.KeyFile = viper.GetString(name + "-key-file")
 		updateConfig.CertFile = viper.GetString(name + "-cert-file")
 		updateConfig.CommonName = viper.GetString(name + "-common-name")
-		updateConfig.SANList = viper.GetString(name + "-san-list")
 		updateConfig.Issuer = viper.GetString(name + "-issuer")
 		updateConfig.ValidityDays = viper.GetInt(name + "-validity-days")
 	}
@@ -279,51 +280,40 @@ func defaultConfig() *config.Configuration {
 			Password: viper.GetString("hvs-password"),
 			Dek:      viper.GetString("hvs-data-encryption-key"),
 		},
-		TLS: commConfig.CertConfig{
-			CertFile:     viper.GetString("tls-cert-file"),
-			KeyFile:      viper.GetString("tls-key-file"),
-			CommonName:   viper.GetString("tls-common-name"),
-			SANList:      viper.GetString("tls-san-list"),
-			Issuer:       viper.GetString("tls-issuer"),
-			ValidityDays: viper.GetInt("tls-validity-days"),
+		TLS: commConfig.TLSCertConfig{
+			CertFile:   viper.GetString("tls-cert-file"),
+			KeyFile:    viper.GetString("tls-key-file"),
+			CommonName: viper.GetString("tls-common-name"),
+			SANList:    viper.GetString("tls-san-list"),
 		},
-		SAML: commConfig.CertConfig{
-			CertFile:     viper.GetString("saml-cert-file"),
-			KeyFile:      viper.GetString("saml-key-file"),
-			CommonName:   viper.GetString("saml-common-name"),
-			SANList:      viper.GetString("saml-san-list"),
-			Issuer:       viper.GetString("saml-issuer"),
-			ValidityDays: viper.GetInt("saml-validity-days"),
+		SAML: commConfig.SigningCertConfig{
+			CertFile:   viper.GetString("saml-cert-file"),
+			KeyFile:    viper.GetString("saml-key-file"),
+			CommonName: viper.GetString("saml-common-name"),
 		},
-		FlavorSigning: commConfig.CertConfig{
-			CertFile:     viper.GetString("flavor-signing-cert-file"),
-			KeyFile:      viper.GetString("flavor-signing-key-file"),
-			CommonName:   viper.GetString("flavor-signing-common-name"),
-			SANList:      viper.GetString("flavor-signing-san-list"),
-			Issuer:       viper.GetString("flavor-signing-issuer"),
-			ValidityDays: viper.GetInt("flavor-signing-validity-days"),
+		FlavorSigning: commConfig.SigningCertConfig{
+			CertFile:   viper.GetString("flavor-signing-cert-file"),
+			KeyFile:    viper.GetString("flavor-signing-key-file"),
+			CommonName: viper.GetString("flavor-signing-common-name"),
 		},
-		PrivacyCA: commConfig.CertConfig{
+		PrivacyCA: commConfig.SelfSignedCertConfig{
 			CertFile:     viper.GetString("privacy-ca-cert-file"),
 			KeyFile:      viper.GetString("privacy-ca-key-file"),
 			CommonName:   viper.GetString("privacy-ca-common-name"),
-			SANList:      viper.GetString("privacy-ca-san-list"),
 			Issuer:       viper.GetString("privacy-ca-issuer"),
 			ValidityDays: viper.GetInt("privacy-ca-validity-days"),
 		},
-		EndorsementCA: commConfig.CertConfig{
+		EndorsementCA: commConfig.SelfSignedCertConfig{
 			CertFile:     viper.GetString("endorsement-ca-cert-file"),
 			KeyFile:      viper.GetString("endorsement-ca-key-file"),
 			CommonName:   viper.GetString("endorsement-ca-common-name"),
-			SANList:      viper.GetString("endorsement-ca-san-list"),
 			Issuer:       viper.GetString("endorsement-ca-issuer"),
 			ValidityDays: viper.GetInt("endorsement-ca-validity-days"),
 		},
-		TagCA: commConfig.CertConfig{
+		TagCA: commConfig.SelfSignedCertConfig{
 			CertFile:     viper.GetString("tag-ca-cert-file"),
 			KeyFile:      viper.GetString("tag-ca-key-file"),
 			CommonName:   viper.GetString("tag-ca-common-name"),
-			SANList:      viper.GetString("tag-ca-san-list"),
 			Issuer:       viper.GetString("tag-ca-issuer"),
 			ValidityDays: viper.GetInt("tag-ca-validity-days"),
 		},
@@ -339,6 +329,17 @@ func defaultConfig() *config.Configuration {
 			WriteTimeout:      viper.GetDuration("server-write-timeout"),
 			IdleTimeout:       viper.GetDuration("server-idle-timeout"),
 			MaxHeaderBytes:    viper.GetInt("server-max-header-bytes"),
+		},
+		DB: commConfig.DBConfig{
+			Vendor:                  viper.GetString("database-vendor"),
+			Host:                    viper.GetString("database-host"),
+			Port:                    viper.GetString("database-port"),
+			DBName:                  viper.GetString("database-db-name"),
+			Username:                viper.GetString("database-username"),
+			Password:                viper.GetString("database-password"),
+			SSLMode:                 viper.GetString("database-ssl-mode"),
+			ConnectionRetryAttempts: viper.GetInt("database-conn-retry-attempts"),
+			ConnectionRetryTime:     viper.GetInt("database-conn-retry-time"),
 		},
 	}
 }

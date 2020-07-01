@@ -30,11 +30,11 @@ type DownloadCert struct {
 	KeyAlgorithm       string
 	KeyAlgorithmLength int
 	Subject            pkix.Name
+	SanList            string
 	CertType           string
 	CaCertDirPath      string
 
 	CmsBaseURL  string
-	SanList     string
 	BearerToken string
 
 	ConsoleWriter io.Writer
@@ -43,7 +43,7 @@ type DownloadCert struct {
 	commandName string
 }
 
-const downloadCAEnvHelpPrompt = "Following environment variables are used in "
+const downloadCAEnvHelpPrompt = "Following environment variables are optionally used in "
 
 var downloadCAEnvHelp = map[string]string{
 	"CERT_FILE":     "The file to which certificate is created",
@@ -62,14 +62,22 @@ var downloadCAEnvHelp2 = map[string]string{
 }
 
 func (dc *DownloadCert) Run() error {
+	if dc.CmsBaseURL == "" {
+		return errors.New("CMS_BASE_URL is not set")
+	}
+	if dc.BearerToken == "" {
+		return errors.New("BEARER_TOKEN is not set")
+	}
 	// validate host names
 	// this should be moved to crypt.CreateKeyPairAndCertificateRequest
 	// or change crypt.CreateKeyPairAndCertificateRequest that it takes in hosts as slice of strings
-	hosts := strings.Split(dc.SanList, ",")
-	for _, h := range hosts {
-		valid_err := validation.ValidateHostname(h)
-		if valid_err != nil {
-			return errors.Wrap(valid_err, "Failed to validate hostname or ip")
+	if dc.SanList != "" {
+		hosts := strings.Split(dc.SanList, ",")
+		for _, h := range hosts {
+			valid_err := validation.ValidateHostname(h)
+			if valid_err != nil {
+				return errors.Wrap(valid_err, "Failed to validate hostname or ip")
+			}
 		}
 	}
 	printToWriter(dc.ConsoleWriter, dc.commandName, "Start downloading certificate")

@@ -27,13 +27,13 @@ type Configuration struct {
 
 	HVS HVSConfig `yaml:"hvs" mapstructure:"hvs"`
 
-	TLS           commConfig.CertConfig `yaml:"tls" mapstructure:"tls"`
-	SAML          commConfig.CertConfig `yaml:"saml" mapstructure:"saml"`
-	FlavorSigning commConfig.CertConfig `yaml:"flavor-signing" mapstructure:"flavor-signing"`
+	TLS           commConfig.TLSCertConfig     `yaml:"tls" mapstructure:"tls"`
+	SAML          commConfig.SigningCertConfig `yaml:"saml" mapstructure:"saml"`
+	FlavorSigning commConfig.SigningCertConfig `yaml:"flavor-signing" mapstructure:"flavor-signing"`
 
-	PrivacyCA     commConfig.CertConfig `yaml:"privacy-ca" mapstructure:"privacy-ca"`
-	EndorsementCA commConfig.CertConfig `yaml:"endorsement-ca" mapstructure:"endorsement-ca"`
-	TagCA         commConfig.CertConfig `yaml:"tag-ca" mapstructure:"tag-ca"`
+	PrivacyCA     commConfig.SelfSignedCertConfig `yaml:"privacy-ca" mapstructure:"privacy-ca"`
+	EndorsementCA commConfig.SelfSignedCertConfig `yaml:"endorsement-ca" mapstructure:"endorsement-ca"`
+	TagCA         commConfig.SelfSignedCertConfig `yaml:"tag-ca" mapstructure:"tag-ca"`
 
 	Server commConfig.ServerConfig `yaml:"server" mapstructure:"server"`
 	Log    commConfig.LogConfig    `yaml:"log" mapstructure:"log"`

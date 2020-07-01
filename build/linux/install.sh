@@ -2,25 +2,6 @@
 
 COMPONENT_NAME=hvs
 
-# READ .env file 
-echo PWD IS $(pwd)
-if [ -f ~/${COMPONENT_NAME}.env ]; then
-    echo Reading Installation options from `realpath ~/${COMPONENT_NAME}.env`
-    env_file=~/${COMPONENT_NAME}.env
-elif [ -f ../${COMPONENT_NAME}.env ]; then
-    echo Reading Installation options from `realpath ../${COMPONENT_NAME}.env`
-    env_file=../${COMPONENT_NAME}.env
-fi
-
-if [ -z $env_file ]; then
-    echo "No .env file found"
-    HVS_NOSETUP="true"
-else
-    source $env_file
-    env_file_exports=$(cat $env_file | grep -E '^[A-Z0-9_]+\s*=' | cut -d = -f 1)
-    if [ -n "$env_file_exports" ]; then eval export $env_file_exports; fi
-fi
-
 SERVICE_USERNAME=hvs
 
 if [[ $EUID -ne 0 ]]; then 
@@ -58,10 +39,12 @@ for directory in $BIN_PATH $LOG_PATH $CONFIG_PATH $CERTS_PATH $CERTDIR_TRUSTEDJW
 
 done
 
-
 cp $COMPONENT_NAME $BIN_PATH/ && chown $SERVICE_USERNAME:$SERVICE_USERNAME $BIN_PATH/*
 chmod 700 $BIN_PATH/*
 ln -sfT $BIN_PATH/$COMPONENT_NAME /usr/bin/$COMPONENT_NAME
+
+# Copy Endorsement CA cert
+cp EndorsementCA-external.pem $CERTDIR_ENDORSEMENTCA/ && chown $SERVICE_USERNAME:$SERVICE_USERNAME $CERTDIR_ENDORSEMENTCA/EndorsementCA-external.pem
 
 # make log files world readable
 chmod 755 $LOG_PATH
@@ -70,8 +53,6 @@ chmod g+s $LOG_PATH
 # Install systemd script
 cp ${COMPONENT_NAME}.service $PRODUCT_HOME && chown $SERVICE_USERNAME:$SERVICE_USERNAME $PRODUCT_HOME/${COMPONENT_NAME}.service && chown $SERVICE_USERNAME:$SERVICE_USERNAME $PRODUCT_HOME
 
-# Copy Endorsement CA cert
-cp EndorsementCA-external.pem $CERTDIR_ENDORSEMENTCA/ && chown $SERVICE_USERNAME:$SERVICE_USERNAME $CERTDIR_ENDORSEMENTCA/EndorsementCA-external.pem
 # Enable systemd service
 systemctl disable ${COMPONENT_NAME}.service > /dev/null 2>&1
 systemctl enable $PRODUCT_HOME/${COMPONENT_NAME}.service
@@ -137,6 +118,20 @@ if [ ! -a /etc/logrotate.d/${COMPONENT_NAME} ]; then
 }" > /etc/logrotate.d/${COMPONENT_NAME}
 fi
 
+# find .env file 
+echo PWD IS $(pwd)
+if [ -f ~/${COMPONENT_NAME}.env ]; then
+    echo Reading Installation options from `realpath ~/${COMPONENT_NAME}.env`
+    env_file=~/${COMPONENT_NAME}.env
+elif [ -f ../${COMPONENT_NAME}.env ]; then
+    echo Reading Installation options from `realpath ../${COMPONENT_NAME}.env`
+    env_file=../${COMPONENT_NAME}.env
+fi
+
+if [ -z $env_file ]; then
+    echo "No .env file found"
+    HVS_NOSETUP="true"
+fi
 
 # check if HVS_NOSETUP is defined
 if [ "${HVS_NOSETUP,,}" == "true" ]; then
@@ -144,7 +139,8 @@ if [ "${HVS_NOSETUP,,}" == "true" ]; then
     echo "Run \"$COMPONENT_NAME setup all\" for manual setup"
     echo "Installation completed successfully!"
 else 
-    $COMPONENT_NAME setup all
+    $COMPONENT_NAME setup all -f $env_file
+    chown -R hvs:hvs /etc/hvs/
     SETUPRESULT=$?
     if [ ${SETUPRESULT} == 0 ]; then 
         systemctl start $COMPONENT_NAME

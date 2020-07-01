@@ -1,10 +1,26 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package config
 
-type CertConfig struct {
-	KeyFile      string `yaml:"key-file" mapstructure:"key-file"`
+type SigningCertConfig struct {
+	CertFile   string `yaml:"cert-file" mapstructure:"cert-file"`
+	KeyFile    string `yaml:"key-file" mapstructure:"key-file"`
+	CommonName string `yaml:"common-name" mapstructure:"common-name"`
+}
+
+type TLSCertConfig struct {
+	CertFile   string `yaml:"cert-file" mapstructure:"cert-file"`
+	KeyFile    string `yaml:"key-file" mapstructure:"key-file"`
+	CommonName string `yaml:"common-name" mapstructure:"common-name"`
+	SANList    string `yaml:"san-list" mapstructure:"san-list"`
+}
+
+type SelfSignedCertConfig struct {
 	CertFile     string `yaml:"cert-file" mapstructure:"cert-file"`
+	KeyFile      string `yaml:"key-file" mapstructure:"key-file"`
 	CommonName   string `yaml:"common-name" mapstructure:"common-name"`
-	SANList      string `yaml:"san-list" mapstructure:"san-list"`
 	Issuer       string `yaml:"issuer" mapstructure:"issuer"`
 	ValidityDays int    `yaml:"validity-days" mapstructure:"validity-days"`
 }

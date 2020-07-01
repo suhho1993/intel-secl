@@ -1,0 +1,19 @@
+.build-common:
+  stage: build
+  tags:
+    - k8s
+  before_script:
+    - git config --global http."https://${GITLAB_SERVER}".proxy ""
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
+    - cd $CI_PROJECT_DIR
+  script:
+    - echo "This is the CI job that builds monorepo using go 1.13"
+    - go build ./...
+
+build-go-1.13:
+  extends: .build-common
+  image: golang:1.13
+
+build-go-1.14:
+  extends: .build-common
+  image: golang:1.14

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package setup
 
 import (
@@ -18,8 +22,9 @@ type Runner struct {
 	ConsoleWriter io.Writer
 	ErrorWriter   io.Writer
 
-	tasks map[string]Task
-	order []string
+	tasks         map[string]Task
+	order         []string
+	lastFailedCmd string
 }
 
 // If the task called is not added to the runner,
@@ -92,16 +97,17 @@ func (r *Runner) Run(taskName string, force bool) error {
 	if !force {
 		printToWriter(r.ConsoleWriter, "", "Validating setup task: "+taskName)
 		if err := task.Validate(); err == nil {
-			printToWriter(r.ConsoleWriter, "", "Setup task "+taskName+" has been done, skipping...")
+			printToWriter(r.ConsoleWriter, "", "Setup task "+taskName+" has been done")
 			return nil
 		}
 	}
 	printToWriter(r.ConsoleWriter, "", "Running setup task: "+taskName)
 	if err := task.Run(); err != nil {
+		r.lastFailedCmd = taskName
 		return errors.Wrap(err, "Failed to run setup task "+taskName)
 	}
 	if err := task.Validate(); err != nil {
-		r.PrintHelp(taskName)
+		r.lastFailedCmd = taskName
 		return errors.Wrap(err, "Failed to validate setup task "+taskName)
 	}
 	return nil
@@ -116,4 +122,9 @@ func (r *Runner) PrintHelp(taskName string) error {
 	}
 	task.PrintHelp(r.ConsoleWriter)
 	return nil
+}
+
+// LastFailedCommand returns the last command that failed to run
+func (r *Runner) LastFailedCommand() string {
+	return r.lastFailedCmd
 }

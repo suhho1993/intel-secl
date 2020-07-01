@@ -10,13 +10,13 @@ hvs:
 	cd cmd/hvs && GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.GitHash=$(GITCOMMIT)" -o hvs
 
 hvs-installer: hvs
-	mkdir -p bin/installer
-	cp pkg/hvs/dist/linux/hvs.service bin/installer/hvs.service
-	cp pkg/hvs/dist/linux/EndorsementCA-external.pem bin/installer/EndorsementCA-external.pem
-	cp pkg/hvs/dist/linux/install.sh bin/installer/install.sh && chmod +x bin/installer/install.sh
-	cp cmd/hvs/hvs bin/installer/hvs
-	makeself bin/installer bin/hvs-$(VERSION).bin "HVS $(VERSION)" ./install.sh
-	rm -rf bin/installer
+	mkdir installer
+	cp build/linux/EndorsementCA-external.pem installer/EndorsementCA-external.pem
+	cp build/linux/hvs.service installer/hvs.service
+	cp build/linux/install.sh installer/install.sh && chmod +x installer/install.sh
+	cp cmd/hvs/hvs installer/hvs
+	makeself installer deployments/installer/hvs-$(VERSION).bin "HVS $(VERSION)" ./install.sh
+	rm -rf installer
 
 installer: hvs-installer
 
@@ -34,4 +34,4 @@ all: clean installer test
 
 clean:
 	rm -f cover.*
-	rm -rf bin/
+	rm -rf deployments/installer/*.bin

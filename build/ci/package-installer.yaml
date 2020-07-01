@@ -1,0 +1,20 @@
+installer:
+  stage: package
+  tags:
+    - k8s
+  image: golang:latest
+  before_script:
+    - git config --global http."https://${GITLAB_SERVER}".proxy ""
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
+
+    - echo "[http \"https://${GITLAB_SERVER}\"]" >> ~/.gitconfig
+    - echo "        proxy = \"\"" >> ~/.gitconfig
+    - apt-get update -y
+    - cd $CI_PROJECT_DIR
+  script:
+    - apt-get install -yq makeself
+    - make installer
+  artifacts:
+    paths:
+    - deployments/installer
+    expire_in: 24 hour
