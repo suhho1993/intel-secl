@@ -15,3 +15,8 @@ type HostFilterCriteria struct {
 	Value            string
 	IdList           []uuid.UUID
 }
+
+type HostFlavorgroupFilterCriteria struct {
+	HostId        uuid.UUID
+	FlavorgroupId uuid.UUID
+}

@@ -15,7 +15,8 @@ import (
 
 // MockHostStore provides a mocked implementation of interface domain.HostStore
 type MockHostStore struct {
-	hostStore []*hvs.Host
+	hostStore            []*hvs.Host
+	hostFlavorgroupStore []*hvs.HostFlavorgroup
 }
 
 // Create inserts a Host
@@ -26,9 +27,9 @@ func (store *MockHostStore) Create(host *hvs.Host) (*hvs.Host, error) {
 
 // Retrieve returns Host
 func (store *MockHostStore) Retrieve(id uuid.UUID) (*hvs.Host, error) {
-	for _, host := range store.hostStore {
-		if host.Id == id {
-			return host, nil
+	for _, h := range store.hostStore {
+		if h.Id == id {
+			return h, nil
 		}
 	}
 	return nil, errors.New("no rows in result set")
@@ -36,8 +37,8 @@ func (store *MockHostStore) Retrieve(id uuid.UUID) (*hvs.Host, error) {
 
 // Update modifies a Host
 func (store *MockHostStore) Update(host *hvs.Host) (*hvs.Host, error) {
-	for i, t := range store.hostStore {
-		if t.Id == host.Id {
+	for i, h := range store.hostStore {
+		if h.Id == host.Id {
 			store.hostStore[i] = host
 			return host, nil
 		}
@@ -47,9 +48,9 @@ func (store *MockHostStore) Update(host *hvs.Host) (*hvs.Host, error) {
 
 // Delete deletes Host
 func (store *MockHostStore) Delete(id uuid.UUID) error {
-	for i, t := range store.hostStore {
-		if t.Id == id {
-			store.hostStore = append(store.hostStore[:i], store.hostStore[i+1:]...)
+	for i, h := range store.hostStore {
+		if h.Id == id {
+			store.hostStore[i] = &hvs.Host{}
 			return nil
 		}
 	}
@@ -64,24 +65,24 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 
 	var hosts []*hvs.Host
 	if criteria.Id != uuid.Nil {
-		t, _ := store.Retrieve(criteria.Id)
-		hosts = append(hosts, t)
+		h, _ := store.Retrieve(criteria.Id)
+		hosts = append(hosts, h)
 	}  else if criteria.HostHardwareId != uuid.Nil {
-		for _, t := range store.hostStore {
-			if t.HardwareUuid == criteria.HostHardwareId {
-				hosts =  append(hosts, t)
+		for _, h := range store.hostStore {
+			if h.HardwareUuid == criteria.HostHardwareId {
+				hosts =  append(hosts, h)
 			}
 		}
 	} else if criteria.NameEqualTo != "" {
-		for _, t := range store.hostStore {
-			if t.HostName == criteria.NameEqualTo {
-				hosts = append(hosts, t)
+		for _, h := range store.hostStore {
+			if h.HostName == criteria.NameEqualTo {
+				hosts = append(hosts, h)
 			}
 		}
 	} else if criteria.NameContains != "" {
-		for _, t := range store.hostStore {
-			if strings.Contains(t.HostName, criteria.NameContains) {
-				hosts = append(hosts, t)
+		for _, h := range store.hostStore {
+			if strings.Contains(h.HostName, criteria.NameContains) {
+				hosts = append(hosts, h)
 			}
 		}
 	}
@@ -89,6 +90,67 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 	return hosts, nil
 }
 
+// AddFlavorgroups associates a Host with specified flavorgroups
+func (store *MockHostStore) AddFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
+	for _, fgId := range fgIds {
+		store.hostFlavorgroupStore = append(store.hostFlavorgroupStore, &hvs.HostFlavorgroup{
+			HostId:        hId,
+			FlavorgroupId: fgId,
+		})
+	}
+	return nil
+}
+
+// RetrieveFlavorgroup returns Host Flavorgroup association
+func (store *MockHostStore) RetrieveFlavorgroup(hId, fgId uuid.UUID) (*hvs.HostFlavorgroup, error) {
+	for _, hf := range store.hostFlavorgroupStore {
+		if hf.HostId == hId && hf.FlavorgroupId == fgId {
+			return hf, nil
+		}
+	}
+	return nil, errors.New("no rows in result set")
+}
+
+// RemoveFlavorgroup deletes Host Flavorgroup association
+func (store *MockHostStore) RemoveFlavorgroup(hId, fgId uuid.UUID) error {
+	for i, hf := range store.hostFlavorgroupStore {
+		if hf.HostId == hId && hf.FlavorgroupId == fgId {
+			store.hostFlavorgroupStore[i] = &hvs.HostFlavorgroup{}
+			return nil
+		}
+	}
+	return errors.New("record not found")
+}
+
+// SearchFlavorgroups returns a collection of Host Flavorgroup associations filtered as per HostFlavorgroupFilterCriteria
+func (store *MockHostStore) SearchFlavorgroups(criteria *models.HostFlavorgroupFilterCriteria) ([]*hvs.HostFlavorgroup, error) {
+	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFlavorgroupFilterCriteria{}) {
+		return store.hostFlavorgroupStore, nil
+	}
+
+	hostFlavorgroups := store.hostFlavorgroupStore
+	if criteria.HostId != uuid.Nil {
+		var filtered []*hvs.HostFlavorgroup
+		for _, hf := range hostFlavorgroups {
+			if hf.HostId == criteria.HostId {
+				filtered = append(filtered, hf)
+			}
+		}
+		hostFlavorgroups = filtered
+	}
+
+	if criteria.FlavorgroupId != uuid.Nil {
+		var filtered []*hvs.HostFlavorgroup
+		for _, hf := range hostFlavorgroups {
+			if hf.FlavorgroupId == criteria.FlavorgroupId {
+				filtered = append(filtered, hf)
+			}
+		}
+		hostFlavorgroups = filtered
+	}
+
+	return hostFlavorgroups, nil
+}
 
 func (store *MockHostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error){
 	// TODO: to be implemented
@@ -104,7 +166,6 @@ func (store *MockHostStore) RetrieveTrustCacheFlavors(hId ,fgId uuid.UUID) ([]uu
 	// TODO: to be implemented
 	return nil, nil
 }
-
 
 // NewMockHostStore provides two dummy data for Hosts
 func NewMockHostStore() *MockHostStore {

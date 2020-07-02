@@ -18,3 +18,12 @@ type Host struct {
 	HardwareUuid     uuid.UUID `json:"hardware_uuid,omitempty"`
 	FlavorgroupNames []string  `json:"flavorgroup_names,omitempty"`
 }
+
+type HostFlavorgroupCollection struct {
+	HostFlavorgroups []*HostFlavorgroup `json:"flavorgroup_host_links" xml:"flavorgroup_host_link"`
+}
+
+type HostFlavorgroup struct {
+	HostId         uuid.UUID `json:"host_id,omitempty"`
+	FlavorgroupId  uuid.UUID `json:"flavorgroup_id,omitempty"`
+}

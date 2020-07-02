@@ -47,6 +47,11 @@ type (
 		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
 	}
 
+	hostFlavorgroup struct {
+		HostId        uuid.UUID `gorm:"primary_key;type:uuid"`
+		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid"`
+	}
+
 	flavorgroupFlavors struct {
 		FlavorgroupId uuid.UUID   `gorm:"primary_key;not null"`
 		FlavorId      uuid.UUID   `gorm:"primary_key;not null"`

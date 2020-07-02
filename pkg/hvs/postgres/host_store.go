@@ -11,8 +11,8 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"strings"
 	"reflect"
+	"strings"
 )
 
 type HostStore struct {
@@ -133,6 +133,99 @@ func buildHostSearchQuery(tx *gorm.DB, criteria *models.HostFilterCriteria) *gor
 		tx = tx.Where("hardware_uuid = ?", criteria.HostHardwareId)
 	} else if criteria.IdList != nil {
 		tx = tx.Where("id IN (?)", criteria.IdList)
+	}
+
+	return tx
+}
+
+func (hs *HostStore) AddFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
+	defaultLog.Trace("postgres/host_store:AddFlavorgroups() Entering")
+	defer defaultLog.Trace("postgres/host_store:AddFlavorgroups() Leaving")
+
+	var hfgValues []string
+	var hfgValueArgs []interface{}
+	for _, fgId := range fgIds {
+		hfgValues = append(hfgValues, "(?, ?)")
+		hfgValueArgs = append(hfgValueArgs, hId)
+		hfgValueArgs = append(hfgValueArgs, fgId)
+	}
+
+	insertQuery := fmt.Sprintf("INSERT INTO host_flavorgroup VALUES %s", strings.Join(hfgValues, ","))
+	err := hs.Store.Db.Model(hostFlavorgroup{}).Exec(insertQuery, hfgValueArgs...).Error
+	if err != nil {
+		return errors.Wrap(err, "postgres/host_store:AddFlavorgroups() failed to create Host Flavorgroup associations")
+	}
+	return nil
+}
+
+func (hs *HostStore) RetrieveFlavorgroup(hId uuid.UUID, fgId uuid.UUID) (*hvs.HostFlavorgroup, error) {
+	defaultLog.Trace("postgres/host_store:RetrieveFlavorgroup() Entering")
+	defer defaultLog.Trace("postgres/host_store:RetrieveFlavorgroup() Leaving")
+
+	hf := hvs.HostFlavorgroup{}
+	row := hs.Store.Db.Model(&hostFlavorgroup{}).Where(&hostFlavorgroup{HostId: hId, FlavorgroupId: fgId}).Row()
+	if err := row.Scan(&hf.HostId, &hf.FlavorgroupId); err != nil {
+		return nil, errors.Wrap(err, "postgres/host_store:RetrieveFlavorgroup() failed to scan record")
+	}
+	return &hf, nil
+}
+
+func (hs *HostStore) RemoveFlavorgroup(hId uuid.UUID, fgId uuid.UUID) error {
+	defaultLog.Trace("postgres/host_store:RemoveFlavorgroup() Entering")
+	defer defaultLog.Trace("postgres/host_store:RemoveFlavorgroup() Leaving")
+
+	if err := hs.Store.Db.Delete(&hostFlavorgroup{HostId: hId, FlavorgroupId: fgId}).Error; err != nil {
+		return errors.Wrap(err, "postgres/host_store:RemoveFlavorgroup() failed to delete Host Flavorgroup association")
+	}
+	return nil
+}
+
+func (hs *HostStore) SearchFlavorgroups(criteria *models.HostFlavorgroupFilterCriteria) ([]*hvs.HostFlavorgroup, error) {
+	defaultLog.Trace("postgres/host_store:SearchFlavorgroups() Entering")
+	defer defaultLog.Trace("postgres/host_store:SearchFlavorgroups() Leaving")
+
+	tx := buildHostFlavorgroupSearchQuery(hs.Store.Db, criteria)
+	if tx == nil {
+		return nil, errors.New("postgres/host_store:SearchFlavorgroups() Unexpected Error. Could not build" +
+			" a gorm query object.")
+	}
+
+	rows, err := tx.Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/host_store:SearchFlavorgroups() failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	var hostFlavorgroups []*hvs.HostFlavorgroup
+	for rows.Next() {
+		hostFlavorgroup := hvs.HostFlavorgroup{}
+		if err := rows.Scan(&hostFlavorgroup.HostId, &hostFlavorgroup.FlavorgroupId); err != nil {
+			return nil, errors.Wrap(err, "postgres/host_store:SearchFlavorgroups() failed to scan record")
+		}
+		hostFlavorgroups = append(hostFlavorgroups, &hostFlavorgroup)
+	}
+	return hostFlavorgroups, nil
+}
+
+// helper function to build the query object for a Host Flavorgroup association search.
+func buildHostFlavorgroupSearchQuery(tx *gorm.DB, criteria *models.HostFlavorgroupFilterCriteria) *gorm.DB {
+	defaultLog.Trace("postgres/host_store:buildHostFlavorgroupSearchQuery() Entering")
+	defer defaultLog.Trace("postgres/host_store:buildHostFlavorgroupSearchQuery() Leaving")
+
+	if tx == nil {
+		return nil
+	}
+
+	tx = tx.Model(&hostFlavorgroup{})
+	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFlavorgroupFilterCriteria{}) {
+		return tx
+	}
+
+	if criteria.HostId != uuid.Nil {
+		tx = tx.Where("host_id = ?", criteria.HostId)
+	}
+	if criteria.FlavorgroupId != uuid.Nil {
+		tx = tx.Where("flavorgroup_id = ?", criteria.FlavorgroupId)
 	}
 
 	return tx

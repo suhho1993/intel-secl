@@ -84,6 +84,23 @@ func (hs *hostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, e
 	return nil, errors.New("No Records fouund")
 }
 
+func (store *hostStore) AddFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
+	return nil
+}
+
+func (store *hostStore) RetrieveFlavorgroup(hId, fgId uuid.UUID) (*hvs.HostFlavorgroup, error) {
+	return &hvs.HostFlavorgroup{}, nil
+}
+
+func (store *hostStore) RemoveFlavorgroup(hId, fgId uuid.UUID) error {
+	return nil
+}
+
+func (store *hostStore) SearchFlavorgroups(criteria *models.HostFlavorgroupFilterCriteria) ([]*hvs.HostFlavorgroup, error) {
+	var hostFlavorgroups []*hvs.HostFlavorgroup
+	return hostFlavorgroups, nil
+}
+
 func (hs *hostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error){
 	// TODO: to be implemented
 	return nil, nil
