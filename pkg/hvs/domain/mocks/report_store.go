@@ -6,15 +6,17 @@ package mocks
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"reflect"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"reflect"
-	"time"
 )
 
 // MockReportStore provides a mocked implementation of interface postgres.ReportStore
@@ -28,6 +30,10 @@ func (store *MockReportStore) Create(report *models.HVSReport) (*models.HVSRepor
 	return report, nil
 }
 
+func (store *MockReportStore) Update(*models.HVSReport) (*models.HVSReport, error) {
+	return nil, errors.New("Update not implemented")
+}
+
 // Retrieve returns HVSReport
 func (store *MockReportStore) Retrieve(id uuid.UUID) (*models.HVSReport, error) {
 	if rs, found := store.reportStore[id]; found {
@@ -37,7 +43,7 @@ func (store *MockReportStore) Retrieve(id uuid.UUID) (*models.HVSReport, error) 
 }
 
 // Delete deletes HVSReport
-func (store *MockReportStore) Delete(id uuid.UUID)  error {
+func (store *MockReportStore) Delete(id uuid.UUID) error {
 	for _, t := range store.reportStore {
 		if t.ID == id {
 			delete(store.reportStore, id)
@@ -62,17 +68,17 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 		reports = append(reports, t)
 	} else if criteria.HostHardwareID != uuid.Nil || criteria.HostName != "" {
 		for _, t := range hostStore.hostStore {
-			if criteria.HostHardwareID == t.HardwareUuid  || criteria.HostName == t.HostName{
-				hosts =  append(hosts, t)
+			if criteria.HostHardwareID == t.HardwareUuid || criteria.HostName == t.HostName {
+				hosts = append(hosts, t)
 			}
 			for _, h := range hosts {
 				for _, r := range store.reportStore {
 					if h.Id == r.HostID {
 						reports = append(reports, &r)
-						}
 					}
 				}
 			}
+		}
 	} else if criteria.HostID != uuid.Nil {
 		for _, r := range store.reportStore {
 			if criteria.HostID == r.HostID {
@@ -82,7 +88,7 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 	} else if criteria.HostStatus != "" {
 		for _, t := range hostStatusStore.HostStatusStore {
 			if hvs.GetHostState(criteria.HostStatus) == t.HostStatusInformation.HostState {
-				hostStatuses =  append(hostStatuses, &t)
+				hostStatuses = append(hostStatuses, &t)
 			}
 		}
 		for _, h := range hostStatuses {
@@ -90,6 +96,12 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 				if h.HostID == r.HostID {
 					reports = append(reports, &r)
 				}
+			}
+		}
+	} else if !criteria.ToDate.IsZero() {
+		for _, r := range store.reportStore {
+			if r.Expiration.Before(criteria.ToDate) {
+				reports = append(reports, &r)
 			}
 		}
 	}
@@ -108,13 +120,19 @@ func NewMockReportStore() *MockReportStore {
 	created, _ := time.Parse(constants.HVSParamDateFormat, "2020-06-21 07:18:00.57")
 	expiration, _ := time.Parse(constants.HVSParamDateFormat, "2020-06-22 07:18:00.57")
 	store.Create(&models.HVSReport{
-		ID: uuid.MustParse("15701f03-7b1d-49f9-ac62-6b9b0728bdb3"),
-		HostID: uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
-		CreatedAt: created,
-		Expiration: expiration,
-		Saml: string(saml1text),
+		ID:          uuid.MustParse("15701f03-7b1d-49f9-ac62-6b9b0728bdb3"),
+		HostID:      uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
+		CreatedAt:   created,
+		Expiration:  expiration,
+		Saml:        string(saml1text),
 		TrustReport: trustReport,
 	})
 
+	return store
+}
+
+func NewEmptyMockReportStore() domain.ReportStore {
+	store := &MockReportStore{}
+	store.reportStore = make(map[uuid.UUID]models.HVSReport)
 	return store
 }

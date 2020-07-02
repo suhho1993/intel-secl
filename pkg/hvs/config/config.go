@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
 	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -38,6 +39,7 @@ type Configuration struct {
 	Server commConfig.ServerConfig `yaml:"server" mapstructure:"server"`
 	Log    commConfig.LogConfig    `yaml:"log" mapstructure:"log"`
 	DB     commConfig.DBConfig     `yaml:"database" mapstructure:"database"`
+	HRRS   hrrs.HRRSConfig         `yaml:"hrrs" mapstructure:"hrrs"`
 }
 
 // this function sets the configure file name and type

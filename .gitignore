@@ -1,4 +1,5 @@
 *bin
+cmd/hvs/hvs
 go.sum
 .idea
 *.iml

@@ -12,11 +12,17 @@ import (
 
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/tasks"
 	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+)
+
+const (
+	hrrs_refresh_period     = "hrrs-refresh-period"
+	hrrs_refresh_look_ahead = "hrrs-refresh-look-ahead"
 )
 
 // this func sets the default values for viper keys
@@ -80,6 +86,9 @@ func init() {
 	viper.SetDefault("database-ssl-cert", constants.ConfigDir+"hvsdbsslcert.pem")
 	viper.SetDefault("database-conn-retry-attempts", constants.DefaultDbConnRetryAttempts)
 	viper.SetDefault("database-conn-retry-time", constants.DefaultDbConnRetryTime)
+
+	viper.SetDefault(hrrs_refresh_period, hrrs.DefaultRefreshPeriod)
+	viper.SetDefault(hrrs_refresh_look_ahead, hrrs.DefaultRefreshLookAhead)
 }
 
 // input string slice should start with setup
@@ -147,6 +156,9 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 	if a.configuration() == nil {
 		a.Config = defaultConfig()
 	}
+
+	a.setupHRRSConfig()
+
 	runner := setup.NewRunner()
 	runner.ConsoleWriter = a.consoleWriter()
 	runner.ErrorWriter = a.errorWriter()
@@ -270,6 +282,33 @@ func (a *App) selfSignTask(name string) setup.Task {
 	}
 }
 
+// The HRRS does not require setup, just two configuration parameters.  This function
+// populates the HRRS config during 'hvs setup'.
+//
+// The function needs to handle...
+// - The first run of setup with new a config.  The config will either have the default
+//   values (from defaultConfig()) or custom values from env/answer file.
+// - Setup is being re-run and the config has been previously populated (from 'new')...
+//   - User has provided custom HRRS env/answer file values
+//     ==> These should be applied to the config
+//   - User has NOT provided custom HRRS env/answer file values
+//     ==> Any previously configured custom values should be maintained
+//
+// This logic can achieved by just applying custom env/answer file values when they
+// are different from the defaults.
+func (a *App) setupHRRSConfig() {
+
+	refreshPeriod := viper.GetDuration(hrrs_refresh_period)
+	if refreshPeriod != hrrs.DefaultRefreshPeriod {
+		a.Config.HRRS.RefreshPeriod = refreshPeriod
+	}
+
+	refreshLookAhead := viper.GetDuration(hrrs_refresh_look_ahead)
+	if refreshLookAhead != hrrs.DefaultRefreshLookAhead {
+		a.Config.HRRS.RefreshLookAhead = refreshLookAhead
+	}
+}
+
 func defaultConfig() *config.Configuration {
 	return &config.Configuration{
 		AASApiUrl:        viper.GetString("aas-base-url"),
@@ -340,6 +379,10 @@ func defaultConfig() *config.Configuration {
 			SSLMode:                 viper.GetString("database-ssl-mode"),
 			ConnectionRetryAttempts: viper.GetInt("database-conn-retry-attempts"),
 			ConnectionRetryTime:     viper.GetInt("database-conn-retry-time"),
+		},
+		HRRS: hrrs.HRRSConfig{
+			RefreshPeriod:    viper.GetDuration(hrrs_refresh_period),
+			RefreshLookAhead: viper.GetDuration(hrrs_refresh_look_ahead),
 		},
 	}
 }
