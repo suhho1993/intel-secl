@@ -92,7 +92,7 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	if len(finalTrustReport.Results) > 0 && !finalReportValid || newData {
 		log.Debugf("hosttrust/verifier:Verify() Generating new SAML for host: %s", hostId)
 		samlReportGen := NewSamlReportGenerator(&v.tagIssuer)
-		samlReport := samlReportGen.generateSamlReport(&finalTrustReport)
+		samlReport := samlReportGen.GenerateSamlReport(&finalTrustReport)
 
 		log.Debugf("hosttrust/verifier:Verify() Saving new report for host: %s", hostId)
 		v.storeTrustReport( hostId, &finalTrustReport, &samlReport)

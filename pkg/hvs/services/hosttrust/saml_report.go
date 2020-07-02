@@ -5,6 +5,7 @@
 package hosttrust
 
 import (
+	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
@@ -25,7 +26,7 @@ func NewSamlReportGenerator(tagIssuer *saml.IssuerConfiguration) *SamlReportGene
 	return &SamlReportGenerator{tagIssuer}
 }
 
-func (srg *SamlReportGenerator) generateSamlReport(report *hvs.TrustReport) saml.SamlAssertion {
+func (srg *SamlReportGenerator) GenerateSamlReport(report *hvs.TrustReport) saml.SamlAssertion {
 	defaultLog.Trace("hosttrust/saml_report:generateSamlReport() Entering")
 	defer defaultLog.Trace("hosttrust/saml_report:generateSamlReport() Leaving")
 
@@ -101,8 +102,7 @@ func getHostInfoMap(hostInfo model.HostInfo) map[string]string {
 	hostInfoMap := make(map[string]string)
 	for i := 0; i < hostValues.NumField(); i++ {
 		if hostTypes.Field(i).Name != "HardwareFeatures" {
-			//TODO: might have to handle fields apart from string
-			hostInfoMap[hostTypes.Field(i).Name] = hostValues.Field(i).String()
+			hostInfoMap[hostTypes.Field(i).Name] = fmt.Sprintf("%v", hostValues.Field(i).Interface())
 		}
 		defaultLog.Debugf("hosttrust/saml_report:getHostInfoMap() Field: %s\tValue: %v\n", hostTypes.Field(i).Name, hostValues.Field(i).Interface())
 	}
