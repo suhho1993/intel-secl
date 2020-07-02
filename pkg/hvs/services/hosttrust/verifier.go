@@ -90,8 +90,12 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	// create a new report if we actually have any results and either the Final Report is untrusted or
 	// we have new Data from the host and therefore need to update based on the new report.
 	if len(finalTrustReport.Results) > 0 && !finalReportValid || newData {
-		log.Debug("Saving new report for host ", hostId)
-		v.storeReport(hostId, finalTrustReport)
+		log.Debugf("hosttrust/verifier:verify() Generating new SAML for host: %s", hostId)
+		samlReportGen := NewSamlReportGenerator(&v.tagIssuer)
+		samlReport := samlReportGen.generateSamlReport(&finalTrustReport)
+
+		log.Debugf("hosttrust/verifier:verify() Saving new report for host: %s", hostId)
+		v.storeTrustReport( hostId, &finalTrustReport, &samlReport)
 	}
 
 	return nil
@@ -142,6 +146,20 @@ func (v *verifier) validateCachedFlavors(hostId uuid.UUID,
 	return htc, nil
 }
 
-func (v *verifier) storeReport(hostId uuid.UUID, report hvs.TrustReport) {
-	// TODO implement
+func (v *verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustReport, samlReport *saml.SamlAssertion) {
+	defaultLog.Trace("hosttrust/verifier:storeTrustReport() Entering")
+	defer defaultLog.Trace("hosttrust/verifier:storeTrustReport() Leaving")
+
+	log.Debugf("hosttrust/verifier:storeTrustReport() flavorverify host: %s SAML Report: %s", hostID, samlReport.Assertion)
+	hvsReport := models.HVSReport{
+		HostID:      hostID,
+		TrustReport: *trustReport,
+		CreatedAt:   samlReport.CreatedTime,
+		Expiration:  samlReport.ExpiryTime,
+		Saml:        samlReport.Assertion,
+	}
+	_, err := v.reportStore.Create(&hvsReport)
+	if err != nil {
+		log.WithError(err).Errorf("hosttrust/verifier:storeTrustReport() Failed to store Report")
+	}
 }
