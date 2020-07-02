@@ -20,7 +20,7 @@ type (
 		Search(*models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error)
 		Delete(uuid.UUID) error
 		AddFlavors(uuid.UUID, []uuid.UUID) ([]uuid.UUID, error)
-		RemoveFlavors(uuid.UUID, []uuid.UUID) (error)
+		RemoveFlavors(uuid.UUID, []uuid.UUID) error
 		SearchFlavors(uuid.UUID) ([]uuid.UUID, error)
 	}
 
@@ -31,7 +31,7 @@ type (
 		Delete(uuid.UUID) error
 		Search(*models.HostFilterCriteria) ([]*hvs.Host, error)
 		AddTrustCacheFlavors(uuid.UUID, []uuid.UUID) ([]uuid.UUID, error)
-		RemoveTrustCacheFlavors(uuid.UUID, []uuid.UUID) (error)
+		RemoveTrustCacheFlavors(uuid.UUID, []uuid.UUID) error
 		// RetrieveTrustCacheFlavors function takes in host UUID and a flavorgroup uuid. The reason for this
 		// is the trust cache is associated to a flavor group.
 		RetrieveTrustCacheFlavors(uuid.UUID, uuid.UUID) ([]uuid.UUID, error)
@@ -48,13 +48,12 @@ type (
 
 	FlavorStore interface {
 		GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error)
-		GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool, error)
+		GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error)
 
 		Create(*hvs.SignedFlavor) (*hvs.SignedFlavor, error)
 		Retrieve(uuid.UUID) (*hvs.SignedFlavor, error)
 		Search(*models.FlavorFilterCriteria) ([]*hvs.SignedFlavor, error)
 		Delete(uuid.UUID) error
-
 	}
 
 	TpmEndorsementStore interface {

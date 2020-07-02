@@ -17,6 +17,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -299,7 +300,8 @@ func (svc *Service) verifyHostData(hostId uuid.UUID, data *types.HostManifest, n
 	svc.mapmtx.Unlock()
 
 	svc.verifier.Verify(hostId, data, newData)
-
+	// verify is completed - delete the entry
+	svc.deleteEntry(hostId)
 }
 
 // This function is the implementation of the HostDataReceiver interface method. Just create a new request
@@ -310,6 +312,11 @@ func (svc *Service) ProcessHostData(ctx context.Context, host hvs.Host, data *ty
 		return nil
 	default:
 	}
+	// if there is an error - delete the entry
+	if err != nil {
+		svc.deleteEntry(host.Id)
+	}
+
 	// queue the new data to be processed by one of the worker threads by adding this to the queue
 	taskstage.StoreInContext(ctx, taskstage.FlavorVerifyQueued)
 	svc.hfRqstChan <- newHostFetch{
@@ -323,4 +330,22 @@ func (svc *Service) ProcessHostData(ctx context.Context, host hvs.Host, data *ty
 func shouldCancelPrevJob(newJobNeedFreshHostData, prevJobNeededFreshData bool, prevJobStage taskstage.Stage) bool {
 	//TODO: implement
 	return true
+}
+
+func (svc *Service) deleteEntry(hostId uuid.UUID) {
+
+	var strRecId uuid.UUID
+	svc.mapmtx.Lock()
+	if strRec, exists := svc.hosts[hostId]; exists {
+		strRecId = strRec.storPersistId
+		strRec.ctx.Done()
+		delete(svc.hosts, hostId)
+	}
+	svc.mapmtx.Unlock()
+	// by the time that the result came back, the entry could have been deleted.
+	if strRecId != uuid.Nil {
+		if err := svc.prstStor.Delete(strRecId); err != nil {
+			log.Error("could not delete from persistent queue store err - ", err)
+		}
+	}
 }

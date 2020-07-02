@@ -118,26 +118,22 @@ func (r *FlavorGroup) GetMatchPolicyMaps() (
 	// Map to determine what is the match policy for each individual flavor part
 	// eg : map["SOFTWARE"] = MatchPolicy{MatchType: "ANY_OF", Required: "Required_if_defined"}
 	map[cf.FlavorPart]MatchPolicy,
+	// A map for match type to all the flavor part that has the particular match type
+	// eg : map["AL_OF"] = []{"SOFTWARE", "PLATFORM"}
+	map[MatchType][]cf.FlavorPart,
+	// A map for required/ required if defined policy to all the flavor part
+	// eg : map["Required_if_defined"] = {Software}
+	map[FlavorRequiredPolicy][]cf.FlavorPart) {
 
-	// TODO: maybe the value of the following two maps do not need to be another map... just a slice would suffice
-	// Have a mapping of all the flavor parts with a particular match type
-	// eg : map["ALL_OF"] = map with entries {Platform, Software}. The reason the value of the map is another
-	// map is that we can immediately determine if a particular flavorpart is contained in the match type map
-	map[MatchType]map[cf.FlavorPart]bool,
-	// Have a mapping of all the flavor parts with a particular Required Policy
-	// eg : map["Required_if_defined"] = map with entries {Platform, Software}. The reason the value of the map is another
-	// map is that we can immediately determine if a particular flavorpart is contained in the required policy map
-	map[FlavorRequiredPolicy]map[cf.FlavorPart]bool) {
-
-	fpMap := map[cf.FlavorPart]MatchPolicy{}
-	mtMap := map[MatchType]map[cf.FlavorPart]bool{}
-	plcyMap := map[FlavorRequiredPolicy]map[cf.FlavorPart]bool{}
+	fpMap := make(map[cf.FlavorPart]MatchPolicy)
+	mtMap := make(map[MatchType][]cf.FlavorPart)
+	plcyMap := make(map[FlavorRequiredPolicy][]cf.FlavorPart)
 
 	for _, plcy := range r.MatchPolicies {
 		fpMap[plcy.FlavorPart] = plcy.MatchPolicy
 
-		mtMap[plcy.MatchPolicy.MatchType][plcy.FlavorPart] = true
-		plcyMap[plcy.MatchPolicy.Required][plcy.FlavorPart] = true
+		mtMap[plcy.MatchPolicy.MatchType] = append(mtMap[plcy.MatchPolicy.MatchType], plcy.FlavorPart)
+		plcyMap[plcy.MatchPolicy.Required] = append(plcyMap[plcy.MatchPolicy.Required], plcy.FlavorPart)
 	}
 	return fpMap, mtMap, plcyMap
 

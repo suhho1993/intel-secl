@@ -424,7 +424,7 @@ func (store *MockFlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUI
 	panic("implement me")
 }
 
-func (store *MockFlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool, error) {
+func (store *MockFlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error) {
 	panic("implement me")
 }
 

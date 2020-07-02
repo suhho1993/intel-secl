@@ -161,6 +161,6 @@ func (f *FlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[
 	panic("implement me")
 }
 
-func (f *FlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool, error) {
+func (f *FlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error) {
 	panic("implement me")
 }

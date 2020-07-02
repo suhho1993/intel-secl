@@ -86,7 +86,7 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	// we have new Data from the host and therefore need to update based on the new report.
 	if len(finalTrustReport.Results) > 0 && !finalReportValid || newData {
 		log.Debug("Saving new report for host ", hostId)
-
+		v.storeReport(hostId, finalTrustReport)
 	}
 
 	return nil

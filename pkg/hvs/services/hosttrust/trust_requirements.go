@@ -12,7 +12,7 @@ import (
 type flvGrpHostTrustReqs struct {
 	FlavorGroupId                 uuid.UUID
 	FlavorMatchPolicies           hvs.FlavorMatchPolicies
-	AllOfFlavorTypes              map[cf.FlavorPart]bool
+	MatchTypeFlavorParts          map[hvs.MatchType][]cf.FlavorPart
 	AllOfFlavors                  []*hvs.SignedFlavor
 	DefinedAndRequiredFlavorTypes map[cf.FlavorPart]bool
 	FlavorPartMatchPolicy         map[cf.FlavorPart]hvs.MatchPolicy
@@ -25,23 +25,19 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 		FlavorMatchPolicies: fg.MatchPolicies,
 	}
 
-	var fgMatchTypeMap map[hvs.MatchType]map[cf.FlavorPart]bool
-	var fgRequirePolicyMap map[hvs.FlavorRequiredPolicy]map[cf.FlavorPart]bool
+	var fgRequirePolicyMap map[hvs.FlavorRequiredPolicy][]cf.FlavorPart
 
-	reqs.FlavorPartMatchPolicy, fgMatchTypeMap, fgRequirePolicyMap = fg.GetMatchPolicyMaps()
+	reqs.FlavorPartMatchPolicy, reqs.MatchTypeFlavorParts, fgRequirePolicyMap = fg.GetMatchPolicyMaps()
 
-	reqs.AllOfFlavorTypes = fgMatchTypeMap[hvs.MatchTypeAllOf]
-	if len(reqs.AllOfFlavorTypes) > 0 {
+	if len(reqs.MatchTypeFlavorParts[hvs.MatchTypeAllOf]) > 0 {
+		// TODO: this should really be a search on the flavorgroup store which should be able to retrieve a list
+		// of flavor ids in the flavorgroup and then call the flavor store with a list of ids. Right now, it only
+		// support one flavor id
 		reqs.AllOfFlavors, _ = fs.Search(&models.FlavorFilterCriteria{
 			// Flavor Parts of the Search Criteria takes a []cf.FlavorPart - but we have a map.
 			// So dump keys of the map into a slice.
-			FlavorParts: func(mp map[cf.FlavorPart]bool) []cf.FlavorPart {
-				ret := []cf.FlavorPart{}
-				for part, _ := range mp {
-					ret = append(ret, part)
-				}
-				return ret
-			}(reqs.AllOfFlavorTypes),
+			FlavorGroupID: fg.ID,
+			FlavorParts:   reqs.MatchTypeFlavorParts[hvs.MatchTypeAllOf],
 		})
 	}
 
@@ -50,14 +46,13 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 
 	definedUniqueFlavorParts, err := fs.GetUniqueFlavorTypesThatExistForHost(hwUUID)
 	if err != nil {
-		return nil, errors.Wrap(err, "Database error")
+		return nil, errors.Wrap(err, "error gettting unique flavor types that exist for hardware id "+hwUUID.String())
 	}
 
 	for part, _ := range definedUniqueFlavorParts {
-		if _, exists := reqIfdefPartsMap[part]; !exists {
-			if _, exists := reqPartsMap[part]; !exists {
-				delete(definedUniqueFlavorParts, part)
-			}
+		if policy, exists := reqs.FlavorPartMatchPolicy[part]; !exists ||
+			(exists && policy.Required != hvs.FlavorRequiredIfDefined && policy.Required != hvs.FlavorRequired) {
+			delete(definedUniqueFlavorParts, part)
 		}
 	}
 
@@ -68,8 +63,9 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 	definedAutomaticFlavorParts, err := fs.GetFlavorTypesInFlavorgroup(fg.ID, reqIfdefPartsMap)
 
 	// create the host defined and required falvorTypes by joining the map
-
-	reqs.DefinedAndRequiredFlavorTypes = reqPartsMap
+	for _, part := range reqPartsMap {
+		reqs.DefinedAndRequiredFlavorTypes[part] = true
+	}
 	// now add defined automatic flavor parts
 	for part, _ := range definedAutomaticFlavorParts {
 		reqs.DefinedAndRequiredFlavorTypes[part] = true
@@ -80,6 +76,18 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 	}
 
 	return &reqs, nil
+}
+
+func (r *flvGrpHostTrustReqs) GetLatestFlavorTypeMap() map[cf.FlavorPart]bool {
+	result := make(map[cf.FlavorPart]bool)
+	for part, _ := range r.DefinedAndRequiredFlavorTypes {
+		if r.FlavorPartMatchPolicy[part].MatchType == hvs.MatchTypeLatest {
+			result[part] = true
+		} else {
+			result[part] = false
+		}
+	}
+	return result
 }
 
 func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(cache hostTrustCache) bool {
