@@ -2,6 +2,7 @@ package hosttrust
 
 import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"reflect"
 
 	"github.com/google/uuid"
 )
@@ -31,4 +32,11 @@ func (htc *hostTrustCache) removeTrustedFlavors(fIn *hvs.Flavor) {
 			htc.trustedFlavors = append(htc.trustedFlavors[:i], htc.trustedFlavors[i+1:]...)
 		}
 	}
+}
+
+func (htc *hostTrustCache) isTrustCacheEmpty() bool {
+	if !reflect.DeepEqual(htc, hostTrustCache{}) || len(htc.trustedFlavors) == 0 {
+		return true
+	}
+	return false
 }

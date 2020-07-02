@@ -16,9 +16,9 @@ import (
 )
 
 type TrustReport struct {
-	PolicyName string               `json:"policy_name"`
-	Results    []RuleResult         `json:"results"`
-	Trusted    bool                 `json:"trusted"`
+	PolicyName   string             `json:"policy_name"`
+	Results      []RuleResult       `json:"results"`
+	Trusted      bool               `json:"trusted"`
 	HostManifest types.HostManifest `json:"host_manifest"`
 }
 
@@ -30,34 +30,34 @@ type RuleResult struct {
 }
 
 type RuleInfo struct {
-	Name                  string                   `json:"rule_name"`
-	Markers               []common.FlavorPart      `json:"markers,omitempty"`
-	ExpectedPcr           *types.Pcr               `json:"expected_pcr,omitempty"`
-	FlavorID              *uuid.UUID               `json:"flavor_id,omitempty"`
-	FlavorName            *string                  `json:"flavor_name,omitempty"`
-	ExpectedValue         *string                  `json:"expected_value,omitempty"`
-	ExpectedMeasurements  []ta.FlavorMeasurement   `json:"expected_measurements,omitempty"`
-	ExpectedEventLogs     []types.EventLog         `json:"expected,omitempty"`
-	ExpectedEventLogEntry *types.EventLogEntry     `json:"expected,omitempty"`
+	Name                  string                 `json:"rule_name"`
+	Markers               []common.FlavorPart    `json:"markers,omitempty"`
+	ExpectedPcr           *types.Pcr             `json:"expected_pcr,omitempty"`
+	FlavorID              *uuid.UUID             `json:"flavor_id,omitempty"`
+	FlavorName            *string                `json:"flavor_name,omitempty"`
+	ExpectedValue         *string                `json:"expected_value,omitempty"`
+	ExpectedMeasurements  []ta.FlavorMeasurement `json:"expected_measurements,omitempty"`
+	ExpectedEventLogs     []types.EventLog       `json:"expected,omitempty"`
+	ExpectedEventLogEntry *types.EventLogEntry   `json:"expected,omitempty"`
 }
 
 type Fault struct {
-	Name                   string                   `json:"fault_name"`
-	Description            string                   `json:"description"`
-	PcrIndex               *types.PcrIndex          `json:"pcr_index,omitempty"`
-	ExpectedPcrValue       *string                  `json:"expected_value,omitempty"`
-	ActualPcrValue         *string                  `json:"actual_value,omitempty"`
-	MissingEntries         []types.EventLog         `json:"missing_entries,omitempty"`
-	UnexpectedEntries      []types.EventLog         `json:"unexpected_entries,omitempty"`
-	FlavorId               *uuid.UUID               `json:"flavor_id,omitempty"`
-	UnexpectedMeasurements []ta.FlavorMeasurement   `json:"unexpected_entries,omitempty"`
-	MissingMeasurements    []ta.FlavorMeasurement   `json:"missing_entries,omitempty"`
-	MismatchMeasurements   []ta.FlavorMeasurement   `json:"unexpected_entries,omitempty"`
-	ExpectedValue          *string                  `json:"expected_value,omitempty"`   
-	ActualValue            *string                  `json:"actual_value,omitempty"`
-	MeasurementId          *string                  `json:"measurement_id,omitempty"`
-	FlavorDigestAlg        *string                  `json:"flavor_digest_alg,omitempty"`
-	MeasurementDigestAlg   *string                  `json:"measurement_digest_alg,omitempty"`
+	Name                   string                 `json:"fault_name"`
+	Description            string                 `json:"description"`
+	PcrIndex               *types.PcrIndex        `json:"pcr_index,omitempty"`
+	ExpectedPcrValue       *string                `json:"expected_value,omitempty"`
+	ActualPcrValue         *string                `json:"actual_value,omitempty"`
+	MissingEntries         []types.EventLog       `json:"missing_entries,omitempty"`
+	UnexpectedEntries      []types.EventLog       `json:"unexpected_entries,omitempty"`
+	FlavorId               *uuid.UUID             `json:"flavor_id,omitempty"`
+	UnexpectedMeasurements []ta.FlavorMeasurement `json:"unexpected_entries,omitempty"`
+	MissingMeasurements    []ta.FlavorMeasurement `json:"missing_entries,omitempty"`
+	MismatchMeasurements   []ta.FlavorMeasurement `json:"unexpected_entries,omitempty"`
+	ExpectedValue          *string                `json:"expected_value,omitempty"`
+	ActualValue            *string                `json:"actual_value,omitempty"`
+	MeasurementId          *string                `json:"measurement_id,omitempty"`
+	FlavorDigestAlg        *string                `json:"flavor_digest_alg,omitempty"`
+	MeasurementDigestAlg   *string                `json:"measurement_digest_alg,omitempty"`
 }
 
 func NewTrustReport(report TrustReport) *TrustReport {
@@ -78,25 +78,36 @@ func (t *TrustReport) isTrustedForResults(ruleResults []RuleResult) bool {
 
 	trusted := true
 
-	for _, result := range ruleResults{
+	for _, result := range ruleResults {
 		trusted = trusted && result.Trusted
 	}
 
 	return trusted
 }
 
-
 func (t *TrustReport) GetResultsForMarker(marker string) []RuleResult {
 	var ruleResults []RuleResult
-	for _, result := range t.Results{
+	for _, result := range t.Results {
 		markers := result.Rule.Markers
-		if markers != nil{
-			if find(markers, marker){
+		if markers != nil {
+			if find(markers, marker) {
 				ruleResults = append(ruleResults, result)
 			}
 		}
 	}
 	return ruleResults
+}
+
+// TODO: To implement as per libverifier RuleResult.java 107 or TrustReport.java 106
+func (t *TrustReport) CheckResultExists(target RuleResult) bool {
+
+	n := target.Rule.Name
+	for _, res := range t.Results {
+		if res.Rule.Name == n {
+			return true
+		}
+	}
+	return false
 }
 
 func find(slice []common.FlavorPart, val string) bool {

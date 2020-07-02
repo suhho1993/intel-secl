@@ -4,12 +4,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/rules"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	"reflect"
 )
 
 type flvGrpHostTrustReqs struct {
+	HostId                        uuid.UUID
 	FlavorGroupId                 uuid.UUID
 	FlavorMatchPolicies           hvs.FlavorMatchPolicies
 	MatchTypeFlavorParts          map[hvs.MatchType][]cf.FlavorPart
@@ -19,8 +22,11 @@ type flvGrpHostTrustReqs struct {
 }
 
 func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGroup, fs domain.FlavorStore) (*flvGrpHostTrustReqs, error) {
+	defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Entering")
+	defer defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Leaving")
 
 	reqs := flvGrpHostTrustReqs{
+		HostId: hostId,
 		FlavorGroupId:       fg.ID,
 		FlavorMatchPolicies: fg.MatchPolicies,
 	}
@@ -79,6 +85,9 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 }
 
 func (r *flvGrpHostTrustReqs) GetLatestFlavorTypeMap() map[cf.FlavorPart]bool {
+	defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Entering")
+	defer defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Leaving")
+
 	result := make(map[cf.FlavorPart]bool)
 	for part, _ := range r.DefinedAndRequiredFlavorTypes {
 		if r.FlavorPartMatchPolicy[part].MatchType == hvs.MatchTypeLatest {
@@ -90,7 +99,45 @@ func (r *flvGrpHostTrustReqs) GetLatestFlavorTypeMap() map[cf.FlavorPart]bool {
 	return result
 }
 
-func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(cache hostTrustCache) bool {
-	//TODO: implement
+func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(trustCache hostTrustCache) bool {
+	defaultLog.Trace("hosttrust/trust_requirements:MeetsFlavorGroupReqs() Entering")
+	defer defaultLog.Trace("hosttrust/trust_requirements:MeetsFlavorGroupReqs() Leaving")
+
+	if trustCache.isTrustCacheEmpty(){
+		defaultLog.Debugf("No results found in trust cache for host: %s", r.HostId.String())
+		return false
+	}
+
+	reqAndDefFlavorTypes := r.DefinedAndRequiredFlavorTypes
+	missingRequiredFlavorPartsWithLatest := getMissingRequiredFlavorPartsWithLatest(r.HostId, *r, reqAndDefFlavorTypes, trustCache.trustReport)
+	if len(missingRequiredFlavorPartsWithLatest) > 0{
+		defaultLog.Debugf("Host %s has missing required and defined flavor parts: %s", r.HostId.String(), reflect.ValueOf(missingRequiredFlavorPartsWithLatest).MapKeys())
+		return false
+	}
+
+	ruleAllOfFlavors := rules.AllOfFlavors{
+		AllOfFlavors: r.AllOfFlavors,
+		Markers:      r.getAllOfMarkers(),
+	}
+
+	if areAllOfFlavorsMissingInCachedTrustReport(trustCache.trustReport, ruleAllOfFlavors) {
+		defaultLog.Debugf("All of flavors exist in policy for host: %s", r.HostId.String());
+		defaultLog.Debugf("Some all of flavors do not match what is in the trust cache for host: %s", r.HostId.String())
+		return false
+	}
+	defaultLog.Debugf("Trust cache valid for host: %s", r.HostId.String())
 	return true
+}
+
+// According to verification-service: RuleAllOfFlavors.java
+// the protected 'marker' variable inherited from lib-verifier: BaseRule.java
+// does not at all effect the behavior of methods implemented in RuleAllOfFlavors
+func (r *flvGrpHostTrustReqs) getAllOfMarkers() []cf.FlavorPart {
+	defaultLog.Trace("hosttrust/trust_requirements:getAllOfMarkers() Entering")
+	defer defaultLog.Trace("hosttrust/trust_requirements:getAllOfMarkers() Leaving")
+	markers := make([]cf.FlavorPart, len(r.MatchTypeFlavorParts[hvs.MatchTypeAllOf]))
+	for _, flavorPart := range r.MatchTypeFlavorParts[hvs.MatchTypeAllOf]{
+		markers = append(markers, flavorPart)
+	}
+	return markers
 }

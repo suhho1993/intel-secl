@@ -6,8 +6,6 @@
 package hosttrust
 
 import (
-	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
@@ -15,6 +13,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	flavorVerifier "github.com/intel-secl/intel-secl/v3/pkg/lib/verifier"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,6 +45,8 @@ func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
 }
 
 func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newData bool) error {
+	defaultLog.Trace("hosttrust/verifier:Verify() Entering")
+	defer defaultLog.Trace("hosttrust/verifier:Verify() Leaving")
 
 	if hostData == nil {
 		return ErrInvalidHostManiFest
@@ -59,7 +60,7 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	// TODO : remove this when we remove the intermediate collection
 	var flvGroups []*hvs.FlavorGroup
 	if flvGroupColl, err := v.flavorGroupStore.Search(&models.FlavorGroupFilterCriteria{HostId: hostId.String()}); err != nil {
-		return errors.New("Store access error")
+		return errors.New("hosttrust/verifier:Verify() Store access error")
 	} else {
 		flvGroups = (*flvGroupColl).Flavorgroups
 	}
@@ -79,10 +80,9 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 			fgTrustReport := fgTrustCache.trustReport
 			if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache) {
 				finalReportValid = false
-				fgTrustReport = v.createFlavorGroupReport(*fgTrustReqs, hostData, fgTrustCache)
-
+				fgTrustReport, _ = v.createFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
 			}
-			log.Debug("Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.Trusted)
+			log.Debug("hosttrust/verifier:Verify() Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.Trusted)
 			// append the results
 			finalTrustReport.Results = append(finalTrustReport.Results, fgTrustReport.Results...)
 		}
@@ -90,38 +90,39 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	// create a new report if we actually have any results and either the Final Report is untrusted or
 	// we have new Data from the host and therefore need to update based on the new report.
 	if len(finalTrustReport.Results) > 0 && !finalReportValid || newData {
-		log.Debugf("hosttrust/verifier:verify() Generating new SAML for host: %s", hostId)
+		log.Debugf("hosttrust/verifier:Verify() Generating new SAML for host: %s", hostId)
 		samlReportGen := NewSamlReportGenerator(&v.tagIssuer)
 		samlReport := samlReportGen.generateSamlReport(&finalTrustReport)
 
-		log.Debugf("hosttrust/verifier:verify() Saving new report for host: %s", hostId)
+		log.Debugf("hosttrust/verifier:Verify() Saving new report for host: %s", hostId)
 		v.storeTrustReport( hostId, &finalTrustReport, &samlReport)
 	}
-
 	return nil
 }
 
 func (v *verifier) getCachedFlavors(hostId uuid.UUID, flavGrpId uuid.UUID) ([]hvs.SignedFlavor, error) {
-
+	defaultLog.Trace("hosttrust/verifier:getCachedFlavors() Entering")
+	defer defaultLog.Trace("hosttrust/verifier:getCachedFlavors() Leaving")
 	// retrieve the IDs of the trusted flavors from the host store
 	if flIds, err := v.hostStore.RetrieveTrustCacheFlavors(hostId, flavGrpId); err != nil {
-		return nil, fmt.Errorf("store err : %v", err)
+		return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving TrustCacheFlavors")
 	} else {
 		result := make([]hvs.SignedFlavor, 0, len(flIds))
 		for _, flvId := range flIds {
 			if flv, err := v.flavorStore.Retrieve(flvId); err == nil {
 				result = append(result, *flv)
 			}
-
 		}
 		return result, nil
-
 	}
 }
 
 func (v *verifier) validateCachedFlavors(hostId uuid.UUID,
 	hostData *types.HostManifest,
 	cachedFlavors []hvs.SignedFlavor) (hostTrustCache, error) {
+	defaultLog.Trace("hosttrust/verifier:validateCachedFlavors() Entering")
+	defer defaultLog.Trace("hosttrust/verifier:validateCachedFlavors() Leaving")
+
 	htc := hostTrustCache{
 		hostID: hostId,
 	}
@@ -131,7 +132,7 @@ func (v *verifier) validateCachedFlavors(hostId uuid.UUID,
 		//TODO: change the signature verification depending on decision on signed flavors
 		report, err := v.flavorVerifier.Verify(hostData, &cachedFlavor, true)
 		if err != nil {
-			return hostTrustCache{}, err
+			return hostTrustCache{}, errors.Wrap(err, "hosttrust/verifier:validateCachedFlavors() Error from flavor verifier")
 		}
 		if report.Trusted {
 			htc.trustedFlavors = append(htc.trustedFlavors, cachedFlavor.Flavor)

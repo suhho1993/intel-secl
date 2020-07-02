@@ -7,7 +7,6 @@ package hosttrust
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
@@ -67,6 +66,9 @@ type Service struct {
 }
 
 func NewService(cfg domain.HostTrustMgrConfig) (*Service, domain.HostTrustManager, error) {
+	defaultLog.Trace("hosttrust/manager:NewService() Entering")
+	defer defaultLog.Trace("hosttrust/manager:NewService() Leaving")
+
 	svc := &Service{prstStor: cfg.PersistStore,
 		hdFetcher:       cfg.HostFetcher,
 		hostStore:       cfg.HostStore,
@@ -92,6 +94,9 @@ func NewService(cfg domain.HostTrustMgrConfig) (*Service, domain.HostTrustManage
 // Function to Shutdown service. Will wait for pending host data fetch jobs to complete
 // Will not process any further requests. Calling interface Async methods will result in error
 func (svc *Service) Shutdown() error {
+	defaultLog.Trace("hosttrust/manager:Shutdown() Entering")
+	defer defaultLog.Trace("hosttrust/manager:Shutdown() Leaving")
+
 	svc.serviceDone = true
 	close(svc.quit)
 	svc.wg.Wait()
@@ -100,6 +105,9 @@ func (svc *Service) Shutdown() error {
 }
 
 func (svc *Service) startWorkers(workers int) {
+	defaultLog.Trace("hosttrust/manager:startWorkers() Entering")
+	defer defaultLog.Trace("hosttrust/manager:startWorkers() Leaving")
+
 	// start worker go routines
 
 	for i := 0; i < workers; i++ {
@@ -113,6 +121,8 @@ func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch 
 }
 
 func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {
+	defaultLog.Trace("hosttrust/manager:VerifyHostsAsync() Entering")
+	defer defaultLog.Trace("hosttrust/manager:VerifyHostsAsync() Leaving")
 
 	adds := make([]uuid.UUID, 0, len(hostIds))
 	updates := []uuid.UUID{}
@@ -135,7 +145,7 @@ func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferH
 		}
 	}
 	if err := svc.persistToStore(adds, updates, fetchHostData, preferHashMatch); err != nil {
-		return errors.Wrap(err, "hosttrust:Service:persistRequest - error in Persisting to Store")
+		return errors.Wrap(err, "hosttrust/manager:VerifyHostsAsync() persistRequest - error in Persisting to Store")
 	}
 	// at this point, it is safe to return the async call as the records have been persisted.
 	// TODO : add to channel for host data fetch and flavor verification
@@ -149,6 +159,9 @@ func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferH
 }
 
 func (svc *Service) submitHostDataFetch(hostLists ...[]uuid.UUID) {
+	defaultLog.Trace("hosttrust/manager:submitHostDataFetch() Entering")
+	defer defaultLog.Trace("hosttrust/manager:submitHostDataFetch() Leaving")
+
 	defer svc.wg.Done()
 	for _, hosts := range hostLists {
 		// since current store method only support searching one record at a time, use that.
@@ -156,20 +169,20 @@ func (svc *Service) submitHostDataFetch(hostLists ...[]uuid.UUID) {
 		// result from the host store.
 		for _, hId := range hosts {
 			if host, err := svc.hostStore.Retrieve(hId); err != nil {
-				defaultLog.Info("hosttrust:Service:submitHostDataFetch - error retrieving host data for id", hId)
+				defaultLog.Info("hosttrust/manager:submitHostDataFetch() - error retrieving host data for id", hId)
 				continue
 			} else {
 				svc.mapmtx.Lock() //  need to update the record - so take a write lock
 				vtj, ok := svc.hosts[hId]
 				if !ok {
 					svc.mapmtx.Unlock()
-					defaultLog.Error("hosttrust:Service:submitHostDataFetch - Unexpected error retrieving map entry for id:", hId)
+					defaultLog.Error("hosttrust/manager:submitHostDataFetch() - Unexpected error retrieving map entry for id:", hId)
 					continue
 				}
 				vtj.host = host
 				svc.mapmtx.Unlock()
 				if err := svc.hdFetcher.RetriveAsync(vtj.ctx, *vtj.host, svc); err != nil {
-					defaultLog.Error("hosttrust:Service:submitHostDataFetch - error calling RetrieveAsync", hId)
+					defaultLog.Error("hosttrust/manager:submitHostDataFetch() - error calling RetrieveAsync", hId)
 				}
 			}
 		}
@@ -177,6 +190,9 @@ func (svc *Service) submitHostDataFetch(hostLists ...[]uuid.UUID) {
 }
 
 func (svc *Service) queueFlavorVerify(hostsLists ...[]uuid.UUID) {
+	defaultLog.Trace("hosttrust/manager:queueFlavorVerify() Entering")
+	defer defaultLog.Trace("hosttrust/manager:queueFlavorVerify() Leaving")
+
 	for _, hosts := range hostsLists {
 		// unlike the submitHostDataFetch, this one needs to be processed one at a time.
 		for _, hId := range hosts {
@@ -191,6 +207,9 @@ func (svc *Service) queueFlavorVerify(hostsLists ...[]uuid.UUID) {
 }
 
 func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData, preferHashMatch bool) error {
+	defaultLog.Trace("hosttrust/manager:persistToStore() Entering")
+	defer defaultLog.Trace("hosttrust/manager:persistToStore() Leaving")
+
 	strRec := &models.Queue{Action: "flavor-verify",
 		Params: map[string]interface{}{"host_id": uuid.UUID{}, "fetch_host_data": fetchHostData, "prefer_hash_match": preferHashMatch},
 		State:  models.QueueStatePending,
@@ -203,7 +222,7 @@ func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData
 				strRec.Id = uuid.UUID{}
 				strRec.Params["host_id"] = hid
 				if strRec, err = svc.prstStor.Create(strRec); err != nil {
-					return errors.Wrap(err, "hosttrust:Service:persistToStore - Could not create record")
+					return errors.Wrap(err, "hosttrust/manager:persistToStore() - Could not create record")
 				}
 
 			} else {
@@ -211,7 +230,7 @@ func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData
 				strRec.Id = svc.hosts[hid].storPersistId
 				svc.mapmtx.RUnlock()
 				if err = svc.prstStor.Update(strRec); err != nil {
-					return errors.Wrap(err, "hosttrust:Service:persistRequest - Could not update record")
+					return errors.Wrap(err, "hosttrust/manager:persistToStore() - Could not update record")
 				}
 			}
 			ctx, cancel := context.WithCancel(context.Background())
@@ -224,10 +243,10 @@ func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData
 		return nil
 	}
 	if err := persistRecords(additions, true); err != nil {
-		return errors.Wrap(err, "hosttrust:Service:persistRequest - persistRecords additions error")
+		return errors.Wrap(err, "hosttrust/manager:persistToStore() - persistRecords additions error")
 	}
 	if err := persistRecords(updates, false); err != nil {
-		return errors.Wrap(err, "hosttrust:Service:persistRequest - persistRecords updates error")
+		return errors.Wrap(err, "hosttrust/manager:persistToStore() - persistRecords updates error")
 	}
 
 	return nil
@@ -240,6 +259,8 @@ func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData
 // second case, the host data is already available in the work channel - so there is no
 // need to fetch from the store.
 func (svc *Service) doWork() {
+	defaultLog.Trace("hosttrust/manager:doWork() Entering")
+	defer defaultLog.Trace("hosttrust/manager:doWork() Leaving")
 
 	defer svc.wg.Done()
 
@@ -258,10 +279,10 @@ func (svc *Service) doWork() {
 
 		case id := <-svc.workChan:
 			if hId, ok := id.(uuid.UUID); ok {
-				defaultLog.Error("hosttrust:doWork:expecting uuid from channel - but got different type")
+				defaultLog.Error("hosttrust/manager:doWork() expecting uuid from channel - but got different type")
 				return
 			} else if status, err := svc.hostStatusStore.Retrieve(hId); err != nil {
-				defaultLog.Error("hosttrust:doWork: - could not retrieve host data from store - error :", err)
+				defaultLog.Error("hosttrust/manager:doWork() - could not retrieve host data from store - error :", err)
 				return
 			} else {
 				hostId = hId
@@ -270,7 +291,7 @@ func (svc *Service) doWork() {
 
 		case data := <-svc.hfWorkChan:
 			if hData, ok := data.(newHostFetch); !ok {
-				defaultLog.Error("hosttrust:doWork:expecting newHostFetch type from channel - but got different one")
+				defaultLog.Error("hosttrust/manager:doWork() expecting newHostFetch type from channel - but got different one")
 				return
 			} else {
 				hostId = hData.hostId
@@ -285,13 +306,16 @@ func (svc *Service) doWork() {
 
 // This function kicks of the verification process given a manifest
 func (svc *Service) verifyHostData(hostId uuid.UUID, data *types.HostManifest, newData bool) {
+	defaultLog.Trace("hosttrust/manager:verifyHostData() Entering")
+	defer defaultLog.Trace("hosttrust/manager:verifyHostData() Leaving")
+
 	//check if the job has not already been cancelled
 	svc.mapmtx.Lock()
 	vtj := svc.hosts[hostId]
 	select {
 	// remove the requests that have already been cancelled.
 	case <-vtj.ctx.Done():
-		fmt.Println("Host Flavor verification is cancelled for host id", hostId, "...continuing to next one")
+		defaultLog.Debug("Host Flavor verification is cancelled for host id", hostId, "...continuing to next one")
 		svc.mapmtx.Unlock()
 		return
 	default:
@@ -307,6 +331,9 @@ func (svc *Service) verifyHostData(hostId uuid.UUID, data *types.HostManifest, n
 // This function is the implementation of the HostDataReceiver interface method. Just create a new request
 // to process the newly obtained data and it will be submitted to the verification queue
 func (svc *Service) ProcessHostData(ctx context.Context, host hvs.Host, data *types.HostManifest, err error) error {
+	defaultLog.Trace("hosttrust/manager:ProcessHostData() Entering")
+	defer defaultLog.Trace("hosttrust/manager:ProcessHostData() Leaving")
+
 	select {
 	case <-ctx.Done():
 		return nil

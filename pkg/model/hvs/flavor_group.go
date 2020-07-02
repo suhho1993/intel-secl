@@ -136,5 +136,4 @@ func (r *FlavorGroup) GetMatchPolicyMaps() (
 		plcyMap[plcy.MatchPolicy.Required] = append(plcyMap[plcy.MatchPolicy.Required], plcy.FlavorPart)
 	}
 	return fpMap, mtMap, plcyMap
-
 }
