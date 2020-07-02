@@ -30,12 +30,13 @@ func NewAssetTagMatches(expectedAssetTagDigest []byte) (Rule, error) {
 type assetTagMatches struct {
 	expectedAssetTagDigest []byte
 }
+const AssetTagMatches = "com.intel.mtwilson.core.verifier.policy.rule.AssetTagMatches"
 
 func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*hvs.RuleResult, error) {
 	var fault *hvs.Fault
 	result := hvs.RuleResult{}
 	result.Trusted = true 
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.AssetTagMatches"
+	result.Rule.Name = AssetTagMatches
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartAssetTag)
 
 	if len(hostManifest.AssetTagDigest) == 0 {

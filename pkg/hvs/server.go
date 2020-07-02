@@ -2,8 +2,8 @@ package hvs
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
@@ -13,6 +13,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier"
 	"net/http"
 	"os"
@@ -117,28 +118,43 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	fgs := postgres.NewFlavorGroupStore(dataStore)
 	qs := postgres.NewDBQueueStore(dataStore)
 	hss := postgres.NewHostStatusStore(dataStore)
+	rs := postgres.NewReportStore(dataStore)
 
 	//Load certificates
+	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]
+	tagCAs := (*certStore)[models.CaCertTypesTagCa.String()]
+	privacyCAs := (*certStore)[models.CaCertTypesPrivacyCa.String()]
 	//TODO: Add flavor signing certificate
 	verifierCerts := verifier.VerifierCertificates{
-		PrivacyCACertificates:    loadCertPool(models.CaCertTypesPrivacyCa.String(), certStore),
-		AssetTagCACertificates:   loadCertPool(models.CaCertTypesTagCa.String(), certStore),
+		PrivacyCACertificates:    crypt.GetCertPool(privacyCAs.Certificates),
+		AssetTagCACertificates:   crypt.GetCertPool(tagCAs.Certificates),
 		FlavorSigningCertificate: nil,
-		FlavorCACertificates:     loadCertPool(models.CaCertTypesRootCa.String(), certStore),
+		FlavorCACertificates:     crypt.GetCertPool(rootCAs.Certificates),
 	}
 	libVerifier, _ := verifier.NewVerifier(verifierCerts)
+
+	tagKey := (*tagCAs.Key).(rsa.PrivateKey)
+	tagIssuerConfig := saml.IssuerConfiguration{
+		IssuerName:        cfg.TagCA.Issuer,
+		IssuerServiceName: constants.ServiceName,
+		ValiditySeconds:   cfg.TagCA.ValidityDays * 86400, //Day to seconds
+		PrivateKey:        &tagKey,
+		Certificate:       &tagCAs.Certificates[0],
+	}
 
 	htv := domain.HostTrustVerifierConfig{
 		FlavorStore:      fs,
 		FlavorGroupStore: fgs,
 		HostStore:        hs,
+		ReportStore:      rs,
 		FlavorVerifier:   libVerifier,
 		CertsStore:       *certStore,
+		TagIssuerConfig:  tagIssuerConfig,
 	}
 
 	// Initialize Host Fetcher service
 	// TODO: Read Workers from config
-	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]
+
 	htcFactory := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
 
 	c := domain.HostDataFetcherConfig{HostConnectorFactory: *htcFactory}
@@ -157,13 +173,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 
 	return htm
 }
-func loadCertPool(certType string, certStore *models.CertificatesStore) *x509.CertPool {
-	certs := (*certStore)[certType]
-	if certs == nil || certs.Certificates == nil || len(certs.Certificates) == 0{
-		return nil
-	}
-	return crypt.GetCertPool(certs.Certificates)
-}
+
 func (a *App) loadCertPathStore() *models.CertificatesPathStore {
 	// constants are used somewhere else in the repo
 	// change it into the configured paths after fixing all of them

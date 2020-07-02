@@ -8,6 +8,7 @@ package domain
 import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier"
 )
 
@@ -15,8 +16,10 @@ type HostTrustVerifierConfig struct {
 	FlavorStore      FlavorStore
 	FlavorGroupStore FlavorGroupStore
 	HostStore        HostStore
+	ReportStore      ReportStore
 	FlavorVerifier   verifier.Verifier
 	CertsStore       models.CertificatesStore
+	TagIssuerConfig  saml.IssuerConfiguration
 }
 
 type HostTrustMgrConfig struct {

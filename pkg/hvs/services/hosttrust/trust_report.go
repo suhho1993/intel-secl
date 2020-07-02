@@ -2,18 +2,19 @@ package hosttrust
 
 import (
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	// why is this package named "model"...?
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 )
 
 // FlavorVerify.java: 529
-// renamed to createFlavorGroupReport and made it a receiver fucntion since we need certificates
+// renamed to createFlavorGroupReport and made it a receiver function since we need certificates
 // from the config
 func (v *verifier) createFlavorGroupReport(reqs flvGrpHostTrustReqs,
 	hostData *types.HostManifest,
@@ -130,7 +131,32 @@ func verify(v *verifier, hostID uuid.UUID, flavors []hvs.SignedFlavor,
 		log.Error("error while adding flavor trust cache to store for host id ", hostID, "error - ", err)
 	}
 
+	log.Debugf("hosttrust/trust_report:verify() Generating new SAML for host: %s", hostID)
+	samlReportGen := NewSamlReportGenerator(&v.tagIssuer)
+	samlReport := samlReportGen.generateSamlReport(&collectiveTrustReport)
+
+	log.Debugf("hosttrust/trust_report:verify() Saving new report for host: %s", hostID)
+	storeTrustReport(v, hostID, &collectiveTrustReport, &samlReport)
+
 	return &collectiveTrustReport, nil
+}
+
+func storeTrustReport(v *verifier, hostID uuid.UUID, trustReport *hvs.TrustReport, samlReport *saml.SamlAssertion) {
+	defaultLog.Trace("hosttrust/trust_report:storeTrustReport() Entering")
+	defer defaultLog.Trace("hosttrust/trust_report:storeTrustReport() Leaving")
+
+	log.Debugf("hosttrust/trust_report:storeTrustReport() flavorverify host: %s SAML Report: %s", hostID, samlReport.Assertion)
+	hvsReport := models.HVSReport{
+		HostID:      hostID,
+		TrustReport: *trustReport,
+		CreatedAt:   samlReport.CreatedTime,
+		Expiration:  samlReport.ExpiryTime,
+		Saml:        samlReport.Assertion,
+	}
+	_, err := v.reportStore.Create(&hvsReport)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to store Report")
+	}
 }
 
 // FlavorVerify.java: 684
