@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
@@ -27,15 +27,15 @@ import (
 var _ = Describe("TagCertificateController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var tagCertStore *mocks.MockTagCertificateStore
+	var tagCertStore *mocks2.MockTagCertificateStore
 	var tagCertController *controllers.TagCertificateController
-	var signingCertPath = "mocks/tagcert-scert.pem"
-	var signingKeyPath = "mocks/tagcert-skey.pem"
+	var signingCertPath = "../domain/mocks/tagcert-scert.pem"
+	var signingKeyPath = "../domain/mocks/tagcert-skey.pem"
 	var tagKey crypto.PrivateKey
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		tagCertStore = mocks.NewFakeTagCertificateStore()
+		tagCertStore = mocks2.NewFakeTagCertificateStore()
 
 		//Generate Privacyca cert
 		caCertBytes, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
@@ -386,7 +386,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with valid ValidOn date", func() {
 			It("Should return a list of TagCertificates valid on the ValidOn date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks.TimeDuration12Hrs).Format(constants.HVSParamDateFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.HVSParamDateFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -434,7 +434,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with invalid ValidOn date", func() {
 			It("Should get an empty list of TagCertificates and a 400 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"0000000000000", nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"0000000000000", nil)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -450,7 +450,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with invalid ValidBefore date", func() {
 			It("Should get an empty list of TagCertificates and a 400 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().Add(-mocks.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"01010101010", nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"01010101010", nil)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -466,7 +466,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with invalid ValidAfter date", func() {
 			It("Should get an empty list of TagCertificates and a 400 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().Add(-mocks.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"ABC", nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"ABC", nil)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)

@@ -7,7 +7,7 @@ package controllers_test
 import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -23,11 +23,11 @@ import (
 var _ = Describe("FlavorgroupController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var flavorgroupStore *mocks.MockFlavorgroupStore
+	var flavorgroupStore *mocks2.MockFlavorgroupStore
 	var flavorgroupController *controllers.FlavorgroupController
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		flavorgroupStore = mocks.NewFakeFlavorgroupStore()
+		flavorgroupStore = mocks2.NewFakeFlavorgroupStore()
 		flavorgroupController = &controllers.FlavorgroupController{FlavorGroupStore: flavorgroupStore}
 	})
 

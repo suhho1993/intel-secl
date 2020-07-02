@@ -7,9 +7,9 @@ package controllers_test
 import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
-	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
+	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"net/http"
 	"net/http/httptest"
@@ -23,17 +23,17 @@ import (
 var _ = Describe("HostController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var hostStore *mocks.MockHostStore
-	var hostStatusStore *mocks.MockHostStatusStore
-	var flavorGroupStore *mocks.MockFlavorgroupStore
+	var hostStore *mocks2.MockHostStore
+	var hostStatusStore *mocks2.MockHostStatusStore
+	var flavorGroupStore *mocks2.MockFlavorgroupStore
 	var hostController *controllers.HostController
 	var hostTrustManager *smocks.MockHostTrustManager
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		hostStore = mocks.NewMockHostStore()
-		hostStatusStore = mocks.NewFakeHostStatusStore()
-		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
-		certStore := mocks.NewFakeCertificatesStore()
+		hostStore = mocks2.NewMockHostStore()
+		hostStatusStore = mocks2.NewFakeHostStatusStore()
+		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
+		certStore := mocks2.NewFakeCertificatesStore()
 		hostController = &controllers.HostController{
 			HStore:    hostStore,
 			HSStore:   hostStatusStore,

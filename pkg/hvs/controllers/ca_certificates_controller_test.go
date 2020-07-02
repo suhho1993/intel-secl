@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
@@ -26,7 +26,7 @@ import (
 var _ = Describe("CaCertificatesController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	certStore := utils.LoadCertificates(mocks.NewFakeCertificatesPathStore())
+	certStore := utils.LoadCertificates(mocks2.NewFakeCertificatesPathStore())
 	var caCertificatesController *controllers.CaCertificatesController
 	BeforeEach(func() {
 		router = mux.NewRouter()

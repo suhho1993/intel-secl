@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
@@ -20,11 +20,11 @@ import (
 var _ = Describe("FlavorController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var flavorStore *mocks.MockFlavorStore
+	var flavorStore *mocks2.MockFlavorStore
 	var flavorController *controllers.FlavorController
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		flavorStore = mocks.NewFakeFlavorStore()
+		flavorStore = mocks2.NewFakeFlavorStore()
 		flavorController = &controllers.FlavorController{Store: flavorStore}
 	})
 

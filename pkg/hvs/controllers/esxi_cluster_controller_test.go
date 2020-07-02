@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
@@ -22,11 +22,11 @@ import (
 var _ = Describe("ESXiClusterController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var esxiClusterStore *mocks.MockESXiClusterStore
+	var esxiClusterStore *mocks2.MockESXiClusterStore
 	var esxiClusterController *controllers.ESXiClusterController
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		esxiClusterStore = mocks.NewFakeESXiClusterStore()
+		esxiClusterStore = mocks2.NewFakeESXiClusterStore()
 		esxiClusterController = &controllers.ESXiClusterController{ECStore: esxiClusterStore}
 	})
 

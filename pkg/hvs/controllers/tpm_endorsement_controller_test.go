@@ -8,7 +8,7 @@ package controllers_test
 import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"net/http"
@@ -24,12 +24,12 @@ import (
 var _ = Describe("TpmEndorsementController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var mockEndorsement *mocks.MockTpmEndorsementStore
+	var mockEndorsement *mocks2.MockTpmEndorsementStore
 	var tpmEndorsmentController *controllers.TpmEndorsementController
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		mockEndorsement = mocks.NewFakeTpmEndorsementStore()
+		mockEndorsement = mocks2.NewFakeTpmEndorsementStore()
 		tpmEndorsmentController = &controllers.TpmEndorsementController{Store: mockEndorsement}
 	})
 

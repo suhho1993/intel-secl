@@ -41,7 +41,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	// Remove Privacyca certificate and key
-	os.Remove("../controllers/mocks/root-test.pem") // remove ca certificates test resource
+	os.Remove("../domain/mocks/resources/root-test.pem") // remove ca certificates test resource
 	os.Remove(caKeyPath)
 	os.Remove(caCertPath)
 	os.RemoveAll(aikRequestsDir)

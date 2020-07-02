@@ -10,11 +10,11 @@ import (
 
 func NewFakeCertificatesPathStore() *models.CertificatesPathStore {
 	// For ECA, to read list of certificates from directory
-	ecCaPath := "../controllers/mocks/"
+	ecCaPath := "../domain/mocks/resources/"
 	// Mock path to create new certificate
-	rootCaPath := "../controllers/mocks/"
+	rootCaPath := "../domain/mocks/resources/"
 	//Path for any certificate containing file, so instead of creating new use existing one
-	caCertPath := "../controllers/mocks/EndorsementCA-external.pem"
+	caCertPath := "../domain/mocks/resources/EndorsementCA-external.pem"
 
 	return &models.CertificatesPathStore{
 		models.CaCertTypesRootCa.String(): models.CertLocation{
@@ -40,11 +40,11 @@ func NewFakeCertificatesPathStore() *models.CertificatesPathStore {
 
 func NewFakeCertificatesStore() *models.CertificatesStore {
 	// For ECA, to read list of certificates from directory
-	ecCaPath := "../controllers/mocks/"
+	ecCaPath := "../domain/mocks/resources/"
 	// Mock path to create new certificate
-	rootCaPath := "../controllers/mocks/"
+	rootCaPath := "../domain/mocks/resources/"
 	//Path for any certificate containing file, so instead of creating new use existing one
-	caCertPath := "../controllers/mocks/EndorsementCA-external.pem"
+	caCertPath := "../domain/mocks/resources/EndorsementCA-external.pem"
 
 	return &models.CertificatesStore{
 		models.CaCertTypesRootCa.String(): &models.CertificateStore{

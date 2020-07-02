@@ -30,10 +30,10 @@ var _ = Describe("CertifyHostAiksController", func() {
 	var pCAFileStore *controllers.PrivacyCAFileStore
 	var certifyHostAiksController *controllers.CertifyHostAiksController
 	var cacert *x509.Certificate
-	eCAPath = "../controllers/mocks/EndorsementCA-external.pem"
-	caCertPath = "mocks/privacyca-cert.pem"
-	caKeyPath = "mocks/privacycaKey.pem"
-	aikRequestsDir = "mocks/resources/"
+	eCAPath = "../domain/mocks/resources/EndorsementCA-external.pem"
+	caCertPath = "../domain/mocks/privacyca-cert.pem"
+	caKeyPath = "../domain/mocks/privacycaKey.pem"
+	aikRequestsDir = "../domain/mocks/resources/aik/"
 
 	BeforeEach(func() {
 		router = mux.NewRouter()

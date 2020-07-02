@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers/mocks"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
@@ -22,11 +22,11 @@ import (
 var _ = Describe("HostStatusController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var hostStatusStore *mocks.MockHostStatusStore
+	var hostStatusStore *mocks2.MockHostStatusStore
 	var hostStatusController *controllers.HostStatusController
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		hostStatusStore = mocks.NewFakeHostStatusStore()
+		hostStatusStore = mocks2.NewFakeHostStatusStore()
 		hostStatusController = &controllers.HostStatusController{Store: hostStatusStore}
 	})
 
@@ -291,7 +291,7 @@ var _ = Describe("HostStatusController", func() {
 		Context("Search HostStatuses from data store with valid fromDate and toDate", func() {
 			It("Should return a list of HostStatus", func() {
 				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostStatusController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"&toDate="+time.Now().Format(constants.HVSParamDateFormat), nil)
+				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"&toDate="+time.Now().Format(constants.HVSParamDateFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -307,7 +307,7 @@ var _ = Describe("HostStatusController", func() {
 		Context("Search HostStatuses from data store with invalid fromDate and toDate", func() {
 			It("Should return a list of HostStatus", func() {
 				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostStatusController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"ABC"+"&toDate="+time.Now().Format(constants.HVSParamDateFormat), nil)
+				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.HVSParamDateFormat)+"ABC"+"&toDate="+time.Now().Format(constants.HVSParamDateFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -400,7 +400,7 @@ var _ = Describe("HostStatusControllerDBUnavailableTests", func() {
 	var hostStatusController *controllers.HostStatusController
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		hostStatusStore := mocks.BadMockHostStatusStore{}
+		hostStatusStore := mocks2.BadMockHostStatusStore{}
 		hostStatusController = &controllers.HostStatusController{Store: &hostStatusStore}
 	})
 
