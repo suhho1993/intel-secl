@@ -5,15 +5,16 @@
 package rules
 
 import (
-    "encoding/hex"
-    "encoding/xml"
-    "crypto/sha256"
-    "testing"
-    "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-    "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
-    ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
-    "github.com/stretchr/testify/assert"
-    "github.com/google/uuid"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/xml"
+	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
+	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestXmlMeasurementLogIntegrityNoFault(t *testing.T) {
@@ -69,7 +70,7 @@ func TestXmlMeasurementLogIntegrityXmlEventLogMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementLogMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementLogMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -92,7 +93,7 @@ func TestXmlMeasurementLogIntegrityXmlMeasurementLogInvalidFault(t *testing.T) {
     assert.NoError(t, err)
     assert.NotNil(t, result)
     assert.Equal(t, 1, len(result.Faults))
-    assert.Equal(t, FaultXmlMeasurementLogInvalid, result.Faults[0].Name)
+    assert.Equal(t, constants.FaultXmlMeasurementLogInvalid, result.Faults[0].Name)
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -123,7 +124,7 @@ func TestXmlMeasurementLogIntegrityXmlMissingFromBadLabel(t *testing.T) {
     assert.NoError(t, err)
     assert.NotNil(t, result)
     assert.Equal(t, 1, len(result.Faults))
-    assert.Equal(t, FaultXmlMeasurementLogMissing, result.Faults[0].Name)
+    assert.Equal(t, constants.FaultXmlMeasurementLogMissing, result.Faults[0].Name)
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -155,7 +156,7 @@ func TestXmlMeasurementLogIntegrityValueMismatchFromInvalidActualHash(t *testing
     assert.NoError(t, err)
     assert.NotNil(t, result)
     assert.Equal(t, 1, len(result.Faults))
-    assert.Equal(t, FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
+    assert.Equal(t, constants.FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -187,7 +188,7 @@ func TestXmlMeasurementLogIntegrityValueMismatchFromInvalidReplay(t *testing.T) 
     assert.NoError(t, err)
     assert.NotNil(t, result)
     assert.Equal(t, 1, len(result.Faults))
-    assert.Equal(t, FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
+    assert.Equal(t, constants.FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -225,7 +226,7 @@ func TestXmlMeasurementLogIntegrityValueMismatchFromInvalidPcrEventLog(t *testin
     assert.NoError(t, err)
     assert.NotNil(t, result)
     assert.Equal(t, 1, len(result.Faults))
-    assert.Equal(t, FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
+    assert.Equal(t, constants.FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -249,7 +250,7 @@ func TestXmlMeasurementLogIntegrityValueMismatchFromMissingPcrEventLog(t *testin
     assert.NoError(t, err)
     assert.NotNil(t, result)
     assert.Equal(t, 1, len(result.Faults))
-    assert.Equal(t, FaultPcrEventLogMissing, result.Faults[0].Name)
+    assert.Equal(t, constants.FaultPcrEventLogMissing, result.Faults[0].Name)
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -287,7 +288,7 @@ func TestXmlMeasurementLogIntegrityValueMismatchFromMissingPcrEventLabel(t *test
     assert.NoError(t, err)
     assert.NotNil(t, result)
     assert.Equal(t, 1, len(result.Faults))
-    assert.Equal(t, FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
+    assert.Equal(t, constants.FaultXmlMeasurementValueMismatch, result.Faults[0].Name)
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 

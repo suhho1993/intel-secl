@@ -6,11 +6,11 @@
 package rules
 
 import (
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	flavorVerifier "github.com/intel-secl/intel-secl/v3/pkg/lib/verifier"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier/rules"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 )
@@ -40,21 +40,20 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 			if err != nil {
 				return report, errors.Wrap(err, "Failed to apply rule \""+report.PolicyName+"\" to host manifest of "+report.HostManifest.HostInfo.HostName)
 			}
-			if result != nil &&
-				!report.CheckResultExists(*result) {
-				flvPart := flavor.Flavor.Meta.Description.FlavorPart
+			if result != nil {
 				// TODO:
 				// assign RuleInfo? FlavorID?
 				// Trusted is be default empty since Fault is not empty
 				// ref: lib-verifier: RuleResult.java
-				report.Results = append(report.Results, hvs.RuleResult{
+				ruleResult := hvs.RuleResult{
 					Faults: []hvs.Fault{
 						{
-							Name :       rules.FaultAllofFlavorsMissing,
-							Description: "All of Flavor Types Missing : " + flvPart,
+							Name :       constants.FaultAllofFlavorsMissing,
+							Description: "All of Flavor Types Missing : " + flavor.Flavor.Meta.Description.FlavorPart,
 						},
 					},
-				})
+				}
+				report.AddResult(ruleResult)
 			}
 		}
 	}

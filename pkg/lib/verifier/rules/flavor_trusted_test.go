@@ -8,6 +8,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
@@ -102,7 +103,7 @@ func TestFlavorTrustedFlavorSignatureMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultFlavorSignatureMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultFlavorSignatureMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -133,7 +134,7 @@ func TestFlavorTrustedMissingFlavorSigningCertificate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultFlavorSignatureVerificationFailed, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultFlavorSignatureVerificationFailed, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -164,7 +165,7 @@ func TestFlavorTrustedMissingCACertificates(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultFlavorSignatureVerificationFailed, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultFlavorSignatureVerificationFailed, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -202,7 +203,7 @@ func TestFlavorTrustedInvalidRootCA(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultFlavorSignatureVerificationFailed, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultFlavorSignatureVerificationFailed, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -234,7 +235,7 @@ func TestFlavorTrustedForceSignatureVerificationToFail(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultFlavorSignatureNotTrusted, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultFlavorSignatureNotTrusted, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 

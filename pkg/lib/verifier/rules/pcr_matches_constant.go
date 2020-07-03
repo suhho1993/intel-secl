@@ -9,6 +9,7 @@ package rules
 //
 
 import (
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -40,7 +41,7 @@ func (rule *pcrMatchesConstant) Apply(hostManifest *types.HostManifest) (*hvs.Ru
 
 	result := hvs.RuleResult{}
 	result.Trusted = true // default to true, set to false in fault logic
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.PcrMatchesConstant"
+	result.Rule.Name = constants.RulePcrMatchesConstant
 	result.Rule.ExpectedPcr = &rule.expectedPcr
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
 

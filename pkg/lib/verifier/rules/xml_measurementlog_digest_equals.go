@@ -8,10 +8,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 )
 
 func NewXmlMeasurementLogDigestEquals(expectedDigestAlgorithm string, flavorID uuid.UUID) (Rule, error) {
@@ -36,7 +37,7 @@ func (rule *xmlMeasurementLogDigestEquals) Apply(hostManifest *types.HostManifes
 
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.XmlMeasurementsDigestEquals"
+	result.Rule.Name = constants.RuleXmlMeasurementsDigestEquals
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartSoftware)
 
 	if hostManifest.MeasurementXmls == nil || len(hostManifest.MeasurementXmls) == 0 {
@@ -51,11 +52,11 @@ func (rule *xmlMeasurementLogDigestEquals) Apply(hostManifest *types.HostManifes
 				if measurement.DigestAlg != rule.expectedDigestAlgorithm {
 					
 					fault := hvs.Fault {
-						Name: FaultXmlMeasurementsDigestValueMismatch,
-						Description: fmt.Sprintf("XML measurement log for flavor %s has %s algorithm does not match with measurement %s - %s algorithm.", rule.flavorID, rule.expectedDigestAlgorithm, measurement.Uuid, measurement.DigestAlg),
-						FlavorId: &rule.flavorID,
+						Name:                 constants.FaultXmlMeasurementsDigestValueMismatch,
+						Description:          fmt.Sprintf("XML measurement log for flavor %s has %s algorithm does not match with measurement %s - %s algorithm.", rule.flavorID, rule.expectedDigestAlgorithm, measurement.Uuid, measurement.DigestAlg),
+						FlavorId:             &rule.flavorID,
 						MeasurementDigestAlg: &measurement.DigestAlg,
-						FlavorDigestAlg: &rule.expectedDigestAlgorithm,
+						FlavorDigestAlg:      &rule.expectedDigestAlgorithm,
 					}
 
 					result.Faults = append(result.Faults, fault)

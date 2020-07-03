@@ -7,9 +7,10 @@ package rules
 
 import (
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier/rules"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"reflect"
 )
 
 //TODO move to verifier
@@ -28,13 +29,15 @@ func (r *RequiredFlavorTypeExists) Apply(trustReport hvs.TrustReport) *hvs.Trust
 	var ruleResult hvs.RuleResult
  	if r.isFlavorPartMissing(trustReport){
  		fault := hvs.Fault{
-			Name:        rules.FaultRequiredFlavorTypeMissing,
+			Name:        constants.FaultRequiredFlavorTypeMissing,
 			Description: fmt.Sprintf("Required flavor type missing: %s", r.FlavorPart.String()),
 		}
 		defaultLog.Debugf("Defined and required flavor part [%s] is missing", r.FlavorPart.String())
 		ruleResult.Faults = append(ruleResult.Faults, fault)
 	}
-	trustReport.Results = append(trustReport.Results, ruleResult)
+	if !reflect.DeepEqual(ruleResult, hvs.RuleResult{}){
+		trustReport.AddResult(ruleResult)
+	}
 	return &trustReport
 }
 

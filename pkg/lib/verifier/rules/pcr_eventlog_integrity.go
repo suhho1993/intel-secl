@@ -6,6 +6,7 @@ package rules
 
 import (
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -39,7 +40,7 @@ func (rule *pcrEventLogIntegrity) Apply(hostManifest *types.HostManifest) (*hvs.
 
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.PcrEventLogIntegrity"
+	result.Rule.Name = constants.RulePcrEventLogIntegrity
 	result.Rule.ExpectedPcr = rule.expectedPcr
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
 
@@ -70,9 +71,9 @@ func (rule *pcrEventLogIntegrity) Apply(hostManifest *types.HostManifest) (*hvs.
 
 				if calculatedValue != rule.expectedPcr.Value {
 					fault := hvs.Fault{
-						Name:        FaultPcrEventLogInvalid,
+						Name:        constants.FaultPcrEventLogInvalid,
 						Description: fmt.Sprintf("PCR %d Event Log is invalid", rule.expectedPcr.Index),
-						PcrIndex: &rule.expectedPcr.Index,
+						PcrIndex:    &rule.expectedPcr.Index,
 					}
 
 					result.Faults = append(result.Faults, fault)

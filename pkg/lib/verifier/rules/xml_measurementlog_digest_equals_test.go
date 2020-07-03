@@ -6,11 +6,12 @@ package rules
 
 import (
 	"encoding/xml"
-	"testing"
+	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/stretchr/testify/assert"
-	"github.com/google/uuid"
+	"testing"
 )
 
 var 
@@ -83,6 +84,6 @@ func TestXmlMeasurementLogDigestEqualsFaultDigestValueMismatchFault(t *testing.T
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 2, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementsDigestValueMismatch, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementsDigestValueMismatch, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }

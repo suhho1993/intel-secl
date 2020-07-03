@@ -5,6 +5,7 @@
 package rules
 
 import (
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -36,7 +37,7 @@ func (rule *pcrEventLogIncludes) Apply(hostManifest *types.HostManifest) (*hvs.R
 
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.PcrEventLogIncludes"
+	result.Rule.Name = constants.RulePcrEventLogIncludes
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
 	result.Rule.ExpectedEventLogs = rule.expectedEventLogEntry.EventLogs
 

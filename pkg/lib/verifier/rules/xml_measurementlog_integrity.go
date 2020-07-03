@@ -12,6 +12,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/google/uuid"
+	constants "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -49,7 +50,7 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.XmlMeasurementLogIntegrity"
+	result.Rule.Name = constants.RuleXmlMeasurementLogIntegrity
 	result.Rule.FlavorName = &rule.flavorLabel
 	result.Rule.ExpectedValue = &rule.expectedCumulativeHash
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartSoftware)
@@ -109,10 +110,10 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 					if pcrEventLogMeasurement == "" {
 						// the pcr event did not have a measurement with the flavor label
 						fault := hvs.Fault{
-							Name: FaultXmlMeasurementValueMismatch,
-							Description: fmt.Sprintf("The pcr event log did not contain a measurement with label '%s'", rule.flavorLabel),
+							Name:          constants.FaultXmlMeasurementValueMismatch,
+							Description:   fmt.Sprintf("The pcr event log did not contain a measurement with label '%s'", rule.flavorLabel),
 							ExpectedValue: &pcrEventLogMeasurement,
-							ActualValue: &calculatedHash,
+							ActualValue:   &calculatedHash,
 						}
 						
 						result.Faults = append(result.Faults, fault)
@@ -132,10 +133,10 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 						if cacluatedHash256String != pcrEventLogMeasurement {
 							// the calculated hash did not match the measurement captured in the pcr event log
 							fault := hvs.Fault{
-								Name: FaultXmlMeasurementValueMismatch,
-								Description: fmt.Sprintf("Host XML measurement log final hash with value '%s' does not match the pcr event log measurement '%s'", calculatedHash, pcrEventLogMeasurement),
+								Name:          constants.FaultXmlMeasurementValueMismatch,
+								Description:   fmt.Sprintf("Host XML measurement log final hash with value '%s' does not match the pcr event log measurement '%s'", calculatedHash, pcrEventLogMeasurement),
 								ExpectedValue: &pcrEventLogMeasurement,
-								ActualValue: &calculatedHash,
+								ActualValue:   &calculatedHash,
 							}
 							
 							result.Faults = append(result.Faults, fault)

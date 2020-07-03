@@ -6,10 +6,10 @@ package hosttrust
 
 import (
 	"fmt"
+	faultsConst "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier/rules"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	log "github.com/sirupsen/logrus"
@@ -139,7 +139,7 @@ func getTags(trustReport *hvs.TrustReport) map[string]string {
 
 	tagsMap := make(map[string]string)
 	for _, result := range trustReport.GetResultsForMarker(common.FlavorPartAssetTag.String()) {
-		if result.Rule.Name == rules.AssetTagMatches {
+		if result.Rule.Name == faultsConst.RuleAssetTagMatches {
 			//TODO: Add tags in Asset Tag Rule
 		}
 	}

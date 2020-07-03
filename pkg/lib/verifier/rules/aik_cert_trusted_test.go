@@ -12,11 +12,12 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
 	"time"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func newCertificateTemplate() (*x509.Certificate, error) {
@@ -151,7 +152,7 @@ func TestAikCertificateTrustedMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultAikCertificateMissing)
+	assert.Equal(t, result.Faults[0].Name, constants.FaultAikCertificateMissing)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -182,7 +183,7 @@ func TestAikCertificateTrustedExpiredFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultAikCertificateExpired)
+	assert.Equal(t, result.Faults[0].Name, constants.FaultAikCertificateExpired)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -213,7 +214,7 @@ func TestAikCertificateTrustedNotBeforeFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultAikCertificateNotYetValid)
+	assert.Equal(t, result.Faults[0].Name, constants.FaultAikCertificateNotYetValid)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -239,6 +240,6 @@ func TestAikCertificateTrustedNotTrustedFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultAikCertificateNotTrusted)
+	assert.Equal(t, result.Faults[0].Name, constants.FaultAikCertificateNotTrusted)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }

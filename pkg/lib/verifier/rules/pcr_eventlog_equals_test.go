@@ -5,12 +5,13 @@
 package rules
 
 import (
-	"testing"
+	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/stretchr/testify/assert"
-	"github.com/google/uuid"
+	"testing"
 )
 
 // Provide the same event logs in the manifest and to the PcrEventLogEquals rule, expecting
@@ -113,7 +114,7 @@ func TestPcrEventLogEqualsExcludingPcrEventLogMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -151,7 +152,7 @@ func TestPcrEventLogEqualsExcludingPcrEventLogContainsUnexpectedEntriesFault(t *
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogContainsUnexpectedEntries, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogContainsUnexpectedEntries, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].UnexpectedEntries)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
@@ -186,7 +187,7 @@ func TestPcrEventLogEqualsExcludingPcrEventLogMissingExpectedEntriesFault(t *tes
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogMissingExpectedEntries, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogMissingExpectedEntries, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].MissingEntries)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }

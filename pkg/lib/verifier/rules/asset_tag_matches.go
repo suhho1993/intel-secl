@@ -12,6 +12,7 @@ package rules
 import (
 	"bytes"
 	"encoding/base64"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -30,23 +31,22 @@ func NewAssetTagMatches(expectedAssetTagDigest []byte) (Rule, error) {
 type assetTagMatches struct {
 	expectedAssetTagDigest []byte
 }
-const AssetTagMatches = "com.intel.mtwilson.core.verifier.policy.rule.AssetTagMatches"
 
 func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*hvs.RuleResult, error) {
 	var fault *hvs.Fault
 	result := hvs.RuleResult{}
 	result.Trusted = true 
-	result.Rule.Name = AssetTagMatches
+	result.Rule.Name = constants.RuleAssetTagMatches
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartAssetTag)
 
 	if len(hostManifest.AssetTagDigest) == 0 {
 		fault = &hvs.Fault{
-			Name:        FaultAssetTagMissing,
+			Name:        constants.FaultAssetTagMissing,
 			Description: "AssetTag Reported is null",
 		}
 	} else if rule.expectedAssetTagDigest == nil {
 		fault = &hvs.Fault{
-			Name:        FaultAssetTagNotProvisioned,
+			Name:        constants.FaultAssetTagNotProvisioned,
 			Description: "AssetTag is not in provisioned by the management",
 		}
 	} else {
@@ -57,7 +57,7 @@ func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*hvs.RuleR
 
 		if bytes.Compare(actualAssetTagDigest, rule.expectedAssetTagDigest) != 0 {
 			fault = &hvs.Fault{
-				Name:        FaultAssetTagMismatch,
+				Name:        constants.FaultAssetTagMismatch,
 				Description: "Asset tag provisioned does not match asset tag reported",
 			}	
 		}

@@ -6,12 +6,13 @@ package rules
 
 import (
 	"crypto/x509"
+	faultsConst "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
-	"github.com/stretchr/testify/assert"
 )
 
 
@@ -69,7 +70,7 @@ func TestTagCertificateTrustedMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultTagCertificateMissing)
+	assert.Equal(t, result.Faults[0].Name, faultsConst.FaultTagCertificateMissing)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -103,7 +104,7 @@ func TestTagCertificateTrustedNotTrusted(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultTagCertificateNotTrusted)
+	assert.Equal(t, result.Faults[0].Name, faultsConst.FaultTagCertificateNotTrusted)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -140,7 +141,7 @@ func TestTagCertificateTrustedExpiredFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultTagCertificateExpired)
+	assert.Equal(t, result.Faults[0].Name, faultsConst.FaultTagCertificateExpired)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -177,6 +178,6 @@ func TestTagCertificateTrustedNotYetValidFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, len(result.Faults), 1)
-	assert.Equal(t, result.Faults[0].Name, FaultTagCertificateNotYetValid)
+	assert.Equal(t, result.Faults[0].Name, faultsConst.FaultTagCertificateNotYetValid)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }

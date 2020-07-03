@@ -1,11 +1,27 @@
-/*
- * Copyright (C) 2020 Intel Corporation
- * SPDX-License-Identifier: BSD-3-Clause
- */
-package rules
+package constants
 
+const PolicyPrefix = "com.intel.mtwilson.core.verifier.policy."
+
+// Verifier Rules
 const (
-	FaultPrefix                                     = "com.intel.mtwilson.core.verifier.policy.fault."
+	RulePrefix                      = PolicyPrefix + "rule."
+	RuleAikCertificateTrusted       = RulePrefix + "AikCertificateTrusted"
+	RuleAssetTagMatches             = RulePrefix + "AssetTagMatches"
+	RuleFlavorTrusted               = RulePrefix + "FlavorTrusted"
+	RulePcrEventLogEquals           = RulePrefix + "PcrEventLogEquals"
+	RulePcrEventLogIncludes         = RulePrefix + "PcrEventLogIncludes"
+	RulePcrEventLogIntegrity        = RulePrefix + "PcrEventLogIntegrity"
+	RulePcrMatchesConstant          = RulePrefix + "PcrMatchesConstant"
+	RuleTagCertificateTrusted       = RulePrefix + "TagCertificateTrusted"
+	RuleXmlMeasurementsDigestEquals = RulePrefix + "XmlMeasurementsDigestEquals"
+	RuleXmlMeasurementLogEquals     = RulePrefix + "XmlMeasurementLogEquals"
+	RulePcrEventLogEqualsExcluding  = RulePrefix + "PcrEventLogEqualsExcluding"
+	RuleXmlMeasurementLogIntegrity  = RulePrefix + "XmlMeasurementLogIntegrity"
+)
+
+// Verifier Faults
+const (
+	FaultPrefix                                     = PolicyPrefix + "fault."
 	FaultAikCertificateExpired                      = FaultPrefix + "AikCertificateExpired"
 	FaultAikCertificateMissing                      = FaultPrefix + "AikCertificateMissing"
 	FaultAikCertificateNotTrusted                   = FaultPrefix + "AikCertificateNotTrusted"

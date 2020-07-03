@@ -6,6 +6,7 @@ package rules
 
 import (
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -40,7 +41,7 @@ func NewPcrEventLogEquals(expectedEventLogEntry *types.EventLogEntry, flavorID u
 		expectedEventLogEntry: expectedEventLogEntry,
 		flavorID:              &flavorID,
 		marker:                marker,
-		ruleName:              "com.intel.mtwilson.core.verifier.policy.rule.PcrEventLogEquals",
+		ruleName:              constants.RulePcrEventLogEquals,
 	}
 
 	return &rule, nil
@@ -57,7 +58,7 @@ func NewPcrEventLogEqualsExcluding(expectedEventLogEntry *types.EventLogEntry, f
 		marker:                marker,
 		excludeComponents:     defaultExcludeComponents,
 		excludeLabels:         defaultExcludeLabels,
-		ruleName:              "com.intel.mtwilson.core.verifier.policy.rule.PcrEventLogEqualsExcluding",
+		ruleName:              constants.RulePcrEventLogEqualsExcluding,
 	}
 
 	return &rule, nil

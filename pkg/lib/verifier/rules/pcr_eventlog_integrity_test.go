@@ -5,11 +5,12 @@
 package rules
 
 import (
-	"testing"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestPcrEventLogIntegrityNoFault(t *testing.T) {
@@ -70,7 +71,7 @@ func TestPcrEventLogIntegrityPcrValueMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrValueMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrValueMissing, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].PcrIndex)	// should report the missing pcr
 	assert.Equal(t, types.PCR0, *result.Faults[0].PcrIndex)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
@@ -98,7 +99,7 @@ func TestPcrEventLogIntegrityPcrEventLogMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogMissing, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].PcrIndex)	// should report the missing pcr
 	assert.Equal(t, types.PCR0, *result.Faults[0].PcrIndex)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
@@ -145,7 +146,7 @@ func TestPcrEventLogIntegrityPcrEventLogInvalidFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogInvalid, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogInvalid, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].PcrIndex)	// should report the missing pcr
 	assert.Equal(t, types.PCR0, *result.Faults[0].PcrIndex)
 	t.Logf("Fault description: %s", result.Faults[0].Description)

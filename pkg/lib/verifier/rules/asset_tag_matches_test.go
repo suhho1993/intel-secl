@@ -5,9 +5,10 @@
 package rules
 
 import (
-	"testing"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestAssetTagMatchesNotProvisionedFault(t *testing.T) {
@@ -25,7 +26,7 @@ func TestAssetTagMatchesNotProvisionedFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultAssetTagNotProvisioned, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultAssetTagNotProvisioned, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -44,7 +45,7 @@ func TestAssetTagMissingFromManifest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultAssetTagMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultAssetTagMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -63,7 +64,7 @@ func TestAssetTagMismatch(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultAssetTagMismatch, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultAssetTagMismatch, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 

@@ -7,6 +7,7 @@ package rules
 import (
 	"crypto/x509"
 	"fmt"
+	faultsConst "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
@@ -45,12 +46,12 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 	var fault *hvs.Fault
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.TagCertificateTrusted"
+	result.Rule.Name = faultsConst.RuleTagCertificateTrusted
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartAssetTag)
 
 	if rule.attributeCertificate == nil {
 		fault = &hvs.Fault {
-			Name: FaultTagCertificateMissing,
+			Name:        faultsConst.FaultTagCertificateMissing,
 			Description: "Host trust policy requires tag validation but the tag certificate was not found",
 		}
 	} else {
@@ -67,7 +68,7 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 		_, err = tagCertificate.Verify(opts)
 		if err != nil {
 			fault = &hvs.Fault{
-				Name:        FaultTagCertificateNotTrusted,
+				Name:        faultsConst.FaultTagCertificateNotTrusted,
 				Description: "Tag certificate is not signed by any trusted CA",
 			}
 		} else {
@@ -79,7 +80,7 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 
 			if time.Now().Before(notBefore) {
 				fault = &hvs.Fault{
-					Name:        FaultTagCertificateNotYetValid,
+					Name:        faultsConst.FaultTagCertificateNotYetValid,
 					Description: fmt.Sprintf("Tag certificate not valid before %s", rule.attributeCertificate.NotBefore),
 				}
 			}
@@ -92,7 +93,7 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 
 			if time.Now().After(notAfter) {
 				fault = &hvs.Fault{
-					Name:        FaultTagCertificateExpired,
+					Name:        faultsConst.FaultTagCertificateExpired,
 					Description: fmt.Sprintf("Tag certificate not valid after %s", rule.attributeCertificate.NotAfter),
 				}
 			}

@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -41,12 +42,12 @@ func (rule *flavorTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRes
 
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.FlavorTrusted"
+	result.Rule.Name = constants.RuleFlavorTrusted
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
 	
 	if len(rule.signedFlavor.Signature) == 0 {
 		fault := hvs.Fault {
-			Name: FaultFlavorSignatureMissing,
+			Name:        constants.FaultFlavorSignatureMissing,
 			Description: fmt.Sprintf("Signature is missing for flavor with id %s", rule.flavorId),
 		}
 
@@ -83,7 +84,7 @@ func (rule *flavorTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRes
 		err = rule.signedFlavor.Verify(publicKey)
 		if err != nil {
 			fault := hvs.Fault {
-				Name: FaultFlavorSignatureNotTrusted,
+				Name:        constants.FaultFlavorSignatureNotTrusted,
 				Description: fmt.Sprintf("Signature is not trusted for flavor with id %s", rule.flavorId),
 			}
 	

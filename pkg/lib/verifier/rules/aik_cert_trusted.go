@@ -11,6 +11,7 @@ package rules
 import (
 	"crypto/x509"
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -45,12 +46,12 @@ func (rule *aikCertTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRe
 	var fault *hvs.Fault
 	result := hvs.RuleResult{}
 	result.Trusted = true // default to true, set to false when fault encountered
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.AikCertificateTrusted"
+	result.Rule.Name = constants.RuleAikCertificateTrusted
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
 
 	if len(hostManifest.AIKCertificate) == 0 {
 		fault = &hvs.Fault{
-			Name:        FaultAikCertificateMissing,
+			Name:        constants.FaultAikCertificateMissing,
 			Description: "Host report does not include an AIK certificate",
 		}
 	} else {
@@ -62,12 +63,12 @@ func (rule *aikCertTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRe
 
 		if time.Now().After(aik.NotAfter) {
 			fault = &hvs.Fault{
-				Name:        FaultAikCertificateExpired,
+				Name:        constants.FaultAikCertificateExpired,
 				Description: fmt.Sprintf("AIK certificate not valid after '%s'", aik.NotAfter),
 			}
 		} else if time.Now().Before(aik.NotBefore) {
 			fault = &hvs.Fault{
-				Name:        FaultAikCertificateNotYetValid,
+				Name:        constants.FaultAikCertificateNotYetValid,
 				Description: fmt.Sprintf("AIK certificate not valid before '%s'", aik.NotBefore),
 			}
 		} else {
@@ -78,7 +79,7 @@ func (rule *aikCertTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRe
 			_, err := aik.Verify(opts)
 			if err != nil {
 				fault = &hvs.Fault{
-					Name:        FaultAikCertificateNotTrusted,
+					Name:        constants.FaultAikCertificateNotTrusted,
 					Description: "AIK certificate is not signed by any trusted CA",
 				}
 			}

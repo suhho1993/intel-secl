@@ -5,11 +5,12 @@
 package rules
 
 import (
-	"testing"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 // Create an event log that is used by the hostManifest and the rule,
@@ -89,7 +90,7 @@ func TestPcrEventLogIncludesMissingMeasurement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogMissingExpectedEntries, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogMissingExpectedEntries, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].MissingEntries)
 	assert.Equal(t, 1, len(result.Faults[0].MissingEntries))
 	assert.Equal(t, ones, result.Faults[0].MissingEntries[0].Value)
@@ -144,7 +145,7 @@ func TestPcrEventLogIncludesDifferentMeasurement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogMissingExpectedEntries, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogMissingExpectedEntries, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].MissingEntries)
 	assert.Equal(t, 1, len(result.Faults[0].MissingEntries))
 	assert.Equal(t, zeros, result.Faults[0].MissingEntries[0].Value)
@@ -198,7 +199,7 @@ func TestPcrEventLogIncludesPcrEventLogMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -236,6 +237,6 @@ func TestPcrEventLogIncludesNoEventLogInHostManifest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultPcrEventLogMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultPcrEventLogMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }

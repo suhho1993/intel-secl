@@ -10,6 +10,7 @@ package hvs
 
 import (
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
@@ -98,16 +99,40 @@ func (t *TrustReport) GetResultsForMarker(marker string) []RuleResult {
 	return ruleResults
 }
 
-// TODO: To implement as per libverifier RuleResult.java 107 or TrustReport.java 106
-func (t *TrustReport) CheckResultExists(target RuleResult) bool {
-
-	n := target.Rule.Name
-	for _, res := range t.Results {
-		if res.Rule.Name == n {
-			return true
+// TrustReport.java 106
+func (t *TrustReport) CheckResultExists(targetRuleResult RuleResult) bool {
+	//In TrustReport.java 107 marker := targetRuleResult.Rule.Markers[0] why dont we iterate all over the markers?
+	marker := targetRuleResult.Rule.Markers[0]
+	//TODO make all rule name constants even in verifier library?
+		combinedRuleResults := t.GetResultsForMarker(marker.String())
+		for _, ruleResult := range combinedRuleResults {
+			if targetRuleResult.equals(ruleResult) {
+				switch ruleResult.Rule.Name {
+					case constants.RulePcrEventLogEquals,
+						constants.RulePcrEventLogEqualsExcluding,
+						constants.RulePcrEventLogIncludes,
+						constants.RulePcrEventLogIntegrity,
+						constants.RulePcrMatchesConstant:
+						if targetRuleResult.Rule.ExpectedPcr == nil ||
+							(targetRuleResult.Rule.ExpectedPcr != nil && targetRuleResult.Rule.ExpectedPcr != ruleResult.Rule.ExpectedPcr) {
+							return false
+						}
+					default:
+						continue
+				}
+			} else if len(targetRuleResult.Faults) > 0 || targetRuleResult.FlavorId == uuid.Nil{
+				return false
+			} else {
+				return true
+			}
 		}
-	}
 	return false
+}
+
+func (t *TrustReport) AddResult(ruleResult RuleResult) {
+	if !t.CheckResultExists(ruleResult) {
+		t.Results = append(t.Results, ruleResult)
+	}
 }
 
 func find(slice []common.FlavorPart, val string) bool {
@@ -115,6 +140,13 @@ func find(slice []common.FlavorPart, val string) bool {
 		if item.String() == val {
 			return true
 		}
+	}
+	return false
+}
+
+func (r *RuleResult) equals(target RuleResult) bool{
+	if target.Rule.Name == r.Rule.Name && r.FlavorId == target.FlavorId {
+		return true
 	}
 	return false
 }

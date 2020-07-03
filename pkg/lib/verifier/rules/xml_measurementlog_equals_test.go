@@ -7,11 +7,12 @@ package rules
 import (
 	"encoding/json"
 	"encoding/xml"
-	"testing"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
-	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestXmlMeasurementLogEqualsNoFault(t *testing.T) {
@@ -56,7 +57,7 @@ func TestXmlMeasurementLogEqualsMeasurementLogMissingFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementLogMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementLogMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -86,7 +87,7 @@ func TestXmlMeasurementLogEqualsMeasurementLogMissingFaultWrongLabel(t *testing.
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementLogMissing, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementLogMissing, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -111,7 +112,7 @@ func TestXmlMeasurementLogEqualsMeasurementLogInvalidFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementLogInvalid, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementLogInvalid, result.Faults[0].Name)
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
@@ -156,7 +157,7 @@ func TestXmlMeasurementLogEqualsUnexpectedEntriesFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementLogContainsUnexpectedEntries, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementLogContainsUnexpectedEntries, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].UnexpectedMeasurements)
 	assert.Equal(t, 3, len(result.Faults[0].UnexpectedMeasurements))
 	t.Logf("Fault description: %s", result.Faults[0].Description)
@@ -190,7 +191,7 @@ func TestXmlMeasurementLogEqualsMissingExpectedEntriesFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementLogMissingExpectedEntries, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementLogMissingExpectedEntries, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].MissingMeasurements)
 	assert.Equal(t, 2, len(result.Faults[0].MissingMeasurements))
 	t.Logf("Fault description: %s", result.Faults[0].Description)
@@ -225,7 +226,7 @@ func TestXmlMeasurementLogEqualsMismatchEntriesFault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Faults))
-	assert.Equal(t, FaultXmlMeasurementLogValueMismatchEntries384, result.Faults[0].Name)
+	assert.Equal(t, constants.FaultXmlMeasurementLogValueMismatchEntries384, result.Faults[0].Name)
 	assert.NotNil(t, result.Faults[0].MismatchMeasurements)
 	assert.Equal(t, 2, len(result.Faults[0].MismatchMeasurements))
 	t.Logf("Fault description: %s", result.Faults[0].Description)
@@ -267,13 +268,13 @@ func TestXmlMeasurementLogEqualsMultipleComparisonFaults(t *testing.T) {
 
 	for _, fault := range result.Faults {
 		switch fault.Name {
-		case FaultXmlMeasurementLogMissingExpectedEntries:
+		case constants.FaultXmlMeasurementLogMissingExpectedEntries:
 			assert.NotNil(t, fault.MissingMeasurements)
 			assert.Equal(t, 1, len(fault.MissingMeasurements))
-		case FaultXmlMeasurementLogContainsUnexpectedEntries:
+		case constants.FaultXmlMeasurementLogContainsUnexpectedEntries:
 			assert.NotNil(t, fault.UnexpectedMeasurements)
 			assert.Equal(t, 1, len(fault.UnexpectedMeasurements))
-		case FaultXmlMeasurementLogValueMismatchEntries384:
+		case constants.FaultXmlMeasurementLogValueMismatchEntries384:
 			assert.NotNil(t, fault.MismatchMeasurements)
 			assert.Equal(t, 1, len(fault.MismatchMeasurements))
 		default:

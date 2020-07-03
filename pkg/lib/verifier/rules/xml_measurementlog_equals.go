@@ -7,6 +7,7 @@ package rules
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	flavormodel "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
@@ -73,7 +74,7 @@ func (rule *xmlMeasurementLogEquals) Apply(hostManifest *types.HostManifest) (*h
 
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = "com.intel.mtwilson.core.verifier.policy.rule.XmlMeasurementLogEquals"
+	result.Rule.Name = constants.RuleXmlMeasurementLogEquals
 	result.Rule.FlavorName = &rule.flavorLabel
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartSoftware)
 	result.Rule.FlavorID = &rule.flavorID
@@ -164,7 +165,7 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 	// roll up all of the missing measurements into a single fault
 	if len(missingMeasurements) > 0 {
 		fault := hvs.Fault{
-			Name:                FaultXmlMeasurementLogMissingExpectedEntries,
+			Name:                constants.FaultXmlMeasurementLogMissingExpectedEntries,
 			Description:         fmt.Sprintf("XML measurement log for flavor %s missing %d expected entries.", rule.flavorID, len(missingMeasurements)),
 			FlavorId:            &rule.flavorID,
 			MissingMeasurements: missingMeasurements,
@@ -176,7 +177,7 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 	// roll up all of the unexpected measurements into a single fault
 	if len(unexpectedMeasurements) > 0 {
 		fault := hvs.Fault{
-			Name:                   FaultXmlMeasurementLogContainsUnexpectedEntries,
+			Name:                   constants.FaultXmlMeasurementLogContainsUnexpectedEntries,
 			Description:            fmt.Sprintf("XML measurement log of flavor %s contains %d unexpected entries.", rule.flavorID, len(unexpectedMeasurements)),
 			FlavorId:               &rule.flavorID,
 			UnexpectedMeasurements: unexpectedMeasurements,
@@ -188,7 +189,7 @@ func (rule *xmlMeasurementLogEquals) createEventLogFaults(actualMeasurements *ta
 	// roll up all of the mismatched measurements into a single fault
 	if len(mismatchMeasurements) > 0 {
 		fault := hvs.Fault{
-			Name:                 FaultXmlMeasurementLogValueMismatchEntries384,
+			Name:                 constants.FaultXmlMeasurementLogValueMismatchEntries384,
 			Description:          fmt.Sprintf("XML measurement log for flavor %s contains %d entries for which the values are modified.", rule.flavorID, len(mismatchMeasurements)),
 			FlavorId:             &rule.flavorID,
 			MismatchMeasurements: mismatchMeasurements,

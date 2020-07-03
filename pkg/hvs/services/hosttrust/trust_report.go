@@ -84,8 +84,8 @@ func (v *verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManif
 		return hvs.TrustReport{}, errors.Wrap(err,"hosttrust/trust_report:createTrustReport() Error while verifying flavors" )
 	}
 	if !trustCache.isTrustCacheEmpty() {
-		for _, rule := range trustCache.trustReport.Results {
-			trustReport.Results = append(trustReport.Results, rule)
+		for _, ruleResult := range trustCache.trustReport.Results {
+			trustReport.AddResult(ruleResult)
 		}
 	}
 
