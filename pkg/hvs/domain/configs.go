@@ -19,7 +19,7 @@ type HostTrustVerifierConfig struct {
 	ReportStore      ReportStore
 	FlavorVerifier   verifier.Verifier
 	CertsStore       models.CertificatesStore
-	TagIssuerConfig  saml.IssuerConfiguration
+	SamlIssuerConfig saml.IssuerConfiguration
 }
 
 type HostTrustMgrConfig struct {

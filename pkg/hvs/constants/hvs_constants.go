@@ -61,7 +61,7 @@ const (
 	//TODO use EndorsementCA file after implementation of create_endorsement_ca setup task
 	EndorsementCACertDir      = ConfigDir + "certs/endorsement/"
 	EndorsementCACertFile     = EndorsementCACertDir + "EndorsementCA-external.pem" //External ECA
-	SelfEndorsementCACertFile = EndorsementCACertDir + "EndorsementCA.pem" //Self signed ECA
+	SelfEndorsementCACertFile = EndorsementCACertDir + "EndorsementCA.pem"          //Self signed ECA
 	EndorsementCAKeyFile      = TrustedKeysDir + "endorsement-ca.key"
 
 	TagCACertFile = TrustedCaCertsDir + "tag-ca-cert.pem"
@@ -87,6 +87,12 @@ const (
 	HostSigningKeyCertificateCN    = "Signing_Key_Certificate"
 	HostBindingKeyCertificateCN    = "Binding_Key_Certificate"
 	DefaultPrivacyCaIdentityIssuer = "hvs-pca-aik"
+)
+
+// saml
+const (
+	DefaultSamlCertIssuer   = "AttestationService"
+	DefaultSamlCertValidity = 1
 )
 
 // general constants for certificates
@@ -135,4 +141,10 @@ const (
 // jwt constants
 const (
 	JWTCertsCacheTime = "1m"
+)
+
+// FVS constants
+const (
+	DefaultFvsNumberOfVerifiers    = 20
+	DefaultFvsNumberOfDataFetchers = 20
 )

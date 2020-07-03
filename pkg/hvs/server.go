@@ -123,23 +123,27 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	//Load certificates
 	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]
 	tagCAs := (*certStore)[models.CaCertTypesTagCa.String()]
+	samlCert := (*certStore)[models.CertTypesSaml.String()]
 	privacyCAs := (*certStore)[models.CaCertTypesPrivacyCa.String()]
-	//TODO: Add flavor signing certificate
+	signingCerts := (*certStore)[models.CertTypesFlavorSigning.String()]
+	rootCApool := crypt.GetCertPool(rootCAs.Certificates)
+	rootCApool.AddCert(&signingCerts.Certificates[1]) //Add intermediate CA
+
 	verifierCerts := verifier.VerifierCertificates{
 		PrivacyCACertificates:    crypt.GetCertPool(privacyCAs.Certificates),
 		AssetTagCACertificates:   crypt.GetCertPool(tagCAs.Certificates),
-		FlavorSigningCertificate: nil,
-		FlavorCACertificates:     crypt.GetCertPool(rootCAs.Certificates),
+		FlavorSigningCertificate: &signingCerts.Certificates[0],
+		FlavorCACertificates:     rootCApool,
 	}
 	libVerifier, _ := verifier.NewVerifier(verifierCerts)
 
-	tagKey := (*tagCAs.Key).(rsa.PrivateKey)
-	tagIssuerConfig := saml.IssuerConfiguration{
-		IssuerName:        cfg.TagCA.Issuer,
+	samlKey := privacyCAs.Key.(*rsa.PrivateKey)
+	samlIssuerConfig := saml.IssuerConfiguration{
+		IssuerName:        cfg.SAML.Issuer,
 		IssuerServiceName: constants.ServiceName,
-		ValiditySeconds:   cfg.TagCA.ValidityDays * 86400, //Day to seconds
-		PrivateKey:        &tagKey,
-		Certificate:       &tagCAs.Certificates[0],
+		ValiditySeconds:   cfg.SAML.ValidityDays * 86400,
+		PrivateKey:        samlKey,
+		Certificate:       &samlCert.Certificates[0],
 	}
 
 	htv := domain.HostTrustVerifierConfig{
@@ -149,25 +153,22 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 		ReportStore:      rs,
 		FlavorVerifier:   libVerifier,
 		CertsStore:       *certStore,
-		TagIssuerConfig:  tagIssuerConfig,
+		SamlIssuerConfig: samlIssuerConfig,
 	}
 
 	// Initialize Host Fetcher service
-	// TODO: Read Workers from config
-
 	htcFactory := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
 
 	c := domain.HostDataFetcherConfig{HostConnectorFactory: *htcFactory}
-	_, hf, _ := hostfetcher.NewService(c, 5)
+	_, hf, _ := hostfetcher.NewService(c, cfg.FVS.NumberOfDataFetchers)
 
 	// Initialize Host Trust service
-	// TODO: Read Verifiers from config
 	_, htm, _ := hosttrust.NewService(domain.HostTrustMgrConfig{
 		PersistStore: qs,
 		HostStore:    hs,
 		HostStatusStore: hss,
 		HostFetcher:  hf,
-		Verifiers:    5,
+		Verifiers:     cfg.FVS.NumberOfVerifiers,
 		HostTrustVerifier: hosttrust.NewVerifier(htv),
 	})
 
@@ -203,6 +204,10 @@ func (a *App) loadCertPathStore() *models.CertificatesPathStore {
 		models.CertTypesTls.String(): models.CertLocation{
 			KeyFile:  constants.DefaultTLSKeyFile,
 			CertPath: constants.DefaultTLSCertFile,
+		},
+		models.CertTypesFlavorSigning.String(): models.CertLocation{
+			KeyFile:  constants.FlavorSigningKeyFile,
+			CertPath: constants.FlavorSigningCertFile,
 		},
 	}
 }

@@ -36,6 +36,7 @@ type CertTypes string
 const (
 	CertTypesSaml          CertTypes = "saml"
 	CertTypesTls           CertTypes = "tls"
+	CertTypesFlavorSigning CertTypes = "flavor-signing"
 )
 
 func (ct CertTypes) String() string {
@@ -53,7 +54,8 @@ func GetUniqueCertTypes() []string {
 		CaCertTypesPrivacyCa.String(),
 		CaCertTypesTagCa.String(),
 		CertTypesSaml.String(),
-		CertTypesTls.String()}
+		CertTypesTls.String(),
+		CertTypesFlavorSigning.String()}
 }
 
 // GetUniqueCertTypes returns a list of unique certificate types as strings

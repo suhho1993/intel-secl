@@ -108,7 +108,7 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 	// Initialize the TagCertConfig
 	newTCConfig := asset_tag.TagCertConfig{
 		SubjectUUID:       reqTCCriteria.HardwareUUID.String(),
-		PrivateKey:        *controller.CertStore.Key,
+		PrivateKey:        controller.CertStore.Key,
 		TagCACert:         tagCACert,
 		TagAttributes:     reqTCCriteria.SelectionContent,
 		ValidityInSeconds: constants.DefaultTagCertValiditySeconds,

@@ -20,7 +20,7 @@ type CertificatesStore map[string]*CertificateStore
 
 // CertificateStore holds file/directory path and certificates collection
 type CertificateStore struct {
-	Key          *crypto.PrivateKey
+	Key          crypto.PrivateKey
 	CertPath     string
 	Certificates []x509.Certificate
 }

@@ -15,12 +15,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type HVSConfig struct {
-	Username string `yaml:"username" mapstructure:"username"`
-	Password string `yaml:"password" mapstructure:"password"`
-	Dek      string `yaml:"data-encryption-key" mapstructure:"data-encryption-key"`
-}
-
 type Configuration struct {
 	AASApiUrl        string `yaml:"aas-base-url" mapstructure:"aas-base-url"`
 	CMSBaseURL       string `yaml:"cms-base-url" mapstructure:"cms-base-url"`
@@ -29,7 +23,7 @@ type Configuration struct {
 	HVS HVSConfig `yaml:"hvs" mapstructure:"hvs"`
 
 	TLS           commConfig.TLSCertConfig     `yaml:"tls" mapstructure:"tls"`
-	SAML          commConfig.SigningCertConfig `yaml:"saml" mapstructure:"saml"`
+	SAML          SAMLConfig                   `yaml:"saml" mapstructure:"saml"`
 	FlavorSigning commConfig.SigningCertConfig `yaml:"flavor-signing" mapstructure:"flavor-signing"`
 
 	PrivacyCA     commConfig.SelfSignedCertConfig `yaml:"privacy-ca" mapstructure:"privacy-ca"`
@@ -40,6 +34,24 @@ type Configuration struct {
 	Log    commConfig.LogConfig    `yaml:"log" mapstructure:"log"`
 	DB     commConfig.DBConfig     `yaml:"database" mapstructure:"database"`
 	HRRS   hrrs.HRRSConfig         `yaml:"hrrs" mapstructure:"hrrs"`
+	FVS    FVSConfig               `yaml:"fvs" mapstructure:"fvs"`
+}
+
+type HVSConfig struct {
+	Username string `yaml:"username" mapstructure:"username"`
+	Password string `yaml:"password" mapstructure:"password"`
+	Dek      string `yaml:"data-encryption-key" mapstructure:"data-encryption-key"`
+}
+
+type FVSConfig struct {
+	NumberOfVerifiers    int `yaml:"fvs-number-of-verifiers" mapstructure:"fvs-number-of-verifiers"`
+	NumberOfDataFetchers int `yaml:"fvs-number-of-data-fetchers" mapstructure:"fvs-number-of-data-fetchers"`
+}
+
+type SAMLConfig struct {
+	CommonConfig commConfig.SigningCertConfig `yaml:"common" mapstructure:"common"`
+	Issuer       string                       `yaml:"issuer" mapstructure:"issuer"`
+	ValidityDays int                          `yaml:"validity-days" mapstructure:"validity-days"`
 }
 
 // this function sets the configure file name and type

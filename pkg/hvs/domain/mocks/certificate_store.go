@@ -48,32 +48,26 @@ func NewFakeCertificatesStore() *models.CertificatesStore {
 
 	return &models.CertificatesStore{
 		models.CaCertTypesRootCa.String(): &models.CertificateStore{
-			Key:          nil,
 			CertPath:     rootCaPath,
 			Certificates: nil,
 		},
 		models.CaCertTypesEndorsementCa.String(): &models.CertificateStore{
-			Key:          nil,
 			CertPath:     ecCaPath,
 			Certificates: nil,
 		},
 		models.CaCertTypesPrivacyCa.String(): &models.CertificateStore{
-			Key:          nil,
 			CertPath:     caCertPath,
 			Certificates: nil,
 		},
 		models.CaCertTypesTagCa.String(): &models.CertificateStore{
-			Key:          nil,
 			CertPath:     caCertPath,
 			Certificates: nil,
 		},
 		models.CertTypesSaml.String(): &models.CertificateStore{
-			Key:          nil,
 			CertPath:     caCertPath,
 			Certificates: nil,
 		},
 		models.CertTypesTls.String(): &models.CertificateStore{
-			Key:          nil,
 			CertPath:     caCertPath,
 			Certificates: nil,
 		},

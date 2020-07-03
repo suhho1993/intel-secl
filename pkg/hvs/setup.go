@@ -21,8 +21,10 @@ import (
 )
 
 const (
-	hrrs_refresh_period     = "hrrs-refresh-period"
-	hrrs_refresh_look_ahead = "hrrs-refresh-look-ahead"
+	fvsNumberOfVerifiers    = "fvs-number-of-verifiers"
+	fvsNumberOfDataFetchers = "fvs-number-of-data-fetchers"
+	hrrsRefreshPeriod       = "hrrs-refresh-period"
+	hrrsRefreshLookAhead    = "hrrs-refresh-look-ahead"
 )
 
 // this func sets the default values for viper keys
@@ -87,8 +89,16 @@ func init() {
 	viper.SetDefault("database-conn-retry-attempts", constants.DefaultDbConnRetryAttempts)
 	viper.SetDefault("database-conn-retry-time", constants.DefaultDbConnRetryTime)
 
-	viper.SetDefault(hrrs_refresh_period, hrrs.DefaultRefreshPeriod)
-	viper.SetDefault(hrrs_refresh_look_ahead, hrrs.DefaultRefreshLookAhead)
+	// set default for fvs
+	viper.SetDefault(fvsNumberOfVerifiers, constants.DefaultFvsNumberOfVerifiers)
+	viper.SetDefault(fvsNumberOfDataFetchers, constants.DefaultFvsNumberOfDataFetchers)
+
+	// set default for saml
+	viper.SetDefault("saml-issuer-name", constants.DefaultSamlCertIssuer)
+	viper.SetDefault("saml-validity-days", constants.DefaultSamlCertValidity)
+
+	viper.SetDefault(hrrsRefreshPeriod, hrrs.DefaultRefreshPeriod)
+	viper.SetDefault(hrrsRefreshLookAhead, hrrs.DefaultRefreshLookAhead)
 }
 
 // input string slice should start with setup
@@ -229,7 +239,7 @@ func (a *App) downloadCertTask(certType string) setup.Task {
 	var updateConfig *commConfig.SigningCertConfig
 	switch certType {
 	case "saml":
-		updateConfig = &a.configuration().SAML
+		updateConfig = &a.configuration().SAML.CommonConfig
 		certTypeReq = "signing"
 	case "flavor-signing":
 		updateConfig = &a.configuration().FlavorSigning
@@ -298,12 +308,12 @@ func (a *App) selfSignTask(name string) setup.Task {
 // are different from the defaults.
 func (a *App) setupHRRSConfig() {
 
-	refreshPeriod := viper.GetDuration(hrrs_refresh_period)
+	refreshPeriod := viper.GetDuration(hrrsRefreshPeriod)
 	if refreshPeriod != hrrs.DefaultRefreshPeriod {
 		a.Config.HRRS.RefreshPeriod = refreshPeriod
 	}
 
-	refreshLookAhead := viper.GetDuration(hrrs_refresh_look_ahead)
+	refreshLookAhead := viper.GetDuration(hrrsRefreshLookAhead)
 	if refreshLookAhead != hrrs.DefaultRefreshLookAhead {
 		a.Config.HRRS.RefreshLookAhead = refreshLookAhead
 	}
@@ -325,10 +335,14 @@ func defaultConfig() *config.Configuration {
 			CommonName: viper.GetString("tls-common-name"),
 			SANList:    viper.GetString("tls-san-list"),
 		},
-		SAML: commConfig.SigningCertConfig{
-			CertFile:   viper.GetString("saml-cert-file"),
-			KeyFile:    viper.GetString("saml-key-file"),
-			CommonName: viper.GetString("saml-common-name"),
+		SAML: config.SAMLConfig{
+			CommonConfig: commConfig.SigningCertConfig{
+				CertFile:   viper.GetString("saml-cert-file"),
+				KeyFile:    viper.GetString("saml-key-file"),
+				CommonName: viper.GetString("saml-common-name"),
+			},
+			Issuer:       viper.GetString("saml-issuer-name"),
+			ValidityDays: viper.GetInt("saml-validity-days"),
 		},
 		FlavorSigning: commConfig.SigningCertConfig{
 			CertFile:   viper.GetString("flavor-signing-cert-file"),
@@ -381,8 +395,12 @@ func defaultConfig() *config.Configuration {
 			ConnectionRetryTime:     viper.GetInt("database-conn-retry-time"),
 		},
 		HRRS: hrrs.HRRSConfig{
-			RefreshPeriod:    viper.GetDuration(hrrs_refresh_period),
-			RefreshLookAhead: viper.GetDuration(hrrs_refresh_look_ahead),
+			RefreshPeriod:    viper.GetDuration(hrrsRefreshPeriod),
+			RefreshLookAhead: viper.GetDuration(hrrsRefreshLookAhead),
+		},
+		FVS: config.FVSConfig{
+			NumberOfVerifiers:    viper.GetInt(fvsNumberOfVerifiers),
+			NumberOfDataFetchers: viper.GetInt(fvsNumberOfDataFetchers),
 		},
 	}
 }

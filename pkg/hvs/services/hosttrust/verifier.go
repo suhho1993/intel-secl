@@ -28,7 +28,7 @@ type verifier struct {
 	reportStore      domain.ReportStore
 	flavorVerifier   flavorVerifier.Verifier
 	certsStore       models.CertificatesStore
-	tagIssuer        saml.IssuerConfiguration
+	samlIssuer       saml.IssuerConfiguration
 }
 
 func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
@@ -39,7 +39,7 @@ func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
 		reportStore:      cfg.ReportStore,
 		flavorVerifier:   cfg.FlavorVerifier,
 		certsStore:       cfg.CertsStore,
-		tagIssuer:        cfg.TagIssuerConfig,
+		samlIssuer:       cfg.SamlIssuerConfig,
 	}
 
 }
@@ -91,7 +91,7 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	// we have new Data from the host and therefore need to update based on the new report.
 	if len(finalTrustReport.Results) > 0 && !finalReportValid || newData {
 		log.Debugf("hosttrust/verifier:Verify() Generating new SAML for host: %s", hostId)
-		samlReportGen := NewSamlReportGenerator(&v.tagIssuer)
+		samlReportGen := NewSamlReportGenerator(&v.samlIssuer)
 		samlReport := samlReportGen.GenerateSamlReport(&finalTrustReport)
 
 		log.Debugf("hosttrust/verifier:Verify() Saving new report for host: %s", hostId)

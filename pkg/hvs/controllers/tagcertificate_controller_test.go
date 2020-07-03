@@ -46,7 +46,7 @@ var _ = Describe("TagCertificateController", func() {
 		certMap, _ := crypt.GetSubjectCertsMapFromPemFile(signingCertPath)
 
 		var tagCAStore = models.CertificateStore{
-			Key:          &tagKey,
+			Key:          tagKey,
 			CertPath:     signingCertPath,
 			Certificates: certMap,
 		}

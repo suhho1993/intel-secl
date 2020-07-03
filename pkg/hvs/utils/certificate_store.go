@@ -49,7 +49,7 @@ func loadCertificatesFromFile(certLocation *models.CertLocation) *models.Certifi
 
 	key := loadKey(certLocation.KeyFile)
 	return &models.CertificateStore{
-		Key:          &key,
+		Key:          key,
 		CertPath:     certLocation.CertPath,
 		Certificates: certs,
 	}
@@ -79,7 +79,7 @@ func loadCertificatesFromDir(certLocation *models.CertLocation) *models.Certific
 
 	key := loadKey(certLocation.KeyFile)
 	return &models.CertificateStore{
-		Key:          &key,
+		Key:          key,
 		CertPath:     certLocation.CertPath,
 		Certificates: certificates,
 	}
@@ -96,5 +96,5 @@ func loadKey(keyFile string) crypto.PrivateKey {
 	if err != nil {
 		defaultLog.WithError(err).Errorf("utils/certificate_store:loadKey() Error while reading key from file - " + keyFile)
 	}
-	return &key
+	return key
 }
