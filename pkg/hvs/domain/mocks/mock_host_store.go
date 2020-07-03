@@ -7,6 +7,7 @@ package mocks
 import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	"reflect"
@@ -32,7 +33,7 @@ func (store *MockHostStore) Retrieve(id uuid.UUID) (*hvs.Host, error) {
 			return h, nil
 		}
 	}
-	return nil, errors.New("no rows in result set")
+	return nil, errors.New(commErr.RowsNotFound)
 }
 
 // Update modifies a Host
@@ -43,7 +44,7 @@ func (store *MockHostStore) Update(host *hvs.Host) (*hvs.Host, error) {
 			return host, nil
 		}
 	}
-	return nil, errors.New("record not found")
+	return nil, errors.New(commErr.RecordNotFound)
 }
 
 // Delete deletes Host
@@ -54,7 +55,7 @@ func (store *MockHostStore) Delete(id uuid.UUID) error {
 			return nil
 		}
 	}
-	return errors.New("record not found")
+	return errors.New(commErr.RecordNotFound)
 }
 
 // Search returns a collection of Hosts filtered as per HostFilterCriteria
@@ -90,7 +91,7 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 	return hosts, nil
 }
 
-// AddFlavorgroups associates a Host with specified flavorgroups
+// AddFlavorgroups associate a Host with specified flavorgroups
 func (store *MockHostStore) AddFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
 	for _, fgId := range fgIds {
 		store.hostFlavorgroupStore = append(store.hostFlavorgroupStore, &hvs.HostFlavorgroup{
@@ -108,10 +109,10 @@ func (store *MockHostStore) RetrieveFlavorgroup(hId, fgId uuid.UUID) (*hvs.HostF
 			return hf, nil
 		}
 	}
-	return nil, errors.New("no rows in result set")
+	return nil, errors.New(commErr.RowsNotFound)
 }
 
-// RemoveFlavorgroup deletes Host Flavorgroup associations
+// RemoveFlavorgroups delete Host Flavorgroup associations
 func (store *MockHostStore) RemoveFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
 	for i, hf := range store.hostFlavorgroupStore {
 		if hf.HostId == hId {
@@ -123,7 +124,7 @@ func (store *MockHostStore) RemoveFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID)
 			}
 		}
 	}
-	return errors.New("record not found")
+	return errors.New(commErr.RecordNotFound)
 }
 
 // SearchFlavorgroups returns a collection of flavorgroup Ids associated with host Id

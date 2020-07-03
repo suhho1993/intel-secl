@@ -26,6 +26,7 @@ var _ = Describe("HostController", func() {
 	var hostStore *mocks2.MockHostStore
 	var hostStatusStore *mocks2.MockHostStatusStore
 	var flavorGroupStore *mocks2.MockFlavorgroupStore
+	var hostCredentialStore *mocks2.MockHostCredentialStore
 	var hostController *controllers.HostController
 	var hostTrustManager *smocks.MockHostTrustManager
 	BeforeEach(func() {
@@ -33,11 +34,13 @@ var _ = Describe("HostController", func() {
 		hostStore = mocks2.NewMockHostStore()
 		hostStatusStore = mocks2.NewFakeHostStatusStore()
 		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
+		hostCredentialStore = mocks2.NewMockHostCredentialStore()
 		certStore := mocks2.NewFakeCertificatesStore()
 		hostController = &controllers.HostController{
 			HStore:    hostStore,
 			HSStore:   hostStatusStore,
 			FGStore:   flavorGroupStore,
+			HCStore:   hostCredentialStore,
 			CertStore: certStore,
 			HTManager: hostTrustManager,
 		}

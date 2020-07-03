@@ -64,7 +64,6 @@ func (hcs *HostCredentialStore) Retrieve(id uuid.UUID) (*models.HostCredential, 
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_credential_store:Retrieve() failed to decrypt credentials")
 	}
-
 	return &hc, nil
 }
 
@@ -86,6 +85,7 @@ func (hcs *HostCredentialStore) Update(hc *models.HostCredential) (*models.HostC
 		HostName:         hc.HostName,
 		HardwareUuid:     hc.HardwareUuid,
 		Credential:       hc.Credential,
+		CreatedTs:        time.Now(),
 	}
 
 	if db := hcs.Store.Db.Model(&dbHostCredential).Updates(&dbHostCredential); db.Error != nil || db.RowsAffected != 1 {
@@ -123,7 +123,6 @@ func (hcs *HostCredentialStore) FindByHostId(id uuid.UUID) (*models.HostCredenti
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_credential_store:FindByHostId() failed to decrypt credentials")
 	}
-
 	return &hc, nil
 }
 
@@ -142,6 +141,5 @@ func (hcs *HostCredentialStore) FindByHostName(name string) (*models.HostCredent
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_credential_store:FindByHostName() failed to decrypt credentials")
 	}
-
 	return &hc, nil
 }

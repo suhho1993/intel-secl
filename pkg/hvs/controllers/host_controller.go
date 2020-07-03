@@ -6,6 +6,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
@@ -16,6 +17,8 @@ import (
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
+	hcUtil "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	model "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
@@ -218,7 +221,7 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Host with this name already exist"}
 	}
 
-	connectionString, err := utils.GenerateConnectionString(reqHost.ConnectionString)
+	connectionString, credential, err := hc.GenerateConnectionString(reqHost.ConnectionString)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Could not generate formatted connection string")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -270,7 +273,20 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to create Host"}
 	}
 
-	//TODO: create credential
+	// create credential
+	var hostCredential models.HostCredential
+	hostCredential.HostId = createdHost.Id
+	hostCredential.HostName = createdHost.HostName
+	hostCredential.Credential = credential
+	if createdHost.HardwareUuid != uuid.Nil {
+		hostCredential.HardwareUuid = createdHost.HardwareUuid
+	}
+
+	_, err = hc.HCStore.Create(&hostCredential)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host Credential create failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to create Host Credential"}
+	}
 
 	defaultLog.Debugf("Associating host %s with flavorgroups %+q", reqHost.HostName, fgNames)
 	if err := hc.linkFlavorgroupsToHost(fgNames, createdHost.Id); err != nil {
@@ -300,7 +316,7 @@ func (hc *HostController) UpdateHost(reqHost hvs.Host) (interface{}, int, error)
 	}
 
 	if reqHost.ConnectionString != "" {
-		connectionString, err := utils.GenerateConnectionString(reqHost.ConnectionString)
+		connectionString, credential, err := hc.GenerateConnectionString(reqHost.ConnectionString)
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/host_controller:UpdateHost() Could not generate formatted connection string")
 			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -312,7 +328,26 @@ func (hc *HostController) UpdateHost(reqHost hvs.Host) (interface{}, int, error)
 
 		reqHost.ConnectionString = csWithoutCredentials
 
-		//TODO: update credential
+		// update credential
+		hostCredential, err := hc.HCStore.FindByHostId(reqHost.Id)
+		if err != nil {
+			if strings.Contains(err.Error(), commErr.RowsNotFound) {
+				defaultLog.Debugf("controllers/host_controller:UpdateHost() Host Credential with specified host id could not be located")
+				hostCredential = nil
+			} else {
+				defaultLog.WithError(err).WithField("hostId", reqHost.Id).Error("controllers/host_controller:UpdateHost() Host Credential retrieve failed")
+				return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host Credential from database"}
+			}
+		}
+
+		if hostCredential != nil {
+			hostCredential.Credential = credential
+			_, err = hc.HCStore.Update(hostCredential)
+			if err != nil {
+				defaultLog.WithError(err).Error("controllers/host_controller:UpdateHost() Host Credential update failed")
+				return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host Credential"}
+			}
+		}
 	}
 
 	updatedHost, err := hc.HStore.Update(&reqHost)
@@ -348,6 +383,72 @@ func (hc *HostController) retrieveHost(id uuid.UUID) (interface{}, int, error) {
 		}
 	}
 	return host, http.StatusOK, nil
+}
+
+// GenerateConnectionString creates a formatted connection string. If the username and password are not specified, then it would retrieve it
+// from the credential table and forms the complete connection string.
+func (hc *HostController) GenerateConnectionString(cs string) (string, string, error) {
+	defaultLog.Trace("controllers/host_controller:GenerateConnectionString() Entering")
+	defer defaultLog.Trace("controllers/host_controller:GenerateConnectionString() Leaving")
+
+	vc, err := hcUtil.GetConnectorDetails(cs)
+	if err != nil {
+		return "", "", errors.Wrap(err, "Could not get vendor details from connection string")
+	}
+
+	conf := config.Global()
+	var username, password, credential string
+
+	if vc.Vendor != hcConstants.VMWARE {
+		username = "u=" + conf.HVS.Username
+		password = "p=" + conf.HVS.Password
+		credential = fmt.Sprintf("%s;%s", username, password)
+	} else {
+		//if credentials not specified in connection string, retrieve from credential table
+		if !strings.Contains(cs, "u=") || !strings.Contains(cs, "p=") {
+			var hostname string
+			// If the connection string is for VMware, we would have this substring from which we need to extract
+			// the host name. Otherwise we can extract the host name after the https:// in the connection string.
+			if strings.Contains(cs, "h=") {
+				hostname = vc.Configuration.Hostname
+			} else {
+				hostname = strings.Split(strings.Split(cs, "//")[1], ":")[0]
+			}
+
+			if hostname == "" {
+				return "", "", errors.New("Host connection string is formatted incorrectly, cannot retrieve host name")
+			}
+
+			// Fetch credentials from db
+			hostCredential, err := hc.HCStore.FindByHostName(hostname)
+			if err != nil {
+				return "", "", errors.Wrap(err, "Credentials must be provided for the host connection string")
+			}
+
+			credential = hostCredential.Credential
+			username = strings.Split(credential, ";")[0]
+			password = strings.Split(credential, ";")[1]
+		} else {
+			username = vc.Configuration.Username
+			password = vc.Configuration.Password
+			credential = fmt.Sprintf("u=%s;p=%s", username, password)
+		}
+	}
+
+	// validate credential information values are not null or empty
+	if credential == "" {
+		return "", "", errors.New("Credentials must be provided for the host connection string")
+	}
+
+	if username == "" {
+		return "", "", errors.New("Username must be provided in the host connection string")
+	}
+
+	if password == "" {
+		return "", "", errors.New("Password must be provided in the host connection string")
+	}
+
+	return fmt.Sprintf("%s;%s", cs, credential), credential, nil
 }
 
 func (hc *HostController) getHostInfo(cs string) (*model.HostInfo, error) {
