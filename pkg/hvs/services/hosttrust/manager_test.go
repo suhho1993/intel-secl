@@ -12,6 +12,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hostfetcher "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/host-fetcher"
+	hc "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/stretchr/testify/assert"
 	"time"
@@ -23,6 +24,8 @@ func TestHostTrustManagerNewService(t *testing.T) {
 
 	qs := mocks.NewQueueStore()
 	hs := mocks.NewHostStore()
+	hss := mocks.NewFakeHostStatusStore()
+
 	newHost, err := hs.Create(&hvs.Host{
 		HostName:         "test.domain.com",
 		Description:      "Host at test.domain.com",
@@ -36,7 +39,11 @@ func TestHostTrustManagerNewService(t *testing.T) {
 
 	//qs.Create(&models.Queue{})
 
-	cfg := domain.HostDataFetcherConfig{}
+	cfg := domain.HostDataFetcherConfig{
+		HostConnectorFactory: hc.HostConnectorFactory{},
+		RetryTimeMinutes:     7,
+		HostStatusStore:      hss,
+	}
 	_, f, _ := hostfetcher.NewService(cfg, 5)
 
 	fv := NewVerifier(domain.HostTrustVerifierConfig{})
@@ -50,7 +57,7 @@ func TestHostTrustManagerNewService(t *testing.T) {
 
 	err = ht.VerifyHostsAsync([]uuid.UUID{newHost.Id}, true, false)
 	assert.NoError(t, err)
-	time.Sleep(time.Duration(20 * time.Second))
+	time.Sleep(time.Duration(5 * time.Second))
 
 	qrecs, err := qs.Search(&models.QueueFilterCriteria{})
 	assert.NoError(t, err)
