@@ -116,8 +116,29 @@ func (svc *Service) startWorkers(workers int) {
 	}
 }
 
-func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (interface{}, error) {
-	return nil, errors.New("hosttrust/Manager: VerifyHost Not implemented")
+func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) error {
+	var hostData *types.HostManifest
+
+	if fetchHostData {
+		var host *hvs.Host
+		host, err := svc.hostStore.Retrieve(hostId)
+		if err != nil {
+			return errors.Wrap(err, "could not retrieve host id "+hostId.String())
+		}
+
+		hostData, err = svc.hdFetcher.Retrieve(context.Background(), hvs.Host{
+			Id:               host.Id,
+			ConnectionString: host.ConnectionString})
+
+	} else {
+		hostStatus, err := svc.hostStatusStore.Retrieve(hostId)
+		if err != nil || hostStatus.HostStatusInformation.HostState != hvs.HostStateConnected {
+			return errors.New("could not retrieve host manifest for host id " + hostId.String())
+		}
+
+		hostData = &hostStatus.HostManifest
+	}
+	return svc.verifier.Verify(hostId, hostData, fetchHostData)
 }
 
 func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {
@@ -286,6 +307,8 @@ func (svc *Service) doWork() {
 				return
 			} else {
 				hostId = hId
+				// TODO: check if hostmanifest is present. If it is not - prob due to conn failure, just remove this work from
+				// the queue here.
 				hostData = &status.HostManifest
 			}
 

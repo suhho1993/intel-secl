@@ -82,8 +82,8 @@ type MockHostTrustManager struct {
 	reportStore domain.ReportStore
 }
 
-func (htm MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (interface{}, error) {
-	return nil, errors.New("VerifyHost is not implemented")
+func (htm MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) error {
+	return errors.New("VerifyHost is not implemented")
 }
 
 func (htm MockHostTrustManager) VerifyHostsAsync(hostIDs []uuid.UUID, fetchHostData, preferHashMatch bool) error {

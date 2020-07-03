@@ -113,7 +113,7 @@ type (
 	HostTrustManager interface {
 		// Verify the trust of the a host.
 		//Returns the host trust report. For now marking this as interface since we have not defined the report structure
-		VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (interface{}, error)
+		VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) error
 
 		// This method is an ansychrounous method meant to do the verify the trust of the host
 		// asynchronously. The request are persisted to Store in case the server is taken down.

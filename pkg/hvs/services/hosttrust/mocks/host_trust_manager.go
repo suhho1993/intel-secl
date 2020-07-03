@@ -8,8 +8,8 @@ import "github.com/google/uuid"
 
 type MockHostTrustManager struct{}
 
-func (mock *MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (interface{}, error) {
-	return nil, nil
+func (mock *MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) error {
+	return nil
 }
 
 func (mock *MockHostTrustManager) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {

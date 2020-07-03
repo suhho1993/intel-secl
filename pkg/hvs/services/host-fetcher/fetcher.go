@@ -215,7 +215,29 @@ func (svc *Service) doWork() {
 }
 
 func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostManifest, error) {
-	return nil, errors.New("Not implemented")
+	hostData, err := svc.GetHostData(host.Id, host.ConnectionString)
+	hostStatus := &hvs.HostStatus{
+		HostID: host.Id,
+		HostStatusInformation: hvs.HostStatusInformation{
+			LastTimeConnected: time.Now(),
+		},
+	}
+	if err != nil {
+		hostStatus.HostStatusInformation.HostState = hvs.HostStateUnknown
+		if _, err := svc.hs.Create(hostStatus); err != nil {
+
+			log.Error("could not update host status to store")
+		}
+		return nil, err
+	}
+	hostStatus.HostStatusInformation.HostState = hvs.HostStateConnected
+	hostStatus.HostManifest = *hostData
+
+	if _, err := svc.hs.Create(hostStatus); err != nil {
+		log.Error("could not update host status and manifest to store")
+	}
+
+	return hostData, nil
 }
 
 func (svc *Service) RetriveAsync(ctx context.Context, host hvs.Host, rcvrs ...domain.HostDataReceiver) error {
