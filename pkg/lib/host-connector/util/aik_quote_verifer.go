@@ -7,6 +7,7 @@ package util
 import (
 	"bytes"
 	"crypto"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -408,4 +409,17 @@ func addPcrEntry(module types.Module, eventLogMap types.PcrEventLogMap) types.Pc
 	}
 	log.Debug("util/aik_quote_verifier:addPcrEntry() Successfully added all PCR log entries")
 	return eventLogMap
+}
+
+func GenerateNonce(nonceSize int) (string, error) {
+	log.Trace("util/aik_quote_verifier:GenerateNonce() Entering")
+	defer log.Trace("util/aik_quote_verifier:GenerateNonce() Leaving")
+
+	randomBytes := make([]byte, nonceSize)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(randomBytes), err
 }

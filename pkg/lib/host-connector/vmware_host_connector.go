@@ -48,7 +48,7 @@ func (vc *VmwareConnector) GetHostDetails() (taModel.HostInfo, error) {
 	return hostInfo, nil
 }
 
-func (vc *VmwareConnector) GetHostManifest(nonce string, pcrList []int, pcrBankList []string) (types.HostManifest, error) {
+func (vc *VmwareConnector) GetHostManifest() (types.HostManifest, error) {
 
 	log.Trace("vmware_host_connector :GetHostManifest() Entering")
 	defer log.Trace("vmware_host_connector :GetHostManifest() Leaving")

@@ -11,7 +11,7 @@ import (
 
 type HostConnector interface {
 	GetHostDetails() (taModel.HostInfo, error)
-	GetHostManifest(string, []int, []string) (types.HostManifest, error)
+	GetHostManifest() (types.HostManifest, error)
 	DeployAssetTag(string, string) error
 	DeploySoftwareManifest(taModel.Manifest) error
 	GetMeasurementFromManifest(taModel.Manifest) (taModel.Measurement, error)
