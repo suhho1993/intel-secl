@@ -20,7 +20,7 @@ type Host struct {
 }
 
 type HostFlavorgroupCollection struct {
-	HostFlavorgroups []*HostFlavorgroup `json:"flavorgroup_host_links" xml:"flavorgroup_host_link"`
+	HostFlavorgroups []HostFlavorgroup `json:"flavorgroup_host_links" xml:"flavorgroup_host_link"`
 }
 
 type HostFlavorgroup struct {

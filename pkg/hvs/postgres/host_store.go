@@ -170,65 +170,44 @@ func (hs *HostStore) RetrieveFlavorgroup(hId uuid.UUID, fgId uuid.UUID) (*hvs.Ho
 	return &hf, nil
 }
 
-func (hs *HostStore) RemoveFlavorgroup(hId uuid.UUID, fgId uuid.UUID) error {
-	defaultLog.Trace("postgres/host_store:RemoveFlavorgroup() Entering")
-	defer defaultLog.Trace("postgres/host_store:RemoveFlavorgroup() Leaving")
+func (hs *HostStore) RemoveFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
+	defaultLog.Trace("postgres/host_store:RemoveFlavorgroups() Entering")
+	defer defaultLog.Trace("postgres/host_store:RemoveFlavorgroups() Leaving")
 
-	if err := hs.Store.Db.Delete(&hostFlavorgroup{HostId: hId, FlavorgroupId: fgId}).Error; err != nil {
-		return errors.Wrap(err, "postgres/host_store:RemoveFlavorgroup() failed to delete Host Flavorgroup association")
+	tx := hs.Store.Db
+	if hId != uuid.Nil {
+		tx = tx.Where("host_id = ?", hId)
+	}
+
+	if len(fgIds) >= 1 {
+		tx = tx.Where("flavorgroup_id IN (?)", fgIds)
+	}
+
+	if err := tx.Delete(&hostFlavorgroup{}).Error ; err != nil {
+		return errors.Wrap(err, "postgres/host_store:RemoveFlavorgroups() failed to delete Host Flavorgroup association")
 	}
 	return nil
 }
 
-func (hs *HostStore) SearchFlavorgroups(criteria *models.HostFlavorgroupFilterCriteria) ([]*hvs.HostFlavorgroup, error) {
+func (hs *HostStore) SearchFlavorgroups(hId uuid.UUID) ([]uuid.UUID, error) {
 	defaultLog.Trace("postgres/host_store:SearchFlavorgroups() Entering")
 	defer defaultLog.Trace("postgres/host_store:SearchFlavorgroups() Leaving")
 
-	tx := buildHostFlavorgroupSearchQuery(hs.Store.Db, criteria)
-	if tx == nil {
-		return nil, errors.New("postgres/host_store:SearchFlavorgroups() Unexpected Error. Could not build" +
-			" a gorm query object.")
-	}
-
-	rows, err := tx.Rows()
+	rows, err := hs.Store.Db.Model(&hostFlavorgroup{}).Select("flavorgroup_id").Where(&hostFlavorgroup{HostId: hId}).Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_store:SearchFlavorgroups() failed to retrieve records from db")
 	}
 	defer rows.Close()
 
-	var hostFlavorgroups []*hvs.HostFlavorgroup
+	var fgIds []uuid.UUID
 	for rows.Next() {
-		hostFlavorgroup := hvs.HostFlavorgroup{}
-		if err := rows.Scan(&hostFlavorgroup.HostId, &hostFlavorgroup.FlavorgroupId); err != nil {
+		var fgId uuid.UUID
+		if err := rows.Scan(&fgId); err != nil {
 			return nil, errors.Wrap(err, "postgres/host_store:SearchFlavorgroups() failed to scan record")
 		}
-		hostFlavorgroups = append(hostFlavorgroups, &hostFlavorgroup)
+		fgIds = append(fgIds, fgId)
 	}
-	return hostFlavorgroups, nil
-}
-
-// helper function to build the query object for a Host Flavorgroup association search.
-func buildHostFlavorgroupSearchQuery(tx *gorm.DB, criteria *models.HostFlavorgroupFilterCriteria) *gorm.DB {
-	defaultLog.Trace("postgres/host_store:buildHostFlavorgroupSearchQuery() Entering")
-	defer defaultLog.Trace("postgres/host_store:buildHostFlavorgroupSearchQuery() Leaving")
-
-	if tx == nil {
-		return nil
-	}
-
-	tx = tx.Model(&hostFlavorgroup{})
-	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFlavorgroupFilterCriteria{}) {
-		return tx
-	}
-
-	if criteria.HostId != uuid.Nil {
-		tx = tx.Where("host_id = ?", criteria.HostId)
-	}
-	if criteria.FlavorgroupId != uuid.Nil {
-		tx = tx.Where("flavorgroup_id = ?", criteria.FlavorgroupId)
-	}
-
-	return tx
+	return fgIds, nil
 }
 
 // create trust cache

@@ -80,20 +80,14 @@ func (hc *HostController) Retrieve(w http.ResponseWriter, r *http.Request) (inte
 	defaultLog.Trace("controllers/host_controller:Retrieve() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Retrieve() Leaving")
 
-	id := uuid.MustParse(mux.Vars(r)["id"])
-	host, err := hc.HStore.Retrieve(id)
+	id := uuid.MustParse(mux.Vars(r)["hId"])
+	host, status, err := hc.retrieveHost(id)
 	if err != nil {
-		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Retrieve() Host with specified ID could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
-		} else {
-			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Retrieve() Host retrieve failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host"}
-		}
+		return nil, status, err
 	}
 
 	secLog.WithField("host", host).Infof("%s: Host retrieved by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
-	return host, http.StatusOK, nil
+	return host, status, nil
 }
 
 func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -120,12 +114,13 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	reqHost.Id = uuid.MustParse(mux.Vars(r)["id"])
+	reqHost.Id = uuid.MustParse(mux.Vars(r)["hId"])
 	updatedHost, status, err := hc.UpdateHost(reqHost)
 	if err != nil {
 		return nil, status, err
 	}
 
+	defaultLog.Debugf("Adding host %v to flavor-verify queue", reqHost.Id)
 	// Since the host has been updated, add it to the verify queue
 	err = hc.HTManager.VerifyHostsAsync([]uuid.UUID{reqHost.Id}, true, false)
 	if err != nil {
@@ -141,16 +136,10 @@ func (hc *HostController) Delete(w http.ResponseWriter, r *http.Request) (interf
 	defaultLog.Trace("controllers/host_controller:Delete() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Delete() Leaving")
 
-	id := uuid.MustParse(mux.Vars(r)["id"])
-	host, err := hc.HStore.Retrieve(id)
+	id := uuid.MustParse(mux.Vars(r)["hId"])
+	host, status, err := hc.retrieveHost(id)
 	if err != nil {
-		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete()  Host with specified id could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
-		} else {
-			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete() Host retrieve failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Host"}
-		}
+		return nil, status, err
 	}
 
 	//TODO: delete host reports for the host
@@ -305,15 +294,9 @@ func (hc *HostController) UpdateHost(reqHost hvs.Host) (interface{}, int, error)
 	defaultLog.Trace("controllers/host_controller:UpdateHost() Entering")
 	defer defaultLog.Trace("controllers/host_controller:UpdateHost() Leaving")
 
-	_, err := hc.HStore.Retrieve(reqHost.Id)
+	_, status, err := hc.retrieveHost(reqHost.Id)
 	if err != nil {
-		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			defaultLog.WithError(err).WithField("id", reqHost.Id).Error("controllers/host_controller:UpdateHost() Host with specified id could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
-		} else {
-			defaultLog.WithError(err).WithField("id", reqHost.Id).Error("controllers/host_controller:UpdateHost() Host retrieve failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host"}
-		}
+		return nil, status, err
 	}
 
 	if reqHost.ConnectionString != "" {
@@ -350,6 +333,42 @@ func (hc *HostController) UpdateHost(reqHost hvs.Host) (interface{}, int, error)
 	return updatedHost, http.StatusOK, nil
 }
 
+func (hc *HostController) retrieveHost(id uuid.UUID) (interface{}, int, error) {
+	defaultLog.Trace("controllers/host_controller:retrieveHost() Entering")
+	defer defaultLog.Trace("controllers/host_controller:retrieveHost() Leaving")
+
+	host, err := hc.HStore.Retrieve(id)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:retrieveHost() Host with specified id could not be located")
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
+		} else {
+			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:retrieveHost() Host retrieve failed")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host from database"}
+		}
+	}
+	return host, http.StatusOK, nil
+}
+
+func (hc *HostController) getHostInfo(cs string) (*model.HostInfo, error) {
+	defaultLog.Trace("controllers/host_controller:getHostInfo() Entering")
+	defer defaultLog.Trace("controllers/host_controller:getHostInfo() Leaving")
+
+	certList, err := hc.CertStore.GetCertificates(models.CaCertTypesRootCa.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "Error getting list of CA certificates from Certificate store")
+	}
+	conf := config.Global()
+	htcFactory := hostconnector.NewHostConnectorFactory(conf.AASApiUrl, certList)
+	hconnector, err := htcFactory.NewHostConnector(cs)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not instantiate host connector")
+	}
+
+	hostInfo, err := hconnector.GetHostDetails()
+	return &hostInfo, err
+}
+
 func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, hostId uuid.UUID) error {
 	defaultLog.Trace("controllers/host_controller:linkFlavorgroupsToHost() Entering")
 	defer defaultLog.Trace("controllers/host_controller:linkFlavorgroupsToHost() Leaving")
@@ -361,7 +380,13 @@ func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, host
 		})
 
 		if existingFlavorGroups != nil && len(existingFlavorGroups.Flavorgroups) > 0 {
-			flavorgroupIds = append(flavorgroupIds, existingFlavorGroups.Flavorgroups[0].ID)
+			linkExists, err := hc.flavorGroupHostLinkExists(hostId, existingFlavorGroups.Flavorgroups[0].ID)
+			if err != nil {
+				return errors.Wrap(err, "Could not check host-flavorgroup link existence")
+			}
+			if !linkExists {
+				flavorgroupIds = append(flavorgroupIds, existingFlavorGroups.Flavorgroups[0].ID)
+			}
 		} else {
 			flavorgroup, err := hc.createNewFlavorGroup(flavorgroupName)
 			if err != nil {
@@ -371,15 +396,11 @@ func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, host
 		}
 	}
 
-	for _, flavorgroupId := range flavorgroupIds {
-		linkExists, err := hc.flavorGroupHostLinkExists(flavorgroupId, hostId)
-		if err != nil {
-			return errors.Wrap(err, "Could not check flavorgroup-host link existence")
-		}
-		if !linkExists {
-			//TODO: Link host with flavorgroup
-		}
+	defaultLog.Debugf("Linking host %v with flavorgroups %+q", hostId, flavorgroupIds)
+	if err := hc.HStore.AddFlavorgroups(hostId, flavorgroupIds); err != nil {
+		return errors.Wrap(err, "Could not create host-flavorgroup links")
 	}
+
 	return nil
 }
 
@@ -396,11 +417,19 @@ func (hc *HostController) createNewFlavorGroup(flavorgroupName string) (*hvs.Fla
 	return flavorgroup, nil
 }
 
-func (hc *HostController) flavorGroupHostLinkExists(flavorgroupId, hostId uuid.UUID) (bool, error) {
+func (hc *HostController) flavorGroupHostLinkExists(hostId, flavorgroupId uuid.UUID) (bool, error) {
 	defaultLog.Trace("controllers/host_controller:flavorGroupHostLinkExists() Entering")
 	defer defaultLog.Trace("controllers/host_controller:flavorGroupHostLinkExists() Leaving")
 
-	//TODO: retrieve the flavorgroup-host link using flavorgroup id and host id
+	// retrieve the host-flavorgroup link using host id and flavorgroup id
+	_, err := hc.HStore.RetrieveFlavorgroup(hostId, flavorgroupId)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
 	return true, nil
 }
 
@@ -466,21 +495,138 @@ func populateHostFilterCriteria(params url.Values) (*models.HostFilterCriteria, 
 	return &criteria, nil
 }
 
-func (hc *HostController) getHostInfo(cs string) (*model.HostInfo, error) {
-	defaultLog.Trace("controllers/host_controller:getHostInfo() Entering")
-	defer defaultLog.Trace("controllers/host_controller:getHostInfo() Leaving")
+func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/host_controller:AddFlavorgroup() Entering")
+	defer defaultLog.Trace("controllers/host_controller:AddFlavorgroup() Leaving")
 
-	certList, err := hc.CertStore.GetCertificates(models.CaCertTypesRootCa.String())
-	if err != nil {
-		return nil, errors.Wrap(err, "Error getting list of CA certificates from Certificate store")
-	}
-	conf := config.Global()
-	htcFactory := hostconnector.NewHostConnectorFactory(conf.AASApiUrl, certList)
-	hconnector, err := htcFactory.NewHostConnector(cs)
-	if err != nil {
-		return nil, errors.Wrap(err, "Could not instantiate host connector")
+	if r.ContentLength == 0 {
+		secLog.Error("controllers/host_controller:AddFlavorgroup() The request body was not provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body was not provided"}
 	}
 
-	hostInfo, err := hconnector.GetHostDetails()
-	return &hostInfo, err
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	var reqHostFlavorgroup hvs.HostFlavorgroup
+	err := dec.Decode(&reqHostFlavorgroup)
+	if err != nil {
+		secLog.WithError(err).Errorf("controllers/host_controller:AddFlavorgroup() %s :  Failed to decode request body as Host Flavorgroup link", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
+	}
+
+	if reqHostFlavorgroup.FlavorgroupId == uuid.Nil {
+		secLog.Error("controllers/host_controller:AddFlavorgroup() Flavorgroup Id must be specified")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavorgroup Id must be specified"}
+	}
+
+	hId := uuid.MustParse(mux.Vars(r)["hId"])
+	_, status, err := hc.retrieveHost(hId)
+	if err != nil {
+		return nil, status, err
+	}
+
+	_, err = hc.FGStore.Retrieve(reqHostFlavorgroup.FlavorgroupId)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithError(err).WithField("id", reqHostFlavorgroup.FlavorgroupId).Error("controllers/host_controller:AddFlavorgroup() Flavorgroup with specified id could not be located")
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Flavorgroup with specified id does not exist"}
+		} else {
+			defaultLog.WithError(err).WithField("id", reqHostFlavorgroup.FlavorgroupId).Error("controllers/host_controller:AddFlavorgroup() Flavorgroup retrieve failed")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Flavorgroup from database"}
+		}
+	}
+
+	defaultLog.Debugf("Linking host %v with flavorgroup %v", hId, reqHostFlavorgroup.FlavorgroupId)
+	reqHostFlavorgroup.HostId = hId
+	err = hc.HStore.AddFlavorgroups(hId, []uuid.UUID{reqHostFlavorgroup.FlavorgroupId})
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:AddFlavorgroup() Host Flavorgroup association failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to associate Host with Flavorgroup"}
+	}
+
+	defaultLog.Debugf("Adding host %v to flavor-verify queue", hId)
+	err = hc.HTManager.VerifyHostsAsync([]uuid.UUID{hId}, false, false)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host to Flavor Verify Queue addition failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
+	}
+
+	secLog.WithField("host-flavorgroup-link", reqHostFlavorgroup).Infof("%s: Host Flavorgroup link created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return reqHostFlavorgroup, http.StatusCreated, nil
+}
+
+func (hc *HostController) RetrieveFlavorgroup(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/host_controller:RetrieveFlavorgroup() Entering")
+	defer defaultLog.Trace("controllers/host_controller:RetrieveFlavorgroup() Leaving")
+
+	hId := uuid.MustParse(mux.Vars(r)["hId"])
+	fgId := uuid.MustParse(mux.Vars(r)["fgId"])
+	hostFlavorgroup, status, err := hc.retrieveFlavorgroup(hId, fgId)
+	if err != nil {
+		return nil, status, err
+	}
+
+	secLog.WithField("host-flavorgroup-link", hostFlavorgroup).Infof("%s: Host Flavorgroup link retrieved by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
+	return hostFlavorgroup, status, nil
+}
+
+func (hc *HostController) RemoveFlavorgroup(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/host_controller:RemoveFlavorgroup() Entering")
+	defer defaultLog.Trace("controllers/host_controller:RemoveFlavorgroup() Leaving")
+
+	hId := uuid.MustParse(mux.Vars(r)["hId"])
+	fgId := uuid.MustParse(mux.Vars(r)["fgId"])
+	hostFlavorgroup, status, err := hc.retrieveFlavorgroup(hId, fgId)
+	if err != nil {
+		return nil, status, err
+	}
+
+	if err := hc.HStore.RemoveFlavorgroups(hId, []uuid.UUID{fgId}); err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:RemoveFlavorgroup() Host Flavorgroup link delete failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to delete Host Flavorgroup link"}
+	}
+
+	secLog.WithField("host-flavorgroup-link", hostFlavorgroup).Infof("Host Flavorgroup link deleted by: %s", r.RemoteAddr)
+	return nil, http.StatusNoContent, nil
+}
+
+func (hc *HostController) SearchFlavorgroups(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/host_controller:SearchFlavorgroups() Entering")
+	defer defaultLog.Trace("controllers/host_controller:SearchFlavorgroups() Leaving")
+
+	hId := uuid.MustParse(mux.Vars(r)["hId"])
+	fgIds, err := hc.HStore.SearchFlavorgroups(hId)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:SearchFlavorgroups() Host Flavorgroup links search failed")
+		return nil, http.StatusInternalServerError, errors.Errorf("Failed to search Host Flavorgroup links")
+	}
+
+	var hostFlavorgroups []hvs.HostFlavorgroup
+	for _, fgId := range fgIds {
+		hostFlavorgroups = append(hostFlavorgroups, hvs.HostFlavorgroup{
+			HostId:        hId,
+			FlavorgroupId: fgId,
+		})
+	}
+	hostFlavorgroupCollection := hvs.HostFlavorgroupCollection{HostFlavorgroups: hostFlavorgroups}
+
+	secLog.Infof("%s: Host Flavorgroup links searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
+	return hostFlavorgroupCollection, http.StatusOK, nil
+}
+
+func (hc *HostController) retrieveFlavorgroup(hId, fgId uuid.UUID) (interface{}, int, error) {
+	defaultLog.Trace("controllers/host_controller:retrieveFlavorgroup() Entering")
+	defer defaultLog.Trace("controllers/host_controller:retrieveFlavorgroup() Leaving")
+
+	hostFlavorgroup, err := hc.HStore.RetrieveFlavorgroup(hId, fgId)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithError(err).Error("controllers/host_controller:RetrieveFlavorgroup() Host Flavorgroup link with specified ids could not be located")
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host Flavorgroup link with specified ids does not exist"}
+		} else {
+			defaultLog.WithError(err).Error("controllers/host_controller:RetrieveFlavorgroup() Host Foavorgroup link retrieve failed")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host Flavorgroup link from database"}
+		}
+	}
+	return hostFlavorgroup, http.StatusOK, nil
 }

@@ -111,45 +111,30 @@ func (store *MockHostStore) RetrieveFlavorgroup(hId, fgId uuid.UUID) (*hvs.HostF
 	return nil, errors.New("no rows in result set")
 }
 
-// RemoveFlavorgroup deletes Host Flavorgroup association
-func (store *MockHostStore) RemoveFlavorgroup(hId, fgId uuid.UUID) error {
+// RemoveFlavorgroup deletes Host Flavorgroup associations
+func (store *MockHostStore) RemoveFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
 	for i, hf := range store.hostFlavorgroupStore {
-		if hf.HostId == hId && hf.FlavorgroupId == fgId {
-			store.hostFlavorgroupStore[i] = &hvs.HostFlavorgroup{}
-			return nil
+		if hf.HostId == hId {
+			for _, fgId := range fgIds {
+				if hf.FlavorgroupId == fgId {
+					store.hostFlavorgroupStore[i] = &hvs.HostFlavorgroup{}
+					return nil
+				}
+			}
 		}
 	}
 	return errors.New("record not found")
 }
 
-// SearchFlavorgroups returns a collection of Host Flavorgroup associations filtered as per HostFlavorgroupFilterCriteria
-func (store *MockHostStore) SearchFlavorgroups(criteria *models.HostFlavorgroupFilterCriteria) ([]*hvs.HostFlavorgroup, error) {
-	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFlavorgroupFilterCriteria{}) {
-		return store.hostFlavorgroupStore, nil
-	}
-
-	hostFlavorgroups := store.hostFlavorgroupStore
-	if criteria.HostId != uuid.Nil {
-		var filtered []*hvs.HostFlavorgroup
-		for _, hf := range hostFlavorgroups {
-			if hf.HostId == criteria.HostId {
-				filtered = append(filtered, hf)
-			}
+// SearchFlavorgroups returns a collection of flavorgroup Ids associated with host Id
+func (store *MockHostStore) SearchFlavorgroups(hId uuid.UUID) ([]uuid.UUID, error) {
+	var fgIds []uuid.UUID
+	for _, hf := range store.hostFlavorgroupStore {
+		if hf.HostId == hId {
+			fgIds = append(fgIds, hf.FlavorgroupId)
 		}
-		hostFlavorgroups = filtered
 	}
-
-	if criteria.FlavorgroupId != uuid.Nil {
-		var filtered []*hvs.HostFlavorgroup
-		for _, hf := range hostFlavorgroups {
-			if hf.FlavorgroupId == criteria.FlavorgroupId {
-				filtered = append(filtered, hf)
-			}
-		}
-		hostFlavorgroups = filtered
-	}
-
-	return hostFlavorgroups, nil
+	return fgIds, nil
 }
 
 func (store *MockHostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error){

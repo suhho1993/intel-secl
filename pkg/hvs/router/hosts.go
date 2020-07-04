@@ -13,6 +13,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
+	"strings"
 )
 
 // SetHostRoutes registers routes for hosts
@@ -29,7 +30,11 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, certStore *mod
 		flavorGroupStore, hostCredentialStore, certStore,
 		hostTrustManager)
 
-	hostIdExpr := fmt.Sprintf("%s%s", "/hosts/", validation.IdReg)
+	hostIdExpr := fmt.Sprintf("%s/%s", "/hosts", validation.IdReg)
+	strings.Replace(hostIdExpr, "id", "hId", 1)
+	flavorgroupExpr := fmt.Sprintf("%s%s", hostIdExpr, "/flavorgroups")
+	flavorgroupIdExpr := fmt.Sprintf("%s/%s", flavorgroupExpr, validation.IdReg)
+	strings.Replace(flavorgroupIdExpr, "id", "fgId", 1)
 
 	router.Handle("/hosts", ErrorHandler(permissionsHandler(ResponseHandler(hostController.Create),
 		[]string{constants.HostCreate}))).Methods("POST")
@@ -40,6 +45,15 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, certStore *mod
 	router.Handle(hostIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.Delete),
 		[]string{constants.HostDelete}))).Methods("DELETE")
 	router.Handle("/hosts", ErrorHandler(permissionsHandler(ResponseHandler(hostController.Search),
+		[]string{constants.HostSearch}))).Methods("GET")
+
+	router.Handle(flavorgroupExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.AddFlavorgroup),
+		[]string{constants.HostCreate}))).Methods("POST")
+	router.Handle(flavorgroupIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.RetrieveFlavorgroup),
+		[]string{constants.HostRetrieve}))).Methods("GET")
+	router.Handle(flavorgroupIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.RemoveFlavorgroup),
+		[]string{constants.HostDelete}))).Methods("DELETE")
+	router.Handle(flavorgroupExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.SearchFlavorgroups),
 		[]string{constants.HostSearch}))).Methods("GET")
 
 	return router

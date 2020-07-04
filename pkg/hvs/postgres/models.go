@@ -48,8 +48,8 @@ type (
 	}
 
 	hostFlavorgroup struct {
-		HostId        uuid.UUID `gorm:"primary_key;type:uuid"`
-		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid"`
+		HostId        uuid.UUID `gorm:"primary_key;type:uuid REFERENCES host(Id)"`
+		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavorgroup(Id)"`
 	}
 
 	flavorgroupFlavors struct {

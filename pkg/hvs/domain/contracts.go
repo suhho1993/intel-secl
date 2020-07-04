@@ -32,8 +32,8 @@ type (
 		Search(*models.HostFilterCriteria) ([]*hvs.Host, error)
 		AddFlavorgroups(uuid.UUID, []uuid.UUID) error
 		RetrieveFlavorgroup(uuid.UUID, uuid.UUID) (*hvs.HostFlavorgroup, error)
-		RemoveFlavorgroup(uuid.UUID, uuid.UUID) error
-		SearchFlavorgroups(*models.HostFlavorgroupFilterCriteria) ([]*hvs.HostFlavorgroup, error)
+		RemoveFlavorgroups(uuid.UUID, []uuid.UUID) error
+		SearchFlavorgroups(uuid.UUID) ([]uuid.UUID, error)
 		AddTrustCacheFlavors(uuid.UUID, []uuid.UUID) ([]uuid.UUID, error)
 		RemoveTrustCacheFlavors(uuid.UUID, []uuid.UUID) error
 		// RetrieveTrustCacheFlavors function takes in host UUID and a flavorgroup uuid. The reason for this

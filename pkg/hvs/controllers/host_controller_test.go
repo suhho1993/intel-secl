@@ -131,7 +131,7 @@ var _ = Describe("HostController", func() {
 	Describe("Retrieve an existing Host", func() {
 		Context("Retrieve Host by ID", func() {
 			It("Should retrieve a Host", func() {
-				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Retrieve))).Methods("GET")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -141,7 +141,7 @@ var _ = Describe("HostController", func() {
 		})
 		Context("Retrieve Host by non-existent ID", func() {
 			It("Should fail to retrieve Host", func() {
-				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Retrieve))).Methods("GET")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -155,7 +155,7 @@ var _ = Describe("HostController", func() {
 	Describe("Update an existing Host", func() {
 		Context("Provide a valid Host data", func() {
 			It("Should update an existing Host", func() {
-				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
 				hostJson := `{
 								"host_name": "127.0.0.1",
 								"connection_string": "intel:https://127.0.0.1:1443"
@@ -174,7 +174,7 @@ var _ = Describe("HostController", func() {
 		})
 		Context("Provide a Host data that contains malformed connection string", func() {
 			It("Should fail to update Host", func() {
-				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
 				hostJson := `{
 								"host_name": "localhost1",
 								"connection_string": "intel:https://t a.ip.com:1443"
@@ -193,7 +193,7 @@ var _ = Describe("HostController", func() {
 		})
 		Context("Provide a non-existent Host data", func() {
 			It("Should fail to update Host", func() {
-				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
 				hostJson := `{
 								"host_name": "localhost1",
 								"connection_string": "intel:https://ta.ip.com:1443"
@@ -216,7 +216,7 @@ var _ = Describe("HostController", func() {
 	Describe("Delete an existing Host", func() {
 		Context("Delete Host by ID", func() {
 			It("Should delete a Host", func() {
-				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -226,7 +226,7 @@ var _ = Describe("HostController", func() {
 		})
 		Context("Delete Host by non-existent ID", func() {
 			It("Should fail to delete Host", func() {
-				router.Handle("/hosts/{id:(?i:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$)}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
