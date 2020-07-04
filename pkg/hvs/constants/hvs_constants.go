@@ -8,19 +8,18 @@ import "time"
 
 // general HVS constants
 const (
-	ServiceName     = "HVS"
-	ServiceDir      = "hvs/"
-	OldServiceName  = "mtwilson"
-	ApiVersion      = "/v2"
-	ServiceUserName = "hvs"
+	ServiceName           = "HVS"
+	ServiceDir            = "hvs/"
+	OldServiceName        = "mtwilson"
+	ApiVersion            = "/v2"
+	ServiceUserName       = "hvs"
 
 	// Timestamp operations
-	HostStatusDateFormat = "2006-01-02 15:04:05"
+	ParamDateFormat    = "2006-01-02 15:04:05"
+	ParamDateFormatUTC = "2006-01-02T15:04:05.000Z"
 
 	// service remove command
-	ServiceRemoveCmd = "systemctl disable hvs"
-
-	HVSParamDateFormat = "2006-01-02 15:04:05"
+	ServiceRemoveCmd      = "systemctl disable hvs"
 )
 
 // these are used only when uninstalling service
@@ -141,6 +140,13 @@ const (
 // jwt constants
 const (
 	JWTCertsCacheTime = "1m"
+)
+
+// http media type
+const(
+	HTTPMediaTypeJson = "application/json"
+	HTTPMediaTypeSaml = "application/samlassertion+xml"
+	HTTPMediaTypeXml  = "application/xml"
 )
 
 // FVS constants

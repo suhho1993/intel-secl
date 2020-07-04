@@ -113,12 +113,12 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 func NewMockReportStore() *MockReportStore {
 	//TODO add more data
 	store := &MockReportStore{}
-	saml1text, _ := ioutil.ReadFile("../mocks/resources/saml_report")
-	trustReportBytes, _ := ioutil.ReadFile("../mocks/resources/trust_report.json")
+	saml1text, _ := ioutil.ReadFile("../resources/saml_report")
+	trustReportBytes, _ := ioutil.ReadFile("../resources/trust_report.json")
 	var trustReport hvs.TrustReport
 	json.Unmarshal(trustReportBytes, &trustReport)
-	created, _ := time.Parse(constants.HVSParamDateFormat, "2020-06-21 07:18:00.57")
-	expiration, _ := time.Parse(constants.HVSParamDateFormat, "2020-06-22 07:18:00.57")
+	created, _ := time.Parse(constants.ParamDateFormat, "2020-06-21 07:18:00.57")
+	expiration, _ := time.Parse(constants.ParamDateFormat, "2020-06-22 07:18:00.57")
 	store.Create(&models.HVSReport{
 		ID:          uuid.MustParse("15701f03-7b1d-49f9-ac62-6b9b0728bdb3"),
 		HostID:      uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),

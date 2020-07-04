@@ -9,22 +9,34 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 )
 
 // SetReportRoutes registers routes for reports
-func SetReportRoutes(router *mux.Router, store *postgres.DataStore) *mux.Router {
+func SetReportRoutes(router *mux.Router, store *postgres.DataStore, hostTrustManager domain.HostTrustManager) *mux.Router {
 	defaultLog.Trace("router/reports:SetReportRoutes() Entering")
 	defer defaultLog.Trace("router/reports:SetReportRoutes() Leaving")
 
 	reportStore := postgres.NewReportStore(store)
-	reportController := controllers.NewReportController(reportStore)
+	hostStore := postgres.NewHostStore(store)
+	hostStatusStore := postgres.NewHostStatusStore(store)
+	reportController := controllers.NewReportController(reportStore, hostStore, hostStatusStore, hostTrustManager)
 
 	reportIdExpr := fmt.Sprintf("%s%s", "/reports/", validation.IdReg)
+
+	router.Handle("/reports",
+		ErrorHandler(permissionsHandler(SamlAssertionResponseHandler(reportController.CreateSaml),
+			[]string{constants.ReportCreate}))).Methods("POST").Headers("Accept", constants.HTTPMediaTypeSaml)
+
 	router.Handle("/reports",
 		ErrorHandler(permissionsHandler(ResponseHandler(reportController.Create),
 			[]string{constants.ReportCreate}))).Methods("POST")
+
+	router.Handle("/reports",
+		ErrorHandler(permissionsHandler(SamlAssertionResponseHandler(reportController.SearchSaml),
+			[]string{constants.ReportSearch}))).Methods("GET").Headers("Accept", constants.HTTPMediaTypeSaml)
 
 	router.Handle(reportIdExpr,
 		ErrorHandler(permissionsHandler(ResponseHandler(reportController.Retrieve),

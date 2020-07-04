@@ -289,7 +289,7 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 
 	// validOn
 	if param := strings.TrimSpace(params.Get("validOn")); param != "" {
-		pTime, err := time.Parse(constants.HVSParamDateFormat, param)
+		pTime, err := time.Parse(constants.ParamDateFormat, param)
 		if err != nil {
 			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for validOn must be specified")
 		}
@@ -298,7 +298,7 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 
 	// validBefore
 	if param := strings.TrimSpace(params.Get("validBefore")); param != "" {
-		pTime, err := time.Parse(constants.HVSParamDateFormat, param)
+		pTime, err := time.Parse(constants.ParamDateFormat, param)
 		if err != nil {
 			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ValidBefore must be specified")
 		}
@@ -307,7 +307,7 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 
 	// validAfter
 	if param := strings.TrimSpace(params.Get("validAfter")); param != "" {
-		pTime, err := time.Parse(constants.HVSParamDateFormat, param)
+		pTime, err := time.Parse(constants.ParamDateFormat, param)
 		if err != nil {
 			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ValidAfter must be specified")
 		}

@@ -6,6 +6,7 @@ package router
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/auth"
 	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
@@ -39,11 +40,43 @@ func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, in
 			}
 			return err
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", constants.HTTPMediaTypeJson)
 		w.WriteHeader(status)
 		if data != nil {
 			// Send JSON response back to the client application
 			err = json.NewEncoder(w).Encode(data)
+			if err != nil {
+				defaultLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
+				secLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
+			}
+		}
+		return nil
+	}
+}
+
+// SamlAssertionResponseHandler handler for writing response header and body for all handler functions that produces saml assertion
+func SamlAssertionResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) endpointHandler {
+	defaultLog.Trace("router/handlers:SamlAssertionResponseHandler() Entering")
+	defer defaultLog.Trace("router/handlers:SamlAssertionResponseHandler() Leaving")
+
+	return func(w http.ResponseWriter, r *http.Request) error {
+		data, status, err := h(w, r) // execute application handler
+		if err != nil {
+			switch t := err.(type) {
+			case *commErr.EndpointError:
+				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+			case *commErr.ResourceError:
+				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+			case *commErr.PrivilegeError:
+				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+			}
+			return err
+		}
+		w.Header().Set("Content-Type", constants.HTTPMediaTypeSaml)
+		w.WriteHeader(status)
+		if data != nil {
+			// Send XML response back to the client application
+			err = xml.NewEncoder(w).Encode(data)
 			if err != nil {
 				defaultLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
 				secLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())

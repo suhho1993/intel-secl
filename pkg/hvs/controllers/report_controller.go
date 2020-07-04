@@ -25,11 +25,14 @@ import (
 )
 
 type ReportController struct {
-	Store domain.ReportStore
+	reportStore     domain.ReportStore
+	hostStore       domain.HostStore
+	hostStatusStore domain.HostStatusStore
+	HTManager 		domain.HostTrustManager
 }
 
-func NewReportController(store domain.ReportStore) *ReportController {
-	return &ReportController{store}
+func NewReportController(rs domain.ReportStore, hs domain.HostStore, hsts domain.HostStatusStore, ht domain.HostTrustManager ) *ReportController {
+	return &ReportController{rs, hs, hsts, ht}
 }
 
 func (controller ReportController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -53,13 +56,82 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := validateReportCreateCriteria(reqReportCreateCriteria); err != nil {
-		secLog.Errorf("controllers/report_controller:Create()  %s", err.Error())
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		secLog.WithError(err).Errorf("%s controllers/report_controller:Create() Error validating report create criteria", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Bad input given in input request"}
 	}
 
-	// TODO call Flavor verifier for trust report generation
-	secLog.WithField("Name", reqReportCreateCriteria.HostName).Infof("%s: report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
-	return nil, http.StatusCreated, nil
+	hvsReport, err := controller.createReport(reqReportCreateCriteria)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/report_controller:Create() Error while creating report from Flavor verify queue")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
+	}
+	report := convertToReport(hvsReport)
+	secLog.WithField("Name", report.HostInfo.HostName).Infof("%s: report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return report, http.StatusCreated, nil
+}
+
+func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCriteria) (*models.HVSReport, error) {
+	defaultLog.Trace("controllers/report_controller:createReport() Entering")
+	defer defaultLog.Trace("controllers/report_controller:createReport() Leaving")
+	hsCriteria := getHostFilterCriteria(rsCriteria)
+	hosts, err := controller.hostStore.Search(&hsCriteria)
+	if err != nil{
+		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Error while searching host")
+	}
+
+	if hosts == nil{
+		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Host does not exist")
+	}
+	//Always only one record is returned for the particular criteria
+	hostId := hosts[0].Id
+	hostStatus, err := controller.hostStatusStore.Retrieve(hostId)
+	if hostStatus.HostStatusInformation.HostState != hvs.HostStateConnected{
+		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Host is not in CONNECTED state")
+	}
+
+	//TODO return report once below function VerifyHost is implemented
+	_ = controller.HTManager.VerifyHost(hostId, true, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Failed to create a trust report, flavor verification failed")
+	}
+
+	return nil, nil
+}
+
+func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/report_controller:CreateSaml() Entering")
+	defer defaultLog.Trace("controllers/report_controller:CreateSaml() Leaving")
+
+	if r.ContentLength == 0 {
+		secLog.Error("controllers/report_controller:CreateSaml() The request body is not provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body is not provided"}
+	}
+
+	var reqReportCreateCriteria hvs.ReportCreateCriteria
+	// Decode the incoming json data to note struct
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(&reqReportCreateCriteria)
+	if err != nil {
+		defaultLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() %s :  Failed to decode request body as Report Create Criteria", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
+	}
+
+	if err := validateReportCreateCriteria(reqReportCreateCriteria); err != nil {
+		secLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() %s : Error validating report create criteria", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Bad input given in input request"}
+	}
+
+	hvsReport, err := controller.createReport(reqReportCreateCriteria)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml()  Error while creating report from Flavor verify queue")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
+	}
+
+	report := convertToReport(hvsReport)
+	secLog.WithField("Name", report.HostInfo.HostName).Infof("%s: saml report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return report.Saml, http.StatusCreated, nil
 }
 
 func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -68,7 +140,7 @@ func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Reque
 
 	id := uuid.MustParse(mux.Vars(r)["id"])
 
-	hvsReport, err := controller.Store.Retrieve(id)
+	hvsReport, err := controller.reportStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", id).Info(
@@ -94,11 +166,11 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 	// get the ReportFilterCriteria
 	reportFilterCriteria, err := getReportFilterCriteria(r.URL.Query())
 	if err != nil {
-		defaultLog.Warnf("controllers/report_controller:Search() %s", err.Error())
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		secLog.WithError(err).Warnf("controllers/report_controller:Search() %s", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid Input given in request"}
 	}
 
-	hvsReportCollection, err := controller.Store.Search(reportFilterCriteria)
+	hvsReportCollection, err := controller.reportStore.Search(reportFilterCriteria)
 	if err != nil {
 		defaultLog.WithError(err).Warnf("controllers/report_controller:Search() HVSReport search operation failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("HVSReport search operation failed")
@@ -110,6 +182,35 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 	}
 	secLog.Infof("%s: Reports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
 	return reportCollection, http.StatusOK, nil
+}
+
+func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/report_controller:SearchSaml() Entering")
+	defer defaultLog.Trace("controllers/report_controller:SearchSaml() Leaving")
+
+	// get the ReportFilterCriteria
+	reportFilterCriteria, err := getReportFilterCriteria(r.URL.Query())
+	if err != nil {
+		secLog.WithError(err).Warnf("controllers/report_controller:Search() %s", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid Input given in request"}
+	}
+
+	hvsReportCollection, err := controller.reportStore.Search(reportFilterCriteria)
+	if err != nil {
+		defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml() HVSReport search operation failed")
+		return nil, http.StatusInternalServerError, errors.Errorf("HVSReport search operation failed")
+	}
+
+	var samlStruct hvs.Saml
+
+	var samlCollection []hvs.Saml
+	for _, hvsReport := range hvsReportCollection{
+		samlStruct, err = hvsReport.GetSaml()
+		defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml()")
+		samlCollection = append(samlCollection, samlStruct)
+	}
+	secLog.Infof("%s: SamlReports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
+	return samlCollection, http.StatusOK, nil
 }
 
 // getReportFilterCriteria checks for set filter params in the Search request and returns a valid ReportFilterCriteria
@@ -167,9 +268,12 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	// fromDate
 	fromDate := strings.TrimSpace(params.Get("fromDate"))
 	if fromDate != "" {
-		pTime, err := time.Parse(constants.HVSParamDateFormat, fromDate)
+		pTime, err := time.Parse(constants.ParamDateFormat, fromDate)
 		if err != nil {
-			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for FromDate must be specified")
+			pTime, err = time.Parse(constants.ParamDateFormatUTC, fromDate)
+			if err != nil {
+				return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for fromDate must be specified")
+			}
 		}
 		rfc.FromDate = pTime
 	}
@@ -177,9 +281,12 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	// toDate
 	toDate := strings.TrimSpace(params.Get("toDate"))
 	if toDate != "" {
-		pTime, err := time.Parse(constants.HVSParamDateFormat, toDate)
+		pTime, err := time.Parse(constants.ParamDateFormat, toDate)
 		if err != nil {
-			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ToDate must be specified")
+			pTime, err = time.Parse(constants.ParamDateFormatUTC, toDate)
+			if err != nil {
+				return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ToDate must be specified")
+			}
 		}
 		rfc.ToDate = pTime
 	}
@@ -200,8 +307,8 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	numberOfDays := strings.TrimSpace(params.Get("numberOfDays"))
 	if numberOfDays != "" {
 		numDays, err := strconv.Atoi(numberOfDays)
-		if err != nil || numDays <= 0 {
-			return nil, errors.New("NumberOfDays must be an integer > 0")
+		if err != nil || numDays < 0 {
+			return nil, errors.New("NumberOfDays must be an integer >= 0")
 		}
 		rfc.NumberOfDays = numDays
 	}
@@ -266,4 +373,18 @@ func buildTrustInformation(trustReport hvs.TrustReport) *hvs.TrustInformation {
 		}
 	}
 	return &hvs.TrustInformation{Overall: tr.IsTrusted(),  FlavorTrust: flavorsTrustStatus}
+}
+
+func getHostFilterCriteria(rsCriteria hvs.ReportCreateCriteria) models.HostFilterCriteria{
+	var hsCriteria models.HostFilterCriteria
+	if rsCriteria.HostName != ""{
+		hsCriteria.NameEqualTo = rsCriteria.HostName
+	}
+	if rsCriteria.HostID != uuid.Nil{
+		hsCriteria.Id = rsCriteria.HostID
+	}
+	if rsCriteria.HardwareUUID != uuid.Nil{
+		hsCriteria.HostHardwareId = rsCriteria.HardwareUUID
+	}
+	return hsCriteria
 }

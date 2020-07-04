@@ -6,11 +6,14 @@
 package postgres
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -53,16 +56,18 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 	}
 
 	hvsReports, err := r.Search(&refilter)
+	var vsReport *models.HVSReport
 	if err != nil{
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			vsReport, err = r.Create(re)
+			if err != nil{
+				return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
+			}
+		}
 		return nil, errors.Wrap(err, "postgres/report_store:Update() Error while searching report")
 	}
-	vsReport := hvsReports[0]
-	if strings.Contains(err.Error(), commErr.RowsNotFound) {
-		vsReport, err = r.Create(re)
-		if err != nil{
-			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
-		}
-	}
+	vsReport = hvsReports[0]
+
 
 	dbReport := report{}
 	if vsReport.HostID != uuid.Nil {
@@ -116,6 +121,8 @@ func (r *ReportStore) Create(re *models.HVSReport) (*models.HVSReport, error) {
 
 // Search retrieves collection of HVSReport pertaining to a user-provided ReportFilterCriteria
 func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.HVSReport, error) {
+	defaultLog.Trace("postgres/report_store:Search() Entering")
+	defer defaultLog.Trace("postgres/report_store:Search() Leaving")
 
 	var reportID uuid.UUID
 	var hostID uuid.UUID
@@ -126,65 +133,142 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 	var toDate time.Time
 	var fromDate time.Time
 
-	if criteria.ID != uuid.Nil{
+	if criteria.ID != uuid.Nil {
 		reportID = criteria.ID
 	}
-	if criteria.HostID != uuid.Nil{
+	if criteria.HostID != uuid.Nil {
 		hostID = criteria.HostID
 	}
-	if criteria.HostHardwareID != uuid.Nil{
+	if criteria.HostHardwareID != uuid.Nil {
 		hostHardwareUUID = criteria.HostHardwareID
 	}
-	if criteria.HostStatus != ""{
+	if criteria.HostStatus != "" {
 		hostStatus = criteria.HostStatus
 	}
-	if criteria.HostName != ""{
+	if criteria.HostName != "" {
 		hostName = criteria.HostName
 	}
-	if !criteria.ToDate.IsZero(){
+	if !criteria.ToDate.IsZero() {
 		toDate = criteria.ToDate
 	}
-	if !criteria.FromDate.IsZero(){
+	if !criteria.FromDate.IsZero() {
 		fromDate = criteria.FromDate
 	}
 	latestPerHost = criteria.LatestPerHost
 
-	if criteria.NumberOfDays != 0{
+	if criteria.NumberOfDays != 0 {
 		toDate = time.Now()
 		fromDate = toDate.AddDate(0, 0, -(criteria.NumberOfDays))
 	}
 	var tx *gorm.DB
-
-	if criteria.FromDate.IsZero() && criteria.ToDate.IsZero() && criteria.LatestPerHost{
+	if criteria.FromDate.IsZero() && criteria.ToDate.IsZero() && criteria.LatestPerHost {
 		tx = buildLatestReportSearchQuery(r.Store.Db, reportID, hostID, hostHardwareUUID, hostName, hostStatus, criteria.Limit)
-	} else {
-		tx = buildReportSearchQuery(r.Store.Db, reportID, hostID, hostHardwareUUID, hostName, hostStatus, fromDate, toDate, latestPerHost, criteria.Limit)
-	}
 
-	if tx == nil {
-		return nil, errors.New("postgres/report_store:Search() Unexpected Error. Could not build" +
-			" a gorm query object in HVSReport Search function.")
-	}
-
-	rows, err := tx.Rows()
-	if err != nil {
-		return nil, errors.Wrap(err, "postgres/report_store:Search() failed to retrieve records from db")
-	}
-	defer rows.Close()
-
-
-	var reports []*models.HVSReport
-
-	for rows.Next() {
-		result := models.HVSReport{}
-
-		if err := rows.Scan(&result.ID, &result.HostID, (*PGTrustReport)(&result.TrustReport), &result.CreatedAt, &result.Expiration, &result.Saml); err != nil {
-			return nil, errors.Wrap(err, "postgres/report_store:Search() failed to scan record")
+		if tx == nil {
+			return nil, errors.New("postgres/report_store:Search() Unexpected Error. Could not build" +
+				" a gorm query object in HVSReport Search function.")
 		}
-		reports = append(reports, &result)
+
+		rows, err := tx.Rows()
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/report_store:Search() failed to retrieve records from db")
+		}
+		defer rows.Close()
+
+		var reports []*models.HVSReport
+
+		for rows.Next() {
+			result := models.HVSReport{}
+
+			if err := rows.Scan(&result.ID, &result.HostID, (*PGTrustReport)(&result.TrustReport), &result.CreatedAt, &result.Expiration, &result.Saml); err != nil {
+				return nil, errors.Wrap(err, "postgres/report_store:Search() failed to scan record")
+			}
+			reports = append(reports, &result)
+		}
+
+		return reports, nil
+	} else {
+		tx = buildReportSearchQuery(r.Store.Db, hostID, hostHardwareUUID, hostName, hostStatus, fromDate, toDate, latestPerHost, criteria.Limit)
+		if tx == nil {
+			return nil, errors.New("postgres/report_store:Search() Unexpected Error. Could not build" +
+				" a gorm query object in HVSReport Search function.")
+		}
+
+		rows, err := tx.Rows()
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/report_store:Search() failed to retrieve records from db")
+		}
+		defer rows.Close()
+
+		var reports []*models.HVSReport
+		for rows.Next() {
+			result := models.AuditLogEntry{}
+			if err := rows.Scan(&result.ID, &result.EntityID, &result.EntityType, &result.CreatedAt, &result.Action, (*PGAuditLogData)(&result.Data)); err != nil {
+				return nil, errors.Wrap(err, "postgres/report_store:Search() failed to scan record")
+			}
+			if reflect.DeepEqual(models.AuditTableData{}, result.Data) || len (result.Data.Columns) == 0{
+				continue
+			}
+			hvsReport, err := auditlogEntryToReport(result)
+			if err != nil {
+				return nil, errors.Wrap(err, "postgres/report_store:Search() convert auditloag entry into report")
+			}
+			reports = append(reports, hvsReport)
+		}
+
+		return reports, nil
+	}
+}
+
+func auditlogEntryToReport(auRecord models.AuditLogEntry) (*models.HVSReport, error) {
+	defaultLog.Trace("postgres/report_store:auditlogEntryToReport() Entering")
+	defer defaultLog.Trace("postgres/report_store:auditlogEntryToReport() Leaving")
+
+	var hvsReport models.HVSReport
+
+	if 	auRecord.EntityID != uuid.Nil{
+		hvsReport.ID = auRecord.EntityID
+	}
+	// TODO remove duplicate data: first column and the entityID are both same
+	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[1]) && auRecord.Data.Columns[1].Value != nil{
+		hvsReport.HostID = uuid.MustParse(fmt.Sprintf("%v", auRecord.Data.Columns[1].Value))
 	}
 
-	return reports, nil
+	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[2]) && auRecord.Data.Columns[2].Value != nil{
+		c, err := json.Marshal(auRecord.Data.Columns[2].Value)
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToReport() - marshalling failed")
+		}
+		err = json.Unmarshal(c, &hvsReport.TrustReport)
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToReport() - unmarshalling failed")
+		}
+	}
+
+	var err error
+	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[3]) && auRecord.Data.Columns[2].Value != nil {
+		createdString := fmt.Sprintf("%v", auRecord.Data.Columns[3].Value)
+		//TODO use standard UTC time in auditlog handler while inserting time from reports.
+		hvsReport.CreatedAt, err = time.Parse("2006-01-02T15:04:05-0700", createdString)
+		if err != nil{
+			return nil, errors.Wrap(err,"postgres/reports_store:auditlogEntryToReport() - error parsing time")
+		}
+	}
+
+	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[4]) && auRecord.Data.Columns[4].Value != nil {
+		expString := fmt.Sprintf("%v", auRecord.Data.Columns[4].Value)
+		//TODO use standard UTC time in auditlog handler while inserting time from reports.
+		hvsReport.Expiration, err = time.Parse("2006-01-02T15:04:05-0700", expString)
+		if err != nil{
+			return nil, errors.Wrap(err,"postgres/reports_store:auditlogEntryToReport() - error parsing time")
+		}
+	}
+
+	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[5]) && auRecord.Data.Columns[5].Value != nil {
+		hvsReport.Saml = fmt.Sprintf("%v", auRecord.Data.Columns[5].Value)
+	}
+
+	return &hvsReport, nil
 }
 
 // Delete method deletes report for a given Id
@@ -199,11 +283,71 @@ func (r *ReportStore) Delete(reportId uuid.UUID) error {
 }
 
 // buildReportSearchQuery is a helper function to build the query object for a report search.
-func buildReportSearchQuery(tx *gorm.DB, reportID, hostHardwareUUID, hostID uuid.UUID , hostName, hostState string, fromDate, toDate time.Time, latestPerHost bool, limit int) *gorm.DB {
+func buildReportSearchQuery(tx *gorm.DB, hostHardwareID, hostID uuid.UUID , hostName, hostState string, fromDate, toDate time.Time, latestPerHost bool, limit int) *gorm.DB {
 	defaultLog.Trace("postgres/report_store:buildReportSearchQuery() Entering")
 	defer defaultLog.Trace("postgres/report_store:buildReportSearchQuery() Leaving")
-	//TODO Build query for audit log table
-	return nil
+
+	if tx == nil {
+		return nil
+	}
+	//TODO remove after feature development
+	tx.LogMode(true)
+	if latestPerHost {
+		entity := "auj"
+		txSubQuery := tx.Table("audit_log_entry auj").Select("entity_id, max(auj.created) AS max_date")
+		txSubQuery = buildReportSearchQueryWithCriteria(txSubQuery, hostHardwareID, hostID, entity, hostName, hostState , fromDate, toDate)
+		txSubQuery = txSubQuery.Group("entity_id")
+		subQuery := txSubQuery.SubQuery()
+		tx = tx.Table("audit_log_entry au").Select("au.*").Joins("INNER JOIN ? a ON a.entity_id = au.entity_id AND a.max_date = au.created", subQuery)
+	} else {
+		entity := "au"
+		tx = tx.Table("audit_log_entry au").Select("au.*")
+		tx = buildReportSearchQueryWithCriteria(tx, hostHardwareID, hostID, entity, hostName, hostState , fromDate, toDate)
+	}
+	tx = tx.Limit(limit)
+	return tx
+}
+
+func buildReportSearchQueryWithCriteria(tx *gorm.DB, hostHardwareID, hostID uuid.UUID, entity, hostName string, hostState string, fromDate, toDate time.Time) *gorm.DB {
+	defaultLog.Trace("postgres/report_store:buildReportSearchQueryWithCriteria() Entering")
+	defer defaultLog.Trace("postgres/report_store:buildReportSearchQueryWithCriteria() Leaving")
+
+	if hostState != "" {
+		tx = tx.Joins("INNER JOIN host_status hs on hs.host_id = " + entity + ".data -> 'columns' -> 1 ->> 'value'")
+	}
+
+	if hostName != "" || hostHardwareID != uuid.Nil {
+		tx = tx.Joins("INNER JOIN host h on h.id = " + entity + ".data -> 'columns' -> 1 ->> 'value'")
+	}
+
+	//TODO rename after testing
+	tx = tx.Where(entity + ".entity_type = 'Report'")
+
+	if hostName != "" {
+		tx = tx.Where("h.name = ?", hostName)
+	}
+
+	if hostHardwareID != uuid.Nil {
+		tx = tx.Where("h.hardware_uuid = ?", hostHardwareID.String())
+	}
+
+	if hostID != uuid.Nil {
+		tx = tx.Where(entity + ".data -> 'columns' -> 1 ->> 'value' = ?", hostID.String())
+	}
+
+	if hostState != "" {
+		tx = tx.Where("hs.status ->> 'host_state' = ?", strings.ToUpper(hostState))
+	}
+
+	if !fromDate.IsZero() {
+		tx = tx.Where("CAST(" + entity + ".created AS TIMESTAMP) >= CAST(? AS TIMESTAMP)", fromDate)
+	}
+
+	if !toDate.IsZero() {
+		tx = tx.Where("CAST(" + entity + ".created AS TIMESTAMP) < CAST(? AS TIMESTAMP)", toDate)
+	}
+
+	return tx
 }
 
 // buildLatestReportSearchQuery is a helper function to build the query object for a latest report search.
@@ -214,7 +358,7 @@ func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostHardwareID, hostID 
 	if tx == nil {
 		return nil
 	}
-
+	//TODO remove after feature development
 	tx.LogMode(true)
 	tx = tx.Model(&report{})
 
@@ -223,7 +367,7 @@ func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostHardwareID, hostID 
 		tx = tx.Where("id = '%s'", reportID.String())
 		return tx
 	}
-	//TODO rename table names before final merge
+
 	if hostName != "" || hostHardwareID != uuid.Nil{
 		tx = tx.Joins("INNER JOIN host h on h.id = host_id")
 	}

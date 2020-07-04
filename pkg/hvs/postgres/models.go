@@ -114,9 +114,19 @@ type (
 		Certificate  string    `gorm:"certificate;not null"`
 		Comment      string    `gorm:"comment,omitempty"`
 	}
+	//TODO add triggers
+	PGAuditLogData  models.AuditTableData
+	auditLogEntry struct {
+		ID          uuid.UUID       `gorm:"id,omitempty,primary_key;type: uuid; index:audit_log_entry_pkey"`
+		EntityID    uuid.UUID       `gorm:"entity_id; type uuid"`
+		EntityType  string          `gorm:"entity_type;varchar(255)"`
+		CreatedAt   time.Time       `gorm:"created; not null"`
+		Action      string          `gorm:"action;varchar(50)"`
+		Data        PGAuditLogData  `gorm:"data" sql:"type:JSONB"`
+	}
 
 	tagCertificate struct {
-		ID uuid.UUID `gorm:"primary_key; type:uuid"`
+		ID uuid.UUID           `gorm:"primary_key; type:uuid"`
 		// TODO: Do we need to link this to Host.Hardware_UUID?
 		HardwareUUID uuid.UUID `gorm:"not null; type:uuid; column:hardware_uuid"`
 		Certificate  []byte    `gorm:"not null; type:bytea"`
@@ -196,6 +206,19 @@ func (trp *PGTrustReport) Scan(value interface{}) error {
 	}
 	return json.Unmarshal(b, &trp)
 }
+
+func (alp PGAuditLogData) Value() (driver.Value, error) {
+	return json.Marshal(alp)
+}
+
+func (alp *PGAuditLogData) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("postgres/models:PGAuditLogData_Scan() - type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &alp)
+}
+
 
 func (fl PGFlavorContent) Value() (driver.Value, error) {
 	return json.Marshal(fl)
