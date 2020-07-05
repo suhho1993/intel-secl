@@ -221,14 +221,13 @@ func (hs *HostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uu
 	trustCacheValues := []string{}
 	trustCacheValueArgs := []interface{}{}
 	for _, fId := range fIds {
-		trustCacheValues = append(trustCacheValues, "(?, ?, ?)")
-		trustCacheValueArgs = append(trustCacheValueArgs, uuid.New())
+		trustCacheValues = append(trustCacheValues, "(?, ?)")
 		trustCacheValueArgs = append(trustCacheValueArgs, fId)
 		trustCacheValueArgs = append(trustCacheValueArgs, hId)
 	}
 
 	insertQuery := fmt.Sprintf("INSERT INTO trust_cache VALUES %s", strings.Join(trustCacheValues, ","))
-	err := hs.Store.Db.Model(trustCache{}).AddForeignKey("flavor_id", "flavors(id)", "RESTRICT", "RESTRICT").AddForeignKey("host_id", "hosts(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, trustCacheValueArgs...).Error
+	err := hs.Store.Db.Model(trustCache{}).AddForeignKey("flavor_id", "flavor(id)", "RESTRICT", "RESTRICT").AddForeignKey("host_id", "host(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, trustCacheValueArgs...).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_store:AddTrustCacheFlavors() failed to create trust cache")
 	}
@@ -270,7 +269,7 @@ func (hs *HostStore) RetrieveTrustCacheFlavors(hId, fgId uuid.UUID ) ([]uuid.UUI
 		return nil, errors.New("postgres/host_store:RetrieveTrustCacheFlavors() Host ID and Flavorgroup ID must be set to get the list of flavors for a host belonging to a flavorgroup ID")
 	}
 
-	rows, err := hs.Store.Db.Model(&trustCache{}).Select("trust_cache.flavor_id").Joins("INNER JOIN flavorgroup_flavors ON trust_cache.flavor_id = flavorgroup_flavors.flavor_id").Where("flavorgroup_flavors.flavorgroup_id = ? AND trust_cache.host_id = ?", fgId, hId).Rows()
+	rows, err := hs.Store.Db.Model(&trustCache{}).Select("trust_cache.flavor_id").Joins("INNER JOIN flavorgroup_flavor ON trust_cache.flavor_id = flavorgroup_flavor.flavor_id").Where("flavorgroup_flavor.flavorgroup_id = ? AND trust_cache.host_id = ?", fgId, hId).Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_store:RetrieveTrustCacheFlavors() failed to retrieve records from db")
 	}

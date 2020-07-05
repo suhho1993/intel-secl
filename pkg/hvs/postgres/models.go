@@ -49,17 +49,17 @@ type (
 
 	hostFlavorgroup struct {
 		HostId        uuid.UUID `gorm:"primary_key;type:uuid REFERENCES host(Id)"`
-		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavorgroup(Id)"`
+		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id)"`
 	}
 
-	flavorgroupFlavors struct {
-		FlavorgroupId uuid.UUID   `gorm:"primary_key;not null"`
-		FlavorId      uuid.UUID   `gorm:"primary_key;not null"`
+	flavorgroupFlavor struct {
+		FlavorgroupId uuid.UUID   `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id)"`
+		FlavorId      uuid.UUID   `gorm:"primary_key;type:uuid REFERENCES flavor(Id)"`
 	}
 
 	trustCache struct {
-		FlavorId uuid.UUID `gorm:"primary_key;not null"`
-		HostId   uuid.UUID `gorm:"primary_key;not null"`
+		FlavorId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor(Id)"`
+		HostId   uuid.UUID `gorm:"primary_key;type:uuid REFERENCES host(Id)"`
 	}
 
 	hostCredential struct {
@@ -74,7 +74,7 @@ type (
 	// hostStatus holds all the hostStatus records for VS-attested hosts
 	hostStatus struct {
 		ID         uuid.UUID               `gorm:"primary_key;type:uuid"`
-		HostID     uuid.UUID               `sql:"type:uuid REFERENCES hosts(Id)"`
+		HostID     uuid.UUID               `sql:"type:uuid REFERENCES host(Id)"`
 		Status     PGHostStatusInformation `gorm:"column:status" sql:"type:JSONB"`
 		HostReport PGHostManifest          `gorm:"column:host_report" sql:"type:JSONB"`
 		CreatedAt  time.Time               `gorm:"column:created;not null"`
@@ -136,10 +136,6 @@ type (
 		NotAfter     time.Time `gorm:"not null; column:notafter"`
 	}
 )
-
-func (trustCache) TableName() string {
-	return "trust_cache"
-}
 
 func (qp PGJsonStrMap) Value() (driver.Value, error) {
 	return json.Marshal(qp)

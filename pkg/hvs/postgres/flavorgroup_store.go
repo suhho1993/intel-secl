@@ -134,8 +134,8 @@ func (f *FlavorGroupStore) AddFlavors(fgId uuid.UUID, fIds []uuid.UUID) ([]uuid.
 		fgfValueArgs = append(fgfValueArgs, fId)
 	}
 
-	insertQuery := fmt.Sprintf("INSERT INTO flavorgroup_flavors VALUES %s", strings.Join(fgfValues, ","))
-	err := f.Store.Db.Model(flavorgroupFlavors{}).AddForeignKey("flavor_id", "flavors(id)", "RESTRICT", "RESTRICT").AddForeignKey("flavorgroup_id", "flavor_groups(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, fgfValueArgs...).Error
+	insertQuery := fmt.Sprintf("INSERT INTO flavorgroup_flavor VALUES %s", strings.Join(fgfValues, ","))
+	err := f.Store.Db.Model(flavorgroupFlavor{}).AddForeignKey("flavor_id", "flavor(id)", "RESTRICT", "RESTRICT").AddForeignKey("flavorgroup_id", "flavor_group(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, fgfValueArgs...).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:AddFlavors() failed to create flavorgroup-flavor association")
 	}
@@ -159,7 +159,7 @@ func (f *FlavorGroupStore) RemoveFlavors(fgId uuid.UUID, fIds []uuid.UUID) error
 		tx = tx.Where("flavor_id IN (?)", fIds)
 	}
 
-	if err := tx.Delete(&flavorgroupFlavors{}).Error ; err != nil {
+	if err := tx.Delete(&flavorgroupFlavor{}).Error ; err != nil {
 		return errors.Wrap(err, "postgres/flavorgroup_store:RemoveFlavors() failed to delete flavorgroup-flavor association")
 	}
 	return nil
@@ -174,11 +174,11 @@ func (f *FlavorGroupStore) SearchFlavors(fgId uuid.UUID) ([]uuid.UUID, error) {
 		return nil, errors.New("postgres/flavorgroup_store:SearchFlavors() Flavorgroup ID must be set to search through flavorgroup-flavor association")
 	}
 
-	dbfgfl := flavorgroupFlavors{
+	dbfgfl := flavorgroupFlavor{
 		FlavorgroupId: fgId,
 	}
 
-	rows, err := f.Store.Db.Model(&flavorgroupFlavors{}).Select("flavor_id").Where(&dbfgfl).Rows()
+	rows, err := f.Store.Db.Model(&flavorgroupFlavor{}).Select("flavor_id").Where(&dbfgfl).Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:SearchFlavors() failed to retrieve records from db")
 	}

@@ -118,7 +118,7 @@ func (ds *DataStore) Migrate() error {
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 	//Needed to prompt gorm to not add (s) at the end of table name
 	ds.Db.SingularTable(true)
-	ds.Db.AutoMigrate(flavorGroup{}, host{}, hostStatus{}, esxiCluster{}, tagCertificate{}, tpmEndorsement{}, report{}, hostCredential{}, hostFlavorgroup{}, auditLogEntry{})
+	ds.Db.AutoMigrate(flavorGroup{}, host{}, flavor{}, trustCache{}, flavorgroupFlavor{}, hostStatus{}, esxiCluster{}, tagCertificate{}, tpmEndorsement{}, report{}, hostCredential{}, hostFlavorgroup{}, auditLogEntry{})
 	return nil
 }
 
