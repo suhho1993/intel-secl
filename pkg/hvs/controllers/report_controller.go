@@ -89,13 +89,12 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCrite
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Host is not in CONNECTED state")
 	}
 
-	//TODO return report once below function VerifyHost is implemented
-	_ = controller.HTManager.VerifyHost(hostId, true, false)
+	hvsReport, err := controller.HTManager.VerifyHost(hostId, true, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Failed to create a trust report, flavor verification failed")
 	}
 
-	return nil, nil
+	return hvsReport, nil
 }
 
 func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {

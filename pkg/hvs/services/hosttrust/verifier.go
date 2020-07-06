@@ -44,23 +44,23 @@ func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
 
 }
 
-func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newData bool) error {
+func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newData bool) (*models.HVSReport, error) {
 	defaultLog.Trace("hosttrust/verifier:Verify() Entering")
 	defer defaultLog.Trace("hosttrust/verifier:Verify() Leaving")
 
 	if hostData == nil {
-		return ErrInvalidHostManiFest
+		return nil, ErrInvalidHostManiFest
 	}
 	//TODO: Fix HardwareUUID has to be uuid
 	hwUuid, err := uuid.Parse(hostData.HostInfo.HardwareUUID)
 	if err != nil || hwUuid == uuid.Nil {
-		return ErrManifestMissingHwUUID
+		return nil, ErrManifestMissingHwUUID
 	}
 
 	// TODO : remove this when we remove the intermediate collection
 	var flvGroups []*hvs.FlavorGroup
 	if flvGroupColl, err := v.flavorGroupStore.Search(&models.FlavorGroupFilterCriteria{HostId: hostId.String()}); err != nil {
-		return errors.New("hosttrust/verifier:Verify() Store access error")
+		return nil, errors.New("hosttrust/verifier:Verify() Store access error")
 	} else {
 		flvGroups = (*flvGroupColl).Flavorgroups
 	}
@@ -89,15 +89,16 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	}
 	// create a new report if we actually have any results and either the Final Report is untrusted or
 	// we have new Data from the host and therefore need to update based on the new report.
+	var hvsReport *models.HVSReport
 	if len(finalTrustReport.Results) > 0 && !finalReportValid || newData {
 		log.Debugf("hosttrust/verifier:Verify() Generating new SAML for host: %s", hostId)
 		samlReportGen := NewSamlReportGenerator(&v.samlIssuer)
 		samlReport := samlReportGen.GenerateSamlReport(&finalTrustReport)
 
 		log.Debugf("hosttrust/verifier:Verify() Saving new report for host: %s", hostId)
-		v.storeTrustReport( hostId, &finalTrustReport, &samlReport)
+		hvsReport = v.storeTrustReport(hostId, &finalTrustReport, &samlReport)
 	}
-	return nil
+	return hvsReport, nil
 }
 
 func (v *verifier) getCachedFlavors(hostId uuid.UUID, flavGrpId uuid.UUID) ([]hvs.SignedFlavor, error) {
@@ -147,7 +148,7 @@ func (v *verifier) validateCachedFlavors(hostId uuid.UUID,
 	return htc, nil
 }
 
-func (v *verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustReport, samlReport *saml.SamlAssertion) {
+func (v *verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustReport, samlReport *saml.SamlAssertion) *models.HVSReport{
 	defaultLog.Trace("hosttrust/verifier:storeTrustReport() Entering")
 	defer defaultLog.Trace("hosttrust/verifier:storeTrustReport() Leaving")
 
@@ -163,4 +164,5 @@ func (v *verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustRepo
 	if err != nil {
 		log.WithError(err).Errorf("hosttrust/verifier:storeTrustReport() Failed to store Report")
 	}
+	return &hvsReport
 }

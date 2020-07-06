@@ -116,14 +116,14 @@ func (svc *Service) startWorkers(workers int) {
 	}
 }
 
-func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) error {
+func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (*models.HVSReport, error) {
 	var hostData *types.HostManifest
 
 	if fetchHostData {
 		var host *hvs.Host
 		host, err := svc.hostStore.Retrieve(hostId)
 		if err != nil {
-			return errors.Wrap(err, "could not retrieve host id "+hostId.String())
+			return nil, errors.Wrap(err, "could not retrieve host id "+hostId.String())
 		}
 
 		hostData, err = svc.hdFetcher.Retrieve(context.Background(), hvs.Host{
@@ -133,7 +133,7 @@ func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch 
 	} else {
 		hostStatus, err := svc.hostStatusStore.Retrieve(hostId)
 		if err != nil || hostStatus.HostStatusInformation.HostState != hvs.HostStateConnected {
-			return errors.New("could not retrieve host manifest for host id " + hostId.String())
+			return nil, errors.New("could not retrieve host manifest for host id " + hostId.String())
 		}
 
 		hostData = &hostStatus.HostManifest
