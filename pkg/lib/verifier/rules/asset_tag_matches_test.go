@@ -5,20 +5,21 @@
 package rules
 
 import (
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	"testing"
+
+	constants "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAssetTagMatchesNotProvisionedFault(t *testing.T) {
 
 	hostManifest := types.HostManifest{
-		AssetTagDigest : validAssetTagString,	// valid tag in host
+		AssetTagDigest: validAssetTagString, // valid tag in host
 	}
-	
+
 	// provide a nil certificate value to the rule
-	rule, err := NewAssetTagMatches(nil)
+	rule, err := NewAssetTagMatches(nil, assetTags)
 	assert.NoError(t, err)
 
 	// no faults should be returned...
@@ -33,11 +34,11 @@ func TestAssetTagMatchesNotProvisionedFault(t *testing.T) {
 func TestAssetTagMissingFromManifest(t *testing.T) {
 
 	hostManifest := types.HostManifest{
-		AssetTagDigest : "",	// not in host manifest
+		AssetTagDigest: "", // not in host manifest
 	}
-	
+
 	// simulate adding valid asset tag bytes from the flavor...
-	rule, err := NewAssetTagMatches(validAssetTagBytes)
+	rule, err := NewAssetTagMatches(validAssetTagBytes, assetTags)
 	assert.NoError(t, err)
 
 	// we should get a "missing asset tag" fault...
@@ -52,11 +53,11 @@ func TestAssetTagMissingFromManifest(t *testing.T) {
 func TestAssetTagMismatch(t *testing.T) {
 
 	hostManifest := types.HostManifest{
-		AssetTagDigest : invalidAssetTagString,	// in valid from the host
+		AssetTagDigest: invalidAssetTagString, // in valid from the host
 	}
-	
+
 	// simulate adding valid asset tag bytes from the flavor...
-	rule, err := NewAssetTagMatches(validAssetTagBytes)
+	rule, err := NewAssetTagMatches(validAssetTagBytes, assetTags)
 	assert.NoError(t, err)
 
 	// we should get a "asset tag mismatch" fault...
@@ -68,14 +69,14 @@ func TestAssetTagMismatch(t *testing.T) {
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
-func TestAssetTagMatches(t *testing.T) {
+func TestAssetTagMatchesNoFault(t *testing.T) {
 
 	hostManifest := types.HostManifest{
-		AssetTagDigest : validAssetTagString,	// valid tag in host
+		AssetTagDigest: validAssetTagString, // valid tag in host
 	}
-	
+
 	// simulate adding valid asset tag bytes from the flavor...
-	rule, err := NewAssetTagMatches(validAssetTagBytes)
+	rule, err := NewAssetTagMatches(validAssetTagBytes, assetTags)
 	assert.NoError(t, err)
 
 	// no faults should be returned...

@@ -12,17 +12,20 @@ package rules
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+
+	constants "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	asset_tag "github.com/intel-secl/intel-secl/v3/pkg/lib/asset-tag"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 )
 
-func NewAssetTagMatches(expectedAssetTagDigest []byte) (Rule, error) {
+func NewAssetTagMatches(expectedAssetTagDigest []byte, tags []asset_tag.TagKvAttribute) (Rule, error) {
 
-	assetTagMatches := assetTagMatches {
+	assetTagMatches := assetTagMatches{
 		expectedAssetTagDigest: expectedAssetTagDigest,
+		tags:                   tags,
 	}
 
 	return &assetTagMatches, nil
@@ -30,14 +33,16 @@ func NewAssetTagMatches(expectedAssetTagDigest []byte) (Rule, error) {
 
 type assetTagMatches struct {
 	expectedAssetTagDigest []byte
+	tags                   []asset_tag.TagKvAttribute
 }
 
 func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*hvs.RuleResult, error) {
 	var fault *hvs.Fault
 	result := hvs.RuleResult{}
-	result.Trusted = true 
+	result.Trusted = true
 	result.Rule.Name = constants.RuleAssetTagMatches
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartAssetTag)
+	result.Rule.Tags = rule.tags
 
 	if len(hostManifest.AssetTagDigest) == 0 {
 		fault = &hvs.Fault{
@@ -59,7 +64,7 @@ func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*hvs.RuleR
 			fault = &hvs.Fault{
 				Name:        constants.FaultAssetTagMismatch,
 				Description: "Asset tag provisioned does not match asset tag reported",
-			}	
+			}
 		}
 	}
 

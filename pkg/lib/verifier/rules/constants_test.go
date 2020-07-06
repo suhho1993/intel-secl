@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
@@ -6,6 +5,7 @@
 package rules
 
 import (
+	asset_tag "github.com/intel-secl/intel-secl/v3/pkg/lib/asset-tag"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 )
@@ -16,99 +16,102 @@ const (
 )
 
 var (
-	validAssetTagBytes = []byte{'b', 'e', 'e', 'f'}
-	invalidAssetTagBytes = []byte{'d', 'e', 'a', 'd'}
-	validAssetTagString = "YmVlZg=="
-	invalidAssetTagString = "ZGVhZA==" 
+	validAssetTagBytes    = []byte{'b', 'e', 'e', 'f'}
+	invalidAssetTagBytes  = []byte{'d', 'e', 'a', 'd'}
+	validAssetTagString   = "YmVlZg=="
+	invalidAssetTagString = "ZGVhZA=="
+	assetTags             = []asset_tag.TagKvAttribute{
+		{Key: "Country", Value: "US"},
+	}
 )
 
 var (
 	zeros = "00000000000000000000000000000000"
-	ones = "11111111111111111111111111111111"
+	ones  = "11111111111111111111111111111111"
 
-	testExpectedEventLogEntry = types.EventLogEntry {
+	testExpectedEventLogEntry = types.EventLogEntry{
 		PcrIndex: types.PCR0,
-		PcrBank: types.SHA256,
-		EventLogs: []types.EventLog {
+		PcrBank:  types.SHA256,
+		EventLogs: []types.EventLog{
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: zeros,
+				Value:      zeros,
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: ones,
+				Value:      ones,
 			},
 		},
 	}
 )
 
 var (
-	testHostManifestEventLogEntry = types.EventLogEntry {
+	testHostManifestEventLogEntry = types.EventLogEntry{
 		PcrIndex: types.PCR0,
-		PcrBank: types.SHA256,
-		EventLogs: []types.EventLog {
+		PcrBank:  types.SHA256,
+		EventLogs: []types.EventLog{
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: zeros,
+				Value:      zeros,
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: ones,
+				Value:      ones,
 			},
 
 			// these should be stripped by the rule...
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "a",
-				Info: map[string]string {
+				Value:      "a",
+				Info: map[string]string{
 					"ComponentName": "commandLine.",
 				},
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "b",
-				Info: map[string]string {
+				Value:      "b",
+				Info: map[string]string{
 					"ComponentName": "LCP_CONTROL_HASH",
 				},
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "c",
-				Info: map[string]string {
+				Value:      "c",
+				Info: map[string]string{
 					"ComponentName": "initrd",
 				},
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "d",
-				Info: map[string]string {
+				Value:      "d",
+				Info: map[string]string{
 					"ComponentName": "vmlinuz",
 				},
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "e",
-				Info: map[string]string {
+				Value:      "e",
+				Info: map[string]string{
 					"ComponentName": "componentName.imgdb.tgz",
 				},
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "f",
-				Info: map[string]string {
+				Value:      "f",
+				Info: map[string]string{
 					"ComponentName": "componentName.onetime.tgz",
 				},
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "g",
-				Label: "0x4fe",
+				Value:      "g",
+				Label:      "0x4fe",
 			},
 			{
 				DigestType: util.EVENT_LOG_DIGEST_SHA256,
-				Value: "h",
-				Info: map[string]string {
-					"PackageName": "",
+				Value:      "h",
+				Info: map[string]string{
+					"PackageName":   "",
 					"PackageVendor": "",
 				},
 			},
@@ -146,7 +149,6 @@ var (
 	   <File Path="/opt/trustagent/bin/module_analysis_da_tcg.sh">0f47a757c86e91a3a175cd6ee597a67f84c6fec95936d7f2c9316b0944c27cb72f84e32c587adb456b94e64486d14242</File>
 	   <CumulativeHash>fc898764d5adb9053136a90e2ecdf2202e0f7fa58ff4a0e73d9e115804bc7d6e362b170aa358b996f016d915bd017e06</CumulativeHash>
 	</Measurement>`
-
 
 	testSoftwareFlavor = `{
 		"meta": {
