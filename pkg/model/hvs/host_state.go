@@ -18,6 +18,8 @@ const (
 	HostStateUnknown
 	HostStateConnected
 	HostStateQueue
+	HostStateConnectionFailure
+	HostStateConnectionTimeout
 	HostStateUnauthorized
 	HostStateAIKNotProvisioned
 	HostStateEndorsementCertificateNotPresent
@@ -32,6 +34,8 @@ var hostStatusToString = [...]string{
 	HostStateUnknown:                          "UNKNOWN",
 	HostStateConnected:                        "CONNECTED",
 	HostStateQueue:                            "QUEUE",
+	HostStateConnectionFailure:                "CONNECTION_FAILURE",
+	HostStateConnectionTimeout:                "CONNECTION_TIMEOUT",
 	HostStateUnauthorized:                     "UNAUTHORIZED",
 	HostStateAIKNotProvisioned:                "AIK_NOT_PROVISIONED",
 	HostStateEndorsementCertificateNotPresent: "EC_NOT_PRESENT",
@@ -46,6 +50,8 @@ var hostStatusToID = map[string]HostState{
 	"UNKNOWN":                 HostStateUnknown,
 	"CONNECTED":               HostStateConnected,
 	"QUEUE":                   HostStateQueue,
+	"CONNECTION_FAILURE":      HostStateConnectionFailure,
+	"CONNECTION_TIMEOUT":      HostStateConnectionTimeout,
 	"UNAUTHORIZED":            HostStateUnauthorized,
 	"AIK_NOT_PROVISIONED":     HostStateAIKNotProvisioned,
 	"EC_NOT_PRESENT":          HostStateEndorsementCertificateNotPresent,
@@ -62,6 +68,11 @@ func GetHostState(str string) HostState {
 		return s
 	}
 	return HostStateInvalid
+}
+
+// String is used to convert the HostState from enum value to plain string format
+func (s HostState) String() string {
+	return hostStatusToString[s]
 }
 
 // Valid performs boundary-checks on the value of HostState

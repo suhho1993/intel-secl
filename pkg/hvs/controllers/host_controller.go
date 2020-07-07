@@ -223,13 +223,12 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	defaultLog.Debugf("Connecting to host to get the host manifest and the hardware UUID of the host : %s", reqHost.HostName)
-	// connect to the host and retrieve the host manifest
+	defaultLog.Debugf("Connecting to host to get the hardware UUID of the host : %s", reqHost.HostName)
+	// connect to the host and retrieve the host info
 	hostInfo, err := hc.getHostInfo(connectionString)
 	if err != nil {
-		var hostState string
-		//TODO: Determine host-state
-		defaultLog.Warnf("Could not connect to host, hardware UUID and host manifest will not be set: %s", hostState)
+		hostState := utils.DetermineHostState(err)
+		defaultLog.Warnf("Could not connect to host, hardware UUID will not be set: %s", hostState.String())
 	}
 
 	var hwUuid uuid.UUID
