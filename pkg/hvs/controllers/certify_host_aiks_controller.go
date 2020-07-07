@@ -124,7 +124,7 @@ func (certifyHostAiksController *CertifyHostAiksController) GetEkCerts(decrypted
 		return nil, nil, nil, err
 	}
 
-	return ekx509Cert, aikName, modulus, nil
+	return ekx509Cert, modulus, aikName, nil
 }
 
 func (certifyHostAiksController *CertifyHostAiksController) IdentityRequestGetChallenge(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -334,7 +334,6 @@ func (certifyHostAiksController *CertifyHostAiksController) CertifyAik(aikPubKey
 	}
 
 	clientCRTTemplate := x509.Certificate{
-
 		Issuer: pkix.Name{
 			CommonName: privacycaCert.Issuer.CommonName,
 		},
