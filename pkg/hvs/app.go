@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package hvs
 
 import (
@@ -17,6 +21,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
+
+var errInvalidCmd = errors.New("Invalid input after command")
 
 type App struct {
 	HomeDir        string
@@ -55,24 +61,29 @@ func (a *App) Run(args []string) error {
 		return nil
 	case "run":
 		if len(args) != 2 {
-			return errors.New("Invalid input after command")
+			return errInvalidCmd
 		}
 		return a.startServer()
 	case "start":
 		if len(args) != 2 {
-			return errors.New("Invalid input after command")
+			return errInvalidCmd
 		}
 		return a.start()
 	case "stop":
 		if len(args) != 2 {
-			return errors.New("Invalid input after command")
+			return errInvalidCmd
 		}
 		return a.stop()
 	case "status":
 		if len(args) != 2 {
-			return errors.New("Invalid input after command")
+			return errInvalidCmd
 		}
 		return a.status()
+	case "erase-data":
+		if len(args) != 2 {
+			return errInvalidCmd
+		}
+		return a.eraseData()
 	case "uninstall":
 		// the only allowed flag is --purge
 		purge := false
@@ -82,7 +93,7 @@ func (a *App) Run(args []string) error {
 			}
 			purge = true
 		} else if len(args) != 2 {
-			return errors.New("Invalid input after command")
+			return errInvalidCmd
 		}
 		return a.uninstall(purge)
 	case "setup":

@@ -36,7 +36,7 @@ type DBSetup struct {
 // this is only used here, better don't put in constants package
 const defaultSSLCertFilePath = constants.ConfigDir + "hvsdbsslcert.pem"
 
-const dbEnvHelpPrompt = "Following environment variables are required for Database setup:"
+const dbEnvHelpPrompt = "Following environment variables are required for Database related setups:"
 
 var dbEnvHelp = map[string]string{
 	"DATABASE_VENDOR":              "Vendor of database",
@@ -122,6 +122,7 @@ func (t *DBSetup) Run() error {
 }
 
 func (t *DBSetup) Validate() error {
+	fmt.Fprintln(t.ConsoleWriter, "Validating DB args")
 	// check if SSL certificate exists
 	if t.DBConfigPtr == nil {
 		return errors.New("Pointer to configuration structure can not be nil")
@@ -131,6 +132,7 @@ func (t *DBSetup) Validate() error {
 		_, err := os.Stat(t.SSLCert)
 		return err
 	}
+	fmt.Fprintln(t.ConsoleWriter, "Connecting to DB and create schemas")
 	// Create conf for DBTypePostgres
 	conf := postgres.Config{
 		Vendor:            constants.DBTypePostgres,

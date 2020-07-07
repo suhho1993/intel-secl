@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package hvs
 
 import (
@@ -6,6 +10,12 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
@@ -15,11 +25,6 @@ import (
 	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/verifier"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
@@ -164,11 +169,11 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 
 	// Initialize Host Trust service
 	_, htm, _ := hosttrust.NewService(domain.HostTrustMgrConfig{
-		PersistStore: qs,
-		HostStore:    hs,
-		HostStatusStore: hss,
-		HostFetcher:  hf,
-		Verifiers:     cfg.FVS.NumberOfVerifiers,
+		PersistStore:      qs,
+		HostStore:         hs,
+		HostStatusStore:   hss,
+		HostFetcher:       hf,
+		Verifiers:         cfg.FVS.NumberOfVerifiers,
 		HostTrustVerifier: hosttrust.NewVerifier(htv),
 	})
 

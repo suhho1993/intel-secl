@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package hvs
 
 import (
@@ -5,7 +9,10 @@ import (
 	"os"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/tasks"
 	e "github.com/intel-secl/intel-secl/v3/pkg/lib/common/exec"
+	"github.com/pkg/errors"
 )
 
 func executablePath() string {
@@ -108,5 +115,68 @@ func (a *App) uninstall(purge bool) error {
 	}
 	fmt.Fprintln(a.consoleWriter(), "HVS Service uninstalled")
 	a.stop()
+	return nil
+}
+
+var tablesToDrop = []string{
+	"esxi_cluster",
+	"flavor_group",
+	"host",
+	"host_credential",
+	"host_status",
+	"report",
+	"tag_certificate",
+	"tpm_endorsement",
+	// link_flavor_host,
+	// link_flavor_flavorgroup,
+	// link_flavorgroup_host,
+	// queue,
+	// flavorgroup,
+	// flavor,
+	// tag_certificate_request,
+	// host_tpm_password,
+	// audit_log_entry,
+	// tls_policy,
+}
+
+func (a *App) eraseData() error {
+	if a.configuration() == nil {
+		return errors.New("Failed to load configuration file")
+	}
+	dbConf := a.configuration().DB
+	conf := postgres.Config{
+		Vendor:            constants.DBTypePostgres,
+		Host:              dbConf.Host,
+		Port:              dbConf.Port,
+		User:              dbConf.Username,
+		Password:          dbConf.Password,
+		Dbname:            dbConf.DBName,
+		SslMode:           dbConf.SSLMode,
+		SslCert:           dbConf.SSLCert,
+		ConnRetryAttempts: dbConf.ConnectionRetryAttempts,
+		ConnRetryTime:     dbConf.ConnectionRetryTime,
+	}
+	// test connection and create schemas
+	dataStore, err := postgres.New(&conf)
+	if err != nil {
+		return errors.Wrap(err, "Failed to connect database")
+	}
+	for _, t := range tablesToDrop {
+		sqlCmd := "DROP TABLE IF EXISTS " + t + " CASCADE;"
+		dataStore.ExecuteSql(&sqlCmd)
+	}
+	if err := dataStore.Migrate(); err != nil {
+		return errors.Wrap(err, "failed to create removed db tables")
+	}
+	// create default flavor group
+	t := tasks.CreateDefaultFlavor{
+		DBConfig: dbConf,
+	}
+	if err := t.Run(); err != nil {
+		return errors.Wrap(err, "Failed to run setup task CreateDefaultFlavor")
+	}
+	if err := t.Validate(); err != nil {
+		return errors.Wrap(err, "Failed to validate setup task CreateDefaultFlavor")
+	}
 	return nil
 }

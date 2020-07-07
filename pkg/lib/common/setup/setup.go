@@ -22,9 +22,9 @@ type Runner struct {
 	ConsoleWriter io.Writer
 	ErrorWriter   io.Writer
 
-	tasks         map[string]Task
-	order         []string
-	lastFailedCmd string
+	tasks          map[string]Task
+	order          []string
+	failedCommands map[string]error
 }
 
 // If the task called is not added to the runner,
@@ -62,9 +62,10 @@ func (r *Runner) AddTask(name, envPrefix string, t Task) {
 // calls Task.Run() regarding less if the task hac been done previously.
 func (r *Runner) RunAll(force bool) error {
 	for _, taskName := range r.order {
-		if err := r.Run(taskName, force); err != nil {
-			return err
-		}
+		r.Run(taskName, force)
+	}
+	if len(r.failedCommands) != 0 {
+		return errors.New("Failed to run all tasks")
 	}
 	return nil
 }
@@ -103,12 +104,18 @@ func (r *Runner) Run(taskName string, force bool) error {
 	}
 	printToWriter(r.ConsoleWriter, "", "Running setup task: "+taskName)
 	if err := task.Run(); err != nil {
-		r.lastFailedCmd = taskName
-		return errors.Wrap(err, "Failed to run setup task "+taskName)
+		printToWriter(r.ConsoleWriter, "Error", "Failed to run task "+taskName)
+		retErr := errors.Wrap(err, "Failed to run task "+taskName)
+		r.failedCommands[taskName] = retErr
+		return retErr
 	}
 	if err := task.Validate(); err != nil {
-		r.lastFailedCmd = taskName
-		return errors.Wrap(err, "Failed to validate setup task "+taskName)
+		if _, ok := r.failedCommands[taskName]; !ok {
+			printToWriter(r.ConsoleWriter, "Error", "Failed to validate task "+taskName)
+			retErr := errors.Wrap(err, "Failed to validate task "+taskName)
+			r.failedCommands[taskName] = retErr
+			return retErr
+		}
 	}
 	return nil
 }
@@ -125,6 +132,6 @@ func (r *Runner) PrintHelp(taskName string) error {
 }
 
 // LastFailedCommand returns the last command that failed to run
-func (r *Runner) LastFailedCommand() string {
-	return r.lastFailedCmd
+func (r *Runner) GetFailedCommands() map[string]error {
+	return r.failedCommands
 }

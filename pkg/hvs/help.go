@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package hvs
 
 import (
@@ -16,6 +20,7 @@ Avaliable Commands:
 	start                  Start hvs
 	status                 Show the status of hvs
 	stop                   Stop hvs
+	erase-data             Reset all tables in database and create default flavor groups
 	uninstall [--purge]    Uninstall hvs
 		--purge            all configuration and data files will be removed if this flag is set
 
@@ -28,6 +33,8 @@ Available Tasks for setup:
 	all                             Runs all setup tasks
 	server                          Setup http server on given port
 	database                        Setup hvs database
+	create-default-flavorgroup      Create default flavor groups in database
+	create-dek                      Create data encryption key for HVS
 	download-ca-cert                Download CMS root CA certificate
 	download-cert-tls               Download CA certificate from CMS for tls
 	download-cert-saml              Download CA certificate from CMS for saml

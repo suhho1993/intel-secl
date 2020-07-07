@@ -81,6 +81,7 @@ func New(cfg *Config) (*DataStore, error) {
 		secLog.Warningf("%s: Failed to connect to db after %d attempts", commLogMsg.BadConnection, numAttempts)
 		return nil, errors.Wrapf(dbErr, "Failed to connect to db after %d attempts", numAttempts)
 	}
+	db.SingularTable(true)
 	store.Db = db
 	return &store, nil
 }
@@ -117,7 +118,6 @@ func (ds *DataStore) Migrate() error {
 	defaultLog.Trace("postgres/postgres:Migrate() Entering")
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 	//Needed to prompt gorm to not add (s) at the end of table name
-	ds.Db.SingularTable(true)
 	ds.Db.AutoMigrate(flavorGroup{}, host{}, flavor{}, trustCache{}, flavorgroupFlavor{}, hostStatus{}, esxiCluster{}, tagCertificate{}, tpmEndorsement{}, report{}, hostCredential{}, hostFlavorgroup{}, auditLogEntry{})
 	return nil
 }
