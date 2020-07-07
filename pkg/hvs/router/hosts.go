@@ -17,7 +17,7 @@ import (
 )
 
 // SetHostRoutes registers routes for hosts
-func SetHostRoutes(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, dek []byte) *mux.Router {
+func SetHostRoutes(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) *mux.Router {
 	defaultLog.Trace("router/hosts:SetHostRoutes() Entering")
 	defer defaultLog.Trace("router/hosts:SetHostRoutes() Leaving")
 
@@ -25,16 +25,17 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, certStore *mod
 	reportStore := postgres.NewReportStore(store)
 	hostStatusStore := postgres.NewHostStatusStore(store)
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
-	hostCredentialStore := postgres.NewHostCredentialStore(store, dek)
+	hostCredentialStore := postgres.NewHostCredentialStore(store, hostControllerConfig.DataEncryptionKey)
+
 	hostController := controllers.NewHostController(hostStore, reportStore, hostStatusStore,
 		flavorGroupStore, hostCredentialStore, certStore,
-		hostTrustManager)
+		hostTrustManager, hostControllerConfig)
 
 	hostIdExpr := fmt.Sprintf("%s/%s", "/hosts", validation.IdReg)
-	strings.Replace(hostIdExpr, "id", "hId", 1)
+	hostIdExpr = strings.Replace(hostIdExpr, "id", "hId", 1)
 	flavorgroupExpr := fmt.Sprintf("%s%s", hostIdExpr, "/flavorgroups")
 	flavorgroupIdExpr := fmt.Sprintf("%s/%s", flavorgroupExpr, validation.IdReg)
-	strings.Replace(flavorgroupIdExpr, "id", "fgId", 1)
+	flavorgroupIdExpr = strings.Replace(flavorgroupIdExpr, "id", "fgId", 1)
 
 	router.Handle("/hosts", ErrorHandler(permissionsHandler(ResponseHandler(hostController.Create),
 		[]string{constants.HostCreate}))).Methods("POST")

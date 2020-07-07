@@ -171,5 +171,12 @@ func NewMockHostStore() *MockHostStore {
 		Description:      "Vmware Host",
 	})
 
+	var fgIds []uuid.UUID
+	hostId := uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2")
+	fgIds = append(fgIds, uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"))
+	fgIds = append(fgIds, uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"))
+
+	store.AddFlavorgroups(hostId, fgIds)
+
 	return store
 }

@@ -36,3 +36,10 @@ type HostDataFetcherConfig struct {
 	RetryTimeMinutes     int
 	HostStatusStore      HostStatusStore
 }
+
+type HostControllerConfig struct {
+	HostConnectorFactory host_connector.HostConnectorFactory
+	DataEncryptionKey    []byte
+	Username             string
+	Password             string
+}

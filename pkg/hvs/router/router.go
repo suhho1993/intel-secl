@@ -7,7 +7,6 @@ package router
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"io/ioutil"
 	"net/http"
@@ -34,7 +33,7 @@ type Router struct {
 }
 
 // InitRoutes registers all routes for the application.
-func InitRoutes(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager) *mux.Router {
+func InitRoutes(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) *mux.Router {
 	defaultLog.Trace("router/router:InitRoutes() Entering")
 	defer defaultLog.Trace("router/router:InitRoutes() Leaving")
 
@@ -43,24 +42,14 @@ func InitRoutes(cfg *config.Configuration, dataStore *postgres.DataStore, certSt
 
 	// ISECL-8715 - Prevent potential open redirects to external URLs
 	router.SkipClean(true)
-	defineSubRoutes(router, constants.OldServiceName, cfg, dataStore, certStore, hostTrustManager)
-	defineSubRoutes(router, strings.ToLower(constants.ServiceName), cfg, dataStore, certStore, hostTrustManager)
+	defineSubRoutes(router, constants.OldServiceName, cfg, dataStore, certStore, hostTrustManager, hostControllerConfig)
+	defineSubRoutes(router, strings.ToLower(constants.ServiceName), cfg, dataStore, certStore, hostTrustManager, hostControllerConfig)
 	return router
 }
 
-func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager) {
+func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) {
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
-
-	dekBase64 := cfg.HVS.Dek
-	if dekBase64 == "" {
-		defaultLog.Warn("Data encryption key is not defined")
-	}
-
-	dek, err := base64.StdEncoding.DecodeString(dekBase64)
-	if err != nil {
-		defaultLog.WithError(err).Warn("Data encryption key is not base64 encoded")
-	}
 
 	serviceApi := "/" + service + constants.ApiVersion
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
@@ -79,7 +68,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetCertifyAiksRoutes(subRouter, dataStore, certStore)
 	subRouter = SetHostStatusRoutes(subRouter, dataStore)
 	subRouter = SetCertifyHostKeysRoutes(subRouter)
-	subRouter = SetHostRoutes(subRouter, dataStore, certStore, hostTrustManager, dek)
+	subRouter = SetHostRoutes(subRouter, dataStore, certStore, hostTrustManager, hostControllerConfig)
 	subRouter = SetReportRoutes(subRouter, dataStore, hostTrustManager)
 	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
 	subRouter = SetESXiClusterRoutes(subRouter, dataStore)

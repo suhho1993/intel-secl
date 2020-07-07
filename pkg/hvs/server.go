@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -63,8 +64,11 @@ func (a *App) startServer() error {
 	// Initialize Host trust manager
 	hostTrustManager := initHostTrustManager(c, dataStore, certStore)
 
+	// Initialize Host controller config
+	hostControllerConfig := initHostControllerConfig(c, certStore)
+
 	// Initialize routes
-	routes := router.InitRoutes(c, dataStore, certStore, hostTrustManager)
+	routes := router.InitRoutes(c, dataStore, certStore, hostTrustManager, hostControllerConfig)
 
 	defaultLog.Info("Starting server")
 	tlsConfig := &tls.Config{
@@ -111,6 +115,31 @@ func (a *App) startServer() error {
 	}
 	secLog.Info(commLogMsg.ServiceStop)
 	return nil
+}
+
+func initHostControllerConfig(cfg *config.Configuration, certStore *models.CertificatesStore) domain.HostControllerConfig {
+	defaultLog.Trace("server:initHostControllerConfig() Entering")
+	defer defaultLog.Trace("server:initHostControllerConfig() Leaving")
+
+	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]
+	hcFactory := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
+
+	dekBase64 := cfg.HVS.Dek
+	if dekBase64 == "" {
+		defaultLog.Warn("Data encryption key is not defined")
+	}
+	dek, err := base64.StdEncoding.DecodeString(dekBase64)
+	if err != nil {
+		defaultLog.WithError(err).Warn("Data encryption key is not base64 encoded")
+	}
+
+	hcc := domain.HostControllerConfig{
+		HostConnectorFactory: *hcFactory,
+		DataEncryptionKey: dek,
+		Username: cfg.HVS.Username,
+		Password: cfg.HVS.Password,
+	}
+	return hcc
 }
 
 func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore) domain.HostTrustManager {

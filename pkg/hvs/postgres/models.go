@@ -41,15 +41,15 @@ type (
 
 	host struct {
 		Id               uuid.UUID `gorm:"primary_key;type:uuid"`
-		Name             string    `gorm:"type:varchar(255);not null;index:idx_host_hostname"`
+		Name             string    `gorm:"type:varchar(255);unique;not null;index:idx_host_hostname"`
 		Description      string
 		ConnectionString string    `gorm:"not null"`
 		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
 	}
 
 	hostFlavorgroup struct {
-		HostId        uuid.UUID `gorm:"primary_key;type:uuid REFERENCES host(Id)"`
-		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id)"`
+		HostId        uuid.UUID `gorm:"primary_key;type:uuid REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
+		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
 	}
 
 	flavorgroupFlavor struct {
@@ -64,7 +64,7 @@ type (
 
 	hostCredential struct {
 		Id           uuid.UUID `gorm:"primary_key;type:uuid"`
-		HostId       uuid.UUID `gorm:"type:uuid;index:idx_host_credential_host_id"`
+		HostId       uuid.UUID `gorm:"type:uuid;index:idx_host_credential_host_id REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
 		HostName     string    `gorm:"type:varchar(255);index:idx_host_credential_hostname"`
 		HardwareUuid uuid.UUID `gorm:"type:uuid;index:idx_host_credential_hardware_uuid"`
 		Credential   string

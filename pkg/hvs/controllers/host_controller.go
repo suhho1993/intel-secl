@@ -9,14 +9,12 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
-	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcUtil "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -35,11 +33,12 @@ type HostController struct {
 	HCStore   domain.HostCredentialStore
 	CertStore *models.CertificatesStore
 	HTManager domain.HostTrustManager
+	HCConfig  domain.HostControllerConfig
 }
 
 func NewHostController(hs domain.HostStore, rs domain.ReportStore, hss domain.HostStatusStore,
 	fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore, cs *models.CertificatesStore,
-	htm domain.HostTrustManager) *HostController {
+	htm domain.HostTrustManager, hcc domain.HostControllerConfig) *HostController {
 	return &HostController{
 		HStore:    hs,
 		RStore:    rs,
@@ -48,6 +47,7 @@ func NewHostController(hs domain.HostStore, rs domain.ReportStore, hss domain.Ho
 		HCStore:   hcs,
 		CertStore: cs,
 		HTManager: htm,
+		HCConfig:  hcc,
 	}
 }
 
@@ -396,13 +396,13 @@ func (hc *HostController) GenerateConnectionString(cs string) (string, string, e
 		return "", "", errors.Wrap(err, "Could not get vendor details from connection string")
 	}
 
-	conf := config.Global()
 	var username, password, credential string
 
 	if vc.Vendor != hcConstants.VMWARE {
-		username = "u=" + conf.HVS.Username
-		password = "p=" + conf.HVS.Password
+		username = "u=" + hc.HCConfig.Username
+		password = "p=" + hc.HCConfig.Password
 		credential = fmt.Sprintf("%s;%s", username, password)
+		cs = fmt.Sprintf("%s;%s", cs, credential)
 	} else {
 		//if credentials not specified in connection string, retrieve from credential table
 		if !strings.Contains(cs, "u=") || !strings.Contains(cs, "p=") {
@@ -426,6 +426,7 @@ func (hc *HostController) GenerateConnectionString(cs string) (string, string, e
 			}
 
 			credential = hostCredential.Credential
+			cs = fmt.Sprintf("%s;%s", cs, credential)
 			username = strings.Split(credential, ";")[0]
 			password = strings.Split(credential, ";")[1]
 		} else {
@@ -448,25 +449,19 @@ func (hc *HostController) GenerateConnectionString(cs string) (string, string, e
 		return "", "", errors.New("Password must be provided in the host connection string")
 	}
 
-	return fmt.Sprintf("%s;%s", cs, credential), credential, nil
+	return cs, credential, nil
 }
 
 func (hc *HostController) getHostInfo(cs string) (*model.HostInfo, error) {
 	defaultLog.Trace("controllers/host_controller:getHostInfo() Entering")
 	defer defaultLog.Trace("controllers/host_controller:getHostInfo() Leaving")
 
-	certList, err := hc.CertStore.GetCertificates(models.CaCertTypesRootCa.String())
-	if err != nil {
-		return nil, errors.Wrap(err, "Error getting list of CA certificates from Certificate store")
-	}
-	conf := config.Global()
-	htcFactory := hostconnector.NewHostConnectorFactory(conf.AASApiUrl, certList)
-	hconnector, err := htcFactory.NewHostConnector(cs)
+	hostConnector, err := hc.HCConfig.HostConnectorFactory.NewHostConnector(cs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not instantiate host connector")
 	}
 
-	hostInfo, err := hconnector.GetHostDetails()
+	hostInfo, err := hostConnector.GetHostDetails()
 	return &hostInfo, err
 }
 
@@ -510,12 +505,12 @@ func (hc *HostController) createNewFlavorGroup(flavorgroupName string) (*hvs.Fla
 	defer defaultLog.Trace("controllers/host_controller:createNewFlavorGroup() Leaving")
 
 	fg := utils.CreateFlavorGroupByName(flavorgroupName)
-	flavorgroup, err := hc.FGStore.Create(&fg)
+	flavorGroup, err := hc.FGStore.Create(&fg)
 	if err != nil {
 		return nil, err
 	}
 
-	return flavorgroup, nil
+	return flavorGroup, nil
 }
 
 func (hc *HostController) flavorGroupHostLinkExists(hostId, flavorgroupId uuid.UUID) (bool, error) {
@@ -630,7 +625,7 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			defaultLog.WithError(err).WithField("id", reqHostFlavorgroup.FlavorgroupId).Error("controllers/host_controller:AddFlavorgroup() Flavorgroup with specified id could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Flavorgroup with specified id does not exist"}
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Flavorgroup with specified id does not exist"}
 		} else {
 			defaultLog.WithError(err).WithField("id", reqHostFlavorgroup.FlavorgroupId).Error("controllers/host_controller:AddFlavorgroup() Flavorgroup retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Flavorgroup from database"}

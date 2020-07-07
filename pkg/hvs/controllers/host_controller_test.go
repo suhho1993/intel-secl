@@ -130,7 +130,7 @@ var _ = Describe("HostController", func() {
 		})
 	})
 
-	// Specs for HTTP Get to "/hosts/{id}"
+	// Specs for HTTP Get to "/hosts/{hId}"
 	Describe("Retrieve an existing Host", func() {
 		Context("Retrieve Host by ID", func() {
 			It("Should retrieve a Host", func() {
@@ -154,7 +154,7 @@ var _ = Describe("HostController", func() {
 		})
 	})
 
-	// Specs for HTTP Put to "/hosts/{id}"
+	// Specs for HTTP Put to "/hosts/{hId}"
 	Describe("Update an existing Host", func() {
 		Context("Provide a valid Host data", func() {
 			It("Should update an existing Host", func() {
@@ -215,7 +215,7 @@ var _ = Describe("HostController", func() {
 		})
 	})
 
-	// Specs for HTTP Delete to "/hosts/{id}"
+	// Specs for HTTP Delete to "/hosts/{hId}"
 	Describe("Delete an existing Host", func() {
 		Context("Delete Host by ID", func() {
 			It("Should delete a Host", func() {
@@ -279,6 +279,182 @@ var _ = Describe("HostController", func() {
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+	})
+
+	// Specs for HTTP Post to "/hosts/{hId}/flavorgroups"
+	Describe("Create a new Host Flavorgroup link", func() {
+		Context("Provide a valid Flavorgroup Id", func() {
+			It("Should create a new Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.AddFlavorgroup))).Methods("POST")
+				hostJson := `{
+								"flavorgroup_id": "e57e5ea0-d465-461e-882d-1600090caa0d"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusCreated))
+			})
+		})
+		Context("Provide a non-existing Host Id", func() {
+			It("Should fail to create new Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.AddFlavorgroup))).Methods("POST")
+				hostJson := `{
+								"flavorgroup_id": "e57e5ea0-d465-461e-882d-1600090caa0d"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusNotFound))
+			})
+		})
+		Context("Provide a non-existing Flavorgroup Id", func() {
+			It("Should fail to create new Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.AddFlavorgroup))).Methods("POST")
+				hostJson := `{
+								"flavorgroup_id": "73755fda-c910-46be-821f-e8ddeab189e9"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+		Context("Provide an invalid Flavorgroup Id", func() {
+			It("Should fail to create new Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.AddFlavorgroup))).Methods("POST")
+				hostJson := `{
+								"flavorgroup_id": "local host"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+	})
+
+	// Specs for HTTP Get to "/hosts/{hId}/flavorgroups/{fgId}"
+	Describe("Retrieve an existing Host Flavorgroup link", func() {
+		Context("Retrieve by Host Id and Flavorgroup Id", func() {
+			It("Should retrieve a Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RetrieveFlavorgroup))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/e57e5ea0-d465-461e-882d-1600090caa0d", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+			})
+		})
+		Context("Retrieve by non-existent Host Id", func() {
+			It("Should fail to retrieve Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RetrieveFlavorgroup))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups/e57e5ea0-d465-461e-882d-1600090caa0d", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusNotFound))
+			})
+		})
+		Context("Retrieve by non-existent Flavorgroup Id", func() {
+			It("Should fail to retrieve Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RetrieveFlavorgroup))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
+	// Specs for HTTP Delete to "/hosts/{hId}/flavorgroups/{fgId}"
+	Describe("Delete an existing Host Flavorgroup link", func() {
+		Context("Delete by Id and Flavorgroup Id", func() {
+			It("Should delete a Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
+				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/e57e5ea0-d465-461e-882d-1600090caa0d", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusNoContent))
+			})
+		})
+		Context("Delete by non-existent Host Id", func() {
+			It("Should fail to delete Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
+				req, err := http.NewRequest("DELETE", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups/", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusNotFound))
+			})
+		})
+		Context("Delete by non-existent Flavorgroup Id", func() {
+			It("Should fail to delete Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
+				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
+	// Specs for HTTP Get to "/hosts/{hId}/flavorgroups"
+	Describe("Search for all the Host Flavorgroup links", func() {
+		Context("Get all the Host Flavorgroup links for a Host", func() {
+			It("Should get list of all the Host Flavorgroup links associated with Host", func() {
+				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.SearchFlavorgroups))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hostFlavorgroupCollection hvs.HostFlavorgroupCollection
+				json.Unmarshal(w.Body.Bytes(), &hostFlavorgroupCollection)
+				Expect(len(hostFlavorgroupCollection.HostFlavorgroups)).To(Equal(2))
+			})
+		})
+		Context("Get all the Host Flavorgroup links for non-existent Host", func() {
+			It("Should fail to get Host Flavorgroup links", func() {
+				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.SearchFlavorgroups))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hostFlavorgroupCollection hvs.HostFlavorgroupCollection
+				json.Unmarshal(w.Body.Bytes(), &hostFlavorgroupCollection)
+				Expect(len(hostFlavorgroupCollection.HostFlavorgroups)).To(Equal(0))
 			})
 		})
 	})
