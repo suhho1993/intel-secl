@@ -38,10 +38,10 @@ type HostDataFetcherConfig struct {
 }
 
 type HostControllerConfig struct {
-	HostConnectorFactory host_connector.HostConnectorFactory
-	DataEncryptionKey    []byte
-	Username             string
-	Password             string
+	HostConnectorProvider host_connector.HostConnectorProvider
+	DataEncryptionKey     []byte
+	Username              string
+	Password              string
 }
 
 type TagCertControllerConfig struct {

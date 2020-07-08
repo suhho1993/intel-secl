@@ -122,7 +122,7 @@ func initHostControllerConfig(cfg *config.Configuration, certStore *models.Certi
 	defer defaultLog.Trace("server:initHostControllerConfig() Leaving")
 
 	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]
-	hcFactory := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
+	hcProvider := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
 
 	dekBase64 := cfg.HVS.Dek
 	if dekBase64 == "" {
@@ -134,10 +134,10 @@ func initHostControllerConfig(cfg *config.Configuration, certStore *models.Certi
 	}
 
 	hcc := domain.HostControllerConfig{
-		HostConnectorFactory: *hcFactory,
-		DataEncryptionKey: dek,
-		Username: cfg.HVS.Username,
-		Password: cfg.HVS.Password,
+		HostConnectorProvider: hcProvider,
+		DataEncryptionKey:     dek,
+		Username:              cfg.HVS.Username,
+		Password:              cfg.HVS.Password,
 	}
 	return hcc
 }

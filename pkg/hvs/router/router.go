@@ -68,7 +68,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetCertifyAiksRoutes(subRouter, dataStore, certStore)
 	subRouter = SetHostStatusRoutes(subRouter, dataStore)
 	subRouter = SetCertifyHostKeysRoutes(subRouter)
-	subRouter = SetHostRoutes(subRouter, dataStore, certStore, hostTrustManager, hostControllerConfig)
+	subRouter = SetHostRoutes(subRouter, dataStore, hostTrustManager, hostControllerConfig)
 	subRouter = SetReportRoutes(subRouter, dataStore, hostTrustManager)
 	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
 	subRouter = SetESXiClusterRoutes(subRouter, dataStore)

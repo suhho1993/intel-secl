@@ -27,25 +27,21 @@ import (
 
 type HostController struct {
 	HStore    domain.HostStore
-	RStore    domain.ReportStore
 	HSStore   domain.HostStatusStore
 	FGStore   domain.FlavorGroupStore
 	HCStore   domain.HostCredentialStore
-	CertStore *models.CertificatesStore
 	HTManager domain.HostTrustManager
 	HCConfig  domain.HostControllerConfig
 }
 
-func NewHostController(hs domain.HostStore, rs domain.ReportStore, hss domain.HostStatusStore,
-	fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore, cs *models.CertificatesStore,
+func NewHostController(hs domain.HostStore, hss domain.HostStatusStore,
+	fgs domain.FlavorGroupStore, hcs domain.HostCredentialStore,
 	htm domain.HostTrustManager, hcc domain.HostControllerConfig) *HostController {
 	return &HostController{
 		HStore:    hs,
-		RStore:    rs,
 		HSStore:   hss,
 		FGStore:   fgs,
 		HCStore:   hcs,
-		CertStore: cs,
 		HTManager: htm,
 		HCConfig:  hcc,
 	}
@@ -399,9 +395,9 @@ func (hc *HostController) GenerateConnectionString(cs string) (string, string, e
 	var username, password, credential string
 
 	if vc.Vendor != hcConstants.VMWARE {
-		username = "u=" + hc.HCConfig.Username
-		password = "p=" + hc.HCConfig.Password
-		credential = fmt.Sprintf("%s;%s", username, password)
+		username = hc.HCConfig.Username
+		password = hc.HCConfig.Password
+		credential = fmt.Sprintf("u=%s;p=%s", username, password)
 		cs = fmt.Sprintf("%s;%s", cs, credential)
 	} else {
 		//if credentials not specified in connection string, retrieve from credential table
@@ -456,7 +452,7 @@ func (hc *HostController) getHostInfo(cs string) (*model.HostInfo, error) {
 	defaultLog.Trace("controllers/host_controller:getHostInfo() Entering")
 	defer defaultLog.Trace("controllers/host_controller:getHostInfo() Leaving")
 
-	hostConnector, err := hc.HCConfig.HostConnectorFactory.NewHostConnector(cs)
+	hostConnector, err := hc.HCConfig.HostConnectorProvider.NewHostConnector(cs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not instantiate host connector")
 	}

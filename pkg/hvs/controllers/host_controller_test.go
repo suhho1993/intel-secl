@@ -5,11 +5,14 @@
 package controllers_test
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
+	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"net/http"
 	"net/http/httptest"
@@ -29,20 +32,31 @@ var _ = Describe("HostController", func() {
 	var hostCredentialStore *mocks2.MockHostCredentialStore
 	var hostController *controllers.HostController
 	var hostTrustManager *smocks.MockHostTrustManager
+	var hostControllerConfig domain.HostControllerConfig
+	var hostConnectorProvider hostconnector.MockHostConnectorFactory
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		hostStore = mocks2.NewMockHostStore()
 		hostStatusStore = mocks2.NewFakeHostStatusStore()
 		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
 		hostCredentialStore = mocks2.NewMockHostCredentialStore()
-		certStore := mocks2.NewFakeCertificatesStore()
+
+		dekBase64 := "gcXqH8YwuJZ3Rx4qVzA/zhVvkTw2TL+iRAC9T3E6lII="
+		dek, _ := base64.StdEncoding.DecodeString(dekBase64)
+		hostControllerConfig = domain.HostControllerConfig{
+			HostConnectorProvider: hostConnectorProvider,
+			DataEncryptionKey:     dek,
+			Username:              "fakeuser",
+			Password:              "fakepassword",
+		}
+
 		hostController = &controllers.HostController{
 			HStore:    hostStore,
 			HSStore:   hostStatusStore,
 			FGStore:   flavorGroupStore,
 			HCStore:   hostCredentialStore,
-			CertStore: certStore,
 			HTManager: hostTrustManager,
+			HCConfig:  hostControllerConfig,
 		}
 	})
 

@@ -6,13 +6,16 @@ package host_connector
 
 import (
 	"crypto/x509"
+	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/ta"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/vmware"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
+	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
+	"io/ioutil"
 )
 
 // MockHostConnectorFactory is required for mocking the HostConnector dependency in flows involving HostConnector
@@ -43,6 +46,11 @@ func (micf MockIntelConnectorFactory) GetHostConnector(vendorConnector types.Ven
 	// AnythingOfType allows us to wildcard the digest hash since this will be computed at runtime
 	tac.On("DeployAssetTag", "7a569dad-2d82-49e4-9156-069b0065b262", mock.AnythingOfType("string")).Return(nil)
 	tac.On("DeployAssetTag", "00e4d709-8d72-44c3-89ae-c5edc395d6fe", mock.AnythingOfType("string")).Return(errors.New("Error deploying tag"))
+
+	var hostInfo taModel.HostInfo
+	hostInfoJson, _ := ioutil.ReadFile("./test/sample_platform_info.json")
+	_ = json.Unmarshal(hostInfoJson, &hostInfo)
+	tac.On("GetHostInfo").Return(hostInfo, nil)
 	return &IntelConnector{client: tac}, nil
 }
 

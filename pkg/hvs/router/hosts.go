@@ -10,25 +10,23 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"strings"
 )
 
 // SetHostRoutes registers routes for hosts
-func SetHostRoutes(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) *mux.Router {
+func SetHostRoutes(router *mux.Router, store *postgres.DataStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) *mux.Router {
 	defaultLog.Trace("router/hosts:SetHostRoutes() Entering")
 	defer defaultLog.Trace("router/hosts:SetHostRoutes() Leaving")
 
 	hostStore := postgres.NewHostStore(store)
-	reportStore := postgres.NewReportStore(store)
 	hostStatusStore := postgres.NewHostStatusStore(store)
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	hostCredentialStore := postgres.NewHostCredentialStore(store, hostControllerConfig.DataEncryptionKey)
 
-	hostController := controllers.NewHostController(hostStore, reportStore, hostStatusStore,
-		flavorGroupStore, hostCredentialStore, certStore,
+	hostController := controllers.NewHostController(hostStore, hostStatusStore,
+		flavorGroupStore, hostCredentialStore,
 		hostTrustManager, hostControllerConfig)
 
 	hostIdExpr := fmt.Sprintf("%s/%s", "/hosts", validation.IdReg)

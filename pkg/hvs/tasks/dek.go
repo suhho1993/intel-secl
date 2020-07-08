@@ -15,7 +15,7 @@ import (
 // 256 bits = 32 bytes
 const keyLen = 32
 
-var defaultB64Encoder = base64.URLEncoding
+var defaultB64Encoder = base64.StdEncoding
 
 type CreateDek struct {
 	DekStore *string
