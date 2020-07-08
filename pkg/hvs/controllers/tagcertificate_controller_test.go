@@ -7,13 +7,17 @@ package controllers_test
 import (
 	"crypto"
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,45 +25,91 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"testing"
 	"time"
 )
+
+const (
+	tagCASigningCertPath  = "../domain/mocks/resources/tagcert-scert.pem"
+	tagCASigningKeyPath   = "../domain/mocks/resources/tagcert-skey.pem"
+	flavorSigningCertPath = "../domain/mocks/resources/flavor-scert.pem"
+	flavorSigningKeyPath  = "../domain/mocks/resources/flavor-skey.pem"
+)
+
+func setupCertsStore() *models.CertificatesStore {
+	var tagKey, fsKey crypto.PrivateKey
+
+	//Generate TagCA Keypair
+	caCertBytes, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultCertIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	err := crypt.SavePrivateKeyAsPKCS8(key, tagCASigningKeyPath)
+	if err != nil {
+		return nil
+	}
+	err = crypt.SavePemCert(caCertBytes, tagCASigningCertPath)
+	if err != nil {
+		return nil
+	}
+	tagKey, _ = crypt.GetPrivateKeyFromPKCS8File(tagCASigningKeyPath)
+	certMap, _ := crypt.GetSubjectCertsMapFromPemFile(tagCASigningCertPath)
+
+	var tagCAStore = models.CertificateStore{
+		Key:          tagKey,
+		CertPath:     tagCASigningCertPath,
+		Certificates: certMap,
+	}
+
+	var caCertsStore = *mocks2.NewFakeCertificatesStore()
+
+	// Generate flavor signing Keypair
+	caCertBytes, key, _ = crypt.CreateKeyPairAndCertificate(constants.DefaultCN, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	_ = crypt.SavePrivateKeyAsPKCS8(key, flavorSigningKeyPath)
+	_ = crypt.SavePemCert(caCertBytes, flavorSigningCertPath)
+	fsKey, _ = crypt.GetPrivateKeyFromPKCS8File(flavorSigningKeyPath)
+	certMap, _ = crypt.GetSubjectCertsMapFromPemFile(flavorSigningCertPath)
+
+	var flavorCAStore = models.CertificateStore{
+		Key:          fsKey,
+		CertPath:     flavorSigningCertPath,
+		Certificates: certMap,
+	}
+
+	caCertsStore[models.CaCertTypesTagCa.String()] = &tagCAStore
+	caCertsStore[models.CertTypesFlavorSigning.String()] = &flavorCAStore
+
+	return &caCertsStore
+}
 
 var _ = Describe("TagCertificateController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
+	var caCertsStore *models.CertificatesStore
 	var tagCertStore *mocks2.MockTagCertificateStore
+	var hostStore *mocks2.MockHostStore
+	var flavorStore *mocks2.MockFlavorStore
 	var tagCertController *controllers.TagCertificateController
-	var signingCertPath = "../domain/mocks/tagcert-scert.pem"
-	var signingKeyPath = "../domain/mocks/tagcert-skey.pem"
-	var tagKey crypto.PrivateKey
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
+		caCertsStore = setupCertsStore()
 		tagCertStore = mocks2.NewFakeTagCertificateStore()
-
-		//Generate Privacyca cert
-		caCertBytes, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
-		_ = crypt.SavePrivateKeyAsPKCS8(key, signingKeyPath)
-		_ = crypt.SavePemCert(caCertBytes, signingCertPath)
-		tagKey, _ = crypt.GetPrivateKeyFromPKCS8File(signingKeyPath)
-
-		certMap, _ := crypt.GetSubjectCertsMapFromPemFile(signingCertPath)
-
-		var tagCAStore = models.CertificateStore{
-			Key:          tagKey,
-			CertPath:     signingCertPath,
-			Certificates: certMap,
+		hostStore = mocks2.NewMockHostStore()
+		flavorStore = mocks2.NewFakeFlavorStore()
+		// inject MockHostConnector into the TagCertController
+		hcp := host_connector.MockHostConnectorFactory{}
+		tcc := domain.TagCertControllerConfig{
+			AASApiUrl:       "/fakeaas",
+			ServiceUsername: "fakeuser",
+			ServicePassword: "fakepassword",
 		}
 
-		var caCertsStore = make(models.CertificatesStore)
-		caCertsStore[models.CaCertTypesTagCa.String()] = &tagCAStore
-
-		tagCertController = controllers.NewTagCertificateController(&caCertsStore, tagCertStore)
+		tagCertController = controllers.NewTagCertificateController(tcc, *caCertsStore, tagCertStore, hostStore, flavorStore, hcp)
 	})
 
 	AfterEach(func() {
-		_ = os.Remove(signingKeyPath)
-		_ = os.Remove(signingCertPath)
+		_ = os.Remove(flavorSigningCertPath)
+		_ = os.Remove(flavorSigningKeyPath)
+		_ = os.Remove(tagCASigningCertPath)
+		_ = os.Remove(tagCASigningKeyPath)
 	})
 
 	Describe("Create TagCertificates", func() {
@@ -154,7 +204,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(len(tcCollection.TagCertificates)).To(Equal(4))
+				Expect(len(tcCollection.TagCertificates)).To(Equal(7))
 			})
 		})
 
@@ -267,7 +317,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(tcCollection.TagCertificates)).To(Equal(2))
+				Expect(len(tcCollection.TagCertificates)).To(Equal(1))
 			})
 		})
 
@@ -299,7 +349,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(tcCollection.TagCertificates)).To(Equal(2))
+				Expect(len(tcCollection.TagCertificates)).To(Equal(1))
 			})
 		})
 
@@ -514,4 +564,196 @@ var _ = Describe("TagCertificateController", func() {
 			})
 		})
 	})
+
+	//-------TagCertificate DEPLOY Tests---------------------
+
+	// Specs for HTTP POST to "/rpc/deploy-tag-certificate"
+	Describe("Deploy TagCertificate", func() {
+		Context("Deploy valid TagCertificate to a connected Linux host", func() {
+			It("Should deploy a TagCertificate to the connected host", func() {
+				// we inject the MockTAClient into the controller
+				aasBaseURL := "/aas"
+				config.Global().AASApiUrl = aasBaseURL
+
+				hostUrl := "intel:/fakehost;u=fakeuser;p=fakepass"
+
+				hardwareUUID := "7a569dad-2d82-49e4-9156-069b0065b262"
+
+				_, _ = tagCertController.HostStore.Create(&hvs.Host{
+					Id:               uuid.New(),
+					HostName:         "MyFakeHost",
+					Description:      "Fakest Connected Host In The World",
+					ConnectionString: hostUrl,
+					HardwareUuid:     uuid.MustParse(hardwareUUID),
+				})
+
+				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Deploy))).Methods("POST")
+				// Deploy Request body
+				deployTcReq := `{ "certificate_id" : "cf197a51-8362-465f-9ec1-d88ad0023a27" }`
+				req, err := http.NewRequest(
+					"POST",
+					hvsRoutes.TagCertificateDeployEndpointPath,
+					strings.NewReader(deployTcReq),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("Deploy valid TagCertificate to a disconnected Linux host but Deploy Operation fails", func() {
+			It("Should return a 500 Error Code response", func() {
+				// we inject the MockTAClient into the controller
+				aasBaseURL := "/aas"
+				config.Global().AASApiUrl = aasBaseURL
+
+				hostUrl := "intel:/fakebadhost;u=fakeuser;p=fakepass"
+
+				hardwareUUID := "00e4d709-8d72-44c3-89ae-c5edc395d6fe"
+
+				_, _ = tagCertController.HostStore.Create(&hvs.Host{
+					Id:               uuid.New(),
+					HostName:         "MyFakeBadHost",
+					Description:      "Fakest Disconnected Host In The World",
+					ConnectionString: hostUrl,
+					HardwareUuid:     uuid.MustParse(hardwareUUID),
+				})
+
+				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Deploy))).Methods("POST")
+				// Deploy Request body
+				deployTcReq := `{ "certificate_id" : "7ce60664-faa3-4c2e-8c45-41e209e4f1db" }`
+				req, err := http.NewRequest(
+					"POST",
+					hvsRoutes.TagCertificateDeployEndpointPath,
+					strings.NewReader(deployTcReq),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusInternalServerError))
+			})
+		})
+
+		Context("Deploy expired TagCertificate to a connected Linux host", func() {
+			It("Should fail to deploy TagCertificate and return a 400 response code", func() {
+				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Deploy))).Methods("POST")
+				deployTcReq := `{ "certificate_id" : "390784a9-d83f-4fa1-b6b5-a77bd13a3c7b" }`
+				req, err := http.NewRequest(
+					"POST",
+					hvsRoutes.TagCertificateDeployEndpointPath,
+					strings.NewReader(deployTcReq),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		Context("Deploy non-existent TagCertificate to a connected Linux host", func() {
+			It("Should fail to deploy TagCertificate and return a 400 response code", func() {
+				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Deploy))).Methods("POST")
+				deployTcReq := `{ "certificate_id" : "146fffdb-97b9-4b5d-9b59-17c6e8248493" }`
+				req, err := http.NewRequest(
+					"POST",
+					hvsRoutes.TagCertificateDeployEndpointPath,
+					strings.NewReader(deployTcReq),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		Context("Deploy invalid TagCertificate to a connected Linux host", func() {
+			It("Should fail to deploy TagCertificate and return a 400 response code", func() {
+				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Deploy))).Methods("POST")
+				deployTcReq := `{ "certificate_id" : "73755fda-c910-46be-821f-xyxyz" }`
+				req, err := http.NewRequest(
+					"POST",
+					hvsRoutes.TagCertificateDeployEndpointPath,
+					strings.NewReader(deployTcReq),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		Context("Deploy valid TagCertificate to a Linux host that does not have a entry in the Host table", func() {
+			It("Should return a 400 Error Code response", func() {
+				// we inject the MockTAClient into the controller
+				aasBaseURL := "/aas"
+				config.Global().AASApiUrl = aasBaseURL
+
+				newTC, _ := tagCertController.Store.Create(&hvs.TagCertificate{
+					ID:           uuid.New(),
+					Certificate:  nil,
+					Subject:      "CN=Does Not Compute",
+					Issuer:       "Fake CA",
+					NotBefore:    time.Now(),
+					NotAfter:     time.Now().AddDate(1, 0, 0),
+					HardwareUUID: uuid.New(),
+				})
+
+				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Deploy))).Methods("POST")
+				// Deploy Request body
+				deployTcReq := `{ "certificate_id" :  "` + newTC.ID.String() + `" }`
+				req, err := http.NewRequest(
+					"POST",
+					hvsRoutes.TagCertificateDeployEndpointPath,
+					strings.NewReader(deployTcReq),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+	})
 })
+
+func TestNewTagCertificateController(t *testing.T) {
+	certStoreMissingTagCA := setupCertsStore()
+	delete(*certStoreMissingTagCA, models.CaCertTypesTagCa.String())
+
+	certStoreMissingFSCA := setupCertsStore()
+	delete(*certStoreMissingFSCA, models.CaCertTypesTagCa.String())
+	type args struct {
+		certStore *models.CertificatesStore
+		tcs       domain.TagCertificateStore
+		hs        domain.HostStore
+		fs        domain.FlavorStore
+		hcp       host_connector.HostConnectorProvider
+	}
+	tests := []struct {
+		name string
+		args args
+		want *controllers.TagCertificateController
+	}{
+		{
+			name: "CertStore missing TagCA to NewTagCertificateController",
+			args: args{
+				certStore: certStoreMissingTagCA,
+				tcs:       mocks2.NewFakeTagCertificateStore(),
+			},
+		},
+		{
+			name: "CertStore missing Flavor Signing CA to NewTagCertificateController",
+			args: args{
+				certStore: certStoreMissingFSCA,
+				tcs:       mocks2.NewFakeTagCertificateStore(),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := controllers.NewTagCertificateController(domain.TagCertControllerConfig{}, *tt.args.certStore, tt.args.tcs, tt.args.hs, tt.args.fs, tt.args.hcp); got != nil {
+				t.Errorf("TagCertificateController should be non-nil")
+			}
+		})
+	}
+}

@@ -43,3 +43,9 @@ type HostControllerConfig struct {
 	Username             string
 	Password             string
 }
+
+type TagCertControllerConfig struct {
+	AASApiUrl       string
+	ServiceUsername string
+	ServicePassword string
+}

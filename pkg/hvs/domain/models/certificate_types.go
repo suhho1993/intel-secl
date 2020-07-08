@@ -94,7 +94,7 @@ func IsValidCertType(certType string) bool {
 // Validate if domain is present in specific certificate types
 func IsValidDomainType(domain string) bool {
 	return domain != "" &&
-		 (domain == CaCertTypesRootCa.String() ||
+		(domain == CaCertTypesRootCa.String() ||
 			domain == CaCertTypesEkCa.String() ||
 			domain == CaCertTypesEndorsementCa.String() ||
 			domain == CertTypesSaml.String())

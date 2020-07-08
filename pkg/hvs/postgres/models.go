@@ -44,7 +44,7 @@ type (
 		Name             string    `gorm:"type:varchar(255);unique;not null;index:idx_host_hostname"`
 		Description      string
 		ConnectionString string    `gorm:"not null"`
-		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
+		HardwareUuid     uuid.UUID `gorm:"type:uuid;unique;index:idx_host_hardware_uuid"`
 	}
 
 	hostFlavorgroup struct {
@@ -53,8 +53,8 @@ type (
 	}
 
 	flavorgroupFlavor struct {
-		FlavorgroupId uuid.UUID   `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id)"`
-		FlavorId      uuid.UUID   `gorm:"primary_key;type:uuid REFERENCES flavor(Id)"`
+		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id)"`
+		FlavorId      uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor(Id)"`
 	}
 
 	trustCache struct {
@@ -96,8 +96,8 @@ type (
 		Message   string            `json:"message,omitempty"`
 	}
 
-	PGTrustReport         hvs.TrustReport
-	report struct {
+	PGTrustReport hvs.TrustReport
+	report        struct {
 		ID          uuid.UUID     `gorm:"id,omitempty" gorm:"primary_key;"`
 		HostID      uuid.UUID     `gorm:"host_id" gorm:"unique;type:uuid;not null;index:idx_report_host_id"`
 		TrustReport PGTrustReport `gorm:"column:trust_report; not null" sql:"type:JSONB"`
@@ -114,21 +114,21 @@ type (
 		Certificate  string    `gorm:"certificate;not null"`
 		Comment      string    `gorm:"comment,omitempty"`
 	}
+
 	//TODO add triggers
-	PGAuditLogData  models.AuditTableData
-	auditLogEntry struct {
-		ID          uuid.UUID       `gorm:"id,omitempty,primary_key;type: uuid; index:audit_log_entry_pkey"`
-		EntityID    uuid.UUID       `gorm:"entity_id; type uuid"`
-		EntityType  string          `gorm:"entity_type;varchar(255)"`
-		CreatedAt   time.Time       `gorm:"created; not null"`
-		Action      string          `gorm:"action;varchar(50)"`
-		Data        PGAuditLogData  `gorm:"data" sql:"type:JSONB"`
+	PGAuditLogData models.AuditTableData
+	auditLogEntry  struct {
+		ID         uuid.UUID      `gorm:"id,omitempty,primary_key;type: uuid; index:audit_log_entry_pkey"`
+		EntityID   uuid.UUID      `gorm:"entity_id; type uuid"`
+		EntityType string         `gorm:"entity_type;varchar(255)"`
+		CreatedAt  time.Time      `gorm:"created; not null"`
+		Action     string         `gorm:"action;varchar(50)"`
+		Data       PGAuditLogData `gorm:"data" sql:"type:JSONB"`
 	}
 
 	tagCertificate struct {
-		ID uuid.UUID           `gorm:"primary_key; type:uuid"`
-		// TODO: Do we need to link this to Host.Hardware_UUID?
-		HardwareUUID uuid.UUID `gorm:"not null; type:uuid; column:hardware_uuid"`
+		ID           uuid.UUID `gorm:"primary_key; type:uuid"`
+		HardwareUUID uuid.UUID `gorm:"not null; type:uuid; column:hardware_uuid" sql:"REFERENCES host(hardware_uuid)"`
 		Certificate  []byte    `gorm:"not null; type:bytea"`
 		Subject      string    `gorm:"not null"`
 		Issuer       string    `gorm:"not null"`
@@ -214,7 +214,6 @@ func (alp *PGAuditLogData) Scan(value interface{}) error {
 	}
 	return json.Unmarshal(b, &alp)
 }
-
 
 func (fl PGFlavorContent) Value() (driver.Value, error) {
 	return json.Marshal(fl)

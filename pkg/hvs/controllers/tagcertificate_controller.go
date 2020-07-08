@@ -5,8 +5,11 @@
 package controllers
 
 import (
+	"crypto"
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
@@ -16,52 +19,83 @@ import (
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	fc "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	hostConnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	hvsmodel "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 )
 
 // TagCertificateController contains logic for handling TagCertificate API requests
 type TagCertificateController struct {
-	// CertStore is required to source the Asset Tag Signing Key and Certificates
-	CertStore *models.CertificateStore
+	// Config contains the required values sourced from the VS configuration
+	Config domain.TagCertControllerConfig
+	// TagCertStore is required to source the Signing Keys and Certificates
+	CertStore models.CertificatesStore
 	// Store is used to hold a reference to the backend store for the TagCertificates
 	Store domain.TagCertificateStore
+	// HostStore is used to hold a reference to the backend store for the Host records
+	HostStore domain.HostStore
+	// FlavorController holds a reference to the FlavorController, needed to create AssetTag Flavor
+	// and assign to the appropriate FlavorGroup
+	FlavorController FlavorController
+	// HostConnectorFactory is required for providing a HostConnector for connecting to the host during the Deploy Tag Certificate workflow
+	HostConnectorProvider hostConnector.HostConnectorProvider
 }
 
-func NewTagCertificateController(certStore *models.CertificatesStore, store domain.TagCertificateStore) *TagCertificateController {
-
-	// certStore should not be nil
-	if certStore == nil {
-		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : CertStore is not set", commLogMsg.AppRuntimeErr)
-		return nil
-	}
+func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore models.CertificatesStore, tcs domain.TagCertificateStore,
+	hs domain.HostStore, fs domain.FlavorStore, hcp hostConnector.HostConnectorProvider) *TagCertificateController {
 
 	// certStore should have an entry for Tag CA Cert
-	if _, found := (*certStore)[models.CaCertTypesTagCa.String()]; !found {
+	if _, found := certStore[models.CaCertTypesTagCa.String()]; !found {
 		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Tag Certificate KeyPair not found in CertStore", commLogMsg.AppRuntimeErr)
 		return nil
 	}
 
 	// Tag CA cert entry should have certificates
 	var tagCACert *x509.Certificate
-	for _, cert := range (*certStore)[models.CaCertTypesTagCa.String()].Certificates {
+	for _, cert := range certStore[models.CaCertTypesTagCa.String()].Certificates {
 		tagCACert = &cert
 	}
 
 	if tagCACert == nil {
-		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Tag CA Certificate not found in CertStore", commLogMsg.AppRuntimeErr)
+		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Tag CA Certificate not found in TagCertStore", commLogMsg.AppRuntimeErr)
 		return nil
 	}
 
+	// certStore should have an entry for Flavor Signing CA
+	if _, found := certStore[models.CertTypesFlavorSigning.String()]; !found {
+		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Flavor Signing KeyPair not found in CertStore", commLogMsg.AppRuntimeErr)
+		return nil
+	}
+
+	var fsKey crypto.PrivateKey
+	fsKey = certStore[models.CertTypesFlavorSigning.String()].Key
+	if fsKey == nil {
+		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Flavor Signing Key not found in CertStore", commLogMsg.AppRuntimeErr)
+		return nil
+	}
+
+	fCon := FlavorController{
+		Store: fs,
+	}
+
 	return &TagCertificateController{
-		CertStore: (*certStore)[models.CaCertTypesTagCa.String()],
-		Store:     store,
+		Config:                tc,
+		CertStore:             certStore,
+		Store:                 tcs,
+		HostStore:             hs,
+		FlavorController:      fCon,
+		HostConnectorProvider: hcp,
 	}
 }
 
@@ -95,34 +129,27 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 	}
 
 	// get the Tag CA Cert from the certstore
-	var tagCACert *x509.Certificate
-	for _, cert := range controller.CertStore.Certificates {
-		tagCACert = &cert
-	}
-
-	if tagCACert == nil {
-		defaultLog.WithError(err).Warnf("controllers/tagcertificate_controller:Create() %s : Failed to source Tag CA Certificiate from CertStore", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Creation failure"}
-	}
+	tagCA := controller.CertStore[models.CaCertTypesTagCa.String()]
+	var tagCACert = tagCA.Certificates[0]
 
 	// Initialize the TagCertConfig
 	newTCConfig := asset_tag.TagCertConfig{
 		SubjectUUID:       reqTCCriteria.HardwareUUID.String(),
-		PrivateKey:        controller.CertStore.Key,
-		TagCACert:         tagCACert,
+		PrivateKey:        tagCA.Key,
+		TagCACert:         &tagCACert,
 		TagAttributes:     reqTCCriteria.SelectionContent,
 		ValidityInSeconds: constants.DefaultTagCertValiditySeconds,
 	}
 
 	// build the x509.Certificate
 	atCreator := asset_tag.NewAssetTag()
-	newTCBytes, err := atCreator.CreateAssetTag(newTCConfig)
+	newAssetTagBytes, err := atCreator.CreateAssetTag(newTCConfig)
 	if err != nil {
 		defaultLog.Warnf("controllers/tagcertificate_controller:Create() %s : Error during Tag Certificate creation: %s", commLogMsg.AppRuntimeErr, err.Error())
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Creation failure"}
 	}
 
-	newX509TC, err := x509.ParseCertificate(newTCBytes)
+	newX509TC, err := x509.ParseCertificate(newAssetTagBytes)
 	if err != nil {
 		defaultLog.Warnf("controllers/tagcertificate_controller:Create() %s : Error during Tag Certificate creation: %s", commLogMsg.AppRuntimeErr, err.Error())
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Creation failure"}
@@ -137,13 +164,16 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 
 	// convert to a TagCertificate
 	newTagCert := hvs.TagCertificate{
-		Certificate:  newTCBytes,
+		Certificate:  newAssetTagBytes,
 		Subject:      tempX509AttrCert.Subject,
-		Issuer:       tempX509AttrCert.Issuer,
+		Issuer:       tagCACert.Issuer.CommonName,
 		NotBefore:    newX509TC.NotBefore,
 		NotAfter:     newX509TC.NotAfter,
 		HardwareUUID: reqTCCriteria.HardwareUUID,
 	}
+
+	// set TagDigest
+	newTagCert.SetAssetTagDigest()
 
 	// persist to DB
 	newTC, err := controller.Store.Create(&newTagCert)
@@ -166,20 +196,16 @@ func (controller TagCertificateController) Search(w http.ResponseWriter, r *http
 		defaultLog.Warnf("controllers/tagcertificate_controller:Search() %s : %s", commLogMsg.InvalidInputBadParam, err.Error())
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
-	/*
-		for rows.Next() {
-				hvsTC := hvs.TagCertificate{}
-				if err := rows.Scan(&hvsTC.ID, &hvsTC.HardwareUUID, &hvsTC.Certificate, &hvsTC.Subject, &hvsTC.Issuer, &hvsTC.NotBefore, &hvsTC.NotAfter); err != nil {
-					return nil, errors.Wrap(err, "postgres/tagcertificate_store:Search() failed to scan record")
-				}
-				tagCertCollection.TagCertificates = append(tagCertCollection.TagCertificates, &hvsTC)
-			}
-	*/
 
 	tagCertResultSet, err := controller.Store.Search(filter)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/tagcertificate_controller:Search() %s : TagCertificate search operation failed", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusInternalServerError, errors.Errorf("TagCertificate search operation failed")
+	}
+
+	// add the asset tag digest to all the results
+	for _, tc := range tagCertResultSet {
+		tc.SetAssetTagDigest()
 	}
 
 	tagCertCollection := hvs.TagCertificateCollection{TagCertificates: tagCertResultSet}
@@ -267,20 +293,18 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 		tagCertFc.SubjectContains = param
 	}
 
-	issuerMatch := regexp.MustCompile(`(^[a-zA-Z0-9-_,.=#+?&;)( ]*$)`)
-	// issuerEqualTo - TODO: use new issuer check in validation pkg
-	param := strings.TrimSpace(params.Get("issuerEqualTo"))
-	if param != "" {
-		if issuerMatch.MatchString(param) {
+	// issuerEqualTo
+	if param := strings.TrimSpace(params.Get("issuerEqualTo")); param != "" {
+		if err := validation.ValidateIssuer(param); err == nil {
 			tagCertFc.IssuerEqualTo = param
 		} else {
 			return nil, errors.New("Valid contents for issuerEqualTo must be specified")
 		}
 	}
 
-	// issuerContains - TODO: use new issuer check in validation pkg
+	// issuerContains
 	if param := strings.TrimSpace(params.Get("issuerContains")); param != "" {
-		if issuerMatch.MatchString(param) {
+		if err := validation.ValidateIssuer(param); err == nil {
 			tagCertFc.IssuerContains = param
 		} else {
 			return nil, errors.New("Valid contents for issuerContains must be specified")
@@ -324,4 +348,156 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 	}
 
 	return &tagCertFc, nil
+}
+
+// Deploy retrieves the specified asset tag certificate, verifies it, and
+// deploys it to the host specified in the asset tag certificate subject.
+// If the asset tag certificate is successfully deployed to the host, an
+// ASSET_TAG flavor is created for the host and the host is queued for flavor
+// verification.The TagCertificates REST API is used to manage the certificates
+// that are deployed on the host.
+func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/tagcertificate_controller:Deploy() Entering")
+	defer defaultLog.Trace("controllers/tagcertificate_controller:Deploy() Leaving")
+
+	// body should be populated
+	if r.ContentLength == 0 {
+		secLog.Error("controllers/tagcertificate_controller:Deploy() The request body is not provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
+	}
+
+	// Decode incoming json data
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	var dtcReq models.TagCertificateDeployCriteria
+
+	err := dec.Decode(&dtcReq)
+	if err != nil {
+		secLog.WithError(err).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to decode request body as TagCertificate", commLogMsg.InvalidInputBadEncoding)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
+	}
+
+	// check if certificateID is populated
+	if dtcReq.CertID == uuid.Nil {
+		secLog.WithError(err).WithField("id", dtcReq.CertID).Warnf(
+			"controllers/tagcertificate_controller:Deploy() %s : Invalid UUID format of the identifier provided", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid UUID format of the Tag Certificate identifier provided"}
+	}
+
+	defaultLog.Debug("RPC: DeployTagCertificate - Got request to deploy certificate with ID {}", dtcReq.CertID)
+
+	tc, err := controller.Store.Retrieve(dtcReq.CertID)
+	if err != nil {
+		secLog.WithError(err).WithField("id", dtcReq.CertID).Warnf(
+			"controllers/tagcertificate_controller:Deploy() %s : Error retrieving TagCertificate", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Tag Certificate does not exist"}
+	}
+	tc.SetAssetTagDigest()
+
+	// Ascertain Validity of Tag Certificate
+	log.Debug("controllers/tagcertificate_controller:Deploy() Got tagCertificate with ID {}. Checking validity.", dtcReq.CertID)
+	// verify certificate validity
+	today := time.Now()
+	defaultLog.Debug("controllers/tagcertificate_controller:Deploy() Tag Cert not before: {}", tc.NotBefore)
+	defaultLog.Debug("controllers/tagcertificate_controller:Deploy() Tag Cert not after: {}", tc.NotAfter)
+	defaultLog.Debug("controllers/tagcertificate_controller:Deploy() Time now: {}", today)
+	if today.Before(tc.NotBefore) {
+		secLog.WithField("id", dtcReq.CertID).Warnf("controllers/tagcertificate_controller:Deploy() %s : Certificate with Subject %s is not yet valid", commLogMsg.InvalidInputBadParam, tc.Subject)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+	if today.After(tc.NotAfter) {
+		secLog.WithField("id", dtcReq.CertID).Warnf("controllers/tagcertificate_controller:Deploy() %s : Certificate with Subject %s has expired", commLogMsg.InvalidInputBadParam, tc.Subject)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
+	// lookup Host by Host HardwareUUID
+	defaultLog.WithField("HardwareUUID", tc.HardwareUUID).Debug("controllers/tagcertificate_controller:Deploy() Looking up Host")
+	hosts, err := controller.HostStore.Search(&models.HostFilterCriteria{
+		HostHardwareId: tc.HardwareUUID,
+	})
+
+	// handle zero records returned
+	if len(hosts) == 0 || err != nil {
+		defaultLog.WithError(err).WithField("id", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() The Host lookup with specified hardware UUID %s failed", tc.HardwareUUID)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Tag Certificate Deploy failure: Target Host lookup failed"}
+	}
+
+	// handle more than 1 record returned for HWUUID
+	if len(hosts) > 1 {
+		secLog.WithField("id", dtcReq.CertID).Warnf("controllers/tagcertificate_controller:Deploy() Multiple hosts with hardware UUID %s were found", tc.HardwareUUID)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Tag Certificate Deploy failure: multiple hosts linked to Tag Certificate found"}
+	}
+
+	// Unwrap Host record from the collection
+	targetHost := hosts[0]
+	defaultLog.WithField("HardwareUUID", targetHost.HardwareUuid).Debugf("controllers/tagcertificate_controller:Deploy() Found Host with ID %s", targetHost.Id)
+
+	// populate service credentials for AAS
+	hostConnStr := fmt.Sprintf("%s;u=%s;p=%s", targetHost.ConnectionString, controller.Config.ServiceUsername, controller.Config.ServicePassword)
+
+	// initialize HostConnector and test connectivity
+	hc, err := controller.HostConnectorProvider.NewHostConnector(hostConnStr)
+	if err != nil {
+		defaultLog.WithField("id", dtcReq.CertID).Error("controllers/tagcertificate_controller:Deploy() Failed "+
+			"to initialize HostConnector for host with hardware UUID {}", tc.HardwareUUID)
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure: Target Host connection failed"}
+	}
+
+	// DeployAssetTag
+	err = hc.DeployAssetTag(targetHost.HardwareUuid.String(), tc.TagCertDigest)
+	if err != nil {
+		defaultLog.WithField("id", dtcReq.CertID).Error("controllers/tagcertificate_controller:Deploy() Failed "+
+			"to deploy Asset Tag on Host {}", targetHost.HardwareUuid)
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
+	newX509TC, err := x509.ParseCertificate(tc.Certificate)
+	if err != nil {
+		defaultLog.WithField("id", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to parse x509.Certificate from TagCert %s", commLogMsg.AppRuntimeErr, err.Error())
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
+	// Create AssetTag Flavor for the Host
+	// create x509AttributeCert
+	fProvider, err := flavor.NewPlatformFlavorProvider(nil, newX509TC)
+	if err != nil {
+		defaultLog.WithField("id", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to initialize FlavorProvider %s", commLogMsg.AppRuntimeErr, err.Error())
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
+	// get the vendor details
+	vendorConn, _ := util.GetConnectorDetails(targetHost.ConnectionString)
+
+	// get the asset tag flavor
+	assetTagFlavor, err := fProvider.GetGenericPlatformFlavor(vendorConn.Vendor)
+	if err != nil {
+		defaultLog.WithField("id", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to generate AssetTag Flavor %s", commLogMsg.AppRuntimeErr, err.Error())
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
+	// get the Flavor Signing Key from the certstore
+	var flavorSignKey = controller.CertStore[models.CertTypesFlavorSigning.String()].Key
+
+	// get the signed flavor
+	signedFlavors, err := (*assetTagFlavor).GetFlavorPart(common.FlavorPartAssetTag, flavorSignKey.(*rsa.PrivateKey))
+	if err != nil {
+		defaultLog.WithField("id", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Error while generating SignedFlavor %s", commLogMsg.AppRuntimeErr, err.Error())
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
+	// add newly created flavor to flavor store
+	sf, err := controller.FlavorController.Store.Create(&signedFlavors[0])
+
+	if err != nil {
+		defaultLog.WithField("id", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to persist SignedFlavor %s to FlavorStore", commLogMsg.AppRuntimeErr, err.Error())
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
+	var flavorPartMap = make(map[fc.FlavorPart][]hvsmodel.SignedFlavor)
+	flavorPartMap[fc.FlavorPartAssetTag] = []hvsmodel.SignedFlavor{*sf}
+
+	// TODO: Call FlavorController to link to HostUnique FlavorGroup
+
+	return sf, http.StatusOK, nil
 }

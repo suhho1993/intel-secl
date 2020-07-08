@@ -57,7 +57,7 @@ func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*hvs.RuleR
 	} else {
 		actualAssetTagDigest, err := base64.StdEncoding.DecodeString(hostManifest.AssetTagDigest)
 		if err != nil {
-			return nil, errors.Wrap(err, "Could not decode AssetTagDigest")
+			return nil, errors.Wrap(err, "Could not decode TagCertDigest")
 		}
 
 		if bytes.Compare(actualAssetTagDigest, rule.expectedAssetTagDigest) != 0 {

@@ -15,9 +15,14 @@ import (
 var log = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
+// HostConnectorProvider is an interface implemented by HostConnectorFactory for injecting HostConnector instances at runtime
+type HostConnectorProvider interface {
+	NewHostConnector(string) (HostConnector, error)
+}
+
 type HostConnectorFactory struct {
-	aasApiUrl        string
-	trustedCaCerts   []x509.Certificate
+	aasApiUrl      string
+	trustedCaCerts []x509.Certificate
 }
 
 func NewHostConnectorFactory(aasApiUrl string, trustedCaCerts []x509.Certificate) *HostConnectorFactory {
