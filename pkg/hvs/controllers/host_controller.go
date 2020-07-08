@@ -217,7 +217,7 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Host with this name already exist"}
 	}
 
-	connectionString, credential, err := hc.GenerateConnectionString(reqHost.ConnectionString)
+	connectionString, credential, err := GenerateConnectionString(reqHost.ConnectionString, hc)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Could not generate formatted connection string")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -312,7 +312,7 @@ func (hc *HostController) UpdateHost(reqHost hvs.Host) (interface{}, int, error)
 	}
 
 	if reqHost.ConnectionString != "" {
-		connectionString, credential, err := hc.GenerateConnectionString(reqHost.ConnectionString)
+		connectionString, credential, err := GenerateConnectionString(reqHost.ConnectionString, hc)
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/host_controller:UpdateHost() Could not generate formatted connection string")
 			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -383,7 +383,7 @@ func (hc *HostController) retrieveHost(id uuid.UUID) (interface{}, int, error) {
 
 // GenerateConnectionString creates a formatted connection string. If the username and password are not specified, then it would retrieve it
 // from the credential table and forms the complete connection string.
-func (hc *HostController) GenerateConnectionString(cs string) (string, string, error) {
+func GenerateConnectionString(cs string, hc *HostController) (string, string, error) {
 	defaultLog.Trace("controllers/host_controller:GenerateConnectionString() Entering")
 	defer defaultLog.Trace("controllers/host_controller:GenerateConnectionString() Leaving")
 

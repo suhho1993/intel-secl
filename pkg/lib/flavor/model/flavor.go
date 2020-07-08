@@ -21,7 +21,7 @@ import (
 // measurements will be considered “trusted.”
 type Flavor struct {
 	// Meta section is mandatory for all Flavor types
-	Meta     Meta      `json:"meta"`
+	Meta     Meta     `json:"meta"`
 	Validity *Validity `json:"validity,omitempty"`
 	Bios     *Bios     `json:"bios,omitempty"`
 	// Hardware section is unique to Platform Flavor type

@@ -86,7 +86,7 @@ func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore mo
 	}
 
 	fCon := FlavorController{
-		Store: fs,
+		FStore:    fs,
 	}
 
 	return &TagCertificateController{
@@ -487,7 +487,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	}
 
 	// add newly created flavor to flavor store
-	sf, err := controller.FlavorController.Store.Create(&signedFlavors[0])
+	sf, err := controller.FlavorController.FStore.Create(&signedFlavors[0])
 
 	if err != nil {
 		defaultLog.WithField("id", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to persist SignedFlavor %s to FlavorStore", commLogMsg.AppRuntimeErr, err.Error())

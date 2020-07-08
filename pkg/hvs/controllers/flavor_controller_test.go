@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
+	mocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
@@ -20,14 +20,23 @@ import (
 var _ = Describe("FlavorController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var flavorStore *mocks2.MockFlavorStore
+	var flavorStore *mocks.MockFlavorStore
 	var flavorController *controllers.FlavorController
+	var hostStore *mocks.MockHostStore
+	var flavorGroupStore *mocks.MockFlavorgroupStore
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		flavorStore = mocks2.NewFakeFlavorStore()
-		flavorController = &controllers.FlavorController{Store: flavorStore}
+		hostStore = mocks.NewMockHostStore()
+		flavorStore = mocks.NewMockFlavorStore()
+		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
+		certStore := mocks.NewFakeCertificatesStore()
+		flavorController = &controllers.FlavorController{
+			FStore:    flavorStore,
+			FGStore:   flavorGroupStore,
+			HStore:    hostStore,
+			CertStore: certStore,
+		}
 	})
-
 	// Specs for HTTP Get to "/flavors"
 	Describe("Search Flavors", func() {
 		Context("When no filter arguments are passed", func() {

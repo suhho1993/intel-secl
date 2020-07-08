@@ -93,7 +93,7 @@ var _ = Describe("TagCertificateController", func() {
 		caCertsStore = setupCertsStore()
 		tagCertStore = mocks2.NewFakeTagCertificateStore()
 		hostStore = mocks2.NewMockHostStore()
-		flavorStore = mocks2.NewFakeFlavorStore()
+		flavorStore = mocks2.NewMockFlavorStore()
 		// inject MockHostConnector into the TagCertController
 		hcp := host_connector.MockHostConnectorFactory{}
 		tcc := domain.TagCertControllerConfig{

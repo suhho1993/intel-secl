@@ -428,8 +428,8 @@ func (store *MockFlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, fl
 	panic("implement me")
 }
 
-// NewFakeFlavorStore loads dummy data into MockFlavorStore
-func NewFakeFlavorStore() *MockFlavorStore {
+// NewMockFlavorStore provides one dummy data for Flavors
+func NewMockFlavorStore() *MockFlavorStore {
 	store := &MockFlavorStore{}
 
 	var sf hvs.SignedFlavor

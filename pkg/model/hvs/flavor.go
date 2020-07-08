@@ -21,5 +21,5 @@ type SignedFlavor = model.SignedFlavor
 
 // SignedFlavorCollection is a list of SignedFlavor objects
 type SignedFlavorCollection struct {
-	SignedFlavors []*SignedFlavor `json:"signed_flavors" xml:"signed_flavors"`
+	SignedFlavors []SignedFlavor `json:"signed_flavors" xml:"signed_flavors"`
 }

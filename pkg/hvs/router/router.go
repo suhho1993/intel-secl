@@ -64,6 +64,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 		constants.TrustedRootCACertsDir, cfgRouter.fnGetJwtCerts,
 		cacheTime))
 	subRouter = SetFlavorGroupRoutes(subRouter, dataStore)
+	subRouter = SetFlavorRoutes(subRouter, dataStore, certStore, hostControllerConfig)
 	subRouter = SetTpmEndorsementRoutes(subRouter, dataStore)
 	subRouter = SetCertifyAiksRoutes(subRouter, dataStore, certStore)
 	subRouter = SetHostStatusRoutes(subRouter, dataStore)
