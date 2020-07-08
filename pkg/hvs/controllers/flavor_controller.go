@@ -36,7 +36,6 @@ type FlavorController struct {
 	FGStore   domain.FlavorGroupStore
 	HStore    domain.HostStore
 	CertStore *dm.CertificatesStore
-	HCConfig  domain.HostControllerConfig
 	HostCon   HostController
 }
 
@@ -64,7 +63,6 @@ func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs 
 		FGStore:   fgs,
 		HStore:    hs,
 		CertStore: certStore,
-		HCConfig:  hcConfig,
 		HostCon:   hController,
 	}
 }
@@ -231,7 +229,7 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 func (fcon *FlavorController) getHostManifest(cs string) (*hcType.HostManifest, error) {
 	defaultLog.Trace("controllers/flavor_controller:getHostManifest() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:getHostManifest() Leaving")
-	hostConnector, err := fcon.HCConfig.HostConnectorProvider.NewHostConnector(cs)
+	hostConnector, err := fcon.HostCon.HCConfig.HostConnectorProvider.NewHostConnector(cs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not instantiate host connector")
 	}
