@@ -32,8 +32,8 @@ const (
 
 // file and directory constants
 const (
-	DefaultConfigFilePath = "/etc/hvs/config.yaml"
 	ConfigDir             = "/etc/hvs/"
+	DefaultConfigFilePath = ConfigDir + "config.yml"
 	ConfigFile            = "config"
 
 	// certificates' path

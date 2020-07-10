@@ -7,7 +7,6 @@ package hvs
 import (
 	"crypto/x509/pkix"
 	"fmt"
-	"path"
 	"strings"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
@@ -51,7 +50,7 @@ func (a *App) setup(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer a.Config.Save(path.Join(a.configDir(), "config.yaml"))
+	defer a.Config.Save(constants.DefaultConfigFilePath)
 	cmd := args[1]
 	if cmd == "all" {
 		if err = runner.RunAll(force); err != nil {
