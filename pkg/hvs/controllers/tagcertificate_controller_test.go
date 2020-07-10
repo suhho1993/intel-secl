@@ -86,14 +86,16 @@ var _ = Describe("TagCertificateController", func() {
 	var tagCertStore *mocks2.MockTagCertificateStore
 	var hostStore *mocks2.MockHostStore
 	var flavorStore *mocks2.MockFlavorStore
+	var flavorGroupStore *mocks2.MockFlavorgroupStore
 	var tagCertController *controllers.TagCertificateController
+	caCertsStore = setupCertsStore()
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		caCertsStore = setupCertsStore()
 		tagCertStore = mocks2.NewFakeTagCertificateStore()
 		hostStore = mocks2.NewMockHostStore()
 		flavorStore = mocks2.NewMockFlavorStore()
+		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
 		// inject MockHostConnector into the TagCertController
 		hcp := host_connector.MockHostConnectorFactory{}
 		tcc := domain.TagCertControllerConfig{
@@ -102,14 +104,7 @@ var _ = Describe("TagCertificateController", func() {
 			ServicePassword: "fakepassword",
 		}
 
-		tagCertController = controllers.NewTagCertificateController(tcc, *caCertsStore, tagCertStore, hostStore, flavorStore, hcp)
-	})
-
-	AfterEach(func() {
-		_ = os.Remove(flavorSigningCertPath)
-		_ = os.Remove(flavorSigningKeyPath)
-		_ = os.Remove(tagCASigningCertPath)
-		_ = os.Remove(tagCASigningKeyPath)
+		tagCertController = controllers.NewTagCertificateController(tcc, *caCertsStore, tagCertStore, hostStore, flavorStore, flavorGroupStore, hcp)
 	})
 
 	Describe("Create TagCertificates", func() {
@@ -727,6 +722,7 @@ func TestNewTagCertificateController(t *testing.T) {
 		tcs       domain.TagCertificateStore
 		hs        domain.HostStore
 		fs        domain.FlavorStore
+		fgs       domain.FlavorGroupStore
 		hcp       host_connector.HostConnectorProvider
 	}
 	tests := []struct {
@@ -751,9 +747,15 @@ func TestNewTagCertificateController(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := controllers.NewTagCertificateController(domain.TagCertControllerConfig{}, *tt.args.certStore, tt.args.tcs, tt.args.hs, tt.args.fs, tt.args.hcp); got != nil {
+			if got := controllers.NewTagCertificateController(domain.TagCertControllerConfig{}, *tt.args.certStore, tt.args.tcs, tt.args.hs, tt.args.fs, tt.args.fgs, tt.args.hcp); got != nil {
 				t.Errorf("TagCertificateController should be non-nil")
 			}
 		})
 	}
+
+	// cleanup
+	_ = os.Remove(flavorSigningCertPath)
+	_ = os.Remove(flavorSigningKeyPath)
+	_ = os.Remove(tagCASigningCertPath)
+	_ = os.Remove(tagCASigningKeyPath)
 }

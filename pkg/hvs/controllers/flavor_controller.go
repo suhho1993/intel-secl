@@ -190,7 +190,7 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 			}
 			flavorParts = append(flavorParts, fp)
 		}
-		if flavorFlavorPartMap == nil || len(flavorFlavorPartMap) == 0 {
+		if len(flavorFlavorPartMap) == 0 {
 			defaultLog.Error("controllers/flavor_controller:createFlavors() Valid flavor content must be given")
 			return nil, errors.New("Valid flavor content must be given")
 		}
@@ -286,7 +286,7 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 		}
 	}
 
-	if flavorgroupId.String() == "" || len(flavorIds) == 0 {
+	if flavorgroupId == uuid.Nil || len(flavorIds) == 0 {
 		defaultLog.Info("controllers/flavor_controller: addFlavorToFlavorgroup(): Missing flavorgroupID or flavorId's")
 		return returnSignedFlavors, nil
 	}
@@ -586,9 +586,9 @@ func (fcon *FlavorController) createFGIfNotExists(fgName string) (*hvs.FlavorGro
 		return nil, errors.New("Flavorgroup name cannot be nil")
 	}
 
-	flavorgroupExists, err := fcon.FGStore.Search((&dm.FlavorGroupFilterCriteria{
+	flavorgroupExists, err := fcon.FGStore.Search(&dm.FlavorGroupFilterCriteria{
 		NameEqualTo: fgName,
-	}))
+	})
 	if err != nil {
 		defaultLog.Errorf("controllers/flavor_controller:createFGIfNotExists() Error searching for flavorgroup with name %s", fgName)
 		return nil, errors.Wrapf(err, "Error searching for flavorgroup with name %s", fgName)

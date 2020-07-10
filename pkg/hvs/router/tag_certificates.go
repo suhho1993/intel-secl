@@ -41,6 +41,7 @@ func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, cert
 	tagCertificateStore := postgres.NewTagCertificateStore(store)
 	hostStore := postgres.NewHostStore(store)
 	flavorStore := postgres.NewFlavorStore(store)
+	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 
 	// initialize the user credentials for AAS connections
 	tcConfig := domain.TagCertControllerConfig{
@@ -50,7 +51,7 @@ func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, cert
 	}
 
 	tagCertificateController := controllers.NewTagCertificateController(tcConfig, *certStore, tagCertificateStore, hostStore,
-		flavorStore, hcp)
+		flavorStore, flavorGroupStore, hcp)
 
 	tagCertificateIdExpr := fmt.Sprintf("%s%s", TagCertificateEndpointPath+"/", validation.IdReg)
 	router.Handle(TagCertificateEndpointPath,

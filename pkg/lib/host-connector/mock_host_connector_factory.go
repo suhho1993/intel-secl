@@ -7,7 +7,6 @@ package host_connector
 import (
 	"crypto/x509"
 	"encoding/json"
-	"github.com/intel-secl/intel-secl/v3/pkg/clients/ta"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/vmware"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
@@ -16,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"io/ioutil"
+	"os"
 )
 
 // MockHostConnectorFactory is required for mocking the HostConnector dependency in flows involving HostConnector
@@ -42,16 +42,26 @@ type MockIntelConnectorFactory struct{}
 
 // GetHostConnector returns an instance of IntelConnector passing in a MockedTAClient
 func (micf MockIntelConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string, trustedCaCerts []x509.Certificate) (HostConnector, error) {
-	tac, _ := ta.NewMockTAClient()
-	// AnythingOfType allows us to wildcard the digest hash since this will be computed at runtime
-	tac.On("DeployAssetTag", "7a569dad-2d82-49e4-9156-069b0065b262", mock.AnythingOfType("string")).Return(nil)
-	tac.On("DeployAssetTag", "00e4d709-8d72-44c3-89ae-c5edc395d6fe", mock.AnythingOfType("string")).Return(errors.New("Error deploying tag"))
+	mhc := MockIntelConnector{}
 
+	// AnythingOfType allows us to wildcard the digest hash since this will be computed at runtime
+	mhc.On("DeployAssetTag", "7a569dad-2d82-49e4-9156-069b0065b262", mock.AnythingOfType("string")).Return(nil)
+	mhc.On("DeployAssetTag", "00e4d709-8d72-44c3-89ae-c5edc395d6fe", mock.AnythingOfType("string")).Return(errors.New("Error deploying tag"))
+
+	// Mock GetHostDetails
 	var hostInfo taModel.HostInfo
-	hostInfoJson, _ := ioutil.ReadFile("./test/sample_platform_info.json")
-	_ = json.Unmarshal(hostInfoJson, &hostInfo)
-	tac.On("GetHostInfo").Return(hostInfo, nil)
-	return &IntelConnector{client: tac}, nil
+	hostInfoJson, _ := os.Open("../../lib/host-connector/test/sample_platform_info.json")
+	hostInfoBytes, _ := ioutil.ReadAll(hostInfoJson)
+	_ = json.Unmarshal(hostInfoBytes, &hostInfo)
+	mhc.On("GetHostDetails").Return(hostInfo, nil)
+
+	// Mock GetHostManifest
+	var hm types.HostManifest
+	hmBytes, _ := ioutil.ReadFile("../../lib/host-connector/test/sample_host_manifest.json")
+	_ = json.Unmarshal(hmBytes, &hm)
+	mhc.On("GetHostManifest").Return(hm, nil)
+
+	return &mhc, nil
 }
 
 // MockVmwareConnectorFactory implements the VendorConnectorFactory interface
