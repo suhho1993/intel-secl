@@ -11,6 +11,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
+	"github.com/vmware/govmomi/vim25/mo"
 	vim25Types "github.com/vmware/govmomi/vim25/types"
 	"sort"
 	"strconv"
@@ -92,6 +93,17 @@ func (vc *VmwareConnector) DeploySoftwareManifest(manifest taModel.Manifest) err
 
 func (vc *VmwareConnector) GetMeasurementFromManifest(manifest taModel.Manifest) (taModel.Measurement, error) {
 	return taModel.Measurement{}, errors.New("vmware_host_connector :GetMeasurementFromManifest() Operation not supported")
+}
+
+func (vc *VmwareConnector) GetClusterReference(clusterName string) ([]mo.HostSystem, error) {
+	log.Trace("vmware_host_connector :GetClusterReference() Entering")
+	defer log.Trace("vmware_host_connector :GetClusterReference() Leaving")
+	hostInfoList, err := vc.client.GetVmwareClusterReference(clusterName)
+	if err != nil {
+		return nil, errors.Wrap(err, "vmware_host_connector: GetClusterReference() Error getting host"+
+			"info from vmware")
+	}
+	return hostInfoList, nil
 }
 
 func createPCRManifest(hostTpmAttestationReport *vim25Types.HostTpmAttestationReport) (types.PcrManifest, error) {

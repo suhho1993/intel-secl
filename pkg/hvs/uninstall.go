@@ -120,6 +120,7 @@ func (a *App) uninstall(purge bool) error {
 
 var tablesToDrop = []string{
 	"esxi_cluster",
+	"esxi_cluster_host",
 	"flavor_group",
 	"host",
 	"host_credential",
@@ -128,15 +129,14 @@ var tablesToDrop = []string{
 	"tag_certificate",
 	"tpm_endorsement",
 	// link_flavor_host,
-	// link_flavor_flavorgroup,
-	// link_flavorgroup_host,
-	// queue,
-	// flavorgroup,
-	// flavor,
+	"flavorgroup_flavor",
+	"host_flavorgroup",
+	"queue",
+	"flavor",
+	"trust_cache",
 	// tag_certificate_request,
 	// host_tpm_password,
-	// audit_log_entry,
-	// tls_policy,
+	"audit_log_entry",
 }
 
 func (a *App) eraseData() error {

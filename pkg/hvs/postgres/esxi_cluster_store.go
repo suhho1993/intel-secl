@@ -6,59 +6,77 @@
 package postgres
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 type ESXiClusterStore struct {
 	Store *DataStore
+	Dek   []byte
 }
 
-func NewESXiCLusterStore(store *DataStore) *ESXiClusterStore {
-	return &ESXiClusterStore{store}
+func NewESXiCLusterStore(store *DataStore, dek []byte) *ESXiClusterStore {
+	return &ESXiClusterStore{store, dek}
 }
 
-func (t *ESXiClusterStore) Create(esxiCLuster *hvs.ESXiCluster) (*hvs.ESXiCluster, error) {
+func (e *ESXiClusterStore) Create(esxiCLuster *hvs.ESXiCluster) (*hvs.ESXiCluster, error) {
 	defaultLog.Trace("postgres/esxi_cluster_store:Create() Entering")
 	defer defaultLog.Trace("postgres/esxi_cluster_store:Create() Leaving")
 
+	if esxiCLuster.Id == uuid.Nil {
+		esxiCLuster.Id = uuid.New()
+	}
+
+	encCS, err := utils.EncryptString(esxiCLuster.ConnectionString, e.Dek)
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/esxi_cluster_store:Create() Failed to encrypt ESXi cluster "+
+			"connection string")
+	}
 	dbESXiCluster := esxiCluster{
-		Id:               uuid.New(),
-		ConnectionString: esxiCLuster.ConnectionString,
+		Id:               esxiCLuster.Id,
+		ConnectionString: encCS,
 		ClusterName:      esxiCLuster.ClusterName,
 	}
 
-	if err := t.Store.Db.Create(&dbESXiCluster).Error; err != nil {
+	if err := e.Store.Db.Create(&dbESXiCluster).Error; err != nil {
 		return esxiCLuster, errors.Wrap(err, "postgres/esxi_cluster_store:Create() Failed to create ESXi cluster")
 	}
-	esxiCLuster.Id = dbESXiCluster.Id
 
-	//TODO : Add hosts in the cluster to host table
 	return esxiCLuster, nil
 }
 
-func (t *ESXiClusterStore) Retrieve(id uuid.UUID) (*hvs.ESXiCluster, error) {
+func (e *ESXiClusterStore) Retrieve(id uuid.UUID) (*hvs.ESXiCluster, error) {
 	defaultLog.Trace("postgres/esxi_cluster_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/esxi_cluster_store:Retrieve() Leaving")
 
 	cluster := hvs.ESXiCluster{}
-	row := t.Store.Db.Model(&esxiCluster{}).Where(&esxiCluster{Id: id}).Row()
-	if err := row.Scan(&cluster.Id, &cluster.ConnectionString, &cluster.ClusterName); err != nil {
+
+	row := e.Store.Db.Model(&esxiCluster{}).Where(&esxiCluster{Id: id}).Row()
+	err := row.Scan(&cluster.Id, &cluster.ConnectionString, &cluster.ClusterName)
+	if err != nil {
 		return nil, errors.Wrap(err, "postgres/esxi_cluster_store:Retrieve() Failed to scan record")
 	}
 
-	//TODO : Get the list of hosts from host table
+	decryptedCS, err := utils.DecryptString(cluster.ConnectionString, e.Dek)
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/esxi_cluster_store:Retrieve() Failed to decrypt connection string")
+	}
+
+	cluster.ConnectionString = decryptedCS
 	return &cluster, nil
 }
 
-func (t *ESXiClusterStore) Search(ecFilter *models.ESXiClusterFilterCriteria) (*hvs.ESXiClusterCollection, error) {
+func (e *ESXiClusterStore) Search(ecFilter *models.ESXiClusterFilterCriteria) ([]hvs.ESXiCluster, error) {
 	defaultLog.Trace("postgres/esxi_cluster_store:Search() Entering")
 	defer defaultLog.Trace("postgres/esxi_cluster_store:Search() Leaving")
 
-	tx := buildESXiClusterSearchQuery(t.Store.Db, ecFilter)
+	tx := buildESXiClusterSearchQuery(e.Store.Db, ecFilter)
 	if tx == nil {
 		return nil, errors.New("postgres/esxi_cluster_store:Search() Unexpected Error. Could not build" +
 			" a gorm query object.")
@@ -70,27 +88,93 @@ func (t *ESXiClusterStore) Search(ecFilter *models.ESXiClusterFilterCriteria) (*
 	}
 	defer rows.Close()
 
-	clusterCollection := hvs.ESXiClusterCollection{}
+	var clusters []hvs.ESXiCluster
 	for rows.Next() {
 		cluster := hvs.ESXiCluster{}
 		if err := rows.Scan(&cluster.Id, &cluster.ConnectionString, &cluster.ClusterName); err != nil {
 			return nil, errors.Wrap(err, "postgres/esxi_cluster_store:Search() Failed to scan record")
 		}
-		clusterCollection.ESXiCluster = append(clusterCollection.ESXiCluster, &cluster)
-	}
+		decryptedCS, err := utils.DecryptString(cluster.ConnectionString, e.Dek)
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/esxi_cluster_store:Search() Failed to decrypt connection string")
+		}
 
-	//TODO : Get the list of hosts from host table
-	return &clusterCollection, nil
+		cluster.ConnectionString = decryptedCS
+		clusters = append(clusters, cluster)
+	}
+	return clusters, nil
 }
 
-func (t *ESXiClusterStore) Delete(id uuid.UUID) error {
+func (e *ESXiClusterStore) Delete(id uuid.UUID) error {
 	defaultLog.Trace("postgres/esxi_cluster_store:Delete() Entering")
 	defer defaultLog.Trace("postgres/esxi_cluster_store:Delete() Leaving")
 
-	if err := t.Store.Db.Delete(&esxiCluster{Id: id}).Error; err != nil {
+	if err := e.Store.Db.Delete(&esxiCluster{Id: id}).Error; err != nil {
 		return errors.Wrap(err, "postgres/esxi_cluster_store:Delete() Failed to delete ESXi cluster")
 	}
 	return nil
+}
+
+// create esxiCluster-Host association
+func (e *ESXiClusterStore) AddHosts(esxiClusterId uuid.UUID, hostNames []string) error {
+	defaultLog.Trace("postgres/esxi_cluster_store:AddHosts() Entering")
+	defer defaultLog.Trace("postgres/esxi_cluster_store:AddHosts() Leaving")
+
+	if esxiClusterId == uuid.Nil {
+		return errors.New("postgres/esxi_cluster_store:AddHosts() Must have esxiClusterId " +
+			" to associate esxiCluster with the host")
+	}
+
+	var echValues []string
+	var echValueArgs []interface{}
+	for _, name := range hostNames {
+		if strings.TrimSpace(name) == "" {
+			return errors.New("postgres/esxi_cluster_store:AddHosts() Must have hostname " +
+				"to associate esxi Cluster with the host")
+		}
+		echValues = append(echValues, "(?, ?)")
+		echValueArgs = append(echValueArgs, esxiClusterId)
+		echValueArgs = append(echValueArgs, name)
+	}
+
+	insertQuery := fmt.Sprintf("INSERT INTO esxi_cluster_host VALUES %s", strings.Join(echValues, ","))
+	err := e.Store.Db.Model(esxiClusterHost{}).Exec(insertQuery, echValueArgs...).Error
+	if err != nil {
+		return errors.Wrap(err, "postgres/esxi_cluster_store:AddHosts() Failed to create "+
+			"esxi cluster and host association")
+	}
+	return nil
+}
+
+// Search esxiCluster-host association
+func (e *ESXiClusterStore) SearchHosts(ecId uuid.UUID) ([]string, error) {
+	defaultLog.Trace("postgres/esxi_cluster_store:SearchHosts() Entering")
+	defer defaultLog.Trace("postgres/esxi_cluster_store:SearchHosts() Leaving")
+
+	if ecId == uuid.Nil {
+		return nil, errors.New("postgres/esxi_cluster_store:SearchHosts() ESXi cluster ID " +
+			"must be set to search through esxiCluster host association")
+	}
+
+	dbech := esxiClusterHost{
+		ClusterID: ecId,
+	}
+
+	rows, err := e.Store.Db.Model(&esxiClusterHost{}).Select("hostname").Where(&dbech).Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/esxi_cluster_store:SearchHosts() Failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	var hostNames []string
+	var name string
+	for rows.Next() {
+		if err := rows.Scan(&name); err != nil {
+			return nil, errors.Wrap(err, "postgres/esxi_cluster_store:SearchHosts() Failed to scan record")
+		}
+		hostNames = append(hostNames, name)
+	}
+	return hostNames, nil
 }
 
 //Helper function to build the query object for a ESXi cluster search.

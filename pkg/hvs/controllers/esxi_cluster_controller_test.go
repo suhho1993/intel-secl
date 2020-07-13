@@ -6,11 +6,15 @@
 package controllers_test
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
-	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
+	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
+	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -22,12 +26,42 @@ import (
 var _ = Describe("ESXiClusterController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var esxiClusterStore *mocks2.MockESXiClusterStore
+	var esxiClusterStore *mocks.MockESXiClusterStore
 	var esxiClusterController *controllers.ESXiClusterController
+	var hostStore *mocks.MockHostStore
+	var hostStatusStore *mocks.MockHostStatusStore
+	var flavorGroupStore *mocks.MockFlavorgroupStore
+	var hostCredentialStore *mocks.MockHostCredentialStore
+	var hostController *controllers.HostController
+	var hostTrustManager *smocks.MockHostTrustManager
+	var hostConnectorProvider hostconnector.MockHostConnectorFactory
+
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		esxiClusterStore = mocks2.NewFakeESXiClusterStore()
-		esxiClusterController = &controllers.ESXiClusterController{ECStore: esxiClusterStore}
+		esxiClusterStore = mocks.NewFakeESXiClusterStore()
+		hostStore = mocks.NewMockHostStore()
+		hostStatusStore = mocks.NewFakeHostStatusStore()
+		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
+		hostCredentialStore = mocks.NewMockHostCredentialStore()
+		dekBase64 := "gcXqH8YwuJZ3Rx4qVzA/zhVvkTw2TL+iRAC9T3E6lII="
+		dek, _ := base64.StdEncoding.DecodeString(dekBase64)
+
+		hostControllerConfig := domain.HostControllerConfig{
+			HostConnectorProvider: hostConnectorProvider,
+			DataEncryptionKey:     dek,
+			Username:              "fakeuser",
+			Password:              "fakepassword",
+		}
+		hostController = &controllers.HostController{
+			HStore:    hostStore,
+			HSStore:   hostStatusStore,
+			FGStore:   flavorGroupStore,
+			HCStore:   hostCredentialStore,
+			HTManager: hostTrustManager,
+			HCConfig:  hostControllerConfig,
+		}
+		esxiClusterController = &controllers.ESXiClusterController{ECStore: esxiClusterStore,
+			HController: *hostController}
 	})
 
 	// Specs for HTTP Get to "/esxi-cluster"

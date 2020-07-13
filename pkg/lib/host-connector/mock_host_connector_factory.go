@@ -14,6 +14,8 @@ import (
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
+	"github.com/vmware/govmomi/vim25/mo"
+	vim25Types "github.com/vmware/govmomi/vim25/types"
 	"io/ioutil"
 	"os"
 )
@@ -69,5 +71,19 @@ type MockVmwareConnectorFactory struct{}
 
 // GetHostConnector returns an instance of VmwareConnector passing in a MockVMwareClient
 func (micf MockVmwareConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string, trustedCaCerts []x509.Certificate) (HostConnector, error) {
-	return &VmwareConnector{&vmware.MockVMWareClient{}}, nil
+	vmc, _ := vmware.NewMockVMWareClient()
+
+	var hostInfoList []mo.HostSystem
+	hostInfoList = append(hostInfoList, mo.HostSystem{ManagedEntity : mo.ManagedEntity{Name: "1.1.1.1"}, Summary:
+		vim25Types.HostListSummary{Hardware: &vim25Types.HostHardwareSummary{Uuid: "7a569dad-2d82-49e4-9156-069b0065b261"}}})
+	hostInfoList = append(hostInfoList, mo.HostSystem{ManagedEntity : mo.ManagedEntity{Name: "2.2.2.2"}, Summary:
+		vim25Types.HostListSummary{Hardware: &vim25Types.HostHardwareSummary{Uuid: "7a569dad-2d82-49e4-9156-069b0065b262"}}})
+	vmc.On("GetVmwareClusterReference", mock.AnythingOfType("string")).Return(hostInfoList, nil)
+
+	var hostInfo taModel.HostInfo
+	hostInfoJson, _ := ioutil.ReadFile("./test/sample_vmware_platform_info.json")
+	_ = json.Unmarshal(hostInfoJson, &hostInfo)
+	vmc.On("GetHostInfo").Return(hostInfo, nil)
+
+	return &VmwareConnector{client: vmc}, nil
 }

@@ -123,7 +123,7 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	// Since the host has been updated, add it to the verify queue
 	err = hc.HTManager.VerifyHostsAsync([]uuid.UUID{reqHost.Id}, true, false)
 	if err != nil {
-		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host to Flavor Verify Queue addition failed")
+		defaultLog.WithError(err).Error("controllers/host_controller:Update() Host to Flavor Verify Queue addition failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
 	}
 

@@ -9,6 +9,7 @@ package vmware
 import (
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/stretchr/testify/mock"
+	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )
 
@@ -30,3 +31,9 @@ func (vm *MockVMWareClient) GetTPMAttestationReport() (*types.QueryTpmAttestatio
 	args := vm.Called()
 	return args.Get(0).(*types.QueryTpmAttestationReportResponse), args.Error(1)
 }
+
+func (vm *MockVMWareClient) GetVmwareClusterReference (string) ([]mo.HostSystem, error) {
+	args := vm.Called()
+	return args.Get(0).([]mo.HostSystem), args.Error(1)
+}
+

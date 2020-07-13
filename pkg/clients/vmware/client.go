@@ -29,6 +29,7 @@ var log = commLog.GetDefaultLogger()
 type VMWareClient interface {
 	GetHostInfo() (taModel.HostInfo, error)
 	GetTPMAttestationReport() (*types.QueryTpmAttestationReportResponse, error)
+	GetVmwareClusterReference(string) ([]mo.HostSystem, error)
 }
 
 const (
@@ -160,9 +161,9 @@ func getVmwareHostReference(vc *vmwareClient) (mo.HostSystem, *govmomi.Client, e
 		"hostname " + vc.HostName + " found in cluster")
 }
 
-func getVmwareClusterReference(vc *vmwareClient, clusterName string) ([]mo.HostSystem, error) {
-	log.Trace("vmware/client:getVmwareClusterReference() Entering ")
-	defer log.Trace("vmware/client:getVmwareClusterReference() Leaving ")
+func (vc *vmwareClient) GetVmwareClusterReference (clusterName string) ([]mo.HostSystem, error) {
+	log.Trace("vmware/client:GetVmwareClusterReference() Entering ")
+	defer log.Trace("vmware/client:GetVmwareClusterReference() Leaving ")
 
 	vmwareClient, err := getGovmomiClient(vc)
 	if err != nil {

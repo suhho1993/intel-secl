@@ -10,17 +10,26 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 )
 
 // SetESXiClusterRoutes registers routes for esxi cluster apis
-func SetESXiClusterRoutes(router *mux.Router, store *postgres.DataStore) *mux.Router {
+func SetESXiClusterRoutes(router *mux.Router, store *postgres.DataStore,
+	hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) *mux.Router {
+
 	defaultLog.Trace("router/esxi_cluster:SetESXiClusterRoutes() Entering")
 	defer defaultLog.Trace("router/esxi_cluster:SetESXiClusterRoutes() Leaving")
 
-	esxiClusterStore := postgres.NewESXiCLusterStore(store)
-	esxiClusterController := controllers.NewESXiClusterController(esxiClusterStore)
+	esxiClusterStore := postgres.NewESXiCLusterStore(store, hostControllerConfig.DataEncryptionKey)
+	hostStore := postgres.NewHostStore(store)
+	hostStatusStore := postgres.NewHostStatusStore(store)
+	flavorGroupStore := postgres.NewFlavorGroupStore(store)
+	hostCredentialStore := postgres.NewHostCredentialStore(store, hostControllerConfig.DataEncryptionKey)
+	hc := controllers.NewHostController(hostStore, hostStatusStore,
+		flavorGroupStore, hostCredentialStore, hostTrustManager, hostControllerConfig)
+	esxiClusterController := controllers.NewESXiClusterController(esxiClusterStore, *hc)
 
 	esxiClusterIdExpr := fmt.Sprintf("%s%s", "/esxi-cluster/", validation.IdReg)
 

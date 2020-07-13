@@ -41,30 +41,30 @@ type (
 
 	host struct {
 		Id               uuid.UUID `gorm:"primary_key;type:uuid"`
-		Name             string    `gorm:"type:varchar(255);unique;not null;index:idx_host_hostname"`
+		Name             string    `gorm:"unique;type:varchar(255);not null;index:idx_host_hostname"`
 		Description      string
 		ConnectionString string    `gorm:"not null"`
 		HardwareUuid     uuid.UUID `gorm:"type:uuid;unique;index:idx_host_hardware_uuid"`
 	}
 
 	hostFlavorgroup struct {
-		HostId        uuid.UUID `gorm:"primary_key;type:uuid REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
-		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
+		HostId        uuid.UUID `gorm:"type:uuid REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
+		FlavorgroupId uuid.UUID `gorm:"type:uuid REFERENCES flavor_group(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
 	}
 
 	flavorgroupFlavor struct {
-		FlavorgroupId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor_group(Id)"`
-		FlavorId      uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor(Id)"`
+		FlavorgroupId uuid.UUID `gorm:"type:uuid REFERENCES flavor_group(Id) ON UPDATE CASCADE ON DELETE CASCADE"`
+		FlavorId      uuid.UUID `gorm:"type:uuid REFERENCES flavor(Id) ON UPDATE CASCADE ON DELETE CASCADE"`
 	}
 
 	trustCache struct {
-		FlavorId uuid.UUID `gorm:"primary_key;type:uuid REFERENCES flavor(Id)"`
-		HostId   uuid.UUID `gorm:"primary_key;type:uuid REFERENCES host(Id)"`
+		FlavorId uuid.UUID `gorm:"type:uuid REFERENCES flavor(Id)"`
+		HostId   uuid.UUID `gorm:"type:uuid REFERENCES host(Id)"`
 	}
 
 	hostCredential struct {
 		Id           uuid.UUID `gorm:"primary_key;type:uuid"`
-		HostId       uuid.UUID `gorm:"type:uuid;index:idx_host_credential_host_id REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
+		HostId       uuid.UUID `gorm:"type:uuid REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE;index:idx_host_credential_host_id"`
 		HostName     string    `gorm:"type:varchar(255);index:idx_host_credential_hostname"`
 		HardwareUuid uuid.UUID `gorm:"type:uuid;index:idx_host_credential_hardware_uuid"`
 		Credential   string
@@ -74,7 +74,7 @@ type (
 	// hostStatus holds all the hostStatus records for VS-attested hosts
 	hostStatus struct {
 		ID         uuid.UUID               `gorm:"primary_key;type:uuid"`
-		HostID     uuid.UUID               `sql:"type:uuid REFERENCES host(Id)"`
+		HostID     uuid.UUID               `sql:"type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE"`
 		Status     PGHostStatusInformation `gorm:"column:status" sql:"type:JSONB"`
 		HostReport PGHostManifest          `gorm:"column:host_report" sql:"type:JSONB"`
 		CreatedAt  time.Time               `gorm:"column:created;not null"`
@@ -83,7 +83,12 @@ type (
 	esxiCluster struct {
 		Id               uuid.UUID `gorm:"primary_key;type:uuid"`
 		ConnectionString string    `gorm:"column:connection_string;not null"`
-		ClusterName      string    `gorm:"column:cluster_name;type:varchar(255);not null"`
+		ClusterName      string    `gorm:"column:cluster_name;type:varchar(255);not null;index:idx_esxi_cluster_name"`
+	}
+
+	esxiClusterHost struct {
+		ClusterID uuid.UUID `gorm:"column:cluster_id;type:uuid REFERENCES esxi_cluster(id) ON UPDATE CASCADE ON DELETE CASCADE"`
+		HostName  string    `gorm:"column:hostname;type:varchar(255) REFERENCES host(name) ON UPDATE CASCADE ON DELETE CASCADE"`
 	}
 
 	queue struct {

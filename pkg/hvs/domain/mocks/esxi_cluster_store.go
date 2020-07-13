@@ -23,14 +23,14 @@ var (
 	)
 
 type MockESXiClusterStore struct {
-	ESXiClusterStore []*hvs.ESXiCluster
+	ESXiClusterStore []hvs.ESXiCluster
 }
 
 // Retrieve returns ESXi Cluster
 func (store *MockESXiClusterStore) Retrieve(id uuid.UUID) (*hvs.ESXiCluster, error) {
 	for _, ec := range store.ESXiClusterStore {
 		if ec.Id == id {
-			return ec, nil
+			return &ec, nil
 		}
 	}
 	return nil, errors.New(commErr.RowsNotFound)
@@ -47,39 +47,45 @@ func (store *MockESXiClusterStore) Delete(esxiClusterId uuid.UUID) error {
 }
 
 // Search returns a filtered list of ESXi clusters as per the provided ESXiClusterFilterCriteria
-func (store *MockESXiClusterStore) Search(criteria *models.ESXiClusterFilterCriteria) (*hvs.ESXiClusterCollection, error) {
+func (store *MockESXiClusterStore) Search(criteria *models.ESXiClusterFilterCriteria) ([]hvs.ESXiCluster, error) {
 
-	var ecCollection []*hvs.ESXiCluster
-
+	var ecFiltered []hvs.ESXiCluster
 	// ESXi cluster ID filter
 	if criteria.Id != uuid.Nil {
-		var ecFiltered []*hvs.ESXiCluster
 		for _, ec := range store.ESXiClusterStore {
 			if ec.Id == criteria.Id {
 				ecFiltered = append(ecFiltered, ec)
 			}
 		}
-		ecCollection = ecFiltered
 	} else if criteria.ClusterName != "" {
-		var ecFiltered []*hvs.ESXiCluster
 		for _, ec := range store.ESXiClusterStore {
 			if strings.ToLower(ec.ClusterName) == strings.ToLower(criteria.ClusterName) {
 				ecFiltered = append(ecFiltered, ec)
 			}
 		}
-		ecCollection = ecFiltered
 	} else {
-		return &hvs.ESXiClusterCollection{ESXiCluster: store.ESXiClusterStore}, nil
+		return store.ESXiClusterStore, nil
 	}
 
-	return &hvs.ESXiClusterCollection{ESXiCluster: ecCollection}, nil
+	return ecFiltered, nil
 }
 
 // Create inserts a ESXi cluster
 func (store *MockESXiClusterStore) Create(ec *hvs.ESXiCluster) (*hvs.ESXiCluster, error) {
-	store.ESXiClusterStore = append(store.ESXiClusterStore, ec)
+	store.ESXiClusterStore = append(store.ESXiClusterStore, *ec)
 	return ec, nil
 }
+
+func (store *MockESXiClusterStore) AddHosts(esxiClusterId uuid.UUID, hostName []string)  error {
+	//TODO Implement mock for AddHosts
+	return nil
+}
+
+func (store *MockESXiClusterStore) SearchHosts(clusterId uuid.UUID) ([]string, error){
+	//TODO Implement mock for SearchHosts
+	return nil, nil
+}
+
 
 // NewFakeESXiClusterStore loads dummy data into MockESXiClusterStore
 func NewFakeESXiClusterStore() *MockESXiClusterStore {

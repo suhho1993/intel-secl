@@ -111,7 +111,7 @@ const (
 	DefaultHVSListenerPort   = 8443
 	DefaultReadTimeout       = 30 * time.Second
 	DefaultReadHeaderTimeout = 10 * time.Second
-	DefaultWriteTimeout      = 10 * time.Second
+	DefaultWriteTimeout      = 30 * time.Second
 	DefaultIdleTimeout       = 10 * time.Second
 	DefaultMaxHeaderBytes    = 1 << 20
 )

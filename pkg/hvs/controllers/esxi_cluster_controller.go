@@ -11,23 +11,30 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
+	hcUtil "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	"github.com/vmware/govmomi/vim25/mo"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
 type ESXiClusterController struct {
-	ECStore domain.ESXiClusterStore
+	ECStore     domain.ESXiClusterStore
+	HController HostController
+
 }
 
-func NewESXiClusterController(ec domain.ESXiClusterStore) *ESXiClusterController {
+func NewESXiClusterController(ec domain.ESXiClusterStore, hc HostController) *ESXiClusterController {
 	return &ESXiClusterController{
-		ECStore: ec,
+		ECStore:     ec,
+		HController: hc,
 	}
 }
 
@@ -60,23 +67,58 @@ func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Re
 	existingCluster, err := controller.ECStore.Search(&models.ESXiClusterFilterCriteria{
 		ClusterName: reqESXiCluster.ClusterName,
 	})
-	if existingCluster != nil && len(existingCluster.ESXiCluster) > 0 {
+	if existingCluster != nil && len(existingCluster) > 0 {
 		defaultLog.Warn("Trying to register duplicate ESXi cluster. Skipping the registration for this cluster")
-		secLog.WithField("Cluster Name", existingCluster.ESXiCluster[0].ClusterName).Warningf("%s: Trying to "+
+		secLog.WithField("Cluster Name", existingCluster[0].ClusterName).Warningf("%s: Trying to "+
 			"register duplicate Cluster from addr: %s", commLogMsg.InvalidInputBadParam, r.RemoteAddr)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "ESXi cluster with the same name already exists"}
 	}
-	//TODO Add validation to check if cluster exists
+
+	hostInfoList, err := controller.getHostsFromCluster(reqESXiCluster)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/esxi_cluster_controller:Create() Error getting hosts from " +
+			"ESXi cluster")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while registering a new ESXi cluster"}
+	}
 
 	newESXiCluster, err := controller.ECStore.Create(reqESXiCluster)
 	if err != nil {
-		secLog.WithError(err).Error("controllers/esxi_cluster_controller:Create() ESXi cluster registration failed")
+		defaultLog.WithError(err).Error("controllers/esxi_cluster_controller:Create() ESXi cluster registration failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while registering a new ESXi cluster"}
 	}
+
+	var hostNames []string
+	for _, hostInfo := range hostInfoList {
+		description := hostInfo.Name + " in ESX Cluster " + reqESXiCluster.ClusterName
+
+		reqHost := hvs.Host{
+			HostName:         hostInfo.Name,
+			Description:      description,
+			ConnectionString: reqESXiCluster.ConnectionString + ";h=" + hostInfo.Name,
+			HardwareUuid:     uuid.Nil,
+			FlavorgroupNames: nil,
+		}
+		_, _, err := controller.HController.CreateHost(reqHost)
+		if err != nil {
+			defaultLog.WithError(err).Errorf("controllers/esxi_cluster_controller:Create() ESXi host registration "+
+				"failed for host : %s", hostInfo.Name)
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "ESXi host registration " +
+				"failed for host : " + hostInfo.Name}
+		}
+		hostNames = append(hostNames, hostInfo.Name)
+	}
+	newESXiCluster.ConnectionString = utils.GetConnectionStringWithoutCredentials(newESXiCluster.ConnectionString)
+
+	err = controller.ECStore.AddHosts(newESXiCluster.Id, hostNames)
+	if err != nil {
+		defaultLog.WithError(err).Errorf("controllers/esxi_cluster_controller:Create() Linking ESXi cluster to"+
+			" host failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Linking ESXi cluster to" +
+			" host failed"}
+	}
+
 	secLog.WithField("Cluster Name", newESXiCluster.ClusterName).Infof("%s: ESXi cluster registered by: %s",
 		commLogMsg.PrivilegeModified, r.RemoteAddr)
-
-	//TODO : Add hosts in the cluster to host table
 	return newESXiCluster, http.StatusCreated, nil
 }
 
@@ -95,13 +137,24 @@ func (controller ESXiClusterController) Search(w http.ResponseWriter, r *http.Re
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid search criteria provided"}
 	}
 
-	esxiClusterCollection, err := controller.ECStore.Search(filter)
+	esxiClusters, err := controller.ECStore.Search(filter)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/esxi_cluster_controller:Search() ESXi cluster search failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to search ESXi cluster"}
 	}
 
-	//TODO : Get the list of hosts from host table
+	for index, cluster := range esxiClusters {
+		esxiClusters[index].HostNames, err = controller.ECStore.SearchHosts(cluster.Id)
+		if err != nil {
+			defaultLog.WithError(err).Error("controllers/esxi_cluster_controller:Search() Failed to retrieve " +
+				"host names associated with ESXi cluster")
+			return nil,http.StatusInternalServerError,  errors.New("controllers/esxi_cluster_controller:" +
+				"Search() Failed to retrieve host names associated with ESXi cluster")
+		}
+		esxiClusters[index].ConnectionString = utils.GetConnectionStringWithoutCredentials(esxiClusters[index].ConnectionString)
+	}
+
+	esxiClusterCollection := hvs.ESXiClusterCollection{ESXiCluster: esxiClusters}
 
 	secLog.Infof("%s: Return ESXi cluster query result to: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
 	return esxiClusterCollection, http.StatusOK, nil
@@ -125,8 +178,29 @@ func (controller ESXiClusterController) Delete(w http.ResponseWriter, r *http.Re
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete ESXi cluster"}
 		}
 	}
-	//TODO: Check if cluster is related to any host
 
+	hostNames, err := controller.ECStore.SearchHosts(id)
+	if err != nil {
+		defaultLog.WithError(err).WithField("id", id).Error(
+			"controllers/esxi_cluster_controller:Delete() Failed to get host names associated with ESXi cluster")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete ESXi cluster"}
+	}
+
+	for _, name := range hostNames {
+		var hostFilterCriteria = &models.HostFilterCriteria{NameEqualTo: name}
+		hostDetails, err := controller.HController.HStore.Search(hostFilterCriteria)
+		if err != nil {
+			defaultLog.WithError(err).WithField("id", id).Error(
+				"controllers/esxi_cluster_controller:Delete() Failed to get hosts associated with ESXi cluster")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete ESXi cluster"}
+		}
+		err = controller.HController.HStore.Delete(hostDetails[0].Id)
+		if err != nil {
+			defaultLog.WithError(err).WithField("id", id).Error(
+				"controllers/esxi_cluster_controller:Delete() Failed to delete hosts associated with ESXi cluster")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete ESXi cluster"}
+		}
+	}
 	if err := controller.ECStore.Delete(id); err != nil {
 		defaultLog.WithError(err).WithField("id", id).Error(
 			"controllers/esxi_cluster_controller:Delete() Failed to delete ESXi cluster")
@@ -154,7 +228,18 @@ func (controller ESXiClusterController) Retrieve(w http.ResponseWriter, r *http.
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve ESXi cluster"}
 		}
 	}
-	//TODO : Get the list of hosts from host table
+
+	esxiCluster.HostNames, err = controller.ECStore.SearchHosts(esxiCluster.Id)
+	if err != nil {
+		defaultLog.WithError(err).WithField("id", id).Error(
+			"controllers/esxi_cluster_controller:Retrieve() Failed to retrieve host names associated with the " +
+				"cluster")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve host names " +
+			"associated with the cluster"}
+	}
+
+	esxiCluster.ConnectionString = utils.GetConnectionStringWithoutCredentials(esxiCluster.ConnectionString)
+
 	secLog.WithField("Cluster name", esxiCluster.ClusterName).Infof("ESXi cluster retrieved by: %s", r.RemoteAddr)
 	return esxiCluster, http.StatusOK, nil
 }
@@ -163,14 +248,25 @@ func validateESXiClusterRequest(esxiCluster hvs.ESXiCluster) error {
 	defaultLog.Trace("controllers/esxi_cluster_controller:ValidateESXiClusterRequest() Entering")
 	defer defaultLog.Trace("controllers/esxi_cluster_controller:ValidateESXiClusterRequest() Leaving")
 
-	if esxiCluster.ClusterName != "" {
-		if errs := validation.ValidateStrings([]string{esxiCluster.ClusterName}); errs != nil {
-			return errors.Wrap(errs, "Valid ESXi Cluster Name must be specified")
+	if strings.TrimSpace(esxiCluster.ClusterName) != "" {
+		if err := validation.ValidateStrings([]string{esxiCluster.ClusterName}); err != nil {
+			return errors.Wrap(err, "Valid ESXi Cluster Name must be specified")
 		}
 	} else {
 		return errors.New("ESXi Cluster Name must be specified")
 	}
-	//TODO : Add validation for connection string
+
+	if strings.TrimSpace(esxiCluster.ConnectionString) != "" {
+		vc, _ := hcUtil.GetConnectorDetails(esxiCluster.ConnectionString)
+		if vc.Vendor != constants.VMWARE {
+			return errors.New("Only VMWARE connection strings are supported for this API")
+		}
+		if err := utils.ValidateConnectionString(esxiCluster.ConnectionString); err != nil {
+			return errors.Wrap(err, "Valid Connection string must be specified")
+		}
+	} else {
+		return errors.New("Connection string must be specified")
+	}
 	return nil
 }
 
@@ -196,4 +292,18 @@ func getECCriteria(params url.Values) (*models.ESXiClusterFilterCriteria, error)
 	}
 
 	return &ecfc, nil
+}
+
+func (controller *ESXiClusterController) getHostsFromCluster(reqESXiCluster *hvs.ESXiCluster) ([]mo.HostSystem, error) {
+	defaultLog.Trace("controllers/esxi_cluster_controller:getHostsFromCluster() Entering")
+	defer defaultLog.Trace("controllers/esxi_cluster_controller:getHostsFromCluster() Leaving")
+	hostConnectorFactory, err := controller.HController.HCConfig.HostConnectorProvider.NewHostConnector(reqESXiCluster.ConnectionString)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error creating host connector instance")
+	}
+	hostInfoList, err := hostConnectorFactory.GetClusterReference(reqESXiCluster.ClusterName)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error retrieving host info list from cluster")
+	}
+	return hostInfoList, err
 }

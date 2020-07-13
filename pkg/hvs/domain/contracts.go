@@ -98,8 +98,10 @@ type (
 	ESXiClusterStore interface {
 		Create(*hvs.ESXiCluster) (*hvs.ESXiCluster, error)
 		Retrieve(uuid.UUID) (*hvs.ESXiCluster, error)
-		Search(*models.ESXiClusterFilterCriteria) (*hvs.ESXiClusterCollection, error)
+		Search(*models.ESXiClusterFilterCriteria) ([]hvs.ESXiCluster, error)
 		Delete(uuid.UUID) error
+		AddHosts(uuid.UUID, []string) error
+		SearchHosts(uuid.UUID) ([]string, error)
 	}
 
 	// TagCertificateStore enumerates the operations expected to be performed on a TagCertificate backend

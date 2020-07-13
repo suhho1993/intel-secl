@@ -40,7 +40,7 @@ var _ = Describe("HostController", func() {
 		hostStatusStore = mocks2.NewFakeHostStatusStore()
 		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
 		hostCredentialStore = mocks2.NewMockHostCredentialStore()
-
+		
 		dekBase64 := "gcXqH8YwuJZ3Rx4qVzA/zhVvkTw2TL+iRAC9T3E6lII="
 		dek, _ := base64.StdEncoding.DecodeString(dekBase64)
 		hostControllerConfig = domain.HostControllerConfig{

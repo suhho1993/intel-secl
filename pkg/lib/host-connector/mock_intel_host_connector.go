@@ -11,6 +11,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/stretchr/testify/mock"
+	"github.com/vmware/govmomi/vim25/mo"
 )
 
 type MockIntelConnector struct {
@@ -41,4 +42,9 @@ func (ihc *MockIntelConnector) DeploySoftwareManifest(manifest taModel.Manifest)
 func (ihc *MockIntelConnector) GetMeasurementFromManifest(manifest taModel.Manifest) (taModel.Measurement, error) {
 	args := ihc.Called(manifest)
 	return args.Get(0).(taModel.Measurement), args.Error(1)
+}
+
+func (ihc *MockIntelConnector) GetClusterReference(clusterName string) ([]mo.HostSystem, error) {
+	args := ihc.Called(clusterName)
+	return args.Get(0).([]mo.HostSystem), args.Error(1)
 }

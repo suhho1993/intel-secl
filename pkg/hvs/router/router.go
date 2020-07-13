@@ -47,10 +47,11 @@ func InitRoutes(cfg *config.Configuration, dataStore *postgres.DataStore, certSt
 	return router
 }
 
-func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) {
+func defineSubRoutes(router *mux.Router, service string, cfg *config.Configuration, dataStore *postgres.DataStore,
+	certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) {
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
-
+	
 	serviceApi := "/" + service + constants.ApiVersion
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
 	subRouter = SetVersionRoutes(subRouter)
@@ -72,8 +73,8 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetHostRoutes(subRouter, dataStore, hostTrustManager, hostControllerConfig)
 	subRouter = SetReportRoutes(subRouter, dataStore, hostTrustManager)
 	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
-	subRouter = SetESXiClusterRoutes(subRouter, dataStore)
 	subRouter = SetTagCertificateRoutes(subRouter, cfg, certStore, dataStore)
+	subRouter = SetESXiClusterRoutes(subRouter, dataStore, hostTrustManager, hostControllerConfig)
 }
 
 // Fetch JWT certificate from AAS

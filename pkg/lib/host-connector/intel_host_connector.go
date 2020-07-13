@@ -14,6 +14,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
+	"github.com/vmware/govmomi/vim25/mo"
 	"strings"
 )
 
@@ -24,14 +25,14 @@ type IntelConnector struct {
 func (ic *IntelConnector) GetHostDetails() (taModel.HostInfo, error) {
 
 	log.Trace("intel_host_connector:GetHostDetails() Entering")
-	defer log.Trace("host_connector_factory:GetHostDetails() Leaving")
+	defer log.Trace("intel_host_connector:GetHostDetails() Leaving")
 	hostInfo, err := ic.client.GetHostInfo()
 	return hostInfo, err
 }
 
 func (ic *IntelConnector) GetHostManifest() (types.HostManifest, error) {
 	log.Trace("intel_host_connector:GetHostManifest() Entering")
-	defer log.Trace("host_connector_factory:GetHostManifest() Leaving")
+	defer log.Trace("intel_host_connector:GetHostManifest() Leaving")
 
 	nonce, err := util.GenerateNonce(20)
 	if err != nil {
@@ -51,7 +52,7 @@ func (ic *IntelConnector) GetHostManifest() (types.HostManifest, error) {
 func (ic *IntelConnector) GetHostManifestAcceptNonce(nonce string) (types.HostManifest, error) {
 
 	log.Trace("intel_host_connector:GetHostManifestAcceptNonce() Entering")
-	defer log.Trace("host_connector_factory:GetHostManifestAcceptNonce() Leaving")
+	defer log.Trace("intel_host_connector:GetHostManifestAcceptNonce() Leaving")
 	var verificationNonce string
 	var hostManifest types.HostManifest
 	var pcrBankList []string
@@ -171,7 +172,7 @@ func (ic *IntelConnector) GetHostManifestAcceptNonce(nonce string) (types.HostMa
 func (ic *IntelConnector) DeployAssetTag(hardwareUUID, tag string) error {
 
 	log.Trace("intel_host_connector:DeployAssetTag() Entering")
-	defer log.Trace("host_connector_factory:DeployAssetTag() Leaving")
+	defer log.Trace("intel_host_connector:DeployAssetTag() Leaving")
 	err := ic.client.DeployAssetTag(hardwareUUID, tag)
 	return err
 }
@@ -179,7 +180,7 @@ func (ic *IntelConnector) DeployAssetTag(hardwareUUID, tag string) error {
 func (ic *IntelConnector) DeploySoftwareManifest(manifest taModel.Manifest) error {
 
 	log.Trace("intel_host_connector:DeploySoftwareManifest() Entering")
-	defer log.Trace("host_connector_factory:DeploySoftwareManifest() Leaving")
+	defer log.Trace("intel_host_connector:DeploySoftwareManifest() Leaving")
 	err := ic.client.DeploySoftwareManifest(manifest)
 	return err
 }
@@ -187,7 +188,11 @@ func (ic *IntelConnector) DeploySoftwareManifest(manifest taModel.Manifest) erro
 func (ic *IntelConnector) GetMeasurementFromManifest(manifest taModel.Manifest) (taModel.Measurement, error) {
 
 	log.Trace("intel_host_connector:GetMeasurementFromManifest() Entering")
-	defer log.Trace("host_connector_factory:GetMeasurementFromManifest() Leaving")
+	defer log.Trace("intel_host_connector:GetMeasurementFromManifest() Leaving")
 	measurement, err := ic.client.GetMeasurementFromManifest(manifest)
 	return measurement, err
+}
+
+func (ic *IntelConnector) GetClusterReference(clusterName string) ([]mo.HostSystem, error) {
+	return nil, errors.New("intel_host_connector :GetClusterReference() Operation not supported")
 }
