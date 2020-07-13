@@ -28,13 +28,25 @@ const (
 	FlavorPartAssetTag   FlavorPart = "ASSET_TAG"
 )
 
-// GetFlavorTypes returns a list of flavor types as strings
+// GetFlavorTypes returns a list of flavor types
 func GetFlavorTypes() []FlavorPart {
 	log.Trace("flavor/common/flavor_part:GetFlavorTypes() Entering")
 	defer log.Trace("flavor/common/flavor_part:GetFlavorTypes() Leaving")
 
 	return []FlavorPart{FlavorPartPlatform, FlavorPartOs, FlavorPartHostUnique, FlavorPartSoftware, FlavorPartAssetTag}
 }
+
+// GetFlavorTypesString returns a list of flavor types as strings for given flavor types
+func GetFlavorTypesString(flavorParts []FlavorPart) []string {
+	log.Trace("flavor/common/flavor_part:GetFlavorTypesString() Entering")
+	defer log.Trace("flavor/common/flavor_part:GetFlavorTypesString() Leaving")
+	var flavorTypes []string
+	for _, flavorPart := range flavorParts{
+		flavorTypes = append(flavorTypes, flavorPart.String())
+	}
+	return flavorTypes
+}
+
 
 func (fp FlavorPart) String() string {
 	log.Trace("flavor/common/flavor_part/FlavorPart:String() Entering")

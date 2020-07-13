@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	fvsNumberOfVerifiers    = "fvs-number-of-verifiers"
-	fvsNumberOfDataFetchers = "fvs-number-of-data-fetchers"
-	hrrsRefreshPeriod       = "hrrs-refresh-period"
-	hrrsRefreshLookAhead    = "hrrs-refresh-look-ahead"
+	fvsNumberOfVerifiers               = "fvs-number-of-verifiers"
+	fvsNumberOfDataFetchers            = "fvs-number-of-data-fetchers"
+	fvsSkipFlavorSignatureVerification = "fvs-skip-flavor-signature-verification"
+	hrrsRefreshPeriod                  = "hrrs-refresh-period"
+	hrrsRefreshLookAhead               = "hrrs-refresh-look-ahead"
 )
 
 // this func sets the default values for viper keys
@@ -84,6 +85,7 @@ func init() {
 	// set default for fvs
 	viper.SetDefault(fvsNumberOfVerifiers, constants.DefaultFvsNumberOfVerifiers)
 	viper.SetDefault(fvsNumberOfDataFetchers, constants.DefaultFvsNumberOfDataFetchers)
+	viper.SetDefault(fvsSkipFlavorSignatureVerification, constants.DefaultSkipFlavorSignatureVerification)
 
 	// set default for saml
 	viper.SetDefault("saml-issuer-name", constants.DefaultSamlCertIssuer)
@@ -173,8 +175,9 @@ func defaultConfig() *config.Configuration {
 			RefreshLookAhead: viper.GetDuration(hrrsRefreshLookAhead),
 		},
 		FVS: config.FVSConfig{
-			NumberOfVerifiers:    viper.GetInt(fvsNumberOfVerifiers),
-			NumberOfDataFetchers: viper.GetInt(fvsNumberOfDataFetchers),
+			NumberOfVerifiers:               viper.GetInt(fvsNumberOfVerifiers),
+			NumberOfDataFetchers:            viper.GetInt(fvsNumberOfDataFetchers),
+			SkipFlavorSignatureVerification: viper.GetBool(fvsSkipFlavorSignatureVerification),
 		},
 	}
 }

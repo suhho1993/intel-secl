@@ -24,7 +24,7 @@ type AllOfFlavors struct {
 var defaultLog = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
-func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, error) {
+func (aof *AllOfFlavors) AddFaults(verifierCerts flavorVerifier.VerifierCertificates, report *hvs.TrustReport) (*hvs.TrustReport, error) {
 
 	if report == nil {
 		return nil, nil
@@ -34,18 +34,24 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 		if flavor == nil {
 			continue
 		}
-		trustPolicyManager := flavorVerifier.NewHostTrustPolicyManager(flavor.Flavor, hostManifest)
-		for _, policyRule := range trustPolicyManager.GetVendorTrustPolicyReader().Rules() {
+		ruleFactory := flavorVerifier.NewRuleFactory(verifierCerts, hostManifest, flavor, false)
+		policyRules, _, err := ruleFactory.GetVerificationRules()
+		if err != nil{
+			return nil, err
+		}
+		for _, policyRule := range policyRules {
 			result, err := policyRule.Apply(hostManifest)
 			if err != nil {
 				return report, errors.Wrap(err, "Failed to apply rule \""+report.PolicyName+"\" to host manifest of "+report.HostManifest.HostInfo.HostName)
 			}
-			if result != nil {
+			if result != nil && !report.CheckResultExists(*result){
 				// TODO:
 				// assign RuleInfo? FlavorID?
 				// Trusted is be default empty since Fault is not empty
 				// ref: lib-verifier: RuleResult.java
 				ruleResult := hvs.RuleResult{
+					//FlavorVerify.java 585
+					Rule: hvs.RuleInfo{Markers: aof.Markers},
 					Faults: []hvs.Fault{
 						{
 							Name :       constants.FaultAllofFlavorsMissing,

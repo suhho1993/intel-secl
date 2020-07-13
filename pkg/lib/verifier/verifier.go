@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// VerifierCertificates A collection of certificates/certificate pools that 
+// VerifierCertificates A collection of certificates/certificate pools that
 // must be provide to the Verifier in NewVerifier().
 type VerifierCertificates struct {
 	PrivacyCACertificates    *x509.CertPool
@@ -31,9 +31,12 @@ type VerifierCertificates struct {
 // be used to disable the verification of the flavor signature.
 type Verifier interface {
 	Verify(hostManifest *types.HostManifest, signedFlavor *hvs.SignedFlavor, skipFlavorSignatureVerification bool) (*hvs.TrustReport, error)
+	GetVerifierCerts() VerifierCertificates
 }
 
-// NewVerifier Creates a Verifier provided a valid set of VerifierCertificates.
+
+
+// NewVerifier Creates a Verifier provided a valid set of verifierCertificates.
 // An error is raised if any of the fields in VerifierCertificate is nil.
 func NewVerifier(verifierCertificates VerifierCertificates) (Verifier, error) {
 

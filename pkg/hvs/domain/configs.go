@@ -13,13 +13,14 @@ import (
 )
 
 type HostTrustVerifierConfig struct {
-	FlavorStore      FlavorStore
-	FlavorGroupStore FlavorGroupStore
-	HostStore        HostStore
-	ReportStore      ReportStore
-	FlavorVerifier   verifier.Verifier
-	CertsStore       models.CertificatesStore
-	SamlIssuerConfig saml.IssuerConfiguration
+	FlavorStore         FlavorStore
+	FlavorGroupStore    FlavorGroupStore
+	HostStore           HostStore
+	ReportStore         ReportStore
+	FlavorVerifier      verifier.Verifier
+	CertsStore          models.CertificatesStore
+	SamlIssuerConfig    saml.IssuerConfiguration
+	SkipFlavorSignature bool
 }
 
 type HostTrustMgrConfig struct {

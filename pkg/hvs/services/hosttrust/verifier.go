@@ -21,30 +21,31 @@ var ErrInvalidHostManiFest = errors.New("invalid host data")
 var ErrManifestMissingHwUUID = errors.New("host data missing hardware uuid")
 var ErrMissingHostId = errors.New("host id ")
 
-type verifier struct {
-	flavorStore      domain.FlavorStore
-	flavorGroupStore domain.FlavorGroupStore
-	hostStore        domain.HostStore
-	reportStore      domain.ReportStore
-	flavorVerifier   flavorVerifier.Verifier
-	certsStore       models.CertificatesStore
-	samlIssuer       saml.IssuerConfiguration
+type Verifier struct {
+	FlavorStore                     domain.FlavorStore
+	FlavorGroupStore                domain.FlavorGroupStore
+	HostStore                       domain.HostStore
+	ReportStore                     domain.ReportStore
+	FlavorVerifier                  flavorVerifier.Verifier
+	CertsStore                      models.CertificatesStore
+	SamlIssuer                      saml.IssuerConfiguration
+	SkipFlavorSignatureVerification bool
 }
 
 func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
-	return &verifier{
-		flavorStore:      cfg.FlavorStore,
-		flavorGroupStore: cfg.FlavorGroupStore,
-		hostStore:        cfg.HostStore,
-		reportStore:      cfg.ReportStore,
-		flavorVerifier:   cfg.FlavorVerifier,
-		certsStore:       cfg.CertsStore,
-		samlIssuer:       cfg.SamlIssuerConfig,
+	return &Verifier{
+		FlavorStore:                     cfg.FlavorStore,
+		FlavorGroupStore:                cfg.FlavorGroupStore,
+		HostStore:                       cfg.HostStore,
+		ReportStore:                     cfg.ReportStore,
+		FlavorVerifier:                  cfg.FlavorVerifier,
+		CertsStore:                      cfg.CertsStore,
+		SamlIssuer:                      cfg.SamlIssuerConfig,
+		SkipFlavorSignatureVerification: cfg.SkipFlavorSignature,
 	}
-
 }
 
-func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newData bool) (*models.HVSReport, error) {
+func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newData bool) (*models.HVSReport, error) {
 	defaultLog.Trace("hosttrust/verifier:Verify() Entering")
 	defer defaultLog.Trace("hosttrust/verifier:Verify() Leaving")
 
@@ -59,7 +60,7 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 	// TODO : remove this when we remove the intermediate collection
 	var flvGroups []*hvs.FlavorGroup
-	if flvGroupColl, err := v.flavorGroupStore.Search(&models.FlavorGroupFilterCriteria{HostId: hostId.String()}); err != nil {
+	if flvGroupColl, err := v.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{HostId: hostId.String()}); err != nil {
 		return nil, errors.New("hosttrust/verifier:Verify() Store access error")
 	} else {
 		flvGroups = (*flvGroupColl).Flavorgroups
@@ -73,16 +74,17 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 	for _, fg := range flvGroups {
 		//TODO - handle errors in case of DB transaction
-		fgTrustReqs, _ := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.flavorStore)
+		fgTrustReqs, _ := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore)
 		fgCachedFlavors, _ := v.getCachedFlavors(hostId, (*fg).ID)
-		if len(fgCachedFlavors) > 0 {
+		//Check for empty map, FlavorVerify.java 345
+		if fgCachedFlavors != nil {
 			fgTrustCache, _ := v.validateCachedFlavors(hostId, hostData, fgCachedFlavors)
 			fgTrustReport := fgTrustCache.trustReport
 			if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache) {
 				finalReportValid = false
-				fgTrustReport, _ = v.createFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
+				fgTrustReport, _ = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
 			}
-			log.Debug("hosttrust/verifier:Verify() Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.Trusted)
+			log.Debug("hosttrust/verifier:Verify() Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.IsTrusted())
 			// append the results
 			finalTrustReport.Results = append(finalTrustReport.Results, fgTrustReport.Results...)
 		}
@@ -90,27 +92,27 @@ func (v *verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	// create a new report if we actually have any results and either the Final Report is untrusted or
 	// we have new Data from the host and therefore need to update based on the new report.
 	var hvsReport *models.HVSReport
-	if len(finalTrustReport.Results) > 0 && !finalReportValid || newData {
+	if len(finalTrustReport.Results) > 0 && (!finalReportValid || newData) {
 		log.Debugf("hosttrust/verifier:Verify() Generating new SAML for host: %s", hostId)
-		samlReportGen := NewSamlReportGenerator(&v.samlIssuer)
+		samlReportGen := NewSamlReportGenerator(&v.SamlIssuer)
 		samlReport := samlReportGen.GenerateSamlReport(&finalTrustReport)
-
+		finalTrustReport.Trusted = finalTrustReport.IsTrusted()
 		log.Debugf("hosttrust/verifier:Verify() Saving new report for host: %s", hostId)
 		hvsReport = v.storeTrustReport(hostId, &finalTrustReport, &samlReport)
 	}
 	return hvsReport, nil
 }
 
-func (v *verifier) getCachedFlavors(hostId uuid.UUID, flavGrpId uuid.UUID) ([]hvs.SignedFlavor, error) {
+func (v *Verifier) getCachedFlavors(hostId uuid.UUID, flavGrpId uuid.UUID) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("hosttrust/verifier:getCachedFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/verifier:getCachedFlavors() Leaving")
 	// retrieve the IDs of the trusted flavors from the host store
-	if flIds, err := v.hostStore.RetrieveTrustCacheFlavors(hostId, flavGrpId); err != nil {
+	if flIds, err := v.HostStore.RetrieveTrustCacheFlavors(hostId, flavGrpId); err != nil {
 		return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving TrustCacheFlavors")
 	} else {
 		result := make([]hvs.SignedFlavor, 0, len(flIds))
 		for _, flvId := range flIds {
-			if flv, err := v.flavorStore.Retrieve(flvId); err == nil {
+			if flv, err := v.FlavorStore.Retrieve(flvId); err == nil {
 				result = append(result, *flv)
 			}
 		}
@@ -118,7 +120,7 @@ func (v *verifier) getCachedFlavors(hostId uuid.UUID, flavGrpId uuid.UUID) ([]hv
 	}
 }
 
-func (v *verifier) validateCachedFlavors(hostId uuid.UUID,
+func (v *Verifier) validateCachedFlavors(hostId uuid.UUID,
 	hostData *types.HostManifest,
 	cachedFlavors []hvs.SignedFlavor) (hostTrustCache, error) {
 	defaultLog.Trace("hosttrust/verifier:validateCachedFlavors() Entering")
@@ -131,7 +133,7 @@ func (v *verifier) validateCachedFlavors(hostId uuid.UUID,
 	var trustCachesToDelete []uuid.UUID
 	for _, cachedFlavor := range cachedFlavors {
 		//TODO: change the signature verification depending on decision on signed flavors
-		report, err := v.flavorVerifier.Verify(hostData, &cachedFlavor, true)
+		report, err := v.FlavorVerifier.Verify(hostData, &cachedFlavor, v.SkipFlavorSignatureVerification)
 		if err != nil {
 			return hostTrustCache{}, errors.Wrap(err, "hosttrust/verifier:validateCachedFlavors() Error from flavor verifier")
 		}
@@ -143,12 +145,12 @@ func (v *verifier) validateCachedFlavors(hostId uuid.UUID,
 		}
 	}
 	// remove cache entries for flavors that could not be verified
-	_ = v.hostStore.RemoveTrustCacheFlavors(hostId, trustCachesToDelete)
+	_ = v.HostStore.RemoveTrustCacheFlavors(hostId, trustCachesToDelete)
 	htc.trustReport = collectiveReport
 	return htc, nil
 }
 
-func (v *verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustReport, samlReport *saml.SamlAssertion) *models.HVSReport{
+func (v *Verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustReport, samlReport *saml.SamlAssertion) *models.HVSReport {
 	defaultLog.Trace("hosttrust/verifier:storeTrustReport() Entering")
 	defer defaultLog.Trace("hosttrust/verifier:storeTrustReport() Leaving")
 
@@ -160,7 +162,7 @@ func (v *verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustRepo
 		Expiration:  samlReport.ExpiryTime,
 		Saml:        samlReport.Assertion,
 	}
-	_, err := v.reportStore.Create(&hvsReport)
+	_, err := v.ReportStore.Create(&hvsReport)
 	if err != nil {
 		log.WithError(err).Errorf("hosttrust/verifier:storeTrustReport() Failed to store Report")
 	}

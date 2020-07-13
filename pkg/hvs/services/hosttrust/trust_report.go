@@ -12,13 +12,13 @@ import (
 )
 
 // FlavorVerify.java: 529
-// renamed to createFlavorGroupReport and made it a receiver function since we need certificates
+// renamed to CreateFlavorGroupReport and made it a receiver function since we need certificates
 // from the config
-func (v *verifier) createFlavorGroupReport(hostId uuid.UUID, reqs flvGrpHostTrustReqs,
+func (v *Verifier) CreateFlavorGroupReport(hostId uuid.UUID, reqs flvGrpHostTrustReqs,
 	hostData *types.HostManifest,
 	trustCache hostTrustCache) (hvs.TrustReport, error) {
-	defaultLog.Trace("hosttrust/trust_report:createFlavorGroupReport() Entering")
-	defer defaultLog.Trace("hosttrust/trust_report:createFlavorGroupReport() Leaving")
+	defaultLog.Trace("hosttrust/trust_report:CreateFlavorGroupReport() Entering")
+	defer defaultLog.Trace("hosttrust/trust_report:CreateFlavorGroupReport() Leaving")
 
 	reqAndDefFlavorTypes := reqs.DefinedAndRequiredFlavorTypes
 	latestReqAndDefFlavorTypes := reqs.GetLatestFlavorTypeMap()
@@ -71,7 +71,7 @@ func areRequiredFlavorsMissing(cachedTrustReport hvs.TrustReport, flavorPart cf.
 }
 
 // FlavorVerify.java: 529
-func (v *verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManifest, reqs flvGrpHostTrustReqs, trustCache hostTrustCache, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool) (hvs.TrustReport, error) {
+func (v *Verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManifest, reqs flvGrpHostTrustReqs, trustCache hostTrustCache, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool) (hvs.TrustReport, error) {
 	defaultLog.Trace("hosttrust/trust_report:createTrustReport() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:createTrustReport() Leaving")
 
@@ -99,7 +99,7 @@ func (v *verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManif
 		AllOfFlavors: reqs.AllOfFlavors,
 		Markers:      reqs.getAllOfMarkers(),
 	}
-	trustReport, err = ruleAllOfFlavors.AddFaults(trustReport)
+	trustReport, err = ruleAllOfFlavors.AddFaults(v.FlavorVerifier.GetVerifierCerts(), trustReport)
 	if err != nil {
 		return hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:createTrustReport() Error applying ruleAllOfFlavors")
 	}
@@ -128,7 +128,7 @@ type flavorReport struct {
 }
 
 // FlavorVerify.java: 405
-func (v *verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
+func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 	hostData *types.HostManifest, hostTrustReqs flvGrpHostTrustReqs) (*hvs.TrustReport, error) {
 	defaultLog.Trace("hosttrust/trust_report:verifyFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:verifyFlavors() Leaving")
@@ -153,9 +153,8 @@ func (v *verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 			// if these field are not changed to value type
 			flvPart := signedFlavor.Flavor.Meta.Description.FlavorPart
 			if flvPart == flvMatchPolicy.FlavorPart.String() {
-				// TODO
-				// skipFlavorSignatureVerification needs real values
-				individualTrustReport, err := v.flavorVerifier.Verify(hostData, signedFlavor, false)
+
+				individualTrustReport, err := v.FlavorVerifier.Verify(hostData, signedFlavor, v.SkipFlavorSignatureVerification)
 				if err != nil {
 					return &hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:verifyFlavors() Error verifying flavor")
 				}
@@ -225,7 +224,7 @@ func (v *verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 		}, nil
 	}
 	// save the trust cache // ignore error since it is just a cache.
-	if _, err := v.hostStore.AddTrustCacheFlavors(hostID, newTrustCaches); err != nil {
+	if _, err := v.HostStore.AddTrustCacheFlavors(hostID, newTrustCaches); err != nil {
 		log.Error("hosttrust/trust_report:verifyFlavors() error while adding flavor trust cache to store for host id ", hostID, "error - ", err)
 	}
 
@@ -234,7 +233,7 @@ func (v *verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 
 // FlavorVerify.java: 684
 //TODO find flavors by required key value
-func (v *verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool) ([]*hvs.SignedFlavor, error) {
+func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool) ([]*hvs.SignedFlavor, error) {
 	defaultLog.Trace("hosttrust/trust_report:findFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:findFlavors() Leaving")
 
@@ -242,11 +241,12 @@ func (v *verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTyp
 	for flavorPart, _ := range latestReqAndDefFlavorTypes {
 		flavorParts = append(flavorParts, flavorPart)
 	}
+
 	flvrFilterCriteria := models.FlavorFilterCriteria{
 		FlavorGroupID: flavorGroupID,
-		FlavorParts:   flavorParts,
+		FlavorPartsWithLatest: flavorParts,
 	}
-	signedFlavors, err := v.flavorStore.Search(&flvrFilterCriteria)
+	signedFlavors, err := v.FlavorStore.Search(&flvrFilterCriteria)
 	if err != nil {
 		return nil, err
 	}

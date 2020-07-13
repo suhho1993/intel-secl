@@ -170,7 +170,6 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 		FlavorCACertificates:     rootCApool,
 	}
 	libVerifier, _ := verifier.NewVerifier(verifierCerts)
-
 	samlKey := privacyCAs.Key.(*rsa.PrivateKey)
 	samlIssuerConfig := saml.IssuerConfiguration{
 		IssuerName:        cfg.SAML.Issuer,
@@ -181,13 +180,14 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	}
 
 	htv := domain.HostTrustVerifierConfig{
-		FlavorStore:      fs,
-		FlavorGroupStore: fgs,
-		HostStore:        hs,
-		ReportStore:      rs,
-		FlavorVerifier:   libVerifier,
-		CertsStore:       *certStore,
-		SamlIssuerConfig: samlIssuerConfig,
+		FlavorStore:         fs,
+		FlavorGroupStore:    fgs,
+		HostStore:           hs,
+		ReportStore:         rs,
+		FlavorVerifier:      libVerifier,
+		CertsStore:          *certStore,
+		SamlIssuerConfig:    samlIssuerConfig,
+		SkipFlavorSignature: cfg.FVS.SkipFlavorSignatureVerification,
 	}
 
 	// Initialize Host Fetcher service

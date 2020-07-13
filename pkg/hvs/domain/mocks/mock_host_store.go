@@ -17,7 +17,7 @@ import (
 // MockHostStore provides a mocked implementation of interface domain.HostStore
 type MockHostStore struct {
 	hostStore            []*hvs.Host
-	hostFlavorgroupStore []*hvs.HostFlavorgroup
+	HostFlavorgroupStore []*hvs.HostFlavorgroup
 }
 
 // Create inserts a Host
@@ -94,7 +94,7 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 // AddFlavorgroups associate a Host with specified flavorgroups
 func (store *MockHostStore) AddFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
 	for _, fgId := range fgIds {
-		store.hostFlavorgroupStore = append(store.hostFlavorgroupStore, &hvs.HostFlavorgroup{
+		store.HostFlavorgroupStore = append(store.HostFlavorgroupStore, &hvs.HostFlavorgroup{
 			HostId:        hId,
 			FlavorgroupId: fgId,
 		})
@@ -104,7 +104,7 @@ func (store *MockHostStore) AddFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) er
 
 // RetrieveFlavorgroup returns Host Flavorgroup association
 func (store *MockHostStore) RetrieveFlavorgroup(hId, fgId uuid.UUID) (*hvs.HostFlavorgroup, error) {
-	for _, hf := range store.hostFlavorgroupStore {
+	for _, hf := range store.HostFlavorgroupStore {
 		if hf.HostId == hId && hf.FlavorgroupId == fgId {
 			return hf, nil
 		}
@@ -114,11 +114,11 @@ func (store *MockHostStore) RetrieveFlavorgroup(hId, fgId uuid.UUID) (*hvs.HostF
 
 // RemoveFlavorgroups delete Host Flavorgroup associations
 func (store *MockHostStore) RemoveFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error {
-	for i, hf := range store.hostFlavorgroupStore {
+	for i, hf := range store.HostFlavorgroupStore {
 		if hf.HostId == hId {
 			for _, fgId := range fgIds {
 				if hf.FlavorgroupId == fgId {
-					store.hostFlavorgroupStore[i] = &hvs.HostFlavorgroup{}
+					store.HostFlavorgroupStore[i] = &hvs.HostFlavorgroup{}
 					return nil
 				}
 			}
@@ -130,7 +130,7 @@ func (store *MockHostStore) RemoveFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID)
 // SearchFlavorgroups returns a collection of flavorgroup Ids associated with host Id
 func (store *MockHostStore) SearchFlavorgroups(hId uuid.UUID) ([]uuid.UUID, error) {
 	var fgIds []uuid.UUID
-	for _, hf := range store.hostFlavorgroupStore {
+	for _, hf := range store.HostFlavorgroupStore {
 		if hf.HostId == hId {
 			fgIds = append(fgIds, hf.FlavorgroupId)
 		}

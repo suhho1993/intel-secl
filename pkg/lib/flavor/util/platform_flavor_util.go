@@ -595,3 +595,4 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavor(flavorString string, privateKey
 
 	return string(signedFlavorJSON), nil
 }
+

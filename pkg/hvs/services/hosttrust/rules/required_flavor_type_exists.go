@@ -26,7 +26,13 @@ func NewRequiredFlavorTypeExists(flavorPart cf.FlavorPart) *RequiredFlavorTypeEx
 
 func (r *RequiredFlavorTypeExists) Apply(trustReport hvs.TrustReport) *hvs.TrustReport{
 
-	var ruleResult hvs.RuleResult
+	var markers []cf.FlavorPart
+	//RequiredFlavorTypeExists.java 36
+	ruleResult := hvs.RuleResult{
+		Rule:     hvs.RuleInfo{
+			Markers:  append(markers, r.FlavorPart),
+		},
+	}
  	if r.isFlavorPartMissing(trustReport){
  		fault := hvs.Fault{
 			Name:        constants.FaultRequiredFlavorTypeMissing,
@@ -35,6 +41,7 @@ func (r *RequiredFlavorTypeExists) Apply(trustReport hvs.TrustReport) *hvs.Trust
 		defaultLog.Debugf("Defined and required flavor part [%s] is missing", r.FlavorPart.String())
 		ruleResult.Faults = append(ruleResult.Faults, fault)
 	}
+
 	if !reflect.DeepEqual(ruleResult, hvs.RuleResult{}){
 		trustReport.AddResult(ruleResult)
 	}

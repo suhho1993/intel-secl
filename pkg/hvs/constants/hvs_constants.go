@@ -8,18 +8,18 @@ import "time"
 
 // general HVS constants
 const (
-	ServiceName           = "HVS"
-	ServiceDir            = "hvs/"
-	OldServiceName        = "mtwilson"
-	ApiVersion            = "/v2"
-	ServiceUserName       = "hvs"
+	ServiceName     = "HVS"
+	ServiceDir      = "hvs/"
+	OldServiceName  = "mtwilson"
+	ApiVersion      = "/v2"
+	ServiceUserName = "hvs"
 
 	// Timestamp operations
 	ParamDateFormat    = "2006-01-02 15:04:05"
 	ParamDateFormatUTC = "2006-01-02T15:04:05.000Z"
 
 	// service remove command
-	ServiceRemoveCmd      = "systemctl disable hvs"
+	ServiceRemoveCmd = "systemctl disable hvs"
 )
 
 // these are used only when uninstalling service
@@ -143,7 +143,7 @@ const (
 )
 
 // http media type
-const(
+const (
 	HTTPMediaTypeJson = "application/json"
 	HTTPMediaTypeSaml = "application/samlassertion+xml"
 	HTTPMediaTypeXml  = "application/xml"
@@ -151,6 +151,7 @@ const(
 
 // FVS constants
 const (
-	DefaultFvsNumberOfVerifiers    = 20
-	DefaultFvsNumberOfDataFetchers = 20
+	DefaultFvsNumberOfVerifiers            = 20
+	DefaultFvsNumberOfDataFetchers         = 20
+	DefaultSkipFlavorSignatureVerification = false
 )

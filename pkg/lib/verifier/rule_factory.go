@@ -28,7 +28,7 @@ type ruleBuilder interface {
 
 // The ruleFactory uses flavor and manifest data to determine
 // which vendor specific rule builder to use when creating rules
-// in 'getVerificationRules'.
+// in 'GetVerificationRules'.
 type ruleFactory struct {
 	verifierCertificates         VerifierCertificates
 	hostManifest                 *types.HostManifest
@@ -36,7 +36,7 @@ type ruleFactory struct {
 	skipSignedFlavorVerification bool
 }
 
-func newRuleFactory(verifierCertificates VerifierCertificates,
+func NewRuleFactory(verifierCertificates VerifierCertificates,
 	hostManifest *types.HostManifest,
 	signedFlavor *hvs.SignedFlavor,
 	skipSignedFlavorVerification bool) *ruleFactory {
@@ -49,7 +49,7 @@ func newRuleFactory(verifierCertificates VerifierCertificates,
 	}
 }
 
-func (factory *ruleFactory) getVerificationRules() ([]rules.Rule, string, error) {
+func (factory *ruleFactory) GetVerificationRules() ([]rules.Rule, string, error) {
 
 	var flavorPart common.FlavorPart
 	var results []rules.Rule

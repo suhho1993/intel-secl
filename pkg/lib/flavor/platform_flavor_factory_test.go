@@ -34,34 +34,6 @@ const (
 
 var pfutil util.PlatformFlavorUtil
 
-// loadManifestAndTagCert is a helper function that loads a HostManifest and TagCertificate from files
-func loadManifestAndTagCert(hmFilePath string, tcFilePath string) (*hcTypes.HostManifest, *x509.Certificate) {
-	// load manifest
-	var hm hcTypes.HostManifest
-	var tagCert *x509.Certificate
-
-	// load hostmanifest
-	if hmFilePath != "" {
-		manifestFile, _ := os.Open(hmFilePath)
-		manifestBytes, _ := ioutil.ReadAll(manifestFile)
-		_ = json.Unmarshal(manifestBytes, &hm)
-	}
-
-	// load tag cert
-	if tcFilePath != "" {
-		// load tagCert
-		// read the test tag cert
-		tagCertFile, _ := os.Open(tcFilePath)
-		tagCertPathBytes, _ := ioutil.ReadAll(tagCertFile)
-
-		// convert pem to cert
-		pemBlock, _ := pem.Decode(tagCertPathBytes)
-		tagCert, _ = x509.ParseCertificate(pemBlock.Bytes)
-	}
-
-	return &hm, tagCert
-}
-
 // checkIfRequiredFlavorsArePresent is a helper function that ensures expected flavorparts are present in Flavor
 func checkIfRequiredFlavorsArePresent(t *testing.T, expFlavorParts []cf.FlavorPart, actualFlavorParts []cf.FlavorPart) {
 	// check if expected flavorparts are present
@@ -193,6 +165,7 @@ func TestLinuxPlatformFlavorGetSignedOSFlavor(t *testing.T) {
 
 	// get the flavor
 	pflavor, err := pffactory.GetPlatformFlavor()
+
 	assert.NoError(t, err, "Error initializing PlatformFlavor")
 	pFlavorParts, err := (*pflavor).GetFlavorPartNames()
 	assert.NoError(t, err, "Error fetching flavor parts")
@@ -528,3 +501,31 @@ func TestSoftwareFlavor_Failure(t *testing.T) {
 	assert.Error(t, err, "Error expected for invalid software flavor")
 	t.Log(sfg)
 }
+
+// loadManifestAndTagCert is a helper function that loads a HostManifest and TagCertificate from files
+func loadManifestAndTagCert(hmFilePath string, tcFilePath string) (*hcTypes.HostManifest, *x509.Certificate) {
+	var hm hcTypes.HostManifest
+	var tagCert *x509.Certificate
+
+	// load hostmanifest
+	if hmFilePath != "" {
+		manifestFile, _ := os.Open(hmFilePath)
+		manifestBytes, _ := ioutil.ReadAll(manifestFile)
+		_ = json.Unmarshal(manifestBytes, &hm)
+	}
+
+	// load tag cert
+	if tcFilePath != "" {
+		// load tagCert
+		// read the test tag cert
+		tagCertFile, _ := os.Open(tcFilePath)
+		tagCertPathBytes, _ := ioutil.ReadAll(tagCertFile)
+
+		// convert pem to cert
+		pemBlock, _ := pem.Decode(tagCertPathBytes)
+		tagCert, _ = x509.ParseCertificate(pemBlock.Bytes)
+	}
+
+	return &hm, tagCert
+}
+

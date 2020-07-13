@@ -13,12 +13,21 @@ import (
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
+	"io/ioutil"
 	"reflect"
 )
 
 // MockFlavorStore provides a mocked implementation of interface hvs.FlavorStore
 type MockFlavorStore struct {
-	flavorStore []*hvs.SignedFlavor
+	flavorStore            []*hvs.SignedFlavor
+	//TODO use flavorgroupFlavor model
+	FlavorFlavorGroupStore []*flavorFlavorGroupStore
+	FlavorgroupStore       map[uuid.UUID]*hvs.FlavorGroup
+}
+
+type flavorFlavorGroupStore struct {
+	fgId uuid.UUID
+	fId  uuid.UUID
 }
 
 var flavor = ` {
@@ -391,11 +400,6 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorFilterCriteria) ([]*
 		return store.flavorStore, nil
 	}
 
-	// start with all rows
-	for _, sf := range store.flavorStore {
-		sfs = append(sfs, sf)
-	}
-
 	// return all entries
 	if reflect.DeepEqual(*criteria, models.FlavorFilterCriteria{}) {
 		return store.flavorStore, nil
@@ -404,28 +408,134 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorFilterCriteria) ([]*
 	// Flavor ID filter
 	if criteria.Id != uuid.Nil {
 		var sfFiltered []*hvs.SignedFlavor
-		for _, f := range sfs {
+		for _, f := range store.flavorStore {
 			if f.Flavor.Meta.ID == criteria.Id {
 				sfFiltered = append(sfFiltered, f)
 			}
 		}
 		sfs = sfFiltered
+	} else if criteria.FlavorGroupID != uuid.Nil ||
+		len(criteria.FlavorParts) >= 1 || len(criteria.FlavorPartsWithLatest) >= 1 || criteria.HostManifest != nil {
+			flavorPartsWithLatestMap := getFlavorPartsWithLatest(criteria.FlavorParts, criteria.FlavorPartsWithLatest)
+
+			var fIds []uuid.UUID
+			// Find flavors for given flavor group Id
+			for _, flvrFg := range store.FlavorFlavorGroupStore {
+				if flvrFg.fgId == criteria.FlavorGroupID{
+					fIds = append(fIds, flvrFg.fId)
+				}
+			}
+			// for each flavors check the flavor part in flavorPartsWithLatestMap is present
+			for _, fId := range fIds{
+				f, _ := store.Retrieve(fId)
+				if f != nil {
+					var flvrPart cf.FlavorPart
+					(&flvrPart).Parse(f.Flavor.Meta.Description.FlavorPart)
+					if f, _ := store.Retrieve(fId); flavorPartsWithLatestMap[flvrPart] == true {
+						sfs = append(sfs, f)
+					}
+				}
+
+		}
 	}
 	return sfs, nil
 }
 
 // Create inserts a Flavor
 func (store *MockFlavorStore) Create(sf *hvs.SignedFlavor) (*hvs.SignedFlavor, error) {
-	store.flavorStore = append(store.flavorStore, sf)
+	//It is not right way to directly append the pointer, reference will be copied. Copy only the values.
+	rec := hvs.SignedFlavor{
+		Flavor:    sf.Flavor,
+		Signature: sf.Signature,
+	}
+	store.flavorStore = append(store.flavorStore, &rec)
 	return sf, nil
 }
 
 func (store *MockFlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error) {
-	panic("implement me")
+	flavorParts := make(map[cf.FlavorPart]bool)
+	//find flavors for given hwId and either flavorPart is host_unique or asset_tag
+	var flavors []*hvs.SignedFlavor
+	for _, flavor := range store.flavorStore{
+		//skip for flavor with not matching hwuuid
+		if flavor.Flavor.Meta.Description.HardwareUUID == nil{
+			continue
+		}
+		if *flavor.Flavor.Meta.Description.HardwareUUID == hwId && (flavor.Flavor.Meta.Description.FlavorPart == cf.FlavorPartHostUnique.String() ||
+			flavor.Flavor.Meta.Description.FlavorPart == cf.FlavorPartAssetTag.String()){
+			flavors = append(flavors, flavor)
+		}
+	}
+
+	// find flavorgroups with name host_unique and flavougroup id in FlavorFlavorGroupStore and flavor id in list of obtained flavors
+	var flavorPart cf.FlavorPart
+	fgs := store.FlavorgroupStore
+	for _, flavor := range flavors{
+		for _, flvFlg := range store.FlavorFlavorGroupStore {
+			if _, ok := fgs[flvFlg.fgId]; ok && fgs[flvFlg.fgId].Name == cf.FlavorPartHostUnique.String() {
+				(&flavorPart).Parse(flavor.Flavor.Meta.Description.FlavorPart)
+				flavorParts[flavorPart] = true
+			}
+		}
+	}
+
+	return flavorParts, nil
 }
 
 func (store *MockFlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error) {
-	panic("implement me")
+	flavorTypesInFlavorGroup := make(map[cf.FlavorPart]bool)
+
+	if flvParts == nil || len(flvParts) == 0{
+		flvParts = cf.GetFlavorTypes()
+	}
+	for _, flvrPart := range flvParts{
+		if store.flavorgroupContainsFlavorType(flvrPart, flvGrpId){
+			flavorTypesInFlavorGroup[flvrPart]= true
+		}
+	}
+
+	return flavorTypesInFlavorGroup, nil
+}
+
+func(store *MockFlavorStore) flavorgroupContainsFlavorType(flvrPart cf.FlavorPart, fgId uuid.UUID) bool {
+	fgStore := store.FlavorgroupStore
+	flvrMap := make(map[uuid.UUID]hvs.SignedFlavor)
+
+	//Get flavors for given flavor part and store it in flvrMap
+	for _, flvr := range store.flavorStore{
+		if flvr.Flavor.Meta.Description.FlavorPart == flvrPart.String(){
+			flvrMap[flvr.Flavor.Meta.ID] = *flvr
+		}
+	}
+
+	if len(flvrMap) == 0{
+		return false
+	}
+
+	found := false
+	//if flavorgroup is found for given flavorgroup id then search through matchpolicies for given flavorpart
+	//if found then get the flavor id and check flavor id exists in flvrMap as key, if key exists then return true.
+	if _, ok := fgStore[fgId]; ok{
+		policies := fgStore[fgId].MatchPolicies
+		for _, policy := range policies{
+			if policy.FlavorPart == flvrPart{
+				found = true
+				break
+			}
+		}
+
+		if found{
+			for _, flvrFg := range store.FlavorFlavorGroupStore {
+				if fgId == flvrFg.fgId{
+					if _, ok := flvrMap[flvrFg.fId]; ok{
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 // NewMockFlavorStore provides one dummy data for Flavors
@@ -439,4 +549,35 @@ func NewMockFlavorStore() *MockFlavorStore {
 	// add to store
 	store.Create(&sf)
 	return store
+}
+
+func NewFakeFlavorStoreWithAllFlavors() *MockFlavorStore{
+	store := &MockFlavorStore{}
+	var signedFlavors []hvs.SignedFlavor
+
+	flavorsJSON, _ := ioutil.ReadFile("../../../lib/verifier/test_data/intel20/signed_flavors.json")
+
+	json.Unmarshal(flavorsJSON, &signedFlavors)
+	for _, flvr := range signedFlavors{
+		store.Create(&flvr)
+	}
+
+	return store
+}
+
+func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []cf.FlavorPart) map[cf.FlavorPart]bool {
+	flavorPartWithLatest := make(map[cf.FlavorPart]bool)
+	if len(flavorParts) >= 1 && len(latestFlavorParts) == 0{
+		for _, flavorPart := range flavorParts {
+			flavorPartWithLatest[flavorPart] = false
+		}
+		return flavorPartWithLatest
+	}
+
+	if len(latestFlavorParts) >= 1 {
+		for _, flavorPart := range latestFlavorParts {
+			flavorPartWithLatest[flavorPart] = true
+		}
+	}
+	return flavorPartWithLatest
 }

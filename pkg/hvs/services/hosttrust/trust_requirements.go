@@ -29,6 +29,8 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 		HostId: hostId,
 		FlavorGroupId:       fg.ID,
 		FlavorMatchPolicies: fg.MatchPolicies,
+		//Initialize empty map.
+		DefinedAndRequiredFlavorTypes: make(map[cf.FlavorPart]bool),
 	}
 
 	var fgRequirePolicyMap map[hvs.FlavorRequiredPolicy][]cf.FlavorPart
@@ -52,7 +54,7 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 
 	definedUniqueFlavorParts, err := fs.GetUniqueFlavorTypesThatExistForHost(hwUUID)
 	if err != nil {
-		return nil, errors.Wrap(err, "error gettting unique flavor types that exist for hardware id "+hwUUID.String())
+		return nil, errors.Wrap(err, "error getting unique flavor types that exist for hardware id "+hwUUID.String())
 	}
 
 	for part, _ := range definedUniqueFlavorParts {

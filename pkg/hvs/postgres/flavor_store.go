@@ -13,6 +13,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -63,11 +64,8 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorFilterCriteria) ([]*hvs.
 		tx = findFlavorByKeyValue(f.Store.Db, flavorFilter.Key, flavorFilter.Value)
 	} else if flavorFilter.FlavorGroupID.String() != "" ||
 		len(flavorFilter.FlavorParts) >= 1 || len(flavorFilter.FlavorPartsWithLatest) >= 1 || flavorFilter.HostManifest != nil {
-		flavorPartsWithLatestMap, err := getFlavorPartsWithLatest(flavorFilter.FlavorParts, flavorFilter.FlavorPartsWithLatest)
-		if err != nil {
-			defaultLog.WithError(err).Error("Error while getting the list of flavor parts with latest match policy")
-			return nil, errors.Wrap(err, "postgres/flavor_store:Search() failed to search flavors with flavor filter criteria")
-		}
+		flavorPartsWithLatestMap := getFlavorPartsWithLatest(flavorFilter.FlavorParts, flavorFilter.FlavorPartsWithLatest)
+
 		// add all flavor parts in list of flavor Parts
 		tx = buildMultipleFlavorPartQueryString(tx, flavorFilter.FlavorGroupID, flavorFilter.HostManifest, flavorPartsWithLatestMap)
 	} else {
@@ -102,12 +100,14 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, hostManifes
 }
 
 // helper function used to create a map of all the flavor parts for which latest flavors has to be picked up
-func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error) {
+// FlavorRepository.java 74
+func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []cf.FlavorPart) map[cf.FlavorPart]bool {
 	flavorPartWithLatest := make(map[cf.FlavorPart]bool)
-	if len(flavorParts) >= 1 {
+	if len(flavorParts) >= 1 && len(latestFlavorParts) == 0{
 		for _, flavorPart := range flavorParts {
 			flavorPartWithLatest[flavorPart] = false
 		}
+		return flavorPartWithLatest
 	}
 
 	if len(latestFlavorParts) >= 1 {
@@ -115,7 +115,7 @@ func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []cf.FlavorPart) (m
 			flavorPartWithLatest[flavorPart] = true
 		}
 	}
-	return flavorPartWithLatest, nil
+	return flavorPartWithLatest
 }
 
 // helper function used to query through flavor description with a given key-value pair
@@ -158,9 +158,97 @@ func (f *FlavorStore) Delete(flavorId uuid.UUID) error {
 }
 
 func (f *FlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error) {
-	panic("implement me")
+	uniqueFlavorTypesForHost := make(map[cf.FlavorPart]bool)
+
+	// check for HOST_UNIQUE flavor part
+	hostHasHostUniqueFlavor, err := f.isHostHavingFlavorType(hwId.String(), cf.FlavorPartHostUnique.String())
+	if err != nil{
+		return nil, err
+	}
+	if hostHasHostUniqueFlavor {
+		defaultLog.Debugf("Host [%s] has %s flavor type", hwId.String(), cf.FlavorPartHostUnique.String())
+		uniqueFlavorTypesForHost[cf.FlavorPartHostUnique] = true
+	}
+
+	// check for ASSET_TAG flavor part
+	hostHasAssetTagFlavor, err := f.isHostHavingFlavorType(hwId.String(), cf.FlavorPartAssetTag.String())
+	if err != nil{
+		return nil, err
+	}
+	if hostHasAssetTagFlavor {
+		defaultLog.Debugf("Host [%s] has %s flavor type", hwId.String(), cf.FlavorPartAssetTag.String())
+		uniqueFlavorTypesForHost[cf.FlavorPartAssetTag] = true
+	}
+
+	if len (uniqueFlavorTypesForHost) == 0{
+		return nil, nil
+	}
+
+	return uniqueFlavorTypesForHost, nil
 }
 
 func (f *FlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error) {
-	panic("implement me")
+	flavorTypesInFlavorGroup := make(map[cf.FlavorPart]bool)
+	if flvParts == nil || len(flvParts) == 0{
+		flvParts = cf.GetFlavorTypes()
+	}
+	for _, flvrPart := range flvParts{
+		flavorgroupContainsFlavorType, err := f.flavorgroupContainsFlavorType(flvGrpId.String(), flvrPart.String())
+		if err != nil{
+			return nil, err
+		}
+		if flavorgroupContainsFlavorType {
+			defaultLog.Debugf("Flavorgroup [%s] contains flavor type [%s]", flvGrpId.String(), strings.Join(cf.GetFlavorTypesString(flvParts), ","))
+			flavorTypesInFlavorGroup[flvrPart] = true
+		}
+	}
+
+	if len(flavorTypesInFlavorGroup) == 0{
+		defaultLog.Debugf("Flavorgroup [%s] does not contain flavor type [%s]", flvGrpId.String(), cf.GetFlavorTypesString(flvParts))
+		return nil, nil
+	}
+
+	return flavorTypesInFlavorGroup, nil
+}
+
+//Check whether flavors exists for given flavorPart and hardware uuid, associated with host_unique flavorgroup
+func (f *FlavorStore) isHostHavingFlavorType(hwId, flavorType string) (bool, error) {
+	var tx *gorm.DB
+	var count int
+	tx = f.Store.Db.Model(&flavor{}).Joins("INNER JOIN flavorgroup_flavor as l ON flavor.id = l.flavor_id").
+		Joins("INNER JOIN flavorgroup as fg ON l.flavorgroup_id = fg.id").
+		Where("fg.name = 'host_unique'").
+		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorType).
+		Where("LOWER(flavor.content -> 'meta' -> 'description' ->> 'hardware_uuid') = ?)", strings.ToLower(hwId))
+
+	if err := tx.Count(&count).Error; err != nil{
+		return false, errors.Wrap(err,"postgres/flavor_store:isHostHavingFlavorType() failed to execute query")
+	}
+
+	if count > 0{
+		return true, nil
+	}
+	return false, nil
+}
+
+// Checks whether any flavors exists with given flavorPart and associated with flavorgroup for given flavorgroup Id fgId
+// and which has policies with given flavorPart.
+func (f *FlavorStore) flavorgroupContainsFlavorType(fgId , flavorPart string) (bool, error) {
+	var tx *gorm.DB
+	var count int
+	tx = f.Store.Db.Model(&flavor{}).Joins("INNER JOIN flavorgroup_flavor as l ON flavor.id = l.flavor_id").
+		Joins("INNER JOIN flavorgroup as fg ON l.flavorgroup_id = fg.id, json_array_elements(fg.flavor_type_match_policy ->'flavor_match_policies') policies").
+		Where("fg.id = ?", fgId).
+		Where("policies ->> 'flavor_part' = ?", flavorPart).
+		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorPart)
+
+	if err := tx.Count(&count).Error; err != nil{
+		return false, errors.Wrap(err,"postgres/flavor_store:flavorgroupContainsFlavorType() failed to execute query")
+	}
+
+	if count > 0{
+		return true, nil
+	}
+
+	return false, nil
 }

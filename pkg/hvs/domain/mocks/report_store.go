@@ -26,6 +26,7 @@ type MockReportStore struct {
 
 // Create inserts a HVSReport
 func (store *MockReportStore) Create(report *models.HVSReport) (*models.HVSReport, error) {
+	report.ID = uuid.New()
 	store.reportStore[report.ID] = *report
 	return report, nil
 }

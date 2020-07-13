@@ -83,7 +83,7 @@ func (t *TrustReport) isTrustedForResults(ruleResults []RuleResult) bool {
 	trusted := true
 
 	for _, result := range ruleResults {
-		trusted = trusted && result.Trusted
+		trusted = trusted && result.IsTrusted()
 	}
 
 	return trusted
@@ -149,6 +149,13 @@ func find(slice []common.FlavorPart, val string) bool {
 
 func (r *RuleResult) equals(target RuleResult) bool {
 	if target.Rule.Name == r.Rule.Name && r.FlavorId == target.FlavorId {
+		return true
+	}
+	return false
+}
+
+func (r *RuleResult) IsTrusted() bool {
+	if r.Faults == nil || len(r.Faults) == 0 {
 		return true
 	}
 	return false
