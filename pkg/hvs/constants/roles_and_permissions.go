@@ -29,6 +29,9 @@ const (
 	FlavorSearch   = "flavors:search"
 	FlavorDelete   = "flavors:delete"
 
+	SoftwareFlavorCreate   = "software_flavors:create"
+	SoftwareFlavorDeploy   = "software_flavors:deploy"
+
 	ESXiClusterCreate   = "esxi_clusters:create"
 	ESXiClusterRetrieve = "esxi_clusters:retrieve"
 	ESXiClusterSearch   = "esxi_clusters:search"

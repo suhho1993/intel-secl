@@ -30,15 +30,7 @@ func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, in
 	return func(w http.ResponseWriter, r *http.Request) error {
 		data, status, err := h(w, r) // execute application handler
 		if err != nil {
-			switch t := err.(type) {
-			case *commErr.EndpointError:
-				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
-			case *commErr.ResourceError:
-				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
-			case *commErr.PrivilegeError:
-				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
-			}
-			return err
+			return errorFormatter(err, status)
 		}
 		w.Header().Set("Content-Type", constants.HTTPMediaTypeJson)
 		w.WriteHeader(status)
@@ -62,29 +54,60 @@ func SamlAssertionResponseHandler(h func(http.ResponseWriter, *http.Request) (in
 	return func(w http.ResponseWriter, r *http.Request) error {
 		data, status, err := h(w, r) // execute application handler
 		if err != nil {
-			switch t := err.(type) {
-			case *commErr.EndpointError:
-				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
-			case *commErr.ResourceError:
-				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
-			case *commErr.PrivilegeError:
-				err = &commErr.HandledError{StatusCode: status, Message: t.Message}
-			}
-			return err
+			return errorFormatter(err, status)
 		}
 		w.Header().Set("Content-Type", constants.HTTPMediaTypeSaml)
-		w.WriteHeader(status)
-		if data != nil {
-			// Send XML response back to the client application
-			err = xml.NewEncoder(w).Encode(data)
-			if err != nil {
-				defaultLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
-				secLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
-			}
-		}
+		xmlResponseWriter(w, status, data)
 		return nil
 	}
 }
+
+// XMLResponseHandler handler for writing response header and body for all handler functions that produces xml
+func XMLResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) endpointHandler {
+	defaultLog.Trace("router/handlers:XMLResponseHandler() Entering")
+	defer defaultLog.Trace("router/handlers:XMLResponseHandler() Leaving")
+
+	return func(w http.ResponseWriter, r *http.Request) error {
+		data, status, err := h(w, r) // execute application handler
+		if err != nil {
+			return errorFormatter(err, status)
+		}
+		w.Header().Set("Content-Type", constants.HTTPMediaTypeXml)
+		xmlResponseWriter(w, status, data)
+		return nil
+	}
+}
+
+func errorFormatter(err error, status int) error{
+	defaultLog.Trace("router/handlers:errorFormatter() Entering")
+	defer defaultLog.Trace("router/handlers:errorFormatter() Leaving")
+
+	switch t := err.(type) {
+	case *commErr.EndpointError:
+		err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+	case *commErr.ResourceError:
+		err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+	case *commErr.PrivilegeError:
+		err = &commErr.HandledError{StatusCode: status, Message: t.Message}
+	}
+	return err
+}
+
+func xmlResponseWriter(w http.ResponseWriter, status int, data interface{}) {
+	defaultLog.Trace("router/handlers:xmlResponseWriter() Entering")
+	defer defaultLog.Trace("router/handlers:xmlResponseWriter() Leaving")
+	
+	w.WriteHeader(status)
+	if data != nil {
+		// Send XML response back to the client application
+		err := xml.NewEncoder(w).Encode(data)
+		if err != nil {
+			defaultLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
+			secLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
+		}
+	}
+}
+
 
 func permissionsHandler(eh endpointHandler, permissionNames []string) endpointHandler {
 	defaultLog.Trace("router/handlers:permissionsHandler() Entering")

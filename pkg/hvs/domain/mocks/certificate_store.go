@@ -71,5 +71,10 @@ func NewFakeCertificatesStore() *models.CertificatesStore {
 			CertPath:     caCertPath,
 			Certificates: nil,
 		},
+		models.CertTypesFlavorSigning.String(): &models.CertificateStore{
+			Key:          nil,
+			CertPath:     caCertPath,
+			Certificates: nil,
+		},
 	}
 }

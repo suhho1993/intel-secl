@@ -551,17 +551,16 @@ func NewMockFlavorStore() *MockFlavorStore {
 	return store
 }
 
-func NewFakeFlavorStoreWithAllFlavors() *MockFlavorStore{
+func NewFakeFlavorStoreWithAllFlavors(flavorFilePath string) *MockFlavorStore{
 	store := &MockFlavorStore{}
 	var signedFlavors []hvs.SignedFlavor
 
-	flavorsJSON, _ := ioutil.ReadFile("../../../lib/verifier/test_data/intel20/signed_flavors.json")
+	flavorsJSON, _ := ioutil.ReadFile(flavorFilePath)
 
 	json.Unmarshal(flavorsJSON, &signedFlavors)
 	for _, flvr := range signedFlavors{
 		store.Create(&flvr)
 	}
-
 	return store
 }
 

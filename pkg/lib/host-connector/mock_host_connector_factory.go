@@ -7,6 +7,7 @@ package host_connector
 import (
 	"crypto/x509"
 	"encoding/json"
+	"encoding/xml"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/vmware"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
@@ -62,6 +63,18 @@ func (micf MockIntelConnectorFactory) GetHostConnector(vendorConnector types.Ven
 	hmBytes, _ := ioutil.ReadFile("../../lib/host-connector/test/sample_host_manifest.json")
 	_ = json.Unmarshal(hmBytes, &hm)
 	mhc.On("GetHostManifest").Return(hm, nil)
+
+	var measurement taModel.Measurement
+	_ = xml.Unmarshal([]byte("<Measurement DigestAlg=\"SHA384\" Label=\"ISL_Applications123\">" +
+		"<File xmlns=\"lib:wml:measurements:1.0\" Path=\"/opt/trustagent/bin/module_analysis_da.sh\">2a99c3e80e99d495a" +
+		"6b8cce8e7504af511201f05fcb40b766a41e6af52a54a34ea9fba985d2835aef929e636ad2a6f1d</File><Dir xmlns=\"lib:wml:" +
+		"measurements:1.0\" Include=\".*\" Path=\"/opt/trustagent/bin\">3519466d871c395ce1f5b073a4a3847b6b8f0b3e495337" +
+		"daa0474f967aeecd48f699df29a4d106288f3b0d1705ecef75</Dir><CumulativeHash xmlns=\"lib:wml:measurements:1.0\">be" +
+		"7c2c93d8fd084a6b5ba0b4641f02315bde361202b36c4b88eefefa6928a2c17ac0e65ec6aeb930220cf079e46bcb9f</CumulativeHash>" +
+		"</Measurement>"), &measurement)
+	mhc.On("GetMeasurementFromManifest", mock.Anything).Return(measurement, nil)
+
+	mhc.On("DeploySoftwareManifest", mock.Anything).Return(nil)
 
 	return &mhc, nil
 }

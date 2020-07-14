@@ -40,6 +40,7 @@ type Measurement struct {
 }
 
 type MeasurementType string
+
 const (
 	MeasurementTypeFile    MeasurementType = "fileMeasurementType"
 	MeasurementTypeDir     MeasurementType = "directoryMeasurementType"
@@ -50,41 +51,41 @@ type FlavorMeasurement struct {
 	Type       MeasurementType `json:"type"`
 	Value      string          `json:"value"`
 	Path       string          `json:"Path"`
-	Include    *string         `json:"Include,omitempty"`
-	Exclude    *string         `json:"Exclude,omitempty"`
-	SearchType *string         `json:"SearchType,omitempty"`
-	FilterType *string         `json:"FilterType,omitempty"`
+	Include    string          `json:"Include,omitempty"`
+	Exclude    string          `json:"Exclude,omitempty"`
+	SearchType string          `json:"SearchType,omitempty"`
+	FilterType string          `json:"FilterType,omitempty"`
 }
 
 func (flavorMeasurement *FlavorMeasurement) FromFile(file FileMeasurementType) {
-	
-	*flavorMeasurement = FlavorMeasurement {
+
+	*flavorMeasurement = FlavorMeasurement{
 		Type:       MeasurementTypeFile,
 		Value:      file.Value,
 		Path:       file.Path,
-		SearchType: &file.SearchType,
+		SearchType: file.SearchType,
 	}
 }
 
 func (flavorMeasurement *FlavorMeasurement) FromDir(dir DirectoryMeasurementType) {
 
-	*flavorMeasurement = FlavorMeasurement {
+	*flavorMeasurement = FlavorMeasurement{
 		Type:       MeasurementTypeDir,
 		Value:      dir.Value,
 		Path:       dir.Path,
-		SearchType: &dir.SearchType,
-		Include:    &dir.Include,
-		Exclude:    &dir.Exclude,
-		FilterType: &dir.FilterType,
+		SearchType: dir.SearchType,
+		Include:    dir.Include,
+		Exclude:    dir.Exclude,
+		FilterType: dir.FilterType,
 	}
 }
 
 func (flavorMeasurement *FlavorMeasurement) FromSymlink(symlink SymlinkMeasurementType) {
-	
-	*flavorMeasurement = FlavorMeasurement {
+
+	*flavorMeasurement = FlavorMeasurement{
 		Type:       MeasurementTypeSymlink,
 		Value:      symlink.Value,
 		Path:       symlink.Path,
-		SearchType: &symlink.SearchType,
+		SearchType: symlink.SearchType,
 	}
 }

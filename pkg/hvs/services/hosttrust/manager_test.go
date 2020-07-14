@@ -93,7 +93,7 @@ func TestVerifier_Verify(t *testing.T) {
 	fgIds = append(fgIds, uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"))
 	hostStore.AddFlavorgroups(hostId, fgIds)
 
-	flavorStore := mocks.NewFakeFlavorStoreWithAllFlavors()
+	flavorStore := mocks.NewFakeFlavorStoreWithAllFlavors("../../../lib/verifier/test_data/intel20/signed_flavors.json")
 	flavorgroupStore := mocks.NewFakeFlavorgroupStore()
 	flavorgroupStore.HostFlavorgroupStore = hostStore.HostFlavorgroupStore
 

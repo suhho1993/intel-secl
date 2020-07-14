@@ -75,6 +75,9 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
 	subRouter = SetTagCertificateRoutes(subRouter, cfg, certStore, dataStore)
 	subRouter = SetESXiClusterRoutes(subRouter, dataStore, hostTrustManager, hostControllerConfig)
+	subRouter = SetDeploySoftwareManifestRoute(subRouter, dataStore, hostTrustManager, hostControllerConfig)
+	subRouter = SetManifestsRoute(subRouter, dataStore)
+	subRouter = SetFlavorFromAppManifestRoute(subRouter, dataStore, certStore, hostControllerConfig)
 }
 
 // Fetch JWT certificate from AAS

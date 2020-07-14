@@ -74,24 +74,24 @@ func (fmc FlavorToManifestConverter) getManifestType(measurement taModel.FlavorM
 	defer log.Trace("flavor/util/flavor_to_manifest_converter:getManifestType() Leaving")
 	
 	var manType interface{}
-	switch (measurement.Type) {
+	switch measurement.Type {
 	case taModel.MeasurementTypeFile:
 		manType = taModel.FileManifestType{
 			Path:       measurement.Path,
-			SearchType: *measurement.SearchType,
+			SearchType: measurement.SearchType,
 		}
 	case taModel.MeasurementTypeDir:
 		manType = taModel.DirManifestType{
 			Path:       measurement.Path,
-			SearchType: *measurement.SearchType,
-			Include:    *measurement.Include,
-			Exclude:    *measurement.Exclude,
-			FilterType: *measurement.FilterType,
+			SearchType: measurement.SearchType,
+			Include:    measurement.Include,
+			Exclude:    measurement.Exclude,
+			FilterType: measurement.FilterType,
 		}
 	case taModel.MeasurementTypeSymlink:
 		manType = taModel.SymlinkManifestType{
 			Path:       measurement.Path,
-			SearchType: *measurement.SearchType,
+			SearchType: measurement.SearchType,
 		}
 	}
 	return manType
