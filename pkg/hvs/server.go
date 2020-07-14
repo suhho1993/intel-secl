@@ -148,6 +148,15 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 
 	//Load store
 	hs := postgres.NewHostStore(dataStore)
+	dekBase64 := cfg.HVS.Dek
+	if dekBase64 == "" {
+		defaultLog.Warn("Data encryption key is not defined")
+	}
+	dek, err := base64.StdEncoding.DecodeString(dekBase64)
+	if err != nil {
+		defaultLog.WithError(err).Warn("Data encryption key is not base64 encoded")
+	}
+	hc := postgres.NewHostCredentialStore(dataStore, dek)
 	fs := postgres.NewFlavorStore(dataStore)
 	fgs := postgres.NewFlavorGroupStore(dataStore)
 	qs := postgres.NewDBQueueStore(dataStore)
@@ -193,9 +202,20 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	// Initialize Host Fetcher service
 	htcFactory := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
 
-	c := domain.HostDataFetcherConfig{HostConnectorFactory: *htcFactory}
-	_, hf, _ := hostfetcher.NewService(c, cfg.FVS.NumberOfDataFetchers)
-
+	c := domain.HostDataFetcherConfig{
+		HostConnectorFactory: *htcFactory,
+		HostConnectionConfig: domain.HostConnectionConfig{
+			HCStore:         hc,
+			ServiceUsername: cfg.HVS.Username,
+			ServicePassword: cfg.HVS.Password,
+		},
+		RetryTimeMinutes:     5,
+		HostStatusStore:      hss,
+	}
+	_, hf, err := hostfetcher.NewService(c, cfg.FVS.NumberOfDataFetchers)
+	if err != nil {
+		defaultLog.WithError(err).Error("Error initializing host fetcher")
+	}
 	// Initialize Host Trust service
 	_, htm, _ := hosttrust.NewService(domain.HostTrustMgrConfig{
 		PersistStore:      qs,

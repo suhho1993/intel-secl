@@ -8,6 +8,7 @@ package hostfetcher
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/chnlworkq"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
@@ -16,8 +17,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"math/rand"
-	"strings"
 	"sync"
 	"time"
 )
@@ -62,7 +61,7 @@ type Service struct {
 	quit              chan struct{}
 	serviceDone       bool
 	retryIntervalMins int
-
+	hcCfg domain.HostConnectionConfig
 	hcf hc.HostConnectorFactory
 	hs  domain.HostStatusStore
 }
@@ -78,6 +77,7 @@ func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain
 		hcf:               cfg.HostConnectorFactory,
 		retryIntervalMins: cfg.RetryTimeMinutes,
 		hs:                cfg.HostStatusStore,
+		hcCfg:             cfg.HostConnectionConfig,
 	}
 	if svc.hs == nil {
 		return nil, nil, errors.New("host status store cannot be empty")
@@ -104,6 +104,9 @@ func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain
 // Function to Shutdown service. Will wait for pending host data fetch jobs to complete
 // Will not process any further requests. Calling interface Async methods will result in error
 func (svc *Service) Shutdown() error {
+	defaultLog.Trace("hostfetcher/Service:Shutdown() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:Shutdown() Leaving")
+
 	svc.serviceDone = true
 	close(svc.quit)
 	svc.wg.Wait()
@@ -112,6 +115,10 @@ func (svc *Service) Shutdown() error {
 }
 
 func (svc *Service) startRetryChannelProcessor(retryMins int) {
+	defaultLog.Trace("hostfetcher/Service:startRetryChannelProcessor() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:startRetryChannelProcessor() Leaving")
+
+
 	// start worker go routines
 	svc.wg.Add(1)
 	go func() {
@@ -134,6 +141,10 @@ func (svc *Service) startRetryChannelProcessor(retryMins int) {
 }
 
 func (svc *Service) startWorkers(workers int) {
+	defaultLog.Trace("hostfetcher/Service:startWorkers() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:startWorkers() Leaving")
+
+
 	// start worker go routines
 	for i := 0; i < workers; i++ {
 		svc.wg.Add(1)
@@ -144,6 +155,9 @@ func (svc *Service) startWorkers(workers int) {
 // function used to add work to the map. If there is a current entry
 // append the new request to the already queued up requests
 func (svc *Service) addWorkToMap(wrk interface{}) interface{} {
+	defaultLog.Trace("hostfetcher/Service:addWorkToMap() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:addWorkToMap() Leaving")
+
 	switch v := wrk.(type) {
 	case *fetchRequest:
 
@@ -169,6 +183,8 @@ func (svc *Service) addWorkToMap(wrk interface{}) interface{} {
 // then pull records from the map, proceed to work unless requests are not already
 // cancelled
 func (svc *Service) doWork() {
+	defaultLog.Trace("hostfetcher/Service:doWork() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:doWork() Leaving")
 
 	defer svc.wg.Done()
 
@@ -215,7 +231,10 @@ func (svc *Service) doWork() {
 }
 
 func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostManifest, error) {
-	hostData, err := svc.GetHostData(host.Id, host.ConnectionString)
+	defaultLog.Trace("hostfetcher/Service:Retrieve() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:Retrieve() Leaving")
+
+	hostData, err := svc.GetHostData(host.ConnectionString)
 	hostStatus := &hvs.HostStatus{
 		HostID: host.Id,
 		HostStatusInformation: hvs.HostStatusInformation{
@@ -241,6 +260,10 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 }
 
 func (svc *Service) RetriveAsync(ctx context.Context, host hvs.Host, rcvrs ...domain.HostDataReceiver) error {
+	defaultLog.Trace("hostfetcher/Service:RetriveAsync() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:RetriveAsync() Leaving")
+
+
 	if svc.serviceDone {
 		return errors.New("Host Fetcher has been shut down - cannot accept any more requests")
 	}
@@ -251,10 +274,14 @@ func (svc *Service) RetriveAsync(ctx context.Context, host hvs.Host, rcvrs ...do
 }
 
 func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
+	defaultLog.Trace("hostfetcher/Service:FetchDataAndRespond() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:FetchDataAndRespond() Leaving")
+
 	//TODO: update the state in the context to reflect that we are about to start processing
 
-	hostData, err := svc.GetHostData(hId, connUrl)
+	hostData, err := svc.GetHostData(connUrl)
 	if err != nil {
+		defaultLog.WithError(err).Errorf("hostfetcher/Service:FetchDataAndRespond() Leaving")
 		//TODO - presume that error is due to connection failure and we need to retry operation
 		svc.retryRqstChan <- retryRequest{
 			retryTime: time.Now().Add(time.Duration(svc.retryIntervalMins) * time.Minute),
@@ -300,27 +327,23 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 
 }
 
-func (svc *Service) GetHostData(hostId uuid.UUID, connUrl string) (*types.HostManifest, error) {
-	//get the host data
+func (svc *Service) GetHostData(connUrl string) (*types.HostManifest, error) {
+	defaultLog.Trace("hostfetcher/Service:GetHostData() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:GetHostData() Leaving")
 
-	connector, err := svc.hcf.NewHostConnector(connUrl)
+	//get the host data
+	connectionString, _, err := controllers.GenerateConnectionString(connUrl, svc.hcCfg.ServiceUsername,
+		svc.hcCfg.ServicePassword,
+		svc.hcCfg.HCStore)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Could not generate formatted connection string")
+	}
+
+	connector, err := svc.hcf.NewHostConnector(connectionString)
 	if err != nil {
 		return nil, err
 	}
 	data, err := connector.GetHostManifest()
-
 	return &data, err
 
-}
-
-func generateRandomnString(length int) string {
-	rand.Seed(time.Now().UnixNano())
-	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ" +
-		"abcdefghijklmnopqrstuvwxyzåäö" +
-		"0123456789")
-	var b strings.Builder
-	for i := 0; i < length; i++ {
-		b.WriteRune(chars[rand.Intn(len(chars))])
-	}
-	return b.String()
 }

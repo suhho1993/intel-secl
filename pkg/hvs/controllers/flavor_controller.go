@@ -114,7 +114,11 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 		// get flavor from host
 		// get host manifest from the host
 		defaultLog.Debug("Host connection string given, trying to create flavors from host")
-		connectionString, _, err := GenerateConnectionString(flavorReq.ConnectionString, &fcon.HostCon)
+		connectionString, _, err := GenerateConnectionString(flavorReq.ConnectionString,
+			fcon.HostCon.HCConfig.Username,
+			fcon.HostCon.HCConfig.Password,
+			fcon.HostCon.HCStore)
+
 		if err != nil {
 			defaultLog.Error("controllers/flavor_controller:CreateFlavors() Could not generate formatted connection string")
 			return nil, errors.Wrap(err, "Error while generating a formatted connection string")

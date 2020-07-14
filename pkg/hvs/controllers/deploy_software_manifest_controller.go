@@ -108,7 +108,10 @@ func (controller *DeploySoftwareManifestController) deployManifestToHost(hostId 
 		}
 	}
 
-	connectionString, _, err := GenerateConnectionString(host.ConnectionString, &controller.HController)
+	connectionString, _, err := GenerateConnectionString(host.ConnectionString,
+		controller.HController.HCConfig.Username,
+		controller.HController.HCConfig.Password,
+		controller.HController.HCStore)
 
 	hconnector, err := controller.HController.HCConfig.HostConnectorProvider.NewHostConnector(connectionString)
 	if err != nil {

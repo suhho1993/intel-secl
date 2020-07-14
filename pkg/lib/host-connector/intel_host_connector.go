@@ -139,7 +139,7 @@ func (ic *IntelConnector) GetHostManifestAcceptNonce(nonce string) (types.HostMa
 
 	bindingKeyBytes, err := ic.client.GetBindingKeyCertificate()
 	if err !=  nil {
-		return types.HostManifest{}, errors.Wrap(err, "intel_host_connector:GetHostManifestAcceptNonce() Error getting " +
+		log.WithError(err).Debugf( "intel_host_connector:GetHostManifestAcceptNonce() Error getting " +
 			"binding key certificate from TA")
 	}
 

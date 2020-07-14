@@ -202,6 +202,7 @@ func (svc *Service) submitHostDataFetch(hostLists ...[]uuid.UUID) {
 				}
 				vtj.host = host
 				svc.mapmtx.Unlock()
+
 				if err := svc.hdFetcher.RetriveAsync(vtj.ctx, *vtj.host, svc); err != nil {
 					defaultLog.Error("hosttrust/manager:submitHostDataFetch() - error calling RetrieveAsync", hId)
 				}

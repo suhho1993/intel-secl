@@ -12,7 +12,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -55,7 +54,8 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorFilterCriteria) ([]*hvs.
 	defer defaultLog.Trace("postgres/flavor_store:Search() Leaving")
 
 	var tx *gorm.DB
-
+	//TODO: Fix below queries
+/*
 	if (flavorFilter == nil || reflect.DeepEqual(flavorFilter, models.FlavorFilterCriteria{})) {
 		tx = f.Store.Db.Model(&flavor{}).Select("content, signature")
 	} else if flavorFilter.Id != uuid.Nil {
@@ -74,8 +74,9 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorFilterCriteria) ([]*hvs.
 
 	if tx == nil {
 		return nil, errors.New("postgres/flavor_store:Search() Unexpected Error. Could not build gorm query object in flavor Search function")
-	}
+	} */
 
+	tx = f.Store.Db.Model(&flavor{}).Select("content, signature")
 	rows, err := tx.Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/flavor_store:Search() failed to retrieve records from db")
@@ -216,10 +217,10 @@ func (f *FlavorStore) isHostHavingFlavorType(hwId, flavorType string) (bool, err
 	var tx *gorm.DB
 	var count int
 	tx = f.Store.Db.Model(&flavor{}).Joins("INNER JOIN flavorgroup_flavor as l ON flavor.id = l.flavor_id").
-		Joins("INNER JOIN flavorgroup as fg ON l.flavorgroup_id = fg.id").
+		Joins("INNER JOIN flavor_group as fg ON l.flavorgroup_id = fg.id").
 		Where("fg.name = 'host_unique'").
 		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorType).
-		Where("LOWER(flavor.content -> 'meta' -> 'description' ->> 'hardware_uuid') = ?)", strings.ToLower(hwId))
+		Where("LOWER(flavor.content -> 'meta' -> 'description' ->> 'hardware_uuid') = ?", strings.ToLower(hwId))
 
 	if err := tx.Count(&count).Error; err != nil{
 		return false, errors.Wrap(err,"postgres/flavor_store:isHostHavingFlavorType() failed to execute query")
@@ -237,7 +238,7 @@ func (f *FlavorStore) flavorgroupContainsFlavorType(fgId , flavorPart string) (b
 	var tx *gorm.DB
 	var count int
 	tx = f.Store.Db.Model(&flavor{}).Joins("INNER JOIN flavorgroup_flavor as l ON flavor.id = l.flavor_id").
-		Joins("INNER JOIN flavorgroup as fg ON l.flavorgroup_id = fg.id, json_array_elements(fg.flavor_type_match_policy ->'flavor_match_policies') policies").
+		Joins("INNER JOIN flavor_group as fg ON l.flavorgroup_id = fg.id, json_array_elements(fg.flavor_type_match_policy) policies").
 		Where("fg.id = ?", fgId).
 		Where("policies ->> 'flavor_part' = ?", flavorPart).
 		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorPart)

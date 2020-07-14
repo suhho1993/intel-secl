@@ -250,5 +250,6 @@ func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTyp
 	if err != nil {
 		return nil, err
 	}
+	defaultLog.Debugf("%v from Flavorgroup %d Flavors retrieved for verification",  flavorGroupID, len(signedFlavors))
 	return signedFlavors, nil
 }

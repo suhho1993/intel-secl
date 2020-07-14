@@ -69,7 +69,10 @@ func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.Re
 	}
 
 	appManifestRequest.ConnectionString, _, err = GenerateConnectionString(appManifestRequest.ConnectionString,
-		&controller.FlavorController.HostCon)
+		controller.FlavorController.HostCon.HCConfig.Username,
+		controller.FlavorController.HostCon.HCConfig.Password,
+		controller.FlavorController.HostCon.HCStore)
+
 	if err != nil {
 		defaultLog.Errorf("controllers/flavor_from_app_manifest_controller:"+
 			"CreateSoftwareFlavor() %s : Error generating complete connection string with credentials", commLogMsg.AppRuntimeErr)

@@ -34,6 +34,7 @@ type HostTrustMgrConfig struct {
 
 type HostDataFetcherConfig struct {
 	HostConnectorFactory host_connector.HostConnectorFactory
+	HostConnectionConfig HostConnectionConfig
 	RetryTimeMinutes     int
 	HostStatusStore      HostStatusStore
 }
@@ -47,6 +48,12 @@ type HostControllerConfig struct {
 
 type TagCertControllerConfig struct {
 	AASApiUrl       string
+	ServiceUsername string
+	ServicePassword string
+}
+
+type HostConnectionConfig struct {
+	HCStore         HostCredentialStore
 	ServiceUsername string
 	ServicePassword string
 }

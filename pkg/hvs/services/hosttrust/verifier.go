@@ -74,8 +74,14 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 	for _, fg := range flvGroups {
 		//TODO - handle errors in case of DB transaction
-		fgTrustReqs, _ := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore)
-		fgCachedFlavors, _ := v.getCachedFlavors(hostId, (*fg).ID)
+		fgTrustReqs, err := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore)
+		if err != nil {
+			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving NewFlvGrpHostTrustReqs")
+		}
+		fgCachedFlavors, err := v.getCachedFlavors(hostId, (*fg).ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving getCachedFlavors")
+		}
 		//Check for empty map, FlavorVerify.java 345
 		if fgCachedFlavors != nil {
 			fgTrustCache, _ := v.validateCachedFlavors(hostId, hostData, fgCachedFlavors)

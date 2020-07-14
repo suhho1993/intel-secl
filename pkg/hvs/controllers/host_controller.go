@@ -217,7 +217,11 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Host with this name already exist"}
 	}
 
-	connectionString, credential, err := GenerateConnectionString(reqHost.ConnectionString, hc)
+	connectionString, credential, err := GenerateConnectionString(reqHost.ConnectionString,
+		hc.HCConfig.Username,
+		hc.HCConfig.Password,
+		hc.HCStore)
+
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Could not generate formatted connection string")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -311,7 +315,11 @@ func (hc *HostController) UpdateHost(reqHost hvs.Host) (interface{}, int, error)
 	}
 
 	if reqHost.ConnectionString != "" {
-		connectionString, credential, err := GenerateConnectionString(reqHost.ConnectionString, hc)
+		connectionString, credential, err := GenerateConnectionString(reqHost.ConnectionString,
+			hc.HCConfig.Username,
+			hc.HCConfig.Password,
+			hc.HCStore)
+
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/host_controller:UpdateHost() Could not generate formatted connection string")
 			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -382,7 +390,7 @@ func (hc *HostController) retrieveHost(id uuid.UUID) (interface{}, int, error) {
 
 // GenerateConnectionString creates a formatted connection string. If the username and password are not specified, then it would retrieve it
 // from the credential table and forms the complete connection string.
-func GenerateConnectionString(cs string, hc *HostController) (string, string, error) {
+func GenerateConnectionString(cs, username, password string, hc domain.HostCredentialStore) (string, string, error) {
 	defaultLog.Trace("controllers/host_controller:GenerateConnectionString() Entering")
 	defer defaultLog.Trace("controllers/host_controller:GenerateConnectionString() Leaving")
 
@@ -391,11 +399,9 @@ func GenerateConnectionString(cs string, hc *HostController) (string, string, er
 		return "", "", errors.Wrap(err, "Could not get vendor details from connection string")
 	}
 
-	var username, password, credential string
+	var credential string
 
 	if vc.Vendor != hcConstants.VMWARE {
-		username = hc.HCConfig.Username
-		password = hc.HCConfig.Password
 		credential = fmt.Sprintf("u=%s;p=%s", username, password)
 		cs = fmt.Sprintf("%s;%s", cs, credential)
 	} else {
@@ -415,7 +421,7 @@ func GenerateConnectionString(cs string, hc *HostController) (string, string, er
 			}
 
 			// Fetch credentials from db
-			hostCredential, err := hc.HCStore.FindByHostName(hostname)
+			hostCredential, err := hc.FindByHostName(hostname)
 			if err != nil {
 				return "", "", errors.Wrap(err, "Credentials must be provided for the host connection string")
 			}

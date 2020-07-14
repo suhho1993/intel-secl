@@ -41,12 +41,18 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 		// TODO: this should really be a search on the flavorgroup store which should be able to retrieve a list
 		// of flavor ids in the flavorgroup and then call the flavor store with a list of ids. Right now, it only
 		// support one flavor id
-		reqs.AllOfFlavors, _ = fs.Search(&models.FlavorFilterCriteria{
+
+		var err error
+		reqs.AllOfFlavors, err = fs.Search(&models.FlavorFilterCriteria{
 			// Flavor Parts of the Search Criteria takes a []cf.FlavorPart - but we have a map.
 			// So dump keys of the map into a slice.
 			FlavorGroupID: fg.ID,
 			FlavorParts:   reqs.MatchTypeFlavorParts[hvs.MatchTypeAllOf],
 		})
+		if err != nil {
+			return nil, errors.Wrap(err, "error searching flavor for "+hwUUID.String())
+		}
+		defaultLog.Debugf("%v from Flavorgroup %v Flavors retrieved with ALL_OF policy", fg.ID, len(reqs.AllOfFlavors))
 	}
 
 	reqPartsMap := fgRequirePolicyMap[hvs.FlavorRequired]
