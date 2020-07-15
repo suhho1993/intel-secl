@@ -28,7 +28,7 @@ import (
 func TestHostTrustManagerNewService(t *testing.T) {
 
 	qs := mocks.NewQueueStore()
-	hs := mocks.NewHostStore()
+	hs := mocks.NewMockHostStore()
 	hss := mocks.NewFakeHostStatusStore()
 
 	newHost, err := hs.Create(&hvs.Host{

@@ -26,7 +26,7 @@ type (
 
 	flavorGroup struct {
 		ID                    uuid.UUID             `json:"id" gorm:"primary_key;type:uuid"`
-		Name                  string                `json:"name"`
+		Name                  string                `json:"name" gorm:"type:varchar(255);not null;index:idx_flavorgroup_name"`
 		FlavorTypeMatchPolicy PGFlavorMatchPolicies `json:"flavor_type_match_policy,omitempty" sql:"type:JSONB"`
 	}
 
@@ -41,30 +41,30 @@ type (
 
 	host struct {
 		Id               uuid.UUID `gorm:"primary_key;type:uuid"`
-		Name             string    `gorm:"unique;type:varchar(255);not null;index:idx_host_hostname"`
+		Name             string    `gorm:"unique;type:varchar(255);not null"`
 		Description      string
 		ConnectionString string    `gorm:"not null"`
-		HardwareUuid     uuid.UUID `gorm:"type:uuid;unique;index:idx_host_hardware_uuid"`
+		HardwareUuid     uuid.UUID `gorm:"unique;type:uuid"`
 	}
 
 	hostFlavorgroup struct {
-		HostId        uuid.UUID `gorm:"type:uuid REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
-		FlavorgroupId uuid.UUID `gorm:"type:uuid REFERENCES flavor_group(Id) ON DELETE CASCADE ON UPDATE CASCADE"`
+		HostId        uuid.UUID `gorm:"type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;unique_index:idx_flavorgroup_host"`
+		FlavorgroupId uuid.UUID `gorm:"type:uuid REFERENCES flavor_group(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;unique_index:idx_flavorgroup_host"`
 	}
 
 	flavorgroupFlavor struct {
-		FlavorgroupId uuid.UUID `gorm:"type:uuid REFERENCES flavor_group(Id) ON UPDATE CASCADE ON DELETE CASCADE"`
-		FlavorId      uuid.UUID `gorm:"type:uuid REFERENCES flavor(Id) ON UPDATE CASCADE ON DELETE CASCADE"`
+		FlavorgroupId uuid.UUID `gorm:"type:uuid REFERENCES flavor_group(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;unique_index:idx_flavor_flavorgroup"`
+		FlavorId      uuid.UUID `gorm:"type:uuid REFERENCES flavor(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;unique_index:idx_flavor_flavorgroup"`
 	}
 
 	trustCache struct {
-		FlavorId uuid.UUID `gorm:"type:uuid REFERENCES flavor(Id)"`
-		HostId   uuid.UUID `gorm:"type:uuid REFERENCES host(Id)"`
+		FlavorId uuid.UUID `gorm:"type:uuid REFERENCES flavor(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;unique_index:idx_flavor_host"`
+		HostId   uuid.UUID `gorm:"type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;unique_index:idx_flavor_host"`
 	}
 
 	hostCredential struct {
 		Id           uuid.UUID `gorm:"primary_key;type:uuid"`
-		HostId       uuid.UUID `gorm:"type:uuid REFERENCES host(Id) ON DELETE CASCADE ON UPDATE CASCADE;index:idx_host_credential_host_id"`
+		HostId       uuid.UUID `gorm:"type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE;index:idx_host_credential_host_id"`
 		HostName     string    `gorm:"type:varchar(255);index:idx_host_credential_hostname"`
 		HardwareUuid uuid.UUID `gorm:"type:uuid;index:idx_host_credential_hardware_uuid"`
 		Credential   string
@@ -74,7 +74,7 @@ type (
 	// hostStatus holds all the hostStatus records for VS-attested hosts
 	hostStatus struct {
 		ID         uuid.UUID               `gorm:"primary_key;type:uuid"`
-		HostID     uuid.UUID               `sql:"type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE"`
+		HostID     uuid.UUID               `sql:"type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;index:idx_host_status_host_id"`
 		Status     PGHostStatusInformation `gorm:"column:status" sql:"type:JSONB"`
 		HostReport PGHostManifest          `gorm:"column:host_report" sql:"type:JSONB"`
 		CreatedAt  time.Time               `gorm:"column:created;not null"`
@@ -104,7 +104,7 @@ type (
 	PGTrustReport hvs.TrustReport
 	report        struct {
 		ID          uuid.UUID     `gorm:"id,omitempty" gorm:"primary_key;"`
-		HostID      uuid.UUID     `gorm:"host_id" gorm:"unique;type:uuid;not null;index:idx_report_host_id"`
+		HostID      uuid.UUID     `gorm:"column:host_id;type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;index:idx_report_host_id"`
 		TrustReport PGTrustReport `gorm:"column:trust_report; not null" sql:"type:JSONB"`
 		CreatedAt   time.Time     `gorm:"column:created;not null"`
 		Expiration  time.Time     `gorm:"column:expiration;not null"`

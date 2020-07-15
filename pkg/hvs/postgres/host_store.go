@@ -98,7 +98,7 @@ func (hs *HostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, e
 	}
 	defer rows.Close()
 
-	var hosts []*hvs.Host
+	hosts := []*hvs.Host{}
 	for rows.Next() {
 		host := hvs.Host{}
 		if err := rows.Scan(&host.Id, &host.HostName, &host.Description, &host.ConnectionString, &host.HardwareUuid); err != nil {
@@ -227,7 +227,7 @@ func (hs *HostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uu
 	}
 
 	insertQuery := fmt.Sprintf("INSERT INTO trust_cache VALUES %s", strings.Join(trustCacheValues, ","))
-	err := hs.Store.Db.Model(trustCache{}).AddForeignKey("flavor_id", "flavor(id)", "RESTRICT", "RESTRICT").AddForeignKey("host_id", "host(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, trustCacheValueArgs...).Error
+	err := hs.Store.Db.Model(trustCache{}).Exec(insertQuery, trustCacheValueArgs...).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_store:AddTrustCacheFlavors() failed to create trust cache")
 	}
@@ -276,7 +276,6 @@ func (hs *HostStore) RetrieveTrustCacheFlavors(hId, fgId uuid.UUID ) ([]uuid.UUI
 	defer rows.Close()
 
 	flavorIds := []uuid.UUID{}
-
 	for rows.Next() {
 		flavorId := uuid.UUID{}
 		if err := rows.Scan(&flavorId); err != nil {

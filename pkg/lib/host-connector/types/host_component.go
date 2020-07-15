@@ -7,8 +7,8 @@ package types
 type HostComponent string
 
 const (
-	HostComponentTagent  HostComponent = "TAGENT"
-	HostComponentWlagent HostComponent = "WLAGENT"
+	HostComponentTagent  HostComponent = "tagent"
+	HostComponentWlagent HostComponent = "wlagent"
 )
 
 func (hc HostComponent) String() string {

@@ -12,7 +12,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
-	"strings"
 )
 
 // SetHostRoutes registers routes for hosts
@@ -29,13 +28,12 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, hostTrustManag
 		flavorGroupStore, hostCredentialStore,
 		hostTrustManager, hostControllerConfig)
 
-	hostIdExpr := fmt.Sprintf("%s/%s", "/hosts", validation.IdReg)
-	hostIdExpr = strings.Replace(hostIdExpr, "id", "hId", 1)
-	flavorgroupExpr := fmt.Sprintf("%s%s", hostIdExpr, "/flavorgroups")
-	flavorgroupIdExpr := fmt.Sprintf("%s/%s", flavorgroupExpr, validation.IdReg)
-	flavorgroupIdExpr = strings.Replace(flavorgroupIdExpr, "id", "fgId", 1)
+	hostExpr := "/hosts"
+	hostIdExpr := fmt.Sprintf("%s/{hId:%s}", hostExpr, validation.UUIDReg)
+	flavorgroupExpr := fmt.Sprintf("%s/flavorgroups", hostIdExpr)
+	flavorgroupIdExpr := fmt.Sprintf("%s/{fgId:%s}", flavorgroupExpr, validation.UUIDReg)
 
-	router.Handle("/hosts", ErrorHandler(permissionsHandler(ResponseHandler(hostController.Create),
+	router.Handle(hostExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.Create),
 		[]string{constants.HostCreate}))).Methods("POST")
 	router.Handle(hostIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.Retrieve),
 		[]string{constants.HostRetrieve}))).Methods("GET")
@@ -43,7 +41,7 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, hostTrustManag
 		[]string{constants.HostUpdate}))).Methods("PUT")
 	router.Handle(hostIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.Delete),
 		[]string{constants.HostDelete}))).Methods("DELETE")
-	router.Handle("/hosts", ErrorHandler(permissionsHandler(ResponseHandler(hostController.Search),
+	router.Handle(hostExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.Search),
 		[]string{constants.HostSearch}))).Methods("GET")
 
 	router.Handle(flavorgroupExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.AddFlavorgroup),

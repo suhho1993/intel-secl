@@ -19,11 +19,22 @@ type Host struct {
 	FlavorgroupNames []string  `json:"flavorgroup_names,omitempty"`
 }
 
+type HostCreateRequest struct {
+	HostName         string    `json:"host_name"`
+	Description      string    `json:"description,omitempty"`
+	ConnectionString string    `json:"connection_string"`
+	FlavorgroupNames []string  `json:"flavorgroup_names,omitempty"`
+}
+
 type HostFlavorgroupCollection struct {
 	HostFlavorgroups []HostFlavorgroup `json:"flavorgroup_host_links" xml:"flavorgroup_host_link"`
 }
 
 type HostFlavorgroup struct {
 	HostId         uuid.UUID `json:"host_id,omitempty"`
+	FlavorgroupId  uuid.UUID `json:"flavorgroup_id,omitempty"`
+}
+
+type HostFlavorgroupCreateRequest struct {
 	FlavorgroupId  uuid.UUID `json:"flavorgroup_id,omitempty"`
 }

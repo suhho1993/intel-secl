@@ -59,10 +59,10 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	var reqHost hvs.Host
+	var reqHost hvs.HostCreateRequest
 	err := dec.Decode(&reqHost)
 	if err != nil {
-		secLog.WithError(err).Errorf("controllers/host_controller:Create() %s :  Failed to decode request body as Host", commLogMsg.AppRuntimeErr)
+		secLog.WithError(err).Errorf("controllers/host_controller:Create() %s :  Failed to decode request body as HostCreateRequest", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
@@ -108,8 +108,15 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
 	}
 
-	if err := validateHostCreateCriteria(reqHost); err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:Update() Invalid host data")
+	criteria := hvs.HostCreateRequest{
+		HostName:         reqHost.HostName,
+		Description:      reqHost.Description,
+		ConnectionString: reqHost.ConnectionString,
+		FlavorgroupNames: reqHost.FlavorgroupNames,
+	}
+
+	if err := validateHostCreateCriteria(criteria); err != nil {
+		secLog.WithError(err).Errorf("controllers/host_controller:Update() %s : Invalid request body", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
@@ -141,14 +148,6 @@ func (hc *HostController) Delete(w http.ResponseWriter, r *http.Request) (interf
 		return nil, status, err
 	}
 
-	//TODO: delete host reports for the host
-
-	//TODO: delete host status for the host
-
-	//TODO: Delete all the links between the flavors and the host
-
-	//TODO: Delete all the links between the flavorgroups and the host
-
 	if err := hc.HStore.Delete(id); err != nil {
 		defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete() Host delete failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to delete Host"}
@@ -166,7 +165,7 @@ func (hc *HostController) Search(w http.ResponseWriter, r *http.Request) (interf
 	defaultLog.WithField("query", r.URL.Query()).Trace("query hosts")
 	criteria, err := populateHostFilterCriteria(r.URL.Query())
 	if err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:Search() Invalid filter criteria")
+		secLog.WithError(err).Errorf("controllers/host_controller:Search() %s : Invalid filter criteria", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
@@ -190,7 +189,7 @@ func (hc *HostController) Search(w http.ResponseWriter, r *http.Request) (interf
 	return hostCollection, http.StatusOK, nil
 }
 
-func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error) {
+func (hc *HostController) CreateHost(reqHost hvs.HostCreateRequest) (interface{}, int, error) {
 	defaultLog.Trace("controllers/host_controller:CreateHost() Entering")
 	defer defaultLog.Trace("controllers/host_controller:CreateHost() Leaving")
 
@@ -200,7 +199,7 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 	}
 
 	if err := validateHostCreateCriteria(reqHost); err != nil {
-		secLog.WithError(err).Error("controllers/host_controller:CreateHost() Invalid host data")
+		secLog.WithError(err).Errorf("controllers/host_controller:CreateHost() %s : Invalid request body", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
@@ -262,11 +261,15 @@ func (hc *HostController) CreateHost(reqHost hvs.Host) (interface{}, int, error)
 	csWithoutCredentials := utils.GetConnectionStringWithoutCredentials(connectionString)
 	defaultLog.Debugf("connection string without credentials : %s", csWithoutCredentials)
 
-	reqHost.HardwareUuid = hwUuid
-	reqHost.FlavorgroupNames = fgNames
-	reqHost.ConnectionString = csWithoutCredentials
+	host := &hvs.Host{
+		HostName:         reqHost.HostName,
+		Description:      reqHost.Description,
+		ConnectionString: csWithoutCredentials,
+		HardwareUuid:     hwUuid,
+		FlavorgroupNames: fgNames,
+	}
 
-	createdHost, err := hc.HStore.Create(&reqHost)
+	createdHost, err := hc.HStore.Create(host)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host create failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to create Host"}
@@ -400,7 +403,6 @@ func GenerateConnectionString(cs, username, password string, hc domain.HostCrede
 	}
 
 	var credential string
-
 	if vc.Vendor != hcConstants.VMWARE {
 		credential = fmt.Sprintf("u=%s;p=%s", username, password)
 		cs = fmt.Sprintf("%s;%s", cs, credential)
@@ -530,7 +532,7 @@ func (hc *HostController) flavorGroupHostLinkExists(hostId, flavorgroupId uuid.U
 	return true, nil
 }
 
-func validateHostCreateCriteria(host hvs.Host) error {
+func validateHostCreateCriteria(host hvs.HostCreateRequest) error {
 	defaultLog.Trace("controllers/host_controller:validateHostCreateCriteria() Entering")
 	defer defaultLog.Trace("controllers/host_controller:validateHostCreateCriteria() Leaving")
 
@@ -541,6 +543,16 @@ func validateHostCreateCriteria(host hvs.Host) error {
 	}
 	if host.ConnectionString != "" {
 		return utils.ValidateConnectionString(host.ConnectionString)
+	}
+	if host.Description != "" {
+		if err := validation.ValidateStrings([]string{host.Description}); err != nil {
+			return errors.Wrap(err, "Valid Host Description must be specified")
+		}
+	}
+	if len(host.FlavorgroupNames) != 0 {
+		if err := validation.ValidateStrings(host.FlavorgroupNames); err != nil {
+			return errors.Wrap(err, "Valid Flavorgroup Names must be specified")
+		}
 	}
 	return nil
 }
@@ -604,16 +616,16 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	var reqHostFlavorgroup hvs.HostFlavorgroup
+	var reqHostFlavorgroup hvs.HostFlavorgroupCreateRequest
 	err := dec.Decode(&reqHostFlavorgroup)
 	if err != nil {
-		secLog.WithError(err).Errorf("controllers/host_controller:AddFlavorgroup() %s :  Failed to decode request body as Host Flavorgroup link", commLogMsg.AppRuntimeErr)
+		secLog.WithError(err).Errorf("controllers/host_controller:AddFlavorgroup() %s :  Failed to decode request body as HostFlavorgroupCreateRequest", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	if reqHostFlavorgroup.FlavorgroupId == uuid.Nil {
-		secLog.Error("controllers/host_controller:AddFlavorgroup() Flavorgroup Id must be specified")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavorgroup Id must be specified"}
+		secLog.Errorf("controllers/host_controller:AddFlavorgroup() %s : Invalid Flavorgroup Id specified in request", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid Flavorgroup Id specified in request"}
 	}
 
 	hId := uuid.MustParse(mux.Vars(r)["hId"])
@@ -633,12 +645,26 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	linkExists, err := hc.flavorGroupHostLinkExists(hId, reqHostFlavorgroup.FlavorgroupId)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:AddFlavorgroup() Host Flavorgroup link retrieve failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to create Host Flavorgroup link"}
+	}
+	if linkExists {
+		secLog.WithError(err).Warningf("%s: Trying to create duplicate Host Flavorgroup link", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Host Flavorgroup link with specified ids already exist"}
+	}
+
 	defaultLog.Debugf("Linking host %v with flavorgroup %v", hId, reqHostFlavorgroup.FlavorgroupId)
-	reqHostFlavorgroup.HostId = hId
 	err = hc.HStore.AddFlavorgroups(hId, []uuid.UUID{reqHostFlavorgroup.FlavorgroupId})
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:AddFlavorgroup() Host Flavorgroup association failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to associate Host with Flavorgroup"}
+	}
+
+	createdHostFlavorgroup := hvs.HostFlavorgroup{
+		HostId:        hId,
+		FlavorgroupId: reqHostFlavorgroup.FlavorgroupId,
 	}
 
 	defaultLog.Debugf("Adding host %v to flavor-verify queue", hId)
@@ -648,8 +674,8 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
 	}
 
-	secLog.WithField("host-flavorgroup-link", reqHostFlavorgroup).Infof("%s: Host Flavorgroup link created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
-	return reqHostFlavorgroup, http.StatusCreated, nil
+	secLog.WithField("host-flavorgroup-link", createdHostFlavorgroup).Infof("%s: Host Flavorgroup link created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return createdHostFlavorgroup, http.StatusCreated, nil
 }
 
 func (hc *HostController) RetrieveFlavorgroup(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -698,7 +724,7 @@ func (hc *HostController) SearchFlavorgroups(w http.ResponseWriter, r *http.Requ
 		return nil, http.StatusInternalServerError, errors.Errorf("Failed to search Host Flavorgroup links")
 	}
 
-	var hostFlavorgroups []hvs.HostFlavorgroup
+	hostFlavorgroups := []hvs.HostFlavorgroup{}
 	for _, fgId := range fgIds {
 		hostFlavorgroups = append(hostFlavorgroups, hvs.HostFlavorgroup{
 			HostId:        hId,

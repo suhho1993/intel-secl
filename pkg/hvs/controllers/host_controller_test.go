@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
-	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
 	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
@@ -26,20 +26,20 @@ import (
 var _ = Describe("HostController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var hostStore *mocks2.MockHostStore
-	var hostStatusStore *mocks2.MockHostStatusStore
-	var flavorGroupStore *mocks2.MockFlavorgroupStore
-	var hostCredentialStore *mocks2.MockHostCredentialStore
+	var hostStore *mocks.MockHostStore
+	var hostStatusStore *mocks.MockHostStatusStore
+	var flavorGroupStore *mocks.MockFlavorgroupStore
+	var hostCredentialStore *mocks.MockHostCredentialStore
 	var hostController *controllers.HostController
 	var hostTrustManager *smocks.MockHostTrustManager
 	var hostControllerConfig domain.HostControllerConfig
 	var hostConnectorProvider hostconnector.MockHostConnectorFactory
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		hostStore = mocks2.NewMockHostStore()
-		hostStatusStore = mocks2.NewFakeHostStatusStore()
-		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
-		hostCredentialStore = mocks2.NewMockHostCredentialStore()
+		hostStore = mocks.NewMockHostStore()
+		hostStatusStore = mocks.NewFakeHostStatusStore()
+		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
+		hostCredentialStore = mocks.NewMockHostCredentialStore()
 		
 		dekBase64 := "gcXqH8YwuJZ3Rx4qVzA/zhVvkTw2TL+iRAC9T3E6lII="
 		dek, _ := base64.StdEncoding.DecodeString(dekBase64)
@@ -62,7 +62,7 @@ var _ = Describe("HostController", func() {
 
 	// Specs for HTTP Post to "/hosts"
 	Describe("Create a new Host", func() {
-		Context("Provide a valid Host data", func() {
+		Context("Provide a valid Create request", func() {
 			It("Should create a new Host", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Create))).Methods("POST")
 				hostJson := `{
@@ -82,7 +82,7 @@ var _ = Describe("HostController", func() {
 				Expect(w.Code).To(Equal(http.StatusCreated))
 			})
 		})
-		Context("Provide a Host data that contains duplicate hostname", func() {
+		Context("Provide a Create request that contains duplicate hostname", func() {
 			It("Should fail to create new Host", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Create))).Methods("POST")
 				hostJson := `{
@@ -102,7 +102,26 @@ var _ = Describe("HostController", func() {
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
-		Context("Provide a Host data that contains malformed connection string", func() {
+		Context("Provide a Create request without connection string", func() {
+			It("Should fail to create new Host", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Create))).Methods("POST")
+				hostJson := `{
+								"host_name": "localhost3",
+								"description": "Intel Host"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+		Context("Provide a Create request that contains malformed connection string", func() {
 			It("Should fail to create new Host", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Create))).Methods("POST")
 				hostJson := `{
@@ -122,7 +141,26 @@ var _ = Describe("HostController", func() {
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
-		Context("Provide a Host data that contains invalid hostname", func() {
+		Context("Provide a Create request without hostname", func() {
+			It("Should fail to create new Host", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Create))).Methods("POST")
+				hostJson := `{
+								"connection_string": "intel:https://ta.ip.com:1443",
+								"description": "Intel Host"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+		Context("Provide a Create request that contains invalid hostname", func() {
 			It("Should fail to create new Host", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Create))).Methods("POST")
 				hostJson := `{
@@ -208,6 +246,25 @@ var _ = Describe("HostController", func() {
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
+		Context("Provide a Host data that contains invalid hostname", func() {
+			It("Should fail to update Host", func() {
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
+				hostJson := `{
+								"host_name": "local host",
+								"connection_string": "intel:https://ta.ip.com:1443"
+							}`
+
+				req, err := http.NewRequest(
+					"PUT",
+					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
 		Context("Provide a non-existent Host data", func() {
 			It("Should fail to update Host", func() {
 				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Update))).Methods("PUT")
@@ -270,7 +327,37 @@ var _ = Describe("HostController", func() {
 				Expect(len(hostCollection.Hosts)).To(Equal(2))
 			})
 		})
-		Context("Get all the Hosts with hostname", func() {
+		Context("Get all the Hosts with key value params", func() {
+			It("Should get list of all the filtered Hosts", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts?key=os_name&value=RedHatEnterprise", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hostCollection hvs.HostCollection
+				json.Unmarshal(w.Body.Bytes(), &hostCollection)
+				// Verifying mocked data of 0 hosts
+				Expect(len(hostCollection.Hosts)).To(Equal(0))
+			})
+		})
+		Context("Get all the Hosts with valid nameEqualTo param", func() {
+			It("Should get list of all the filtered Hosts", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts?nameEqualTo=localhost1", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hostCollection hvs.HostCollection
+				json.Unmarshal(w.Body.Bytes(), &hostCollection)
+				// Verifying mocked data of 1 host
+				Expect(len(hostCollection.Hosts)).To(Equal(1))
+			})
+		})
+		Context("Get all the Hosts with valid nameContains param", func() {
 			It("Should get list of all the filtered Hosts", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?nameContains=localhost", nil)
@@ -285,10 +372,70 @@ var _ = Describe("HostController", func() {
 				Expect(len(hostCollection.Hosts)).To(Equal(2))
 			})
 		})
-		Context("Get all the Hosts with invalid hostname", func() {
+		Context("Get all the Hosts with invalid nameEqualTo param", func() {
+			It("Should fail to get Hosts", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts?nameEqualTo=local host1", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+		Context("Get all the Hosts with invalid nameContains param", func() {
 			It("Should fail to get Hosts", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?nameContains=local host", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+		Context("Get all the Hosts with valid id param", func() {
+			It("Should get list of all the filtered Hosts", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts?id=ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hostCollection hvs.HostCollection
+				json.Unmarshal(w.Body.Bytes(), &hostCollection)
+				// Verifying mocked data of 1 host
+				Expect(len(hostCollection.Hosts)).To(Equal(1))
+			})
+		})
+		Context("Get all the Hosts with valid hostHardwareId param", func() {
+			It("Should get list of all the filtered Hosts", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts?hostHardwareId=ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hostCollection hvs.HostCollection
+				json.Unmarshal(w.Body.Bytes(), &hostCollection)
+				// Verifying mocked data of 1 host
+				Expect(len(hostCollection.Hosts)).To(Equal(1))
+			})
+		})
+		Context("Get all the Hosts with invalid id param", func() {
+			It("Should fail to get Hosts", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts?id=e57e5ea0-d465-461e-882d-", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+		Context("Get all the Hosts with invalid hostHardwareId param", func() {
+			It("Should fail to get Hosts", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/hosts?hostHardwareId=e57e5ea0-d465-461e-882d-", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -303,7 +450,7 @@ var _ = Describe("HostController", func() {
 			It("Should create a new Host Flavorgroup link", func() {
 				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.AddFlavorgroup))).Methods("POST")
 				hostJson := `{
-								"flavorgroup_id": "e57e5ea0-d465-461e-882d-1600090caa0d"
+								"flavorgroup_id": "ee37c360-7eae-4250-a677-6ee12adce8e2"
 							}`
 
 				req, err := http.NewRequest(
@@ -315,6 +462,24 @@ var _ = Describe("HostController", func() {
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusCreated))
+			})
+		})
+		Context("Provide a linked Flavorgroup Id", func() {
+			It("Should fail to create new Host Flavorgroup link", func() {
+				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.AddFlavorgroup))).Methods("POST")
+				hostJson := `{
+								"flavorgroup_id": "e57e5ea0-d465-461e-882d-1600090caa0d"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
+					strings.NewReader(hostJson),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
 		Context("Provide a non-existing Host Id", func() {
@@ -357,7 +522,7 @@ var _ = Describe("HostController", func() {
 			It("Should fail to create new Host Flavorgroup link", func() {
 				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.AddFlavorgroup))).Methods("POST")
 				hostJson := `{
-								"flavorgroup_id": "local host"
+								"flavorgroup_id": "e57e5ea0-d465-461e-882d-"
 							}`
 
 				req, err := http.NewRequest(
@@ -454,21 +619,8 @@ var _ = Describe("HostController", func() {
 
 				var hostFlavorgroupCollection hvs.HostFlavorgroupCollection
 				json.Unmarshal(w.Body.Bytes(), &hostFlavorgroupCollection)
-				Expect(len(hostFlavorgroupCollection.HostFlavorgroups)).To(Equal(2))
-			})
-		})
-		Context("Get all the Host Flavorgroup links for non-existent Host", func() {
-			It("Should fail to get Host Flavorgroup links", func() {
-				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.SearchFlavorgroups))).Methods("GET")
-				req, err := http.NewRequest("GET", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups", nil)
-				Expect(err).NotTo(HaveOccurred())
-				w = httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(http.StatusOK))
-
-				var hostFlavorgroupCollection hvs.HostFlavorgroupCollection
-				json.Unmarshal(w.Body.Bytes(), &hostFlavorgroupCollection)
-				Expect(len(hostFlavorgroupCollection.HostFlavorgroups)).To(Equal(0))
+				// Verifying mocked data of 1 host flavorgroup link
+				Expect(len(hostFlavorgroupCollection.HostFlavorgroups)).To(Equal(1))
 			})
 		})
 	})

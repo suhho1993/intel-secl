@@ -7,13 +7,14 @@ package validation
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"regexp"
 )
 
 const (
-	IdReg = "{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$}"
+	UUIDReg = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}"
 )
 
 var (
@@ -32,7 +33,8 @@ var (
 	hexStringReg     = regexp.MustCompile("^[a-fA-F0-9]+$")
 	pemEncodedKeyReg = regexp.MustCompile("(^[-a-zA-Z0-9//=+ ]*$)")
 	dateReg          = regexp.MustCompile("[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]")
-	uuidReg          = regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
+	uuidReg          = regexp.MustCompile("^"+UUIDReg+"$")
+	IdReg            = fmt.Sprintf("{id:%s}", UUIDReg)
 	portReg          = regexp.MustCompile("(?:([0-9]{1,5}))")
 	defaultReg       = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")
 	passwordReg      = regexp.MustCompile("(?:([a-zA-Z0-9_\\\\.\\\\, @!#$%^+=>?:{}()\\[\\]\\\"|;~`'*-/]+))")

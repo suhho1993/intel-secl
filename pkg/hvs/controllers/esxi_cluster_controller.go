@@ -91,12 +91,10 @@ func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Re
 	for _, hostInfo := range hostInfoList {
 		description := hostInfo.Name + " in ESX Cluster " + reqESXiCluster.ClusterName
 
-		reqHost := hvs.Host{
+		reqHost := hvs.HostCreateRequest{
 			HostName:         hostInfo.Name,
 			Description:      description,
 			ConnectionString: reqESXiCluster.ConnectionString + ";h=" + hostInfo.Name,
-			HardwareUuid:     uuid.Nil,
-			FlavorgroupNames: nil,
 		}
 		_, _, err := controller.HController.CreateHost(reqHost)
 		if err != nil {

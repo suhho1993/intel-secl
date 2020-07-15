@@ -16,12 +16,9 @@ func CreateFlavorGroupByName(flavorgroupName string) hvs.FlavorGroup {
 	defaultLog.Trace("utils/flavor_group:CreateFlavorGroupByName() Entering")
 	defer defaultLog.Trace("utils/flavor_group:CreateFlavorGroupByName() Leaving")
 
-	collection := GetAutomaticFlavorMatchPolicy()
-
 	var flavorgroup hvs.FlavorGroup
 	flavorgroup.Name = flavorgroupName
-	flavorgroup.MatchPolicies = collection
-
+	flavorgroup.MatchPolicies = GetAutomaticFlavorMatchPolicy()
 	return flavorgroup
 }
 

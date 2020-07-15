@@ -135,7 +135,7 @@ func (f *FlavorGroupStore) AddFlavors(fgId uuid.UUID, fIds []uuid.UUID) ([]uuid.
 	}
 
 	insertQuery := fmt.Sprintf("INSERT INTO flavorgroup_flavor VALUES %s", strings.Join(fgfValues, ","))
-	err := f.Store.Db.Model(flavorgroupFlavor{}).AddForeignKey("flavor_id", "flavor(id)", "RESTRICT", "RESTRICT").AddForeignKey("flavorgroup_id", "flavor_group(id)", "RESTRICT", "RESTRICT").Exec(insertQuery, fgfValueArgs...).Error
+	err := f.Store.Db.Model(flavorgroupFlavor{}).Exec(insertQuery, fgfValueArgs...).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:AddFlavors() failed to create flavorgroup-flavor association")
 	}
