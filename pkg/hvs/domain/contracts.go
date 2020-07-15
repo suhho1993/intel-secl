@@ -56,7 +56,7 @@ type (
 
 		Create(*hvs.SignedFlavor) (*hvs.SignedFlavor, error)
 		Retrieve(uuid.UUID) (*hvs.SignedFlavor, error)
-		Search(*models.FlavorFilterCriteria) ([]*hvs.SignedFlavor, error)
+		Search(*models.FlavorVerificationFC) ([]*hvs.SignedFlavor, error)
 		Delete(uuid.UUID) error
 	}
 

@@ -74,7 +74,7 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 	for _, fg := range flvGroups {
 		//TODO - handle errors in case of DB transaction
-		fgTrustReqs, err := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore)
+		fgTrustReqs, err := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore, hostData)
 		if err != nil {
 			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving NewFlvGrpHostTrustReqs")
 		}
@@ -87,8 +87,12 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 			fgTrustCache, _ := v.validateCachedFlavors(hostId, hostData, fgCachedFlavors)
 			fgTrustReport := fgTrustCache.trustReport
 			if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache) {
+				log.Debug("hosttrust/verifier:Verify() Trust cache  doesn't meet flavorgroup requirements")
 				finalReportValid = false
-				fgTrustReport, _ = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
+				fgTrustReport, err = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
+				if err != nil {
+					return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while crating flavorgroup report")
+				}
 			}
 			log.Debug("hosttrust/verifier:Verify() Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.IsTrusted())
 			// append the results
@@ -98,6 +102,7 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	// create a new report if we actually have any results and either the Final Report is untrusted or
 	// we have new Data from the host and therefore need to update based on the new report.
 	var hvsReport *models.HVSReport
+	log.Debugf("hosttrust/verifier:Verify() Final results in report: %d", len(finalTrustReport.Results))
 	if len(finalTrustReport.Results) > 0 && (!finalReportValid || newData) {
 		log.Debugf("hosttrust/verifier:Verify() Generating new SAML for host: %s", hostId)
 		samlReportGen := NewSamlReportGenerator(&v.SamlIssuer)

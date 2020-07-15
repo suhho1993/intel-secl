@@ -347,7 +347,10 @@ func (svc *Service) verifyHostData(hostId uuid.UUID, data *types.HostManifest, n
 	}
 	svc.mapmtx.Unlock()
 
-	svc.verifier.Verify(hostId, data, newData)
+	_, err := svc.verifier.Verify(hostId, data, newData)
+	if err != nil {
+		defaultLog.WithError(err).Errorf("hosttrust/manager:verifyHostData() Error while verification")
+	}
 	// verify is completed - delete the entry
 	svc.deleteEntry(hostId)
 }

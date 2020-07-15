@@ -19,7 +19,7 @@ import (
 
 // MockFlavorStore provides a mocked implementation of interface hvs.FlavorStore
 type MockFlavorStore struct {
-	flavorStore            []*hvs.SignedFlavor
+	flavorStore []*hvs.SignedFlavor
 	//TODO use flavorgroupFlavor model
 	FlavorFlavorGroupStore []*flavorFlavorGroupStore
 	FlavorgroupStore       map[uuid.UUID]*hvs.FlavorGroup
@@ -393,7 +393,7 @@ func (store *MockFlavorStore) Retrieve(id uuid.UUID) (*hvs.SignedFlavor, error) 
 }
 
 // Search returns a filtered list of flavors per the provided FlavorFilterCriteria
-func (store *MockFlavorStore) Search(criteria *models.FlavorFilterCriteria) ([]*hvs.SignedFlavor, error) {
+func (store *MockFlavorStore) Search(criteria *models.FlavorVerificationFC) ([]*hvs.SignedFlavor, error) {
 	var sfs []*hvs.SignedFlavor
 	// flavor filter empty
 	if criteria == nil {
@@ -406,24 +406,24 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorFilterCriteria) ([]*
 	}
 
 	// Flavor ID filter
-	if criteria.Id != uuid.Nil {
+	if criteria.FlavorFC.Id != uuid.Nil {
 		var sfFiltered []*hvs.SignedFlavor
 		for _, f := range store.flavorStore {
-			if f.Flavor.Meta.ID == criteria.Id {
+			if f.Flavor.Meta.ID == criteria.FlavorFC.Id {
 				sfFiltered = append(sfFiltered, f)
 			}
 		}
 		sfs = sfFiltered
-	} else if criteria.FlavorGroupID != uuid.Nil ||
-		len(criteria.FlavorParts) >= 1 || len(criteria.FlavorPartsWithLatest) >= 1 || criteria.HostManifest != nil {
-			flavorPartsWithLatestMap := getFlavorPartsWithLatest(criteria.FlavorParts, criteria.FlavorPartsWithLatest)
+	} else if criteria.FlavorFC.FlavorgroupID != uuid.Nil ||
+		len(criteria.FlavorFC.FlavorParts) >= 1 || len(criteria.FlavorPartsWithLatest) >= 1 {
+			flavorPartsWithLatestMap := getFlavorPartsWithLatestMap(criteria.FlavorFC.FlavorParts, criteria.FlavorPartsWithLatest)
 
 			var fIds []uuid.UUID
 			// Find flavors for given flavor group Id
 			for _, flvrFg := range store.FlavorFlavorGroupStore {
-				if flvrFg.fgId == criteria.FlavorGroupID{
+				if flvrFg.fgId == criteria.FlavorFC.FlavorgroupID{
 					fIds = append(fIds, flvrFg.fId)
-				}
+	}
 			}
 			// for each flavors check the flavor part in flavorPartsWithLatestMap is present
 			for _, fId := range fIds{
@@ -460,7 +460,7 @@ func (store *MockFlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUI
 		//skip for flavor with not matching hwuuid
 		if flavor.Flavor.Meta.Description.HardwareUUID == nil{
 			continue
-		}
+}
 		if *flavor.Flavor.Meta.Description.HardwareUUID == hwId && (flavor.Flavor.Meta.Description.FlavorPart == cf.FlavorPartHostUnique.String() ||
 			flavor.Flavor.Meta.Description.FlavorPart == cf.FlavorPartAssetTag.String()){
 			flavors = append(flavors, flavor)
@@ -487,7 +487,7 @@ func (store *MockFlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, fl
 
 	if flvParts == nil || len(flvParts) == 0{
 		flvParts = cf.GetFlavorTypes()
-	}
+}
 	for _, flvrPart := range flvParts{
 		if store.flavorgroupContainsFlavorType(flvrPart, flvGrpId){
 			flavorTypesInFlavorGroup[flvrPart]= true
@@ -564,19 +564,18 @@ func NewFakeFlavorStoreWithAllFlavors(flavorFilePath string) *MockFlavorStore{
 	return store
 }
 
-func getFlavorPartsWithLatest(flavorParts, latestFlavorParts []cf.FlavorPart) map[cf.FlavorPart]bool {
-	flavorPartWithLatest := make(map[cf.FlavorPart]bool)
-	if len(flavorParts) >= 1 && len(latestFlavorParts) == 0{
-		for _, flavorPart := range flavorParts {
-			flavorPartWithLatest[flavorPart] = false
+func getFlavorPartsWithLatestMap(flavorParts []cf.FlavorPart, flavorPartsWithLatestMap map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool) {
+	if len(flavorParts) <= 0 {
+		return flavorPartsWithLatestMap
+	}
+	if len(flavorPartsWithLatestMap) <= 0 {
+		flavorPartsWithLatestMap = make(map[cf.FlavorPart]bool)
+	}
+	for _, flavorPart := range flavorParts {
+		if _, ok := flavorPartsWithLatestMap[flavorPart]; !ok {
+			flavorPartsWithLatestMap[flavorPart] = false
 		}
-		return flavorPartWithLatest
 	}
 
-	if len(latestFlavorParts) >= 1 {
-		for _, flavorPart := range latestFlavorParts {
-			flavorPartWithLatest[flavorPart] = true
-		}
-	}
-	return flavorPartWithLatest
+	return flavorPartsWithLatestMap
 }

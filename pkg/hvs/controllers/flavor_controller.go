@@ -416,34 +416,15 @@ func (fcon *FlavorController) Search(w http.ResponseWriter, r *http.Request) (in
 	flavorgroupId := r.URL.Query().Get("flavorgroupId")
 	flavorParts := r.URL.Query()["flavorParts"]
 
-	var filterCriteria *dm.FlavorFilterCriteria = nil
-
-	if id != "" || key != "" || value != "" || flavorgroupId != "" || len(flavorParts) > 0 {
-		var flavorPartsFilter []fc.FlavorPart
-		var err error
-		fId, _ := uuid.Parse(id)
-		fgId, _ := uuid.Parse(flavorgroupId)
-		if len(flavorParts) > 0 {
-			flavorPartsFilter, err = parseFlavorParts(flavorParts)
-			if err != nil {
-				secLog.Errorf("controllers/flavor_controller:Search()  %s", err.Error())
-				return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
-			}
-		}
-		filterCriteria = &dm.FlavorFilterCriteria{
-			Id:            fId,
-			Key:           key,
-			Value:         value,
-			FlavorGroupID: fgId,
-			FlavorParts:   flavorPartsFilter,
-		}
-		if err := validateFlavorFilterCriteria(*filterCriteria); err != nil {
-			secLog.Errorf("controllers/flavor_controller:Search()  %s", err.Error())
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
-		}
+	filterCriteria, err := validateFlavorFilterCriteria(id, key, value, flavorgroupId, flavorParts)
+	if err != nil {
+		secLog.Errorf("controllers/flavor_controller:Search()  %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	flavorCollection, err := fcon.FStore.Search(filterCriteria)
+	flavorCollection, err := fcon.FStore.Search(&dm.FlavorVerificationFC{
+		FlavorFC: *filterCriteria,
+	})
 	if err != nil {
 		secLog.WithError(err).Error("controllers/flavor_controller:Search() Flavor get all failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("Unable to search Flavors")
@@ -501,32 +482,44 @@ func (fcon *FlavorController) Retrieve(w http.ResponseWriter, r *http.Request) (
 	return flavor, http.StatusOK, nil
 }
 
-func validateFlavorFilterCriteria(filter dm.FlavorFilterCriteria) error {
+func validateFlavorFilterCriteria(id, key, value, flavorgroupId string, flavorParts []string) (*dm.FlavorFilterCriteria, error) {
 	defaultLog.Trace("controllers/flavor_controller:validateFlavorFilterCriteria() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:validateFlavorFilterCriteria() Leaving")
 
-	if filter.Id.String() != "" {
-		if _, errs := uuid.Parse(filter.Id.String()); errs != nil {
-			return errors.New("Invalid UUID format of the Flavor Identifier")
+	filterCriteria := dm.FlavorFilterCriteria{}
+	var err error
+	if id != "" {
+		filterCriteria.Id, err = uuid.Parse(id)
+		if err != nil {
+			return nil, errors.New("Invalid UUID format of the flavor identifier")
 		}
 	}
-	if filter.Key != "" {
-		if errs := validation.ValidateNameString(filter.Key); errs != nil {
-			return errors.Wrap(errs, "Valid contents for filter Key must be specified")
+	if key != "" {
+		if err = validation.ValidateNameString(key); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for filter Key must be specified")
+		}
+		filterCriteria.Key = key
+	}
+	if value != "" {
+		if err = validation.ValidateStrings([]string{value}); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for filter Value must be specified")
+		}
+		filterCriteria.Value = value
+	}
+	if flavorgroupId != "" {
+		filterCriteria.FlavorgroupID, err = uuid.Parse(flavorgroupId)
+		if err != nil {
+			return nil, errors.New("Invalid UUID format of flavorgroup identifier")
 		}
 	}
-	if filter.Value != "" {
-		if errs := validation.ValidateStrings([]string{filter.Value}); errs != nil {
-			return errors.Wrap(errs, "Valid contents for filter Value must be specified")
-		}
-	}
-	if filter.FlavorGroupID.String() != "" {
-		if _, errs := uuid.Parse(filter.FlavorGroupID.String()); errs != nil {
-			return errors.New("Invalid UUID format of the Flavorgroup identifier as a flavor filter")
+	if len(flavorParts) > 0 {
+		filterCriteria.FlavorParts, err = parseFlavorParts(flavorParts)
+		if err != nil {
+			return nil, errors.Wrap(err, "Valid contents of filter flavor_parts must be given")
 		}
 	}
 
-	return nil
+	return &filterCriteria, nil
 }
 
 func validateFlavorCreateRequest(criteria dm.FlavorCreateRequest) error {

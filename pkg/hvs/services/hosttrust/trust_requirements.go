@@ -6,6 +6,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/rules"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	"reflect"
@@ -21,7 +22,7 @@ type flvGrpHostTrustReqs struct {
 	FlavorPartMatchPolicy         map[cf.FlavorPart]hvs.MatchPolicy
 }
 
-func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGroup, fs domain.FlavorStore) (*flvGrpHostTrustReqs, error) {
+func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGroup, fs domain.FlavorStore, hostData *types.HostManifest) (*flvGrpHostTrustReqs, error) {
 	defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Entering")
 	defer defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Leaving")
 
@@ -41,17 +42,24 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 		// TODO: this should really be a search on the flavorgroup store which should be able to retrieve a list
 		// of flavor ids in the flavorgroup and then call the flavor store with a list of ids. Right now, it only
 		// support one flavor id
-
 		var err error
-		reqs.AllOfFlavors, err = fs.Search(&models.FlavorFilterCriteria{
-			// Flavor Parts of the Search Criteria takes a []cf.FlavorPart - but we have a map.
-			// So dump keys of the map into a slice.
-			FlavorGroupID: fg.ID,
-			FlavorParts:   reqs.MatchTypeFlavorParts[hvs.MatchTypeAllOf],
+		hostManifestMap, err := getHostManifestMap(hostData, reqs.MatchTypeFlavorParts[hvs.MatchTypeAllOf])
+		if err != nil {
+			return nil, errors.Wrap(err, "error while creating host manifest map")
+		}
+		reqs.AllOfFlavors, _ = fs.Search(&models.FlavorVerificationFC{
+			FlavorFC: models.FlavorFilterCriteria{
+				// Flavor Parts of the Search Criteria takes a []cf.FlavorPart - but we have a map.
+				// So dump keys of the map into a slice.
+				FlavorgroupID: fg.ID,
+				FlavorParts:   reqs.MatchTypeFlavorParts[hvs.MatchTypeAllOf],
+			},
+			FlavorMeta:            hostManifestMap,
+			FlavorPartsWithLatest: nil,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "error searching flavor for "+hwUUID.String())
-		}
+	}
 		defaultLog.Debugf("%v from Flavorgroup %v Flavors retrieved with ALL_OF policy", fg.ID, len(reqs.AllOfFlavors))
 	}
 

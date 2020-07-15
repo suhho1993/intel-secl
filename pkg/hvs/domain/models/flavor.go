@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
-	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 )
 
@@ -23,15 +22,18 @@ type FlavorCreateRequest struct {
 	FlavorParts            []cf.FlavorPart `json:"flavor_parts,omitempty"`
 }
 
-//TODO: this struct will change when search store for hostManifest is created
 type FlavorFilterCriteria struct {
-	Id                    uuid.UUID
-	Key                   string
-	Value                 string
-	FlavorGroupID         uuid.UUID
-	FlavorParts           []cf.FlavorPart
-	FlavorPartsWithLatest []cf.FlavorPart
-	HostManifest          *hcTypes.HostManifest
+	Id            uuid.UUID
+	Key           string
+	Value         string
+	FlavorgroupID uuid.UUID
+	FlavorParts   []cf.FlavorPart
+}
+
+type FlavorVerificationFC struct {
+	FlavorFC FlavorFilterCriteria
+	FlavorMeta map[cf.FlavorPart]map[string]interface{}
+	FlavorPartsWithLatest map[cf.FlavorPart]bool
 }
 
 func (fcr FlavorCreateRequest) MarshalJSON() ([]byte, error) {
