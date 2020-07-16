@@ -19,11 +19,11 @@ type HostStatusInformation struct {
 
 // HostStatus contains the response for the Host Status API for an individual host
 type HostStatus struct {
-	ID                    uuid.UUID             `json:"id,omitempty"`
-	HostID                uuid.UUID             `json:"host_id,omitempty"`
-	Created               time.Time             `json:"created,omitempty"`
-	HostStatusInformation HostStatusInformation `json:"status,omitempty"`
-	HostManifest          types.HostManifest    `json:"host_manifest,omitempty"`
+	ID                    uuid.UUID             `json:"id"`
+	HostID                uuid.UUID             `json:"host_id"`
+	Created               time.Time             `json:"created"`
+	HostStatusInformation HostStatusInformation `json:"status"`
+	HostManifest          types.HostManifest    `json:"host_manifest"`
 }
 
 // HostStatusCollection holds a collection of HostStatus in response to an API query

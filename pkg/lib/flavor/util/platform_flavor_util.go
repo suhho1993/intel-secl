@@ -45,8 +45,6 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 	log.Trace("flavor/util/platform_flavor_util:GetMetaSectionDetails() Entering")
 	defer log.Trace("flavor/util/platform_flavor_util:GetMetaSectionDetails() Leaving")
 
-	// TODO: Determine if Meta.Author field is needed since it is not set anywhere in Java implementation
-
 	var meta cm.Meta
 	// Set UUID
 	meta.ID = uuid.New()
@@ -596,4 +594,3 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavor(flavorString string, privateKey
 
 	return string(signedFlavorJSON), nil
 }
-

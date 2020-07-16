@@ -57,7 +57,7 @@ func (hss *HostStatusStore) Retrieve(hostStatusId uuid.UUID) (*hvs.HostStatus, e
 
 	row := hss.Store.Db.Model(&dbHostStatus).Where(&dbHostStatus).Row()
 	result := hvs.HostStatus{}
-	if err := row.Scan(&result.ID, &result.HostID, (*PGHostStatusInformation)(&result.HostStatusInformation), &result.Created, (*PGHostManifest)(&result.HostManifest)); err != nil {
+	if err := row.Scan(&result.ID, &result.HostID, (*PGHostStatusInformation)(&result.HostStatusInformation), (*PGHostManifest)(&result.HostManifest), &result.Created); err != nil {
 		return nil, errors.Wrap(err, "postgres/hoststatus_store:Retrieve() failed to retrieve hostStatus")
 	}
 

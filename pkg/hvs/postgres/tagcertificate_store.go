@@ -52,7 +52,7 @@ func (tcs *TagCertificateStore) Search(tcFilter *models.TagCertificateFilterCrit
 	defaultLog.Trace("postgres/tagcertificate_store:Search() Entering")
 	defer defaultLog.Trace("postgres/tagcertificate_store:Search() Leaving")
 
-	var tcResultSet []*hvs.TagCertificate
+	var tcResultSet = []*hvs.TagCertificate{}
 
 	tx := buildTagCertificateSearchQuery(tcs.Store.Db, tcFilter)
 

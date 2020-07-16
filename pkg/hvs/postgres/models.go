@@ -176,7 +176,6 @@ func (hm PGHostStatusInformation) Value() (driver.Value, error) {
 }
 
 func (hm *PGHostStatusInformation) Scan(value interface{}) error {
-	// no trace comments here as it is a high frequency function.
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("postgres/models:PGHostStatusInformation_Scan() - type assertion to []byte failed")
