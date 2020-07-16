@@ -59,11 +59,9 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	}
 
 	// TODO : remove this when we remove the intermediate collection
-	var flvGroups []*hvs.FlavorGroup
-	if flvGroupColl, err := v.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{HostId: hostId.String()}); err != nil {
+	flvGroups, err := v.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{HostId: hostId.String()})
+	if err != nil {
 		return nil, errors.New("hosttrust/verifier:Verify() Store access error")
-	} else {
-		flvGroups = (*flvGroupColl).Flavorgroups
 	}
 
 	// start with the presumption that final trust report would be true. It as some point, we get an invalid report,

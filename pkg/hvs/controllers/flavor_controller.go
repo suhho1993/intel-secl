@@ -488,12 +488,13 @@ func validateFlavorFilterCriteria(id, key, value, flavorgroupId string, flavorPa
 
 	filterCriteria := dm.FlavorFilterCriteria{}
 	var err error
-	if id != "" {
-		filterCriteria.Id, err = uuid.Parse(id)
-		if err != nil {
-			return nil, errors.New("Invalid UUID format of the flavor identifier")
+	if id != ""{
+			parsedId, err := uuid.Parse(id)
+			if err != nil {
+				return nil, errors.New("Invalid UUID format of the flavor identifier")
+			}
+			filterCriteria.Ids = []uuid.UUID{parsedId}
 		}
-	}
 	if key != "" {
 		if err = validation.ValidateNameString(key); err != nil {
 			return nil, errors.Wrap(err, "Valid contents for filter Key must be specified")
@@ -583,7 +584,7 @@ func (fcon *FlavorController) createFGIfNotExists(fgName string) (*hvs.FlavorGro
 		return nil, errors.New("Flavorgroup name cannot be nil")
 	}
 
-	flavorgroupExists, err := fcon.FGStore.Search(&dm.FlavorGroupFilterCriteria{
+	flavorgroups, err := fcon.FGStore.Search(&dm.FlavorGroupFilterCriteria{
 		NameEqualTo: fgName,
 	})
 	if err != nil {
@@ -591,8 +592,8 @@ func (fcon *FlavorController) createFGIfNotExists(fgName string) (*hvs.FlavorGro
 		return nil, errors.Wrapf(err, "Error searching for flavorgroup with name %s", fgName)
 	}
 
-	if flavorgroupExists != nil && len(flavorgroupExists.Flavorgroups) >= 1 && flavorgroupExists.Flavorgroups[0].ID != uuid.Nil {
-		return flavorgroupExists.Flavorgroups[0], nil
+	if len(flavorgroups) > 0 && flavorgroups[0].ID != uuid.Nil {
+		return flavorgroups[0], nil
 	}
 	// if flavorgroup of the given name doesn't exist, create a new one
 	var fg hvs.FlavorGroup

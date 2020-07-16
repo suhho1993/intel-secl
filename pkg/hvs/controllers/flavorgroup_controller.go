@@ -55,8 +55,8 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 	existingFlavorGroups, err := controller.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{
 		NameEqualTo: reqFlavorGroup.Name,
 	})
-	if existingFlavorGroups != nil && len(existingFlavorGroups.Flavorgroups) > 0 {
-		secLog.WithField("Name", existingFlavorGroups.Flavorgroups[0].Name).Warningf("%s: Trying to create duplicated FlavorGroup from addr: %s", commLogMsg.InvalidInputBadParam, r.RemoteAddr)
+	if existingFlavorGroups != nil && len(existingFlavorGroups) > 0 {
+		secLog.WithField("Name", existingFlavorGroups[0].Name).Warningf("%s: Trying to create duplicated FlavorGroup from addr: %s", commLogMsg.InvalidInputBadParam, r.RemoteAddr)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "FlavorGroup with same name already exist"}
 	}
 
@@ -80,7 +80,10 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 	nameEqualTo := r.URL.Query().Get("nameEqualTo")
 	nameContains := r.URL.Query().Get("nameContains")
 	hostId := r.URL.Query().Get("hostId")
-	includeFlavorContent := r.URL.Query().Get("includeFlavorContent")
+	includeFlavorContent, err := strconv.ParseBool(r.URL.Query().Get("includeFlavorContent"))
+	if err != nil {
+		includeFlavorContent = false
+	}
 
 	var filter *models.FlavorGroupFilterCriteria = nil
 
@@ -97,15 +100,17 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	flavorgroupCollection, err := controller.FlavorGroupStore.Search(filter)
+	flavorgroups, err := controller.FlavorGroupStore.Search(filter)
 	if err != nil {
 		secLog.WithError(err).Error("controllers/flavorgroup_controller:Search() Flavorgroup get all failed")
-		return nil, http.StatusInternalServerError, errors.Errorf("Unable to search Flavorgroups")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{"Unable to search Flavorgroups"}
 	}
 
-	//TODO: get the collection of flavorId's from mw_link_flavor_flavorgroup
-	if flavorContent, err := strconv.ParseBool(includeFlavorContent); err == nil && flavorContent {
-		defaultLog.Info("TODO: Populate flavors data")
+	flavorgroupCollection, err := controller.getAssociatedFlavor(flavorgroups, includeFlavorContent)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/flavorgroup_controller:Search() Error getting flavor(s) " +
+			"associated with flavor group")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{"Unable to search Flavorgroups"}
 	}
 	secLog.Infof("%s: Return flavorgroup query to: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
 	return flavorgroupCollection, http.StatusOK, nil
@@ -414,4 +419,33 @@ func (controller FlavorgroupController) RetrieveFlavor(w http.ResponseWriter, r 
 
 	secLog.WithField("flavorGroup", fID).WithField("flavor", fID).Infof("%s: Flavor-FlavorGroup link retrieved by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	return fgl, http.StatusOK, nil
+}
+
+func (controller FlavorgroupController) getAssociatedFlavor(flavorgroupList []*hvs.FlavorGroup, includeFlavorContent bool) (*hvs.
+FlavorgroupCollection, error) {
+	defaultLog.Trace("controllers/flavorgroup_controller:getAssociatedFlavor() Entering")
+	defer defaultLog.Trace("controllers/flavorgroup_controller:getAssociatedFlavor() Leaving")
+
+	for index, flavorGroup := range flavorgroupList {
+		flavorIds, err := controller.FlavorGroupStore.SearchFlavors(flavorGroup.ID)
+		if err != nil {
+			return nil, errors.Errorf("Error getting flavor IDs " +
+				"linked to flavor group")
+		}
+		flavorgroupList[index].FlavorIds = flavorIds
+		if includeFlavorContent {
+			signedFlavorList, err := controller.FlavorStore.Search(&models.FlavorVerificationFC{ FlavorFC:
+				models.FlavorFilterCriteria { Ids: flavorIds}})
+			if err != nil {
+				return nil, errors.Wrap(err, "Error retrieving flavors " +
+					"linked to flavor group")
+			}
+			for _, signedFlavor := range signedFlavorList {
+				flavorgroupList[index].Flavors = append(flavorgroupList[index].Flavors, signedFlavor.Flavor)
+			}
+		}
+	}
+
+	flavorgroupCollection := &hvs.FlavorgroupCollection{Flavorgroups: flavorgroupList}
+	return flavorgroupCollection, nil
 }

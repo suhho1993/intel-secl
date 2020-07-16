@@ -24,7 +24,7 @@ type FlavorMatchPolicyCollection struct {
 type FlavorGroup struct {
 	ID            uuid.UUID           `json:"id,omitempty"`
 	Name          string              `json:"name,omitempty"`
-	FlavorIds     []string            `json:"flavorIds,omitempty"`
+	FlavorIds     []uuid.UUID         `json:"flavorIds,omitempty"`
 	Flavors       []Flavor            `json:"flavors,omitempty"`
 	MatchPolicies FlavorMatchPolicies `json:"flavor_match_policies,omitempty"`
 }
@@ -80,7 +80,7 @@ func (r FlavorGroup) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		ID                          uuid.UUID                   `json:"id,omitempty"`
 		Name                        string                      `json:"name,omitempty"`
-		FlavorIds                   []string                    `json:"flavorIds,omitempty"`
+		FlavorIds                   []uuid.UUID                 `json:"flavorIds,omitempty"`
 		Flavors                     []Flavor                    `json:"flavors,omitempty"`
 		FlavorMatchPolicyCollection FlavorMatchPolicyCollection `json:"flavor_match_policy_collection,omitempty"`
 	}{
@@ -96,7 +96,7 @@ func (r *FlavorGroup) UnmarshalJSON(b []byte) error {
 	decoded := new(struct {
 		ID                          uuid.UUID                   `json:"id,omitempty"`
 		Name                        string                      `json:"name,omitempty"`
-		FlavorIds                   []string                    `json:"flavorIds,omitempty"`
+		FlavorIds                   []uuid.UUID                 `json:"flavorIds,omitempty"`
 		Flavors                     []Flavor                    `json:"flavors,omitempty"`
 		FlavorMatchPolicyCollection FlavorMatchPolicyCollection `json:"flavor_match_policy_collection,omitempty"`
 	})
@@ -115,14 +115,14 @@ func (r *FlavorGroup) UnmarshalJSON(b []byte) error {
 // over and over again trying to look for information. Everything is gathered in one fell swoop
 func (r *FlavorGroup) GetMatchPolicyMaps() (
 
-	// Map to determine what is the match policy for each individual flavor part
-	// eg : map["SOFTWARE"] = MatchPolicy{MatchType: "ANY_OF", Required: "Required_if_defined"}
+// Map to determine what is the match policy for each individual flavor part
+// eg : map["SOFTWARE"] = MatchPolicy{MatchType: "ANY_OF", Required: "Required_if_defined"}
 	map[cf.FlavorPart]MatchPolicy,
-	// A map for match type to all the flavor part that has the particular match type
-	// eg : map["AL_OF"] = []{"SOFTWARE", "PLATFORM"}
+// A map for match type to all the flavor part that has the particular match type
+// eg : map["AL_OF"] = []{"SOFTWARE", "PLATFORM"}
 	map[MatchType][]cf.FlavorPart,
-	// A map for required/ required if defined policy to all the flavor part
-	// eg : map["Required_if_defined"] = {Software}
+// A map for required/ required if defined policy to all the flavor part
+// eg : map["Required_if_defined"] = {Software}
 	map[FlavorRequiredPolicy][]cf.FlavorPart) {
 
 	fpMap := make(map[cf.FlavorPart]MatchPolicy)

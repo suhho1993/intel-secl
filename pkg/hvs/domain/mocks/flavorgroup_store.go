@@ -40,7 +40,7 @@ func (store *MockFlavorgroupStore) Retrieve(id uuid.UUID) (*hvs.FlavorGroup, err
 }
 
 // Search returns all FlavorGroups
-func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
+func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCriteria) ([]*hvs.FlavorGroup, error) {
 
 	var flvrGroups []*hvs.FlavorGroup
 	for _, fg := range store.FlavorgroupStore {
@@ -48,15 +48,15 @@ func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCrit
 	}
 
 	if criteria == nil {
-		return &hvs.FlavorgroupCollection{Flavorgroups: flvrGroups}, nil
+		return flvrGroups, nil
 	} else if criteria.Id != "" {
 		id := uuid.MustParse(criteria.Id)
 		fg, _ := store.Retrieve(id)
-		return &hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{fg}}, nil
+		return []*hvs.FlavorGroup{fg}, nil
 	} else if criteria.NameEqualTo != "" {
 		for _, fg := range store.FlavorgroupStore {
 			if fg.Name == criteria.NameEqualTo {
-				return &hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{fg}}, nil
+				return []*hvs.FlavorGroup{fg}, nil
 			}
 		}
 	} else if criteria.NameContains != "" {
@@ -66,7 +66,7 @@ func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCrit
 				flavorgroups = append(flavorgroups, fg)
 			}
 		}
-		return &hvs.FlavorgroupCollection{Flavorgroups: flavorgroups}, nil
+		return flavorgroups, nil
 	} else if criteria.HostId != "" {
 		var flavorgroups []*hvs.FlavorGroup
 		for _, hsFg := range store.HostFlavorgroupStore {
@@ -75,7 +75,7 @@ func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCrit
 				flavorgroups = append(flavorgroups, flavorgroup)
 			}
 		}
-		return &hvs.FlavorgroupCollection{Flavorgroups: flavorgroups}, nil
+		return flavorgroups, nil
 	}
 	return nil, nil
 }

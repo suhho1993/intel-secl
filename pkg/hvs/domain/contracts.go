@@ -17,7 +17,7 @@ type (
 	FlavorGroupStore interface {
 		Create(*hvs.FlavorGroup) (*hvs.FlavorGroup, error)
 		Retrieve(uuid.UUID) (*hvs.FlavorGroup, error)
-		Search(*models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error)
+		Search(*models.FlavorGroupFilterCriteria) ([]*hvs.FlavorGroup, error)
 		Delete(uuid.UUID) error
 		AddFlavors(uuid.UUID, []uuid.UUID) ([]uuid.UUID, error)
 		RemoveFlavors(uuid.UUID, []uuid.UUID) error

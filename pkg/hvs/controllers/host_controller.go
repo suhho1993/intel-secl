@@ -478,13 +478,13 @@ func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, host
 			NameEqualTo: flavorgroupName,
 		})
 
-		if existingFlavorGroups != nil && len(existingFlavorGroups.Flavorgroups) > 0 {
-			linkExists, err := hc.flavorGroupHostLinkExists(hostId, existingFlavorGroups.Flavorgroups[0].ID)
+		if existingFlavorGroups != nil && len(existingFlavorGroups) > 0 {
+			linkExists, err := hc.flavorGroupHostLinkExists(hostId, existingFlavorGroups[0].ID)
 			if err != nil {
 				return errors.Wrap(err, "Could not check host-flavorgroup link existence")
 			}
 			if !linkExists {
-				flavorgroupIds = append(flavorgroupIds, existingFlavorGroups.Flavorgroups[0].ID)
+				flavorgroupIds = append(flavorgroupIds, existingFlavorGroups[0].ID)
 			}
 		} else {
 			flavorgroup, err := hc.createNewFlavorGroup(flavorgroupName)

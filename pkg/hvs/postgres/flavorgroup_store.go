@@ -52,7 +52,7 @@ func (f *FlavorGroupStore) Retrieve(flavorGroupId uuid.UUID) (*hvs.FlavorGroup, 
 	return &fg, nil
 }
 
-func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) (*hvs.FlavorgroupCollection, error) {
+func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) ([]*hvs.FlavorGroup, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:Search() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Search() Leaving")
 
@@ -69,16 +69,16 @@ func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) (*
 	}
 	defer rows.Close()
 
-	flavorgroupCollection := hvs.FlavorgroupCollection{Flavorgroups: []*hvs.FlavorGroup{}}
+	flavorgroupList := []*hvs.FlavorGroup{}
 	for rows.Next() {
 		fg := hvs.FlavorGroup{}
 		if err := rows.Scan(&fg.ID, &fg.Name, (*PGFlavorMatchPolicies)(&fg.MatchPolicies)); err != nil {
 			return nil, errors.Wrap(err, "postgres/flavorgroup_store:Search() failed to scan record")
 		}
-		flavorgroupCollection.Flavorgroups = append(flavorgroupCollection.Flavorgroups, &fg)
+		flavorgroupList = append(flavorgroupList, &fg)
 	}
 
-	return &flavorgroupCollection, nil
+	return flavorgroupList, nil
 }
 
 func (f *FlavorGroupStore) Delete(flavorGroupId uuid.UUID) error {

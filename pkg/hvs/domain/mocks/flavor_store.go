@@ -399,19 +399,21 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorVerificationFC) ([]*
 		return store.flavorStore, nil
 	}
 
+	var sfFiltered []*hvs.SignedFlavor
 	// Flavor ID filter
-	if criteria.FlavorFC.Id != uuid.Nil {
-		var sfFiltered []*hvs.SignedFlavor
+	if len(criteria.FlavorFC.Ids) > 0 {
 		for _, f := range store.flavorStore {
-			if f.Flavor.Meta.ID == criteria.FlavorFC.Id {
-				sfFiltered = append(sfFiltered, f)
+			for _, id := range criteria.FlavorFC.Ids {
+				if f.Flavor.Meta.ID == id {
+					sfFiltered = append(sfFiltered, f)
+					break
+				}
 			}
 		}
 		sfs = sfFiltered
 	} else if criteria.FlavorFC.FlavorgroupID != uuid.Nil ||
 		len(criteria.FlavorFC.FlavorParts) >= 1 || len(criteria.FlavorPartsWithLatest) >= 1 {
 		flavorPartsWithLatestMap := getFlavorPartsWithLatestMap(criteria.FlavorFC.FlavorParts, criteria.FlavorPartsWithLatest)
-
 		// Find flavors for given flavor group Id
 		var fIds = store.FlavorFlavorGroupStore[criteria.FlavorFC.FlavorgroupID]
 

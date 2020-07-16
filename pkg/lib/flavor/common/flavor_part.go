@@ -5,9 +5,9 @@
 package common
 
 import (
-	"strings"
-	"github.com/pkg/errors"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
+	"github.com/pkg/errors"
+	"strings"
 )
 
 var log = commLog.GetDefaultLogger()

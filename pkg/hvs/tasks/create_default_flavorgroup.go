@@ -47,11 +47,11 @@ func (t *CreateDefaultFlavor) Validate() error {
 		searchFilter := models.FlavorGroupFilterCriteria{
 			NameEqualTo: n,
 		}
-		fgCollection, err := fgStore.Search(&searchFilter)
+		fgList, err := fgStore.Search(&searchFilter)
 		if err != nil {
 			return errors.Wrap(err, "Failed to validate "+t.commandName)
 		}
-		if len(fgCollection.Flavorgroups) == 0 {
+		if len(fgList) == 0 {
 			return errors.New(t.commandName + ": default flavor \"" + n + "\" not created")
 		}
 	}

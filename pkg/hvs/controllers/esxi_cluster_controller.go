@@ -43,7 +43,7 @@ func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Re
 	defer defaultLog.Trace("controllers/esxi_cluster_controller:Create() Leaving")
 
 	if r.ContentLength == 0 {
-		defaultLog.Error("controllers/esxi_cluster_controller:Create() The request body is not provided")
+		secLog.Error("controllers/esxi_cluster_controller:Create() The request body is not provided")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
 	}
 

@@ -59,8 +59,8 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]*hvs.
 	var err error
 	if (flavorFilter == nil || reflect.DeepEqual(flavorFilter.FlavorFC, models.FlavorFilterCriteria{})) {
 		tx = f.Store.Db.Model(&flavor{}).Select("id, content, signature")
-	} else if flavorFilter.FlavorFC.Id != uuid.Nil {
-		tx = f.Store.Db.Model(&flavor{}).Select("id, content, signature").Where("id = ?", flavorFilter.FlavorFC.Id)
+	} else if len(flavorFilter.FlavorFC.Ids) > 0 {
+		tx = f.Store.Db.Model(&flavor{}).Select("id, content, signature").Where("id IN (?)", flavorFilter.FlavorFC.Ids)
 	} else if flavorFilter.FlavorFC.Key != "" && flavorFilter.FlavorFC.Value != "" {
 		tx = findFlavorByKeyValue(f.Store.Db, flavorFilter.FlavorFC.Key, flavorFilter.FlavorFC.Value)
 	} else if flavorFilter.FlavorFC.FlavorgroupID.String() != "" ||
@@ -75,7 +75,8 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]*hvs.
 	}
 
 	if tx == nil {
-		return nil, errors.New("postgres/flavor_store:Search() Unexpected Error. Could not build gorm query object in flavor Search function")
+		return nil, errors.New("postgres/flavor_store:Search() Unexpected Error. Could not build gorm query" +
+			" object in flavor Search function")
 	}
 
 	rows, err := tx.Rows()
@@ -453,4 +454,3 @@ func (f *FlavorStore) flavorgroupContainsFlavorType(fgId, flavorPart string) (bo
 
 	return false, nil
 }
-

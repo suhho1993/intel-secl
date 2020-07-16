@@ -574,7 +574,7 @@ var _ = Describe("HostController", func() {
 
 	// Specs for HTTP Delete to "/hosts/{hId}/flavorgroups/{fgId}"
 	Describe("Delete an existing Host Flavorgroup link", func() {
-		Context("Delete by Id and Flavorgroup Id", func() {
+		Context("Delete by host Id and Flavorgroup Id", func() {
 			It("Should delete a Host Flavorgroup link", func() {
 				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/e57e5ea0-d465-461e-882d-1600090caa0d", nil)

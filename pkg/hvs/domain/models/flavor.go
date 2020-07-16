@@ -23,7 +23,7 @@ type FlavorCreateRequest struct {
 }
 
 type FlavorFilterCriteria struct {
-	Id            uuid.UUID
+	Ids           []uuid.UUID
 	Key           string
 	Value         string
 	FlavorgroupID uuid.UUID
