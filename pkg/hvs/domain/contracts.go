@@ -6,6 +6,7 @@ package domain
 
 import (
 	"context"
+	"time"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
@@ -95,6 +96,7 @@ type (
 		Create(*models.HVSReport) (*models.HVSReport, error)
 		Update(*models.HVSReport) (*models.HVSReport, error)
 		Delete(uuid.UUID) error
+		FindHostIdsFromExpiredReports(fromTime time.Time, toTime time.Time) ([]uuid.UUID, error)
 	}
 
 	ESXiClusterStore interface {

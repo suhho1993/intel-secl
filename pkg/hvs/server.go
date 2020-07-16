@@ -9,7 +9,6 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,11 +16,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	hostfetcher "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/host-fetcher"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
@@ -63,6 +65,14 @@ func (a *App) startServer() error {
 
 	// Initialize Host trust manager
 	hostTrustManager := initHostTrustManager(c, dataStore, certStore)
+
+	// create an instance of the HRRS and start it...
+	reportRefresher, err := hrrs.NewHostReportRefresher(c.HRRS, postgres.NewReportStore(dataStore), hostTrustManager)
+	if err != nil {
+		return errors.Wrap(err, "An error occurred while initializing HRRS")
+	}
+
+	reportRefresher.Run()
 
 	// Initialize Host controller config
 	hostControllerConfig := initHostControllerConfig(c, certStore)
@@ -107,8 +117,12 @@ func (a *App) startServer() error {
 	secLog.Info(commLogMsg.ServiceStart)
 	// TODO dispatch Service status checker goroutine
 	<-stop
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	reportRefresher.Stop()
+
 	if err := h.Shutdown(ctx); err != nil {
 		defaultLog.WithError(err).Info("Failed to gracefully shutdown webserver")
 		return err

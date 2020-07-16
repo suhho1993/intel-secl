@@ -34,7 +34,8 @@ var ErrTaskNotFound = errors.New("Task not found")
 // NewRunner returns a new Runner structure
 func NewRunner() *Runner {
 	r := Runner{
-		tasks: make(map[string]Task),
+		tasks:          make(map[string]Task),
+		failedCommands: make(map[string]error),
 	}
 	return &r
 }

@@ -9,9 +9,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 
 	"github.com/pkg/errors"
@@ -26,16 +24,19 @@ type HostReportRefresher interface {
 }
 
 func NewHostReportRefresher(cfg HRRSConfig, reportStore domain.ReportStore, hostTrustManager domain.HostTrustManager) (HostReportRefresher, error) {
+
 	return &hostReportRefresherImpl{
 		reportStore:      reportStore,
 		hostTrustManager: hostTrustManager,
 		cfg:              cfg,
+		fromTime:         time.Unix(0,0),	
 	}, nil
 }
 
 var (
-	defaultLog = commLog.GetDefaultLogger()
-	secLog     = commLog.GetSecurityLogger()
+	defaultLog     = commLog.GetDefaultLogger()
+	secLog         = commLog.GetSecurityLogger()
+	overlapTime, _ = time.ParseDuration("1ms")
 )
 
 type hostReportRefresherImpl struct {
@@ -43,9 +44,12 @@ type hostReportRefresherImpl struct {
 	hostTrustManager domain.HostTrustManager
 	cfg              HRRSConfig
 	ctx              context.Context
+	fromTime         time.Time
 }
 
 func (refresher *hostReportRefresherImpl) Run() error {
+
+	defaultLog.Infof("HRRS is starting with refresh period '%s', look ahead '%s'", refresher.cfg.RefreshPeriod, refresher.cfg.RefreshLookAhead)
 
 	if refresher.cfg.RefreshPeriod == 0 {
 		defaultLog.Info("The HRRS refresh period is zero.  HRRS will now exit")
@@ -55,7 +59,7 @@ func (refresher *hostReportRefresherImpl) Run() error {
 	refresher.ctx = context.Background()
 
 	go func() {
-		for true {
+		for {
 			err := refresher.refreshReports()
 			if err != nil {
 				// log any errors, but do not stop trying to refresh reports
@@ -66,7 +70,7 @@ func (refresher *hostReportRefresherImpl) Run() error {
 			case <-time.After(refresher.cfg.RefreshPeriod):
 				// continue with the loop and refresh reports again
 			case <-refresher.ctx.Done():
-				defaultLog.Info("The HRRS has been stopped and now exit")
+				defaultLog.Info("The HRRS has been stopped and will now exit")
 			}
 		}
 	}()
@@ -84,26 +88,28 @@ func (refresher *hostReportRefresherImpl) Stop() error {
 	return nil
 }
 
+// Uses an 'expiration time window' to find expired reports.
+//
+// - On the first pass, the window is from the epoch to five minutes from now.
+//   This will attempt to queue all hosts that have an expired report.
+// - On subsequent calls, the window wll be the last time this function was called, 
+//   less some overlap and five minutes from now.
+//
+// The intent of this logic is to avoid adding duplicate hosts to the
+// HostTrustManage queue.
 func (refresher *hostReportRefresherImpl) refreshReports() error {
 
-	expirationDate := time.Now().Add(refresher.cfg.RefreshLookAhead)
-	defaultLog.Debugf("HRRS is refreshing hosts that expiring before %s", expirationDate)
+	toTime := time.Now().Add(refresher.cfg.RefreshLookAhead)
+	defaultLog.Debugf("HRRS is refreshing hosts that have expired reports between %s and %s", refresher.fromTime, toTime)
+	
+	hostIDs, err := refresher.reportStore.FindHostIdsFromExpiredReports(refresher.fromTime, toTime)
+	refresher.fromTime = time.Now().Add(-overlapTime)
 
-	criteria := models.ReportFilterCriteria{
-		ToDate: expirationDate,
-	}
-
-	expiredReports, err := refresher.reportStore.Search(&criteria)
 	if err != nil {
-		return errors.Wrap(err, "HRRS encountered an error searching for expired reports")
+		return errors.Wrap(err, "An error occurred while HRRS searched for host ids")
 	}
 
-	defaultLog.Debugf("HRRS found %d expired reports", len(expiredReports))
-
-	hostIDs := make([]uuid.UUID, len(expiredReports))
-	for i, report := range expiredReports {
-		hostIDs[i] = report.HostID
-	}
+	defaultLog.Debugf("HRRS found %d hosts to refresh", len(hostIDs))
 
 	if len(hostIDs) > 0 {
 		err = refresher.hostTrustManager.VerifyHostsAsync(hostIDs, true, false)
@@ -112,7 +118,7 @@ func (refresher *hostReportRefresherImpl) refreshReports() error {
 		}
 	}
 
-	defaultLog.Infof("HRRS queued %d hosts from reports that were expiring before %s", len(hostIDs), expirationDate)
+	defaultLog.Infof("HRRS queued %d hosts from reports that were expiring between %s and %s", len(hostIDs), refresher.fromTime, toTime)
 
 	return nil
 }

@@ -110,6 +110,18 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 	return reports, nil
 }
 
+func (store *MockReportStore) FindHostIdsFromExpiredReports(fromTime time.Time, toTime time.Time) ([]uuid.UUID, error) {
+	hostIDs := []uuid.UUID{}
+
+	for _, r := range store.reportStore {
+		if r.Expiration.After(fromTime) && r.Expiration.Before(toTime) {
+			hostIDs = append(hostIDs, r.HostID)
+		}
+	}
+
+	return hostIDs, nil
+}
+
 // NewMockReportStore provides two dummy data for Reports
 func NewMockReportStore() *MockReportStore {
 	//TODO add more data
