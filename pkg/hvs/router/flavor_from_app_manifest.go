@@ -23,7 +23,8 @@ func SetFlavorFromAppManifestRoute(router *mux.Router, store *postgres.DataStore
 	flavorStore := postgres.NewFlavorStore(store)
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	hostStore := postgres.NewHostStore(store)
-	flavorController := controllers.NewFlavorController(flavorStore, flavorGroupStore, hostStore, certStore, hcConfig)
+	tagCertStore := postgres.NewTagCertificateStore(store)
+	flavorController := controllers.NewFlavorController(flavorStore, flavorGroupStore, hostStore, tagCertStore, certStore, hcConfig)
 	flavorFromAppManifestController := controllers.NewFlavorFromAppManifestController(*flavorController)
 
 	router.Handle("/flavor-from-app-manifest",

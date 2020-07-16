@@ -30,11 +30,13 @@ var _ = Describe("FlavorController", func() {
 		flavorStore = mocks.NewMockFlavorStore()
 		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
 		certStore := mocks.NewFakeCertificatesStore()
+		tagCertStore := mocks.NewFakeTagCertificateStore()
 		flavorController = &controllers.FlavorController{
 			FStore:    flavorStore,
 			FGStore:   flavorGroupStore,
 			HStore:    hostStore,
 			CertStore: certStore,
+			TCStore: tagCertStore,
 		}
 	})
 	// Specs for HTTP Get to "/flavors"

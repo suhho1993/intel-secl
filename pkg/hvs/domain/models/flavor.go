@@ -19,7 +19,7 @@ type FlavorCreateRequest struct {
 	FlavorCollection       flavors         `json:"flavors,omitempty"`
 	SignedFlavorCollection signedFlavors   `json:"signed_flavors,omitempty"`
 	FlavorgroupName        string          `json:"flavorgroup_name,omitempty"`
-	FlavorParts            []cf.FlavorPart `json:"flavor_parts,omitempty"`
+	FlavorParts            []cf.FlavorPart `json:"partial_flavor_types,omitempty"`
 }
 
 type FlavorFilterCriteria struct {
@@ -42,7 +42,7 @@ func (fcr FlavorCreateRequest) MarshalJSON() ([]byte, error) {
 		FlavorCollection       flavors         `json:"flavors,omitempty"`
 		SignedFlavorCollection signedFlavors   `json:"signed_flavors,omitempty"`
 		FlavorgroupName        string          `json:"flavorgroup_name,omitempty"`
-		FlavorParts            []cf.FlavorPart `json:"flavor_parts,omitempty"`
+		FlavorParts            []cf.FlavorPart `json:"partial_flavor_types,omitempty"`
 	}{
 		ConnectionString:       fcr.ConnectionString,
 		FlavorCollection:       fcr.FlavorCollection,
@@ -58,7 +58,7 @@ func (fcr *FlavorCreateRequest) UnmarshalJSON(b []byte) error {
 		FlavorCollection       flavors         `json:"flavors,omitempty"`
 		SignedFlavorCollection signedFlavors   `json:"signed_flavors,omitempty"`
 		FlavorgroupName        string          `json:"flavorgroup_name,omitempty"`
-		FlavorParts            []cf.FlavorPart `json:"flavor_parts,omitempty"`
+		FlavorParts            []cf.FlavorPart `json:"partial_flavor_types,omitempty"`
 	})
 	err := json.Unmarshal(b, decoded)
 	if err == nil {

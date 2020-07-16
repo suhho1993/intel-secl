@@ -8,6 +8,7 @@ package controllers
 import (
 	"crypto"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -35,11 +36,12 @@ type FlavorController struct {
 	FStore    domain.FlavorStore
 	FGStore   domain.FlavorGroupStore
 	HStore    domain.HostStore
+	TCStore   domain.TagCertificateStore
 	CertStore *dm.CertificatesStore
 	HostCon   HostController
 }
 
-func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs domain.HostStore, certStore *dm.CertificatesStore, hcConfig domain.HostControllerConfig) *FlavorController {
+func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs domain.HostStore, tcs domain.TagCertificateStore, certStore *dm.CertificatesStore, hcConfig domain.HostControllerConfig) *FlavorController {
 	// certStore should have an entry for Flavor Signing CA
 	if _, found := (*certStore)[dm.CertTypesFlavorSigning.String()]; !found {
 		defaultLog.Errorf("controllers/flavor_controller:NewFlavorController() %s : Flavor Signing KeyPair not found in CertStore", commLogMsg.AppRuntimeErr)
@@ -62,6 +64,7 @@ func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs 
 		FStore:    fs,
 		FGStore:   fgs,
 		HStore:    hs,
+		TCStore:   tcs,
 		CertStore: certStore,
 		HostCon:   hController,
 	}
@@ -96,7 +99,8 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 
 	signedFlavors, err := fcon.createFlavors(flavorCreateReq)
 	if err != nil {
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: err.Error()}
+		defaultLog.WithError(err).Error("controllers/flavor_controller:Create() Error creating flavors")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating flavors"}
 	}
 	secLog.Info("Flavors created successfully")
 	return signedFlavors, http.StatusCreated, nil
@@ -129,10 +133,27 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 			defaultLog.Error("controllers/flavor_controller:CreateFlavors() Error getting host manifest")
 			return nil, errors.Wrap(err, "Error getting host manifest")
 		}
-		// TODO: check if an asset tag certificate for the host with given HwUUID exists
+		tagCertificate := hvs.TagCertificate{}
+		var tagX509Certificate *x509.Certificate
+		tcFilterCriteria := dm.TagCertificateFilterCriteria{
+			HardwareUUID: uuid.MustParse(hostManifest.HostInfo.HardwareUUID),
+		}
+		tagCertificates, err := fcon.TCStore.Search(&tcFilterCriteria)
+		if err != nil {
+			defaultLog.Debugf("controllers/flavor_controller: Unabled to retrieve tag certificate for host with hardware UUID %s", hostManifest.HostInfo.HardwareUUID)
+		}
+		if len(tagCertificates) >= 1 {
+			tagCertificate = *tagCertificates[0]
+			tagX509Certificate, err = x509.ParseCertificate(tagCertificate.Certificate)
+			if err != nil {
+				defaultLog.Errorf("controllers/flavor_controller: Failed to parse x509.Certificate from tag certificate for host with hardware UUID %s", hostManifest.HostInfo.HardwareUUID)
+				return nil, errors.Wrapf(err, "Failed to parse x509.Certificate from tag certificate for host with hardware UUID %s", hostManifest.HostInfo.HardwareUUID)
+			}
+			defaultLog.Debugf("Tag attribute certificate exists for the host with hardware UUID: %s", hostManifest.HostInfo.HardwareUUID)
+		}
 		// create a platform flavor with the host manifest information
 		defaultLog.Debug("Creating flavor from host manifest using flavor library")
-		newPlatformFlavor, err := flavor.NewPlatformFlavorProvider(hostManifest, nil)
+		newPlatformFlavor, err := flavor.NewPlatformFlavorProvider(hostManifest, tagX509Certificate)
 		if err != nil {
 			defaultLog.Errorf("controllers/flavor_controller:createFlavors() Error while creating platform flavor instance from host manifest and tag certificate")
 			return nil, errors.Wrap(err, "Error while creating platform flavor instance from host manifest and tag certificate")
@@ -262,7 +283,7 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 				returnSignedFlavors = append(returnSignedFlavors, *signedFlavorCreated)
 				if flavorPart == fc.FlavorPartAssetTag {
 					if err = fcon.addFlavorToUniqueFlavorgroup(signedFlavorCreated.Flavor, true); err != nil {
-						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Unable to add flavor to HOST_UNIQUE flavorgroup")
+						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Unable to add flavor to ASSET_TAG flavorgroup")
 						return nil, err
 					}
 				} else if flavorPart == fc.FlavorPartHostUnique {
@@ -376,7 +397,7 @@ func (fcon FlavorController) retrieveFlavorCollection(platformFlavor *fType.Plat
 	defaultLog.Trace("controllers/flavor_controller:retrieveFlavorCollection() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:retrieveFlavorCollection() Leaving")
 	flavorFlavorPartMap := make(map[fc.FlavorPart][]hvs.SignedFlavor)
-	var flavorSignKey = (*fcon.CertStore)[dm.CertTypesFlavorSigning.String()].Key
+	flavorSignKey := (*fcon.CertStore)[dm.CertTypesFlavorSigning.String()].Key
 
 	if fgId.String() == "" || platformFlavor == nil {
 		defaultLog.Error("controllers/flavor_controller:retrieveFlavorCollection() Platform flavor and flavorgroup must be specified")
@@ -448,11 +469,10 @@ func (fcon *FlavorController) Delete(w http.ResponseWriter, r *http.Request) (in
 		} else {
 			secLog.WithError(err).WithField("id", id).Info(
 				"controllers/flavor_controller:Delete() attempt to delete invalid Flavor")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Flavor"}
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Attempt to delete invalid Flavor"}
 		}
 	}
 	//TODO: Check if the flavor-flavorgroup is link exists
-
 	//TODO: Check if the flavor-host link exists
 	if err := fcon.FStore.Delete(id); err != nil {
 		defaultLog.WithError(err).WithField("id", id).Info(

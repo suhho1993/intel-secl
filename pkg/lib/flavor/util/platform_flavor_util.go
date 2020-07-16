@@ -147,8 +147,9 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 			} else {
 				description.HardwareUUID = &hwuuid
 			}
-			description.Label = pfutil.getLabelFromDetails(meta.Vendor, (*description.HardwareUUID).String(), pfutil.getCurrentTimeStamp())
 		}
+		description.Label = pfutil.getLabelFromDetails(meta.Vendor, (*description.HardwareUUID).String(), pfutil.getCurrentTimeStamp())
+
 	case common.FlavorPartHostUnique:
 		if hostDetails != nil {
 			if hostDetails.HostName != "" {

@@ -32,5 +32,5 @@ const (
 
 	// Timestamp format
 	FlavorTimestampFormat   = "2006-01-02T15:04:05-0700"
-	FlavorWoTimestampFormat = "01-02-2006_15-04-05"
+	FlavorWoTimestampFormat = "2006-01-02T15:04:05.999999-07:00"
 )
