@@ -64,7 +64,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter.Use(cmw.NewTokenAuth(constants.TrustedJWTSigningCertsDir,
 		constants.TrustedRootCACertsDir, cfgRouter.fnGetJwtCerts,
 		cacheTime))
-	subRouter = SetFlavorGroupRoutes(subRouter, dataStore)
+	subRouter = SetFlavorGroupRoutes(subRouter, dataStore, hostTrustManager)
 	subRouter = SetFlavorRoutes(subRouter, dataStore, certStore, hostControllerConfig)
 	subRouter = SetTpmEndorsementRoutes(subRouter, dataStore)
 	subRouter = SetCertifyAiksRoutes(subRouter, dataStore, certStore)

@@ -22,6 +22,9 @@ import (
 
 type FlavorgroupController struct {
 	FlavorGroupStore domain.FlavorGroupStore
+	FlavorStore      domain.FlavorStore
+	HostStore        domain.HostStore
+	HTManager        domain.HostTrustManager
 }
 
 func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -203,4 +206,212 @@ func ValidateFgCriteria(filterCriteria models.FlavorGroupFilterCriteria) error {
 		}
 	}
 	return nil
+}
+
+// AddFlavor creates the FlavorGroupFlavor link in the FlavorGroupStore
+func (controller FlavorgroupController) AddFlavor(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/flavorgroup_controller:AddFlavor() Entering")
+	defer defaultLog.Trace("controllers/flavorgroup_controller:AddFlavor() Leaving")
+
+	if r.ContentLength == 0 {
+		secLog.Error("controllers/flavorgroup_controller:AddFlavor() The request body is not provided")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
+	}
+
+	// Get the Flavor ID from the POST body
+	var linkRequest hvs.FlavorgroupFlavorLinkCriteria
+	// Decode the incoming json data to note struct
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(&linkRequest)
+	if err != nil {
+		defaultLog.WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  Failed to decode request body as FlavorgroupFlavorLinkCriteria", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
+	}
+
+	// Get the FlavorGroup ID from the URL
+	fgID := uuid.MustParse(mux.Vars(r)["fgID"])
+
+	// check if FlavorGroup exists
+	_, err = controller.FlavorGroupStore.Retrieve(fgID)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s : FlavorGroup %s does not exist", commLogMsg.AppRuntimeErr, fgID)
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "FlavorGroup does not exist"}
+		} else {
+			defaultLog.WithError(err).WithField("flavorGroup", fgID).Errorf("controllers/flavorgroup_controller:AddFlavor() %s : Error retrieving FlavorGroup", commLogMsg.AppRuntimeErr)
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to create FlavorGroup-Flavor link"}
+		}
+	}
+
+	// check for validity of flavorId in request
+	if linkRequest.FlavorID == uuid.Nil {
+		defaultLog.WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  Invalid Flavor ID %s in request body", commLogMsg.AppRuntimeErr, linkRequest.FlavorID)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid FlavorID in request"}
+	}
+
+	// check if Flavor exists
+	_, err = controller.FlavorStore.Retrieve(linkRequest.FlavorID)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  Flavor %s does not exist", commLogMsg.AppRuntimeErr, linkRequest.FlavorID)
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor does not exist"}
+		} else {
+			defaultLog.WithError(err).WithField("flavor", linkRequest.FlavorID).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  Error checking for flavors", commLogMsg.AppRuntimeErr)
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to create FlavorGroup-Flavor link"}
+		}
+	}
+
+	// now check if there is already a link between Flavor and FlavorGroup
+	_, err = controller.FlavorGroupStore.RetrieveFlavor(fgID, linkRequest.FlavorID)
+	if err != nil {
+		if err.Error() != commErr.RowsNotFound {
+			defaultLog.WithField("flavorGroup", fgID).WithField("flavor", linkRequest.FlavorID).WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  Failed to fetch linked flavors for FlavorGroup", commLogMsg.AppRuntimeErr)
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to create FlavorGroup-Flavor link"}
+		}
+	} else {
+		defaultLog.WithField("flavorGroup", fgID).WithField("flavor", linkRequest.FlavorID).WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  FlavorGroup-Flavor link already exists", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "FlavorGroup-Flavor link already exists"}
+	}
+
+	// Persistence
+	_, err = controller.FlavorGroupStore.AddFlavors(fgID, []uuid.UUID{linkRequest.FlavorID})
+	if err != nil {
+		defaultLog.WithError(err).WithField("flavorGroup", fgID).WithField("flavor", linkRequest.FlavorID).Errorf("controllers/flavorgroup_controller:AddFlavor() %s : Flavorgroup-Flavor save failed", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusInternalServerError, errors.Errorf("Error while inserting a new Flavorgroup-Flavor link")
+	}
+
+	// Add the affected Hosts to the Flavor Verify queue
+	linkedHosts, err := controller.FlavorGroupStore.SearchHostsByFlavorGroup(fgID)
+	if err != nil {
+		defaultLog.WithError(err).WithField("flavorGroup", fgID).WithField("flavor", linkRequest.FlavorID).Errorf("controllers/flavorgroup_controller:AddFlavor() %s : Failed to fetch hosts linked to FlavorGroup", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusInternalServerError, errors.Errorf("Error while inserting a new Flavorgroup-Flavor link")
+	}
+
+	// Since the host has been updated, add it to the verify queue
+	err = controller.HTManager.VerifyHostsAsync(linkedHosts, false, false)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:AddFlavor() Host to Flavor Verify Queue addition failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Addition of Host to Flavor Verify Queue failed"}
+	}
+
+	secLog.WithField("flavorGroup", fgID).WithField("flavor", linkRequest.FlavorID).Infof("%s: Flavor-FlavorGroup link created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return nil, http.StatusCreated, nil
+}
+
+// RemoveFlavor deletes the FlavorGroupFlavor link in the FlavorGroupStore
+func (controller FlavorgroupController) RemoveFlavor(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/flavorgroup_controller:RemoveFlavor() Entering")
+	defer defaultLog.Trace("controllers/flavorgroup_controller:RemoveFlavor() Leaving")
+
+	// Get the FlavorGroup, Flavor ID from the URL
+	fgID := uuid.MustParse(mux.Vars(r)["fgID"])
+	fID := uuid.MustParse(mux.Vars(r)["fID"])
+
+	// check if FlavorGroup exists
+	_, err := controller.FlavorGroupStore.RetrieveFlavor(fgID, fID)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithError(err).Errorf("controllers/flavorgroup_controller:RemoveFlavor() %s : FlavorGroup %s does not exist", commLogMsg.AppRuntimeErr, fgID)
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Flavor does not exist"}
+		} else {
+			defaultLog.WithError(err).WithField("flavor", fID).Errorf("controllers/flavorgroup_controller:RemoveFlavor() %s :  Error checking for FlavorGroups", commLogMsg.AppRuntimeErr)
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to remove FlavorGroup-Flavor link"}
+		}
+	}
+
+	// remove flavor links
+	err = controller.FlavorGroupStore.RemoveFlavors(fgID, []uuid.UUID{fID})
+	if err != nil {
+		defaultLog.WithField("flavorGroup", fID).WithField("flavor", fID).WithError(err).Errorf("controllers/flavorgroup_controller:RemoveFlavor() %s :  Error removing linked flavors ", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to delete FlavorGroup-Flavor links"}
+	}
+
+	// Add the affected Hosts to the Flavor Verify queue
+	linkedHosts, err := controller.FlavorGroupStore.SearchHostsByFlavorGroup(fgID)
+	if err != nil {
+		defaultLog.WithError(err).WithField("flavorGroup", fgID).WithField("flavor", fID).Errorf("controllers/flavorgroup_controller:RemoveFlavor() %s : Failed to fetch hosts linked to FlavorGroup", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusInternalServerError, errors.Errorf("Error while removing Flavorgroup-Flavor link")
+	}
+
+	// Since the host has been updated, add it to the verify queue
+	err = controller.HTManager.VerifyHostsAsync(linkedHosts, false, false)
+	if err != nil {
+		defaultLog.WithError(err).WithField("flavorGroup", fID).WithField("flavor", fID).Error("controllers/host_controller:RemoveFlavor() Addition of Host to Flavor Verify Queue failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
+	}
+
+	secLog.WithField("flavorGroup", fID).WithField("flavor", fID).Infof("%s: Flavor-FlavorGroup link deleted by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return nil, http.StatusNoContent, nil
+}
+
+// SearchFlavors returns a list of Flavors linked to a particular FlavorGroup
+func (controller FlavorgroupController) SearchFlavors(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/flavorgroup_controller:SearchFlavors() Entering")
+	defer defaultLog.Trace("controllers/flavorgroup_controller:SearchFlavors() Leaving")
+
+	// Get the FlavorGroup, Flavor ID from the URL
+	fgID := uuid.MustParse(mux.Vars(r)["fgID"])
+
+	// initialize so empty list is sent in response
+	searchResults := []hvs.FlavorgroupFlavorLink{}
+
+	// check if FlavorGroup exists
+	_, err := controller.FlavorGroupStore.Retrieve(fgID)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithField("flavorGroup", fgID).WithField("flavorGroup", fgID).WithError(err).Errorf("controllers/flavorgroup_controller:SearchFlavor() %s :  Linked Flavors not found ", commLogMsg.AppRuntimeErr)
+			return hvs.FlavorgroupFlavorLinkCollection{FGFLinks: searchResults}, http.StatusOK, nil
+		} else {
+			defaultLog.WithField("flavorGroup", fgID).WithField("flavorGroup", fgID).WithError(err).Errorf("controllers/flavorgroup_controller:SearchFlavor() %s :  Error removing linked flavors ", commLogMsg.AppRuntimeErr)
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to search FlavorGroupFlavor links"}
+		}
+	}
+
+	searchFlavorList, err := controller.FlavorGroupStore.SearchFlavors(fgID)
+	if err != nil && strings.Contains(err.Error(), commErr.RowsNotFound) {
+		return hvs.FlavorgroupFlavorLinkCollection{FGFLinks: searchResults}, http.StatusOK, nil
+	}
+
+	if err != nil {
+		defaultLog.WithField("flavorGroup", fgID).WithError(err).Errorf("controllers/flavorgroup_controller:SearchFlavors() %s :  Failed to search linked flavors for FlavorGroup", commLogMsg.AppRuntimeErr)
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to search FlavorGroup-Flavor links"}
+	}
+
+	// assemble into collection
+	for _, lf := range searchFlavorList {
+		searchResults = append(searchResults, hvs.FlavorgroupFlavorLink{
+			FlavorGroupID: fgID,
+			FlavorID:      lf,
+		})
+	}
+
+	secLog.WithField("flavorGroup", fgID).Infof("%s: Search Flavor-FlavorGroup links filtered by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return hvs.FlavorgroupFlavorLinkCollection{FGFLinks: searchResults}, http.StatusOK, nil
+}
+
+// RetrieveFlavor retrieves the FlavorGroupFlavor link in the FlavorGroupStore
+func (controller FlavorgroupController) RetrieveFlavor(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/flavorgroup_controller:RetrieveFlavor() Entering")
+	defer defaultLog.Trace("controllers/flavorgroup_controller:RetrieveFlavor() Leaving")
+
+	// Get the FlavorGroup, Flavor ID from the URL
+	fgID := uuid.MustParse(mux.Vars(r)["fgID"])
+	fID := uuid.MustParse(mux.Vars(r)["fID"])
+
+	// Retrieve flavor links
+	fgl, err := controller.FlavorGroupStore.RetrieveFlavor(fgID, fID)
+	if err != nil {
+		if strings.Contains(err.Error(), commErr.RowsNotFound) {
+			defaultLog.WithField("flavorGroup", fID).WithField("flavor", fID).WithError(err).Errorf("controllers/flavorgroup_controller:RetrieveFlavor() %s :  Linked Flavors not found ", commLogMsg.AppRuntimeErr)
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Unable to retrieve linked FlavorGroup-Flavor links"}
+		} else {
+			defaultLog.WithField("flavorGroup", fID).WithField("flavor", fID).WithError(err).Errorf("controllers/flavorgroup_controller:RetrieveFlavor() %s :  Error retrieving linked flavor", commLogMsg.AppRuntimeErr)
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to retrieve linked FlavorGroup-Flavor links"}
+		}
+	}
+
+	secLog.WithField("flavorGroup", fID).WithField("flavor", fID).Infof("%s: Flavor-FlavorGroup link retrieved by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return fgl, http.StatusOK, nil
 }

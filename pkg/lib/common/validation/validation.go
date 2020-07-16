@@ -33,7 +33,7 @@ var (
 	hexStringReg     = regexp.MustCompile("^[a-fA-F0-9]+$")
 	pemEncodedKeyReg = regexp.MustCompile("(^[-a-zA-Z0-9//=+ ]*$)")
 	dateReg          = regexp.MustCompile("[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]")
-	uuidReg          = regexp.MustCompile("^"+UUIDReg+"$")
+	uuidReg          = regexp.MustCompile("^" + UUIDReg + "$")
 	IdReg            = fmt.Sprintf("{id:%s}", UUIDReg)
 	portReg          = regexp.MustCompile("(?:([0-9]{1,5}))")
 	defaultReg       = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")

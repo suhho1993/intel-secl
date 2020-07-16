@@ -22,6 +22,8 @@ type (
 		AddFlavors(uuid.UUID, []uuid.UUID) ([]uuid.UUID, error)
 		RemoveFlavors(uuid.UUID, []uuid.UUID) error
 		SearchFlavors(uuid.UUID) ([]uuid.UUID, error)
+		RetrieveFlavor(uuid.UUID, uuid.UUID) (*hvs.FlavorgroupFlavorLink, error)
+		SearchHostsByFlavorGroup(fgID uuid.UUID) ([]uuid.UUID, error)
 	}
 
 	HostStore interface {

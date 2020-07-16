@@ -183,7 +183,7 @@ func (hs *HostStore) RemoveFlavorgroups(hId uuid.UUID, fgIds []uuid.UUID) error 
 		tx = tx.Where("flavorgroup_id IN (?)", fgIds)
 	}
 
-	if err := tx.Delete(&hostFlavorgroup{}).Error ; err != nil {
+	if err := tx.Delete(&hostFlavorgroup{}).Error; err != nil {
 		return errors.Wrap(err, "postgres/host_store:RemoveFlavorgroups() failed to delete Host Flavorgroup association")
 	}
 	return nil
@@ -214,7 +214,7 @@ func (hs *HostStore) SearchFlavorgroups(hId uuid.UUID) ([]uuid.UUID, error) {
 func (hs *HostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error) {
 	defaultLog.Trace("postgres/host_store:AddTrustCacheFlavors() Entering")
 	defer defaultLog.Trace("postgres/host_store:AddTrustCacheFlavors() Leaving")
-	if len(fIds)  <=0 || hId == uuid.Nil {
+	if len(fIds) <= 0 || hId == uuid.Nil {
 		return nil, errors.New("postgres/host_store:AddTrustCacheFlavors()- invalid input : must have flavorId and hostId to create the trust cache")
 	}
 
@@ -235,11 +235,11 @@ func (hs *HostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uu
 }
 
 // delete from trust cache
-func (hs *HostStore) RemoveTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) (error) {
+func (hs *HostStore) RemoveTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) error {
 	defaultLog.Trace("postgres/host_store:RemoveTrustCacheFlavors() Entering")
 	defer defaultLog.Trace("postgres/host_store:RemoveTrustCacheFlavors() Leaving")
 
-	if (hId == uuid.Nil && len(fIds) <=0) {
+	if hId == uuid.Nil && len(fIds) <= 0 {
 		return errors.New("postgres/flavorgroup_store:RemoveTrustCacheFlavors()- invalid input : must have flavorId or hostId to delete from the trust cache")
 	}
 
@@ -249,19 +249,19 @@ func (hs *HostStore) RemoveTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) (e
 		tx = tx.Where("host_id = ?", hId)
 	}
 
-	if len(fIds) >=1 {
+	if len(fIds) >= 1 {
 		fmt.Println(fIds)
 		tx = tx.Where("flavor_id IN (?)", fIds)
 	}
 
-	if err := tx.Delete(&trustCache{}).Error ; err != nil {
+	if err := tx.Delete(&trustCache{}).Error; err != nil {
 		return errors.Wrap(err, "postgres/host_store:RemoveTrustCacheFlavors() failed to delete from trust cache")
 	}
 	return nil
 }
 
 // RetrieveTrustCacheFlavors function return a list of flavor ID's belonging to a host and flavorgroup
-func (hs *HostStore) RetrieveTrustCacheFlavors(hId, fgId uuid.UUID ) ([]uuid.UUID, error) {
+func (hs *HostStore) RetrieveTrustCacheFlavors(hId, fgId uuid.UUID) ([]uuid.UUID, error) {
 	defaultLog.Trace("postgres/host_store:RetrieveTrustCacheFlavors() Entering")
 	defer defaultLog.Trace("postgres/host_store:RetrieveTrustCacheFlavors() Leaving")
 

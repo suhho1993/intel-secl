@@ -17,8 +17,8 @@ import (
 // MockFlavorgroupStore provides a mocked implementation of interface hvs.FlavorGroupStore
 type MockFlavorgroupStore struct {
 	FlavorgroupStore       map[uuid.UUID]*hvs.FlavorGroup
-	FlavorFlavorGroupStore []*flavorFlavorGroupStore
 	HostFlavorgroupStore   []*hvs.HostFlavorgroup
+	FlavorgroupFlavorStore map[uuid.UUID][]uuid.UUID
 }
 
 // Delete Flavorgroup
@@ -87,28 +87,93 @@ func (store *MockFlavorgroupStore) Create(flavorgroup *hvs.FlavorGroup) (*hvs.Fl
 }
 
 func (store *MockFlavorgroupStore) AddFlavors(fgId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error) {
-
-	for _, fId := range fIds {
-		store.FlavorFlavorGroupStore = append(store.FlavorFlavorGroupStore, &flavorFlavorGroupStore{fId: fId, fgId: fgId})
+	// if fgID map does not exist add it
+	if _, ok := store.FlavorgroupFlavorStore[fgId]; !ok {
+		store.FlavorgroupFlavorStore[fgId] = fIds
+	} else {
+		for _, fid := range fIds {
+			// add flavorid link
+			store.FlavorgroupFlavorStore[fgId] = append(store.FlavorgroupFlavorStore[fgId], fid)
+		}
 	}
-	return fIds, nil
+	return nil, nil
 }
 
-func (store *MockFlavorgroupStore) RemoveFlavors(fgId uuid.UUID, fId []uuid.UUID) error {
-	// TODO: to be implemented
+func (store *MockFlavorgroupStore) RemoveFlavors(fgId uuid.UUID, fIds []uuid.UUID) error {
+	// if fgID map does not exist error out
+	if _, ok := store.FlavorgroupFlavorStore[fgId]; !ok {
+		return errors.New(commErr.RowsNotFound)
+	}
+
+	// let's check if all the flavors are present
+	allFidsFound := true
+	for _, fid := range fIds {
+		foundFid := false
+		for i, f := range store.FlavorgroupFlavorStore[fgId] {
+			if f == fid {
+				foundFid = true
+				store.FlavorgroupFlavorStore[fgId] = append(store.FlavorgroupFlavorStore[fgId][:i], store.FlavorgroupFlavorStore[fgId][i+1:]...)
+			}
+		}
+		if !foundFid {
+			allFidsFound = false
+			break
+		}
+	}
+
+	if !allFidsFound {
+		return errors.New(commErr.RowsNotFound)
+	}
 	return nil
 }
 
 func (store *MockFlavorgroupStore) SearchFlavors(fgId uuid.UUID) ([]uuid.UUID, error) {
-	// TODO: to be implemented
-	return nil, nil
+
+	// if fgID map does not exist error out
+	if _, ok := store.FlavorgroupFlavorStore[fgId]; !ok {
+		return nil, errors.New(commErr.RowsNotFound)
+	}
+
+	if len(store.FlavorgroupFlavorStore[fgId]) == 0 {
+		return nil, errors.New(commErr.RowsNotFound)
+	}
+
+	return store.FlavorgroupFlavorStore[fgId], nil
+}
+
+func (store *MockFlavorgroupStore) RetrieveFlavor(fgId uuid.UUID, fId uuid.UUID) (*hvs.FlavorgroupFlavorLink, error) {
+	// if fgID map does not exist error out
+	if _, ok := store.FlavorgroupFlavorStore[fgId]; !ok {
+		return nil, errors.New(commErr.RowsNotFound)
+	}
+
+	for _, f := range store.FlavorgroupFlavorStore[fgId] {
+		if f == fId {
+			return &hvs.FlavorgroupFlavorLink{FlavorGroupID: fgId, FlavorID: fId}, nil
+		}
+	}
+	return nil, errors.New(commErr.RowsNotFound)
+
+}
+
+// SearchHostsByFlavorGroup is used to fetch a list of hosts which are linked to the provided FlavorGroup
+func (store *MockFlavorgroupStore) SearchHostsByFlavorGroup(fgID uuid.UUID) ([]uuid.UUID, error) {
+	var hIds []uuid.UUID
+	for _, hf := range store.HostFlavorgroupStore {
+		if hf.FlavorgroupId == fgID {
+			hIds = append(hIds, hf.HostId)
+		}
+	}
+	return hIds, nil
 }
 
 // NewFakeFlavorgroupStore provides two dummy data for Flavorgroups
 func NewFakeFlavorgroupStore() *MockFlavorgroupStore {
 	store := &MockFlavorgroupStore{
-		FlavorgroupStore: make(map[uuid.UUID]*hvs.FlavorGroup),
+		FlavorgroupStore:       make(map[uuid.UUID]*hvs.FlavorGroup),
+		FlavorgroupFlavorStore: make(map[uuid.UUID][]uuid.UUID),
 	}
+
 	store.Create(&hvs.FlavorGroup{
 		ID:   uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		Name: "hvs_flavorgroup_test1",

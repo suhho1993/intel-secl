@@ -137,3 +137,17 @@ func (r *FlavorGroup) GetMatchPolicyMaps() (
 	}
 	return fpMap, mtMap, plcyMap
 }
+
+type FlavorgroupFlavorLink struct {
+	FlavorGroupID uuid.UUID `json:"flavorgroup_id"`
+	FlavorID      uuid.UUID `json:"flavor_id"`
+}
+
+type FlavorgroupFlavorLinkCollection struct {
+	FGFLinks []FlavorgroupFlavorLink `json:"flavor_flavorgroup_links,omitempty"`
+}
+
+// FlavorgroupFlavorLinkCriteria is used to hold the request details of a Flavor-FlavorGroup Link Request
+type FlavorgroupFlavorLinkCriteria struct {
+	FlavorID uuid.UUID `json:"flavor_id"`
+}

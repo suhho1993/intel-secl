@@ -113,7 +113,7 @@ func TestVerifier_Verify(t *testing.T) {
 	//Add host_unique flavor to host_unique flavorgroup
 	flavorgroupStore.AddFlavors(uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"), fIds)
 	flavorStore.FlavorgroupStore = flavorgroupStore.FlavorgroupStore
-	flavorStore.FlavorFlavorGroupStore = flavorgroupStore.FlavorFlavorGroupStore
+	flavorStore.FlavorFlavorGroupStore = flavorgroupStore.FlavorgroupFlavorStore
 
 	verifierCertificates := createVerifierCertificates(
 		"../../../lib/verifier/test_data/intel20/PrivacyCA.pem",

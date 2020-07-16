@@ -19,15 +19,9 @@ import (
 
 // MockFlavorStore provides a mocked implementation of interface hvs.FlavorStore
 type MockFlavorStore struct {
-	flavorStore []*hvs.SignedFlavor
-	//TODO use flavorgroupFlavor model
-	FlavorFlavorGroupStore []*flavorFlavorGroupStore
+	flavorStore            []*hvs.SignedFlavor
+	FlavorFlavorGroupStore map[uuid.UUID][]uuid.UUID
 	FlavorgroupStore       map[uuid.UUID]*hvs.FlavorGroup
-}
-
-type flavorFlavorGroupStore struct {
-	fgId uuid.UUID
-	fId  uuid.UUID
 }
 
 var flavor = ` {
@@ -416,26 +410,21 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorVerificationFC) ([]*
 		sfs = sfFiltered
 	} else if criteria.FlavorFC.FlavorgroupID != uuid.Nil ||
 		len(criteria.FlavorFC.FlavorParts) >= 1 || len(criteria.FlavorPartsWithLatest) >= 1 {
-			flavorPartsWithLatestMap := getFlavorPartsWithLatestMap(criteria.FlavorFC.FlavorParts, criteria.FlavorPartsWithLatest)
+		flavorPartsWithLatestMap := getFlavorPartsWithLatestMap(criteria.FlavorFC.FlavorParts, criteria.FlavorPartsWithLatest)
 
-			var fIds []uuid.UUID
-			// Find flavors for given flavor group Id
-			for _, flvrFg := range store.FlavorFlavorGroupStore {
-				if flvrFg.fgId == criteria.FlavorFC.FlavorgroupID{
-					fIds = append(fIds, flvrFg.fId)
-	}
-			}
-			// for each flavors check the flavor part in flavorPartsWithLatestMap is present
-			for _, fId := range fIds{
-				f, _ := store.Retrieve(fId)
-				if f != nil {
-					var flvrPart cf.FlavorPart
-					(&flvrPart).Parse(f.Flavor.Meta.Description.FlavorPart)
-					if f, _ := store.Retrieve(fId); flavorPartsWithLatestMap[flvrPart] == true {
-						sfs = append(sfs, f)
-					}
+		// Find flavors for given flavor group Id
+		var fIds = store.FlavorFlavorGroupStore[criteria.FlavorFC.FlavorgroupID]
+
+		// for each flavors check the flavor part in flavorPartsWithLatestMap is present
+		for _, fId := range fIds {
+			f, _ := store.Retrieve(fId)
+			if f != nil {
+				var flvrPart cf.FlavorPart
+				(&flvrPart).Parse(f.Flavor.Meta.Description.FlavorPart)
+				if f, _ := store.Retrieve(fId); flavorPartsWithLatestMap[flvrPart] == true {
+					sfs = append(sfs, f)
 				}
-
+			}
 		}
 	}
 	return sfs, nil
@@ -455,25 +444,25 @@ func (store *MockFlavorStore) Create(sf *hvs.SignedFlavor) (*hvs.SignedFlavor, e
 func (store *MockFlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error) {
 	flavorParts := make(map[cf.FlavorPart]bool)
 	//find flavors for given hwId and either flavorPart is host_unique or asset_tag
-	var flavors []*hvs.SignedFlavor
-	for _, flavor := range store.flavorStore{
+	var hwMatchedFlavors []*hvs.SignedFlavor
+	for _, flavor := range store.flavorStore {
 		//skip for flavor with not matching hwuuid
-		if flavor.Flavor.Meta.Description.HardwareUUID == nil{
+		if flavor.Flavor.Meta.Description.HardwareUUID == nil {
 			continue
-}
+		}
 		if *flavor.Flavor.Meta.Description.HardwareUUID == hwId && (flavor.Flavor.Meta.Description.FlavorPart == cf.FlavorPartHostUnique.String() ||
-			flavor.Flavor.Meta.Description.FlavorPart == cf.FlavorPartAssetTag.String()){
-			flavors = append(flavors, flavor)
+			flavor.Flavor.Meta.Description.FlavorPart == cf.FlavorPartAssetTag.String()) {
+			hwMatchedFlavors = append(hwMatchedFlavors, flavor)
 		}
 	}
 
-	// find flavorgroups with name host_unique and flavougroup id in FlavorFlavorGroupStore and flavor id in list of obtained flavors
+	// find flavorgroups with name host_unique and flavour group id in FlavorFlavorGroupStore and flavor id in list of obtained flavors
 	var flavorPart cf.FlavorPart
 	fgs := store.FlavorgroupStore
-	for _, flavor := range flavors{
-		for _, flvFlg := range store.FlavorFlavorGroupStore {
-			if _, ok := fgs[flvFlg.fgId]; ok && fgs[flvFlg.fgId].Name == cf.FlavorPartHostUnique.String() {
-				(&flavorPart).Parse(flavor.Flavor.Meta.Description.FlavorPart)
+	for _, flavor := range hwMatchedFlavors {
+		for fg := range store.FlavorFlavorGroupStore {
+			if _, ok := fgs[fg]; ok && fgs[fg].Name == cf.FlavorPartHostUnique.String() {
+				_ = (&flavorPart).Parse(flavor.Flavor.Meta.Description.FlavorPart)
 				flavorParts[flavorPart] = true
 			}
 		}
@@ -485,49 +474,49 @@ func (store *MockFlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUI
 func (store *MockFlavorStore) GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error) {
 	flavorTypesInFlavorGroup := make(map[cf.FlavorPart]bool)
 
-	if flvParts == nil || len(flvParts) == 0{
+	if flvParts == nil || len(flvParts) == 0 {
 		flvParts = cf.GetFlavorTypes()
-}
-	for _, flvrPart := range flvParts{
-		if store.flavorgroupContainsFlavorType(flvrPart, flvGrpId){
-			flavorTypesInFlavorGroup[flvrPart]= true
+	}
+	for _, flvrPart := range flvParts {
+		if store.flavorgroupContainsFlavorType(flvrPart, flvGrpId) {
+			flavorTypesInFlavorGroup[flvrPart] = true
 		}
 	}
 
 	return flavorTypesInFlavorGroup, nil
 }
 
-func(store *MockFlavorStore) flavorgroupContainsFlavorType(flvrPart cf.FlavorPart, fgId uuid.UUID) bool {
+func (store *MockFlavorStore) flavorgroupContainsFlavorType(flvrPart cf.FlavorPart, fgId uuid.UUID) bool {
 	fgStore := store.FlavorgroupStore
 	flvrMap := make(map[uuid.UUID]hvs.SignedFlavor)
 
 	//Get flavors for given flavor part and store it in flvrMap
-	for _, flvr := range store.flavorStore{
-		if flvr.Flavor.Meta.Description.FlavorPart == flvrPart.String(){
+	for _, flvr := range store.flavorStore {
+		if flvr.Flavor.Meta.Description.FlavorPart == flvrPart.String() {
 			flvrMap[flvr.Flavor.Meta.ID] = *flvr
 		}
 	}
 
-	if len(flvrMap) == 0{
+	if len(flvrMap) == 0 {
 		return false
 	}
 
 	found := false
 	//if flavorgroup is found for given flavorgroup id then search through matchpolicies for given flavorpart
 	//if found then get the flavor id and check flavor id exists in flvrMap as key, if key exists then return true.
-	if _, ok := fgStore[fgId]; ok{
+	if _, ok := fgStore[fgId]; ok {
 		policies := fgStore[fgId].MatchPolicies
-		for _, policy := range policies{
-			if policy.FlavorPart == flvrPart{
+		for _, policy := range policies {
+			if policy.FlavorPart == flvrPart {
 				found = true
 				break
 			}
 		}
 
-		if found{
-			for _, flvrFg := range store.FlavorFlavorGroupStore {
-				if fgId == flvrFg.fgId{
-					if _, ok := flvrMap[flvrFg.fId]; ok{
+		if found {
+			if flvrIds, ok := store.FlavorFlavorGroupStore[fgId]; ok {
+				for _, fId := range flvrIds {
+					if _, ok := flvrMap[fId]; ok {
 						return true
 					}
 				}
@@ -551,20 +540,20 @@ func NewMockFlavorStore() *MockFlavorStore {
 	return store
 }
 
-func NewFakeFlavorStoreWithAllFlavors(flavorFilePath string) *MockFlavorStore{
+func NewFakeFlavorStoreWithAllFlavors(flavorFilePath string) *MockFlavorStore {
 	store := &MockFlavorStore{}
 	var signedFlavors []hvs.SignedFlavor
 
 	flavorsJSON, _ := ioutil.ReadFile(flavorFilePath)
 
 	json.Unmarshal(flavorsJSON, &signedFlavors)
-	for _, flvr := range signedFlavors{
+	for _, flvr := range signedFlavors {
 		store.Create(&flvr)
 	}
 	return store
 }
 
-func getFlavorPartsWithLatestMap(flavorParts []cf.FlavorPart, flavorPartsWithLatestMap map[cf.FlavorPart]bool) (map[cf.FlavorPart]bool) {
+func getFlavorPartsWithLatestMap(flavorParts []cf.FlavorPart, flavorPartsWithLatestMap map[cf.FlavorPart]bool) map[cf.FlavorPart]bool {
 	if len(flavorParts) <= 0 {
 		return flavorPartsWithLatestMap
 	}

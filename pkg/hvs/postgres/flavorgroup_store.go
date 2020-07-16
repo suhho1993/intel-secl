@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
@@ -118,7 +119,7 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *models.FlavorGroupFilter
 	return tx
 }
 
-// create flavorgroup-flavor association
+// AddFlavors creates a FlavorGroup-Flavor link
 func (f *FlavorGroupStore) AddFlavors(fgId uuid.UUID, fIds []uuid.UUID) ([]uuid.UUID, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:AddFlavors() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:AddFlavors() Leaving")
@@ -142,12 +143,12 @@ func (f *FlavorGroupStore) AddFlavors(fgId uuid.UUID, fIds []uuid.UUID) ([]uuid.
 	return fIds, nil
 }
 
-// delete flavorgroup-flavor association
+// RemoveFlavors deletes one or more FlavorGroup-Flavor links
 func (f *FlavorGroupStore) RemoveFlavors(fgId uuid.UUID, fIds []uuid.UUID) error {
 	defaultLog.Trace("postgres/flavorgroup_store:RemoveFlavors() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:RemoveFlavors() Leaving")
 
-	if (fgId == uuid.Nil && len(fIds) <=0) {
+	if fgId == uuid.Nil && len(fIds) <= 0 {
 		return errors.New("postgres/flavorgroup_store:RemoveFlavors()- invalid input : must have flavorId or flavorgroupId to delete flavorgroup-flavor association")
 	}
 	tx := f.Store.Db
@@ -155,30 +156,30 @@ func (f *FlavorGroupStore) RemoveFlavors(fgId uuid.UUID, fIds []uuid.UUID) error
 		tx = tx.Where("flavorgroup_id = ?", fgId)
 	}
 
-	if len(fIds) >=1 {
+	if len(fIds) >= 1 {
 		tx = tx.Where("flavor_id IN (?)", fIds)
 	}
 
-	if err := tx.Delete(&flavorgroupFlavor{}).Error ; err != nil {
+	if err := tx.Delete(&flavorgroupFlavor{}).Error; err != nil {
 		return errors.Wrap(err, "postgres/flavorgroup_store:RemoveFlavors() failed to delete flavorgroup-flavor association")
 	}
 	return nil
 }
 
-// search flavorgroup-flavor association
+// SearchFlavors returns a list of flavors linked to flavorgroup
 func (f *FlavorGroupStore) SearchFlavors(fgId uuid.UUID) ([]uuid.UUID, error) {
 	defaultLog.Trace("postgres/flavorgroup_store:SearchFlavors() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:SearchFlavors() Leaving")
 
-	if fgId == uuid.Nil {
-		return nil, errors.New("postgres/flavorgroup_store:SearchFlavors() Flavorgroup ID must be set to search through flavorgroup-flavor association")
+	// filter by flavorgroup id
+	tx := f.Store.Db.Model(&flavorgroupFlavor{})
+	tx = tx.Select("flavor_id").Where("flavorgroup_id = ?", fgId)
+	if tx == nil {
+		return nil, errors.New("postgres/flavorgroup_store:SearchFlavors() Unexpected Error. Could not build" +
+			" a gorm query object in FlavorGroupsFlavors Search function.")
 	}
 
-	dbfgfl := flavorgroupFlavor{
-		FlavorgroupId: fgId,
-	}
-
-	rows, err := f.Store.Db.Model(&flavorgroupFlavor{}).Select("flavor_id").Where(&dbfgfl).Rows()
+	rows, err := tx.Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/flavorgroup_store:SearchFlavors() failed to retrieve records from db")
 	}
@@ -194,4 +195,47 @@ func (f *FlavorGroupStore) SearchFlavors(fgId uuid.UUID) ([]uuid.UUID, error) {
 		flavorIds = append(flavorIds, flavorId)
 	}
 	return flavorIds, nil
+}
+
+// RetrieveFlavor retrieves a single FlavorGroup-Flavor link
+func (f *FlavorGroupStore) RetrieveFlavor(fgId uuid.UUID, fId uuid.UUID) (*hvs.FlavorgroupFlavorLink, error) {
+	defaultLog.Trace("postgres/flavorgroup_store:RetrieveFlavor() Entering")
+	defer defaultLog.Trace("postgres/flavorgroup_store:RetrieveFlavor() Leaving")
+
+	var result hvs.FlavorgroupFlavorLink
+
+	tx := f.Store.Db.Model(&flavorgroupFlavor{}).Where("flavorgroup_id = ? and flavor_id = ?", fgId, fId).First(&result)
+	if tx == nil {
+		return nil, errors.New("postgres/flavorgroup_store:RetrieveFlavor() Unexpected Error. Could not build" +
+			" a gorm query object in FlavorGroupsFlavors RetrieveFlavor function.")
+	}
+
+	if &result == nil {
+		return nil, errors.New(commErr.RowsNotFound)
+	}
+
+	return &result, nil
+}
+
+// SearchHostsByFlavorGroup is used to fetch a list of hosts which are linked to the provided FlavorGroup
+func (f *FlavorGroupStore) SearchHostsByFlavorGroup(fgID uuid.UUID) ([]uuid.UUID, error) {
+	defaultLog.Trace("postgres/flavorgroup_store:SearchHostsByFlavorGroups() Entering")
+	defer defaultLog.Trace("postgres/flavorgroup_store:SearchHostsByFlavorGroups() Leaving")
+
+	rows, err := f.Store.Db.Model(&hostFlavorgroup{}).Select("host_id").Where(&hostFlavorgroup{FlavorgroupId: fgID}).Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:SearchHostsByFlavorGroup() failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	var hIDs []uuid.UUID
+	for rows.Next() {
+		var hId uuid.UUID
+		if err := rows.Scan(&hId); err != nil {
+			return nil, errors.Wrap(err, "postgres/flavorgroup_store:SearchHostsByFlavorGroup() failed to scan record")
+		}
+		hIDs = append(hIDs, hId)
+	}
+
+	return hIDs, nil
 }

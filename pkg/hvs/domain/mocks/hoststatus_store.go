@@ -222,27 +222,27 @@ func NewFakeHostStatusStore() *MockHostStatusStore {
 //--------------------BADMOCKSTATUSRESPONSES----------------
 // Create inserts a HostStatus
 func (store *BadMockHostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) {
-	return nil, commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+	return nil, &commErr.ResourceError{Message: "Error accessing HostStatusStore"}
 }
 
 // Retrieve returns a single HostStatus record from the store
 func (store *BadMockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, error) {
-	return nil, commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+	return nil, &commErr.ResourceError{Message: "Error accessing HostStatusStore"}
 }
 
 // Updates updates an existing HostStatus
 func (store *BadMockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
-	return commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+	return &commErr.ResourceError{Message: "Error accessing HostStatusStore"}
 }
 
 // Delete deletes HostStatus from the store per hostStatusId
 func (store *BadMockHostStatusStore) Delete(hostStatusId uuid.UUID) error {
-	return commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+	return &commErr.ResourceError{Message: "Error accessing HostStatusStore"}
 }
 
 // Search returns a filtered list of HostStatuses per the provided HostStatusFilterCriteria
 func (store *BadMockHostStatusStore) Search(criteria *models.HostStatusFilterCriteria) ([]hvs.HostStatus, error) {
-	return nil, commErr.ResourceError{Message: "Error accessing HostStatusStore"}
+	return nil, &commErr.ResourceError{Message: "Error accessing HostStatusStore"}
 }
 
 // FindHostIdsByKeyValue returns host ids for records having key value pair in HostInfo
