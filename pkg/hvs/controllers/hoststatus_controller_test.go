@@ -351,6 +351,24 @@ var _ = Describe("HostStatusController", func() {
 				Expect(hsCollection).To(BeNil())
 			})
 		})
+
+		Context("When searching with filter latestPerHost=false", func() {
+			It("Should return list of Host Status records from HostStatus Audit Table", func() {
+				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostStatusController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/host-status?latestPerHost=true", nil)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+
+				var hsCollection *hvs.HostStatusCollection
+				err = json.Unmarshal(w.Body.Bytes(), &hsCollection)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(hsCollection.HostStatuses).ToNot(BeNil())
+
+				// TODO: validate that multiple entries are present for each host
+			})
+		})
 	})
 
 	// Specs for HTTP Get to "/host-status/{hoststatus_id}"

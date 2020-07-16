@@ -123,12 +123,12 @@ type (
 	//TODO add triggers
 	PGAuditLogData models.AuditTableData
 	auditLogEntry  struct {
-		ID         uuid.UUID      `gorm:"id,omitempty,primary_key;type: uuid; index:audit_log_entry_pkey"`
-		EntityID   uuid.UUID      `gorm:"entity_id; type uuid"`
-		EntityType string         `gorm:"entity_type;varchar(255)"`
-		CreatedAt  time.Time      `gorm:"created; not null"`
-		Action     string         `gorm:"action;varchar(50)"`
-		Data       PGAuditLogData `gorm:"data" sql:"type:JSONB"`
+		ID         uuid.UUID      `gorm:"primary_key;type:uuid"`
+		EntityID   uuid.UUID      `gorm:"type:uuid"`
+		EntityType string         `gorm:"type:varchar(255)"`
+		CreatedAt  time.Time      `gorm:"column:created; not null"`
+		Action     string         `gorm:"type:varchar(50)"`
+		Data       PGAuditLogData `sql:"type:JSONB"`
 	}
 
 	tagCertificate struct {
