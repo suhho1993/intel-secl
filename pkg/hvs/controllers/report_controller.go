@@ -205,7 +205,9 @@ func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Req
 	var samlCollection []hvs.Saml
 	for _, hvsReport := range hvsReportCollection{
 		samlStruct, err = hvsReport.GetSaml()
-		defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml()")
+		if err != nil {
+			defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml() Error while retrieving saml from report")
+		}
 		samlCollection = append(samlCollection, samlStruct)
 	}
 	secLog.Infof("%s: SamlReports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)

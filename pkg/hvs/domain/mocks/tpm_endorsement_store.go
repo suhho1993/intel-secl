@@ -5,24 +5,28 @@
 package mocks
 
 import (
+	"crypto"
+	"encoding/base64"
 	uuid "github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	hvs "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
-	"strconv"
 	"strings"
 )
 
 // MockTpmEndorsementStore is a mock of TpmEndorsementStore interface
 type MockTpmEndorsementStore struct {
-	tpmEndorsementStores []*hvs.TpmEndorsement
+	tpmEndorsementStores map[uuid.UUID]*hvs.TpmEndorsement
 }
 
 // Create mocks base method
-func (m *MockTpmEndorsementStore) Create(arg0 *hvs.TpmEndorsement) (*hvs.TpmEndorsement, error) {
-	m.tpmEndorsementStores = append(m.tpmEndorsementStores, arg0)
-	return arg0, nil
+func (m *MockTpmEndorsementStore) Create(te *hvs.TpmEndorsement) (*hvs.TpmEndorsement, error) {
+	cert, _ := base64.StdEncoding.DecodeString(te.Certificate)
+	te.CertificateDigest, _ = crypt.GetCertHashFromPemInHex(cert, crypto.SHA384)
+	m.tpmEndorsementStores[te.ID] = te
+	return te, nil
 }
 
 func (m *MockTpmEndorsementStore) Update(arg0 *hvs.TpmEndorsement) (*hvs.TpmEndorsement, error) {
@@ -31,74 +35,85 @@ func (m *MockTpmEndorsementStore) Update(arg0 *hvs.TpmEndorsement) (*hvs.TpmEndo
 
 // Retrieve mocks base method
 func (m *MockTpmEndorsementStore) Retrieve(id uuid.UUID) (*hvs.TpmEndorsement, error) {
-	for _, te := range m.tpmEndorsementStores {
-		if te.ID == id {
-			return  te, nil
-		}
+	if _, ok := m.tpmEndorsementStores[id]; ok {
+		return m.tpmEndorsementStores[id], nil
 	}
 
 	return nil, errors.New(commErr.RowsNotFound)
 }
 
-
 // Search mocks base method
 func (m *MockTpmEndorsementStore) Search(teFilter *models.TpmEndorsementFilterCriteria) (*hvs.TpmEndorsementCollection, error) {
+	var tpmEndorsements []*hvs.TpmEndorsement
 	if teFilter == nil {
-		return &hvs.TpmEndorsementCollection{TpmEndorsement: m.tpmEndorsementStores}, nil
+		for _, te := range m.tpmEndorsementStores {
+			tpmEndorsements = append(tpmEndorsements, te)
+		}
+		return &hvs.TpmEndorsementCollection{TpmEndorsement: tpmEndorsements}, nil
 	}
-	tpmEndorsements := []*hvs.TpmEndorsement{}
-	if teFilter.Id != "" {
-		id := uuid.MustParse(teFilter.Id)
-		te, _ := m.Retrieve(id)
+	for id, te := range m.tpmEndorsementStores {
+		if te.Revoked != teFilter.RevokedEqualTo {
+			delete(m.tpmEndorsementStores, id)
+		}
+	}
+	if teFilter.Id != uuid.Nil {
+		te, _ := m.Retrieve(teFilter.Id)
+		if _, ok := m.tpmEndorsementStores[te.ID]; !ok {
+			delete(m.tpmEndorsementStores, teFilter.Id)
+		}
+	}
+	if teFilter.IssuerEqualTo != "" {
+		for id, te := range m.tpmEndorsementStores {
+			if te.Issuer != teFilter.IssuerEqualTo {
+				delete(m.tpmEndorsementStores, id)
+			}
+		}
+	}
+	if teFilter.CommentContains != "" {
+		for id, te := range m.tpmEndorsementStores {
+			if !strings.Contains(te.Comment, teFilter.CommentContains) {
+				delete(m.tpmEndorsementStores, id)
+			}
+		}
+	}
+	if teFilter.CommentEqualTo != "" {
+		for id, te := range m.tpmEndorsementStores {
+			if te.Comment != teFilter.CommentEqualTo {
+				delete(m.tpmEndorsementStores, id)
+			}
+		}
+	}
+	if teFilter.HardwareUuidEqualTo != uuid.Nil {
+		for id, te := range m.tpmEndorsementStores {
+			if te.HardwareUUID != teFilter.HardwareUuidEqualTo {
+				delete(m.tpmEndorsementStores, id)
+			}
+		}
+	}
+	if teFilter.IssuerContains != "" {
+		for id, te := range m.tpmEndorsementStores {
+			if !strings.Contains(te.Issuer, teFilter.IssuerContains) {
+				delete(m.tpmEndorsementStores, id)
+			}
+		}
+	}
+	if teFilter.CertificateDigestEqualTo != "" {
+		for id, te := range m.tpmEndorsementStores {
+			if !strings.Contains(te.CertificateDigest, teFilter.CertificateDigestEqualTo) {
+				delete(m.tpmEndorsementStores, id)
+			}
+		}
+	}
+	for _, te := range m.tpmEndorsementStores {
 		tpmEndorsements = append(tpmEndorsements, te)
-	} else if teFilter.IssuerEqualTo != "" {
-		for _, te := range m.tpmEndorsementStores {
-			if te.Issuer == teFilter.IssuerEqualTo {
-				tpmEndorsements = append(tpmEndorsements, te)
-			}
-		}
-	} else if teFilter.CommentContains != "" {
-		for _, te := range m.tpmEndorsementStores {
-			if strings.Contains(te.Comment, teFilter.CommentContains) {
-				tpmEndorsements = append(tpmEndorsements, te)
-			}
-		}
-	} else if teFilter.CommentEqualTo != "" {
-		for _, te := range m.tpmEndorsementStores {
-			if te.Comment == teFilter.CommentEqualTo {
-				tpmEndorsements = append(tpmEndorsements, te)
-			}
-		}
-	} else if teFilter.RevokedEqualTo != "" {
-		for _, te := range m.tpmEndorsementStores {
-			revoked,_  := strconv.ParseBool(teFilter.RevokedEqualTo)
-			if te.Revoked == revoked {
-				tpmEndorsements = append(tpmEndorsements, te)
-			}
-		}
-	} else if teFilter.HardwareUuidEqualTo != "" {
-		hwUuid := uuid.MustParse(teFilter.HardwareUuidEqualTo)
-		for _, te := range m.tpmEndorsementStores {
-			if te.HardwareUUID == hwUuid {
-				tpmEndorsements = append(tpmEndorsements, te)
-			}
-		}
-	} else if teFilter.IssuerContains != "" {
-		for _, te := range m.tpmEndorsementStores {
-			if strings.Contains(te.Issuer, teFilter.IssuerContains) {
-				tpmEndorsements = append(tpmEndorsements, te)
-			}
-		}
 	}
-
-	return  &hvs.TpmEndorsementCollection{TpmEndorsement: tpmEndorsements}, nil
+	return &hvs.TpmEndorsementCollection{TpmEndorsement: tpmEndorsements}, nil
 }
-
 
 // Delete mocks base method
 func (m *MockTpmEndorsementStore) Delete(id uuid.UUID) error {
 	for i, te := range m.tpmEndorsementStores {
-		if m.tpmEndorsementStores[i] == nil{
+		if m.tpmEndorsementStores[i] == nil {
 			continue
 		}
 		if te.ID == id {
@@ -109,15 +124,16 @@ func (m *MockTpmEndorsementStore) Delete(id uuid.UUID) error {
 	return errors.New(commErr.RowsNotFound)
 }
 
-func NewFakeTpmEndorsementStore () *MockTpmEndorsementStore{
+func NewFakeTpmEndorsementStore() *MockTpmEndorsementStore {
 	store := &MockTpmEndorsementStore{}
+	store.tpmEndorsementStores = make(map[uuid.UUID]*hvs.TpmEndorsement)
 	store.Create(&hvs.TpmEndorsement{
 		ID:           uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		HardwareUUID: uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e3"),
 		Issuer:       "CN=Infineon OPTIGA(TM) RSA Manufacturing CA 007,OU=OPTIGA(TM) TPM2.0,O=Infineon Technologies AG,C=DE",
-		Comment:      "",
+		Comment:      "registered by trust agent",
 		Revoked:      false,
-		Certificate:  "30820122300d06092a864886f70d01010105000382010f003082010a0282010100919eb68d44dfb84a08519c0d8eca57aa37798286769446b42090bad2375dd78e44e7c8dc85400bae3b6a923b6fbe7eeeaf17ac1a95f681d82ca1dc\n33fc4ac389b8f3f73c5b7a91c1096b99729fc6099eb8a11b19c795a88dafacc1e2a381a10d16fea697880cdf270ce10df30ed377e88e48be5004db1e2c2b52f04d9f292be21f760b35e6591bf252158a41e11ee257f15a1bf297d85211fea\n0a183b12cafe04bfbee760720fce609af6387fa7df584b528aba980278670b86e55376f09757676ed15358814552045007f440959d774dc6a9aaf47a3cd94d29f5ef3caf229883456947071b76843305843d5ebed3564cde1e50b0b720ecfef982eae64f94b4f0203010001",
+		Certificate:  "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQzRENDQTRHZ0F3SUJBZ0lMQUxmVWV3WEJNTEpxOW9Rd0NnWUlLb1pJemowRUF3SXdWVEZUTUI4R0ExVUUKQXhNWVRuVjJiM1J2YmlCVVVFMGdVbTl2ZENCRFFTQXhNVEV3TUNVR0ExVUVDaE1lVG5WMmIzUnZiaUJVWldObwpibTlzYjJkNUlFTnZjbkJ2Y21GMGFXOXVNQWtHQTFVRUJoTUNWRmN3SGhjTk1UZ3dORE13TURrd09UUXlXaGNOCk16Z3dOREkyTURrd09UUXlXakFBTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUEKc0xWRjhQVFJlZWczd1g3LzhpYTZtenNIbXo2dVUyZ05BVFlEZkQrQkQxMzhvWm9Fb2tmdnlORXdtY2dsNDk0NgpBQkJFaTdlcXVPM1hnN0d6b0JiWmtvMmc0bkw4QjdiVFVHbGRNTFIvRDJDS3htUktuTjZhVE5wMGsrUFRrN0tnCi9RL3JkYzNBTnhzZVc0ejVNUEtWYWlzMXBDZmxITHJmYXRyVEt2Zm9iM1dyaEZwVHp2eFA0TjROZHJRMFFXc2UKenJlUmk2UndibUt5dVVUQ1VyeXQ4S052UTYram5SMGpLN3pZVzZmSGJ3d0hXTkhNZkdQL0UzQ1NWcmRqZS9ncQpVWHlXS1BSSUJMY091WUtBODJVUG9COWRQKy9sYzVLN3lhVFJkUlJ2UjB4MDdYcU9SdmE0WTBmK0s2dUR4a2ZzCjl1aU9GeWpjblcvTC9FL2dNeXljNFFJREFRQUJvNElCd0RDQ0Fid3dTZ1lEVlIwUkFRSC9CRUF3UHFROE1Eb3gKT0RBVUJnVm5nUVVDQVJNTGFXUTZORVUxTkRRek1EQXdFQVlGWjRFRkFnSVRCMDVRUTFRMmVIZ3dEZ1lGWjRFRgpBZ01UQldsa09qRXpNQXdHQTFVZEV3RUIvd1FDTUFBd0VBWURWUjBsQkFrd0J3WUZaNEVGQ0FFd0h3WURWUjBqCkJCZ3dGb0FVRlpIVXR1cjVqUUVFaGt0cEE2U04wQUpnZDlNd0RnWURWUjBQQVFIL0JBUURBZ1VnTUhBR0ExVWQKQ1FScE1HY3dGZ1lGWjRFRkFoQXhEVEFMREFNeUxqQUNBUUFDQVhRd1RRWUZaNEVGQWhJeFJEQkNBZ0VBQVFILwpvQU1LQVFHaEF3b0JBS0lEQ2dFQW94VXdFeFlETXk0eENnRUVDZ0VCQVFIL29BTUtBUUtrRHpBTkZnVXhOREF0Ck1nb0JBZ0VCQUtVREFRRUFNRUVHQTFVZElBUTZNRGd3TmdZRVZSMGdBREF1TUN3R0NDc0dBUVVGQndJQkZpQm8KZEhSd09pOHZkM2QzTG01MWRtOTBiMjR1WTI5dEwzTmxZM1Z5YVhSNUx6Qm9CZ2dyQmdFRkJRY0JBUVJjTUZvdwpXQVlJS3dZQkJRVUhNQUtHVEdoMGRIQTZMeTkzZDNjdWJuVjJiM1J2Ymk1amIyMHZjMlZqZFhKcGRIa3ZUbFJECkxWUlFUUzFGU3kxRFpYSjBMMDUxZG05MGIyNGdWRkJOSUZKdmIzUWdRMEVnTVRFeE1DNWpaWEl3Q2dZSUtvWkkKemowRUF3SURTUUF3UmdJaEFJWlc1dWI0N2M1dHc3SkZoTUg3WDlMQllLdWs1d1BZbVY4Tk1MUHozVzJxQWlFQQpnbzloZTl0VTUwNGVhdEtudk9tTDk3RG5LUGxjOHFUZ2V2MHY5ZHgxd000PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==",
 	})
 	store.Create(&hvs.TpmEndorsement{
 		ID:           uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e4"),
@@ -125,7 +141,7 @@ func NewFakeTpmEndorsementStore () *MockTpmEndorsementStore{
 		Issuer:       "CN=Infineon OPTIGA(TM) RSA Manufacturing CA 007,OU=OPTIGA(TM) TPM2.0,O=Infineon Technologies AG,C=DE",
 		Comment:      "registered by trust agent",
 		Revoked:      true,
-		Certificate:  "30820122300d06092a864886f70d01010105000382010f003082010a0282010100919eb68d44dfb84a08519c0d8eca57aa37798286769446b42090bad2375dd78e44e7c8dc85400bae3b6a923b6fbe7eeeaf17ac1a95f681d82ca1dc\n33fc4ac389b8f3f73c5b7a91c1096b99729fc6099eb8a11b19c795a88dafacc1e2a381a10d16fea697880cdf270ce10df30ed377e88e48be5004db1e2c2b52f04d9f292be21f760b35e6591bf252158a41e11ee257f15a1bf297d85211fea\n0a183b12cafe04bfbee760720fce609af6387fa7df584b528aba980278670b86e55376f09757676ed15358814552045007f440959d774dc6a9aaf47a3cd94d29f5ef3caf229883456947071b76843305843d5ebed3564cde1e50b0b720ecfef982eae64f94b4f0203010001",
+		Certificate:  "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVuRENDQTRTZ0F3SUJBZ0lFS3FrTU1UQU5CZ2txaGtpRzl3MEJBUXNGQURDQmd6RUxNQWtHQTFVRUJoTUMKUkVVeElUQWZCZ05WQkFvTUdFbHVabWx1Wlc5dUlGUmxZMmh1YjJ4dloybGxjeUJCUnpFYU1CZ0dBMVVFQ3d3UgpUMUJVU1VkQktGUk5LU0JVVUUweUxqQXhOVEF6QmdOVkJBTU1MRWx1Wm1sdVpXOXVJRTlRVkVsSFFTaFVUU2tnClVsTkJJRTFoYm5WbVlXTjBkWEpwYm1jZ1EwRWdNREEzTUI0WERURTFNVEl5TWpFek1EWTBORm9YRFRNd01USXkKTWpFek1EWTBORm93QURDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBSkdldG8xRQozN2hLQ0ZHY0RZN0tWNm8zZVlLR2RwUkd0Q0NRdXRJM1hkZU9ST2ZJM0lWQUM2NDdhcEk3Yjc1KzdxOFhyQnFWCjlvSFlMS0hjTS94S3c0bTQ4L2M4VzNxUndRbHJtWEtmeGdtZXVLRWJHY2VWcUkydnJNSGlvNEdoRFJiK3BwZUkKRE44bkRPRU44dzdUZCtpT1NMNVFCTnNlTEN0UzhFMmZLU3ZpSDNZTE5lWlpHL0pTRllwQjRSN2lWL0ZhRy9LWAoyRklSL3FDaGc3RXNyK0JMKys1MkJ5RDg1Z212WTRmNmZmV0V0U2lycVlBbmhuQzRibFUzYndsMWRuYnRGVFdJCkZGVWdSUUIvUkFsWjEzVGNhcHF2UjZQTmxOS2ZYdlBLOGltSU5GYVVjSEczYUVNd1dFUFY2KzAxWk0zaDVRc0wKY2c3UDc1Z3VybVQ1UzA4Q0F3RUFBYU9DQVpnd2dnR1VNRnNHQ0NzR0FRVUZCd0VCQkU4d1RUQkxCZ2dyQmdFRgpCUWN3QW9ZL2FIUjBjRG92TDNCcmFTNXBibVpwYm1WdmJpNWpiMjB2VDNCMGFXZGhVbk5oVFdaeVEwRXdNRGN2ClQzQjBhV2RoVW5OaFRXWnlRMEV3TURjdVkzSjBNQTRHQTFVZER3RUIvd1FFQXdJQUlEQllCZ05WSFJFQkFmOEUKVGpCTXBFb3dTREVXTUJRR0JXZUJCUUlCREF0cFpEbzBPVFEyTlRnd01ERWFNQmdHQldlQkJRSUNEQTlUVEVJZwpPVFkzTUNCVVVFMHlMakF4RWpBUUJnVm5nUVVDQXd3SGFXUTZNRGN5T0RBTUJnTlZIUk1CQWY4RUFqQUFNRkFHCkExVWRId1JKTUVjd1JhQkRvRUdHUDJoMGRIQTZMeTl3YTJrdWFXNW1hVzVsYjI0dVkyOXRMMDl3ZEdsbllWSnoKWVUxbWNrTkJNREEzTDA5d2RHbG5ZVkp6WVUxbWNrTkJNREEzTG1OeWJEQVZCZ05WSFNBRURqQU1NQW9HQ0NxQwpGQUJFQVJRQk1COEdBMVVkSXdRWU1CYUFGSng5OWFrY1BVbTc1emVOU3JvUy80NTRvdGRjTUJBR0ExVWRKUVFKCk1BY0dCV2VCQlFnQk1DRUdBMVVkQ1FRYU1CZ3dGZ1lGWjRFRkFoQXhEVEFMREFNeUxqQUNBUUFDQVhRd0RRWUoKS29aSWh2Y05BUUVMQlFBRGdnRUJBQVRhSUk2VzRnOVkxMG53Z2FINzZOeE9SSWc5RWRPOU56b0RwalcrOUYvOApkdUZNKzZOMFF1Ly95QjZxcFI3WnlLWUJPZEY1ZUpMc1dGWXBqMmFrUlpoS3VpeEg2eGpSM1hHYXB2aW1XNXBUClEwNTUreGVGNWFTL3M5M1dhL2xKVk0xSnpHc1prK3ZicU13TmxJMTJzWDZ3Y2FTdElNa3VBeUtHclJkdGFmUzgKd29FS0JiNDFiVGQ3WThCdGI0azdnTURvTVUxZWtxWlNOcFQvZlI1RmYxb2IvU2d1OGx3RUNobkZqV0YyMk9qUApsZSsrbnBVeVJOby80YWE2RUM3K2hCVml0Q2lxQTlFSVBCK0RyOFVKNVpMZ09icGtMT21US25sQmE5SEw2ZnBuCnU3RUJoQi9Qb21MU29IdGhaVGpkcWw5N01yUFErWFg3T0ZyTWRVWmR6TzA9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
 	})
 	return store
 }

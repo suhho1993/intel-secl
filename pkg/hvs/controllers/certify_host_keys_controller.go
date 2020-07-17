@@ -10,45 +10,49 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
+	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca"
 	model "github.com/intel-secl/intel-secl/v3/pkg/model/wlagent"
 	"github.com/pkg/errors"
 	"strings"
 
 	"encoding/json"
-	"encoding/pem"
 	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
-	"io/ioutil"
-
 	"net/http"
 )
 
-
 type CertifyHostKeysController struct {
-	Store *PrivacyCAFileStore
+	CertStore *models.CertificatesStore
 }
 
-func NewCertifyHostKeysController(store *PrivacyCAFileStore) *CertifyHostKeysController  {
-	return &CertifyHostKeysController{Store: store}
+func NewCertifyHostKeysController(certStore *models.CertificatesStore) *CertifyHostKeysController  {
+	// CertStore should have an entry for Privacyca key
+	pcaKey, pcaCerts, err := certStore.GetKeyAndCertificates(models.CaCertTypesPrivacyCa.String())
+	if err != nil || pcaKey == nil || pcaCerts == nil{
+		defaultLog.Errorf("Error while retrieving certificate and key for certType %s", models.CaCertTypesPrivacyCa.String())
+		return nil
+	}
+	return &CertifyHostKeysController{CertStore: certStore}
 }
 
 func (certifyHostKeysController *CertifyHostKeysController) CertifySigningKey(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
-	defaultLog.Trace("controllers/certify_host_keys_controller:Certify_host_keys() Entering")
-	defer defaultLog.Trace("controllers/certify_host_keys_controller:Certify_host_keys() Leaving")
+	defaultLog.Trace("controllers/certify_host_keys_controller:CertifySigningKey() Entering")
+	defer defaultLog.Trace("controllers/certify_host_keys_controller:CertifySigningKey() Leaving")
 	var regKeyInfo model.RegisterKeyInfo
 	dec := json.NewDecoder(r.Body)
 	defaultLog.Info(dec)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&regKeyInfo); err != nil {
-		defaultLog.WithError(err).Error("controllers/certify_host_keys_controller:Certify_host_keys() Error while decoding request body")
+		secLog.WithError(err).Errorf("controllers/certify_host_keys_controller:CertifySigningKey() %s Error while decoding request body", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while decoding request body"}
 	}
 
 	certificate, err, httpStatus := certifyHostKeysController.generateCertificate(consts.HostSigningKeyCertificateCN, regKeyInfo)
 	if err != nil{
-		defaultLog.WithError(err).Error("controllers/certify_host_keys_controller:Certify_host_keys() Error while certifying Signing Key")
+		defaultLog.WithError(err).Error("controllers/certify_host_keys_controller:CertifySigningKey() Error while certifying Signing Key")
 		return nil, httpStatus, &commErr.ResourceError{Message: "Error while certifying Signing Key"}
 	}
 
@@ -67,7 +71,7 @@ func (certifyHostKeysController *CertifyHostKeysController) CertifyBindingKey(w 
 	defaultLog.Info(dec)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&regKeyInfo); err != nil {
-		defaultLog.WithError(err).Error("controllers/certify_host_keys_controller:CertifyBindingKey() Error while decoding request body")
+		secLog.WithError(err).Errorf("controllers/certify_host_keys_controller:CertifyBindingKey() %s Error while decoding request body", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Error while decoding request body"}
 	}
 
@@ -118,7 +122,6 @@ func (certifyHostKeysController *CertifyHostKeysController) generateCertificate(
 		return nil, errors.Wrap(err, "controllers/certify_host_keys_controller:generateCertificate() Error while retrieving public key modulus"), http.StatusBadRequest
 	}
 
-	//TODO add support for windows when needed
 	status, err:= certifyKey20.IsCertifiedKeySignatureValid(aikCert)
 	if err != nil || !status{
 		return nil, errors.Wrap(err, "controllers/certify_host_keys_controller:generateCertificate() Signature verification failed"), http.StatusBadRequest
@@ -136,33 +139,9 @@ func (certifyHostKeysController *CertifyHostKeysController) generateCertificate(
 		return nil, errors.Wrap(err,"TPM Key Name specified does not match name digest in the TCG binding certificate"), http.StatusBadRequest
 	}
 	defaultLog.Info("controllers/certify_host_keys_controller:generateCertificate() TpmNameDigest validated successfully")
-
-	caCertPem, err := ioutil.ReadFile(certifyHostKeysController.Store.certPath)
-	if err != nil {
-		return nil, errors.Wrap(err,"controllers/certify_host_keys_controller:generateCertificate() TPM Key Name specified does not match name digest in the TCG binding certificate"), http.StatusBadRequest
-	}
-	block, _ := pem.Decode(caCertPem)
-	if block == nil {
-		return nil, errors.New("controllers/certify_host_keys_controller:generateCertificate() Failed to parse certificate PEM"), http.StatusInternalServerError
-	}
-	caCert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, errors.Wrap(err,"controllers/certify_host_keys_controller:generateCertificate() TPM Key Name specified does not match name digest in the TCG binding certificate"), http.StatusBadRequest
-	}
-	privacyCAKeyBytes, err := ioutil.ReadFile(certifyHostKeysController.Store.keyPath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "controllers/certify_host_keys_controller:generateCertificate() Unable to read %s", certifyHostKeysController.Store.keyPath), http.StatusInternalServerError
-	}
-	block, _ = pem.Decode(privacyCAKeyBytes)
-	if block == nil {
-		return nil, errors.New("controllers/certify_host_keys_controller:generateCertificate() Failed to parse certificate PEM"), http.StatusInternalServerError
-	}
-	caKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil{
-		return nil, errors.Wrap(err, "controllers/certify_host_keys_controller:generateCertificate() Unable to parse privacyca key"), http.StatusInternalServerError
-	}
-
-	certificate, err := certifyKey20.CertifyKey(caCert, rsaPubKey, caKey.(*rsa.PrivateKey), commName)
+	pcaKey := (*certifyHostKeysController.CertStore)[models.CaCertTypesPrivacyCa.String()].Key
+	pcaCert := (*certifyHostKeysController.CertStore)[models.CaCertTypesPrivacyCa.String()].Certificates
+	certificate, err := certifyKey20.CertifyKey(&pcaCert[0], rsaPubKey, pcaKey.(*rsa.PrivateKey), commName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "controllers/certify_host_keys_controller:generateCertificate() Error while Certifying key"), http.StatusInternalServerError
 	}
@@ -174,13 +153,8 @@ func (certifyHostKeysController *CertifyHostKeysController) isAikCertifiedByPriv
 	defaultLog.Trace("controllers/certify_host_keys_controller:isAikCertifiedByPrivacyCA() Entering")
 	defer defaultLog.Trace("controllers/certify_host_keys_controller:isAikCertifiedByPrivacyCA() Leaving")
 
-	privacyCAPem, err := ioutil.ReadFile(certifyHostKeysController.Store.certPath)
-	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/certify_host_keys_controller:isAikCertifiedByPrivacyCA() Error while reading %s", certifyHostKeysController.Store.certPath)
-		return false
-	}
-
-	pubKey, err := crypt.GetPublicKeyFromCertPem(privacyCAPem)
+	pcaCert := (*certifyHostKeysController.CertStore)[models.CaCertTypesPrivacyCa.String()].Certificates
+	pubKey, err := crypt.GetPublicKeyFromCert(&pcaCert[0])
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/certify_host_keys_controller:isAikCertifiedByPrivacyCA() Could not get Public key from privacy ca certificate")
 		return false

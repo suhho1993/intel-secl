@@ -37,13 +37,13 @@ func (ca CaCertificatesController) Create(w http.ResponseWriter, r *http.Request
 
 	err := dec.Decode(&caCertificate)
 	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/ca_certificates_controller:Create() %s :  Failed to decode request body as CaCertificates", commLogMsg.AppRuntimeErr)
+		secLog.WithError(err).Errorf("controllers/ca_certificates_controller:Create() %s :  Failed to decode request body as CaCertificates", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	certificate, err := validateCaCertificates(caCertificate)
 	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/ca_certificates_controller:Create() %s : Validation failed for certificate", commLogMsg.AppRuntimeErr)
+		secLog.WithError(err).Errorf("controllers/ca_certificates_controller:Create() %s : Validation failed for certificate", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 

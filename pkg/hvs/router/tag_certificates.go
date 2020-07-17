@@ -52,23 +52,23 @@ func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, cert
 
 	tagCertificateController := controllers.NewTagCertificateController(tcConfig, *certStore, tagCertificateStore, hostStore,
 		flavorStore, flavorGroupStore, hcp)
+	if tagCertificateController != nil {
+		tagCertificateIdExpr := fmt.Sprintf("%s%s", TagCertificateEndpointPath+"/", validation.IdReg)
+		router.Handle(TagCertificateEndpointPath,
+			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Create),
+				[]string{constants.TagCertificateCreate}))).Methods("POST")
 
-	tagCertificateIdExpr := fmt.Sprintf("%s%s", TagCertificateEndpointPath+"/", validation.IdReg)
-	router.Handle(TagCertificateEndpointPath,
-		ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Create),
-			[]string{constants.TagCertificateCreate}))).Methods("POST")
+		router.Handle(TagCertificateEndpointPath,
+			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Search),
+				[]string{constants.TagCertificateSearch}))).Methods("GET")
 
-	router.Handle(TagCertificateEndpointPath,
-		ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Search),
-			[]string{constants.TagCertificateSearch}))).Methods("GET")
+		router.Handle(tagCertificateIdExpr,
+			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Delete),
+				[]string{constants.TagCertificateDelete}))).Methods("DELETE")
 
-	router.Handle(tagCertificateIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Delete),
-			[]string{constants.TagCertificateDelete}))).Methods("DELETE")
-
-	router.Handle(TagCertificateDeployEndpointPath,
-		ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Deploy),
-			[]string{constants.TagCertificateDeploy}))).Methods("POST")
-
+		router.Handle(TagCertificateDeployEndpointPath,
+			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Deploy),
+				[]string{constants.TagCertificateDeploy}))).Methods("POST")
+	}
 	return router
 }

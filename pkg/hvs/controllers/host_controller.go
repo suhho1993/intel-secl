@@ -104,7 +104,7 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	var reqHost hvs.Host
 	err := dec.Decode(&reqHost)
 	if err != nil {
-		secLog.WithError(err).Errorf("controllers/host_controller:Update() %s :  Failed to decode request body as Host", commLogMsg.AppRuntimeErr)
+		secLog.WithError(err).Errorf("controllers/host_controller:Update() %s :  Failed to decode request body as Host", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
 	}
 
@@ -165,8 +165,8 @@ func (hc *HostController) Search(w http.ResponseWriter, r *http.Request) (interf
 	defaultLog.WithField("query", r.URL.Query()).Trace("query hosts")
 	criteria, err := populateHostFilterCriteria(r.URL.Query())
 	if err != nil {
-		secLog.WithError(err).Errorf("controllers/host_controller:Search() %s : Invalid filter criteria", commLogMsg.InvalidInputBadParam)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		secLog.WithError(err).Errorf("controllers/host_controller:Search() %s Invalid filter criteria", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid filter criteria"}
 	}
 
 	if criteria.Key != "" {
@@ -199,8 +199,8 @@ func (hc *HostController) CreateHost(reqHost hvs.HostCreateRequest) (interface{}
 	}
 
 	if err := validateHostCreateCriteria(reqHost); err != nil {
-		secLog.WithError(err).Errorf("controllers/host_controller:CreateHost() %s : Invalid request body", commLogMsg.InvalidInputBadParam)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		secLog.WithError(err).Errorf("controllers/host_controller:CreateHost() %s Invalid host data", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid host data"}
 	}
 
 	existingHosts, err := hc.HStore.Search(&models.HostFilterCriteria{

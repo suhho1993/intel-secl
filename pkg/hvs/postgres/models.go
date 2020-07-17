@@ -112,12 +112,13 @@ type (
 	}
 
 	tpmEndorsement struct {
-		ID           uuid.UUID `gorm:"id,omitempty" gorm:"primary_key;type:uuid"`
-		HardwareUUID uuid.UUID `gorm:"hardware_uuid;not null"`
-		Issuer       string    `gorm:"issuer;not null"`
-		Revoked      bool      `gorm:"revoked,omitempty" `
-		Certificate  string    `gorm:"certificate;not null"`
-		Comment      string    `gorm:"comment,omitempty"`
+		ID                uuid.UUID `gorm:"id" gorm:"primary_key;type:uuid"`
+		HardwareUUID      uuid.UUID `gorm:"hardware_uuid;not null"`
+		Issuer            string    `gorm:"issuer;not null"`
+		Revoked           bool      `gorm:"revoked" `
+		Certificate       string    `gorm:"certificate;not null"`
+		Comment           string    `gorm:"comment"`
+		CertificateDigest string    `gorm:"certificate_digest;not null"`
 	}
 
 	//TODO add triggers

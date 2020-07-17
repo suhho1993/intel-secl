@@ -57,7 +57,6 @@ const (
 
 	//TODO remove or dont use temporary files
 	AikRequestsDir = HomeDir + "privacyca-aik-requests/"
-	//TODO use EndorsementCA file after implementation of create_endorsement_ca setup task
 	EndorsementCACertDir      = ConfigDir + "certs/endorsement/"
 	EndorsementCACertFile     = EndorsementCACertDir + "EndorsementCA-external.pem" //External ECA
 	SelfEndorsementCACertFile = EndorsementCACertDir + "EndorsementCA.pem"          //Self signed ECA
@@ -81,7 +80,7 @@ const (
 
 // aik and privacy ca constants
 const (
-	AIKCertValidity                = 1
+	DefaultAikCertificateValidity  = 5
 	DefaultPrivacyCACertValidity   = 5
 	HostSigningKeyCertificateCN    = "Signing_Key_Certificate"
 	HostBindingKeyCertificateCN    = "Binding_Key_Certificate"

@@ -86,14 +86,14 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 
 	err := dec.Decode(&flavorCreateReq)
 	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/flavor_controller:Create() %s :  Failed to decode request body as Flavor", commLogMsg.AppRuntimeErr)
+		secLog.WithError(err).Errorf("controllers/flavor_controller:Create() %s :  Failed to decode request body as Flavor", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	defaultLog.Debug("Validating create flavor request")
 	err = validateFlavorCreateRequest(flavorCreateReq)
 	if err != nil {
-		defaultLog.WithError(err).Error("controllers/flavor_controller:Create() Invalid flavor create criteria")
+		secLog.WithError(err).Errorf("controllers/flavor_controller:Create() %s Invalid flavor create criteria", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid flavor create criteria"}
 	}
 
@@ -459,7 +459,7 @@ func (fcon *FlavorController) Delete(w http.ResponseWriter, r *http.Request) (in
 	defaultLog.Trace("controllers/flavor_controller:Delete() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:Delete() Leaving")
 
-	id, _ := uuid.Parse(mux.Vars(r)["id"])
+	id := uuid.MustParse(mux.Vars(r)["id"])
 	_, err := fcon.FStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
@@ -486,7 +486,7 @@ func (fcon *FlavorController) Retrieve(w http.ResponseWriter, r *http.Request) (
 	defaultLog.Trace("controllers/flavor_controller:Retrieve() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:Retrieve() Leaving")
 
-	id, _ := uuid.Parse(mux.Vars(r)["id"])
+	id := uuid.MustParse(mux.Vars(r)["id"])
 	flavor, err := fcon.FStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {

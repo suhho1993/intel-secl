@@ -11,7 +11,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"strconv"
 	"strings"
 )
 
@@ -27,6 +26,7 @@ func (t *TpmEndorsementStore) Create(te *hvs.TpmEndorsement) (*hvs.TpmEndorsemen
 	defaultLog.Trace("postgres/tpm_endorsement_store:Create() Entering")
 	defer defaultLog.Trace("postgres/tpm_endorsement_store:Create() Leaving")
 	te.ID = uuid.New()
+
 	dbTpmEndorsement := tpmEndorsement{
 		ID : te.ID,
 		HardwareUUID: te.HardwareUUID,
@@ -34,6 +34,7 @@ func (t *TpmEndorsementStore) Create(te *hvs.TpmEndorsement) (*hvs.TpmEndorsemen
 		Revoked: te.Revoked,
 		Certificate: te.Certificate,
 		Comment: te.Comment,
+		CertificateDigest: te.CertificateDigest,
 	}
 
 	if err := t.Store.Db.Create(&dbTpmEndorsement).Error; err != nil {
@@ -51,6 +52,7 @@ func (t *TpmEndorsementStore) Update(te *hvs.TpmEndorsement)(*hvs.TpmEndorsement
 		Revoked: te.Revoked,
 		Certificate: te.Certificate,
 		Comment: te.Comment,
+		CertificateDigest: te.CertificateDigest,
 	}
 	if err := t.Store.Db.Save(&dbTpmEndorsement).Error; err != nil {
 		return nil, errors.Wrap(err, "postgres/tpm_endorsement_store:Update() failed to save TpmEndorsement")
@@ -64,7 +66,7 @@ func (t *TpmEndorsementStore) Retrieve(id uuid.UUID) (*hvs.TpmEndorsement, error
 
 	row := t.Store.Db.Model(tpmEndorsement{}).Where(tpmEndorsement{ID: id}).Row()
 	te := hvs.TpmEndorsement{}
-	if err := row.Scan(&te.ID, &te.HardwareUUID, &te.Issuer, &te.Revoked, &te.Certificate, &te.Comment); err != nil {
+	if err := row.Scan(&te.ID, &te.HardwareUUID, &te.Issuer, &te.Revoked, &te.Certificate, &te.Comment, &te.CertificateDigest); err != nil {
 		return nil, errors.Wrap(err, "postgres/tpm_endorsement_store:Retrieve() - Could not scan record ")
 	}
 
@@ -102,7 +104,7 @@ func (t *TpmEndorsementStore) Search(teFilter *models.TpmEndorsementFilterCriter
 
 	for rows.Next() {
 		te := hvs.TpmEndorsement{}
-		if err := rows.Scan(&te.ID, &te.HardwareUUID, &te.Issuer, &te.Revoked, &te.Certificate, &te.Comment); err != nil {
+		if err := rows.Scan(&te.ID, &te.HardwareUUID, &te.Issuer, &te.Revoked, &te.Certificate, &te.Comment, &te.CertificateDigest); err != nil {
 			return nil, errors.Wrap(err, "postgres/tpm_endorsement_store:Search() - Could not scan record ")
 		}
 		tpmEndorsementCollection.TpmEndorsement = append(tpmEndorsementCollection.TpmEndorsement, &te)
@@ -125,7 +127,8 @@ func buildTpmEndorsementSearchQuery(tx *gorm.DB, teFilter *models.TpmEndorsement
 			". Returning all rows.")
 		return tx
 	}
-	if teFilter.Id != "" {
+	tx = tx.Where("revoked = ? ", teFilter.RevokedEqualTo)
+	if teFilter.Id != uuid.Nil {
 		tx = tx.Where("id = ?", teFilter.Id)
 	} else if teFilter.IssuerEqualTo != "" {
 		tx = tx.Where("issuer = ?", teFilter.IssuerEqualTo)
@@ -133,14 +136,12 @@ func buildTpmEndorsementSearchQuery(tx *gorm.DB, teFilter *models.TpmEndorsement
 		tx = tx.Where("comment like ? ", "%"+teFilter.CommentContains+"%")
 	} else if teFilter.CommentEqualTo != "" {
 		tx = tx.Where("comment = ? ", teFilter.CommentEqualTo)
-	} else if teFilter.RevokedEqualTo != "" {
-		revoked, _ := strconv.ParseBool(teFilter.RevokedEqualTo)
-		tx = tx.Where("revoked = ? ", revoked)
-	} else if teFilter.HardwareUuidEqualTo != "" {
+	} else if teFilter.HardwareUuidEqualTo != uuid.Nil {
 		tx = tx.Where("hardware_uuid = ? ", teFilter.HardwareUuidEqualTo)
 	} else if teFilter.IssuerContains != "" {
 		tx = tx.Where("issuer like ? ", "%"+teFilter.IssuerContains+"%")
+	}else if teFilter.CertificateDigestEqualTo != "" {
+		tx = tx.Where("certificate_digest = ? ", teFilter.CertificateDigestEqualTo)
 	}
-
 	return tx
 }

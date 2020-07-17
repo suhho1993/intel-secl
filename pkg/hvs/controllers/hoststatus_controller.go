@@ -36,8 +36,8 @@ func (controller HostStatusController) Search(w http.ResponseWriter, r *http.Req
 	// get the HostStatusFilterCriteria
 	filter, err := getHSFilterCriteria(r.URL.Query())
 	if err != nil {
-		defaultLog.Warnf("controllers/hoststatus_controller:Search() %s", err.Error())
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		secLog.WithError(err).Warnf("controllers/hoststatus_controller:Search() %s ", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid filter criteria"}
 	}
 
 	hostStatusCollection, err := controller.Store.Search(filter)

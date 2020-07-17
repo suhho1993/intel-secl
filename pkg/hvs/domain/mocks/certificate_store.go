@@ -39,8 +39,7 @@ func NewFakeCertificatesPathStore() *models.CertificatesPathStore {
 }
 
 func NewFakeCertificatesStore() *models.CertificatesStore {
-	// For ECA, to read list of certificates from directory
-	ecCaPath := "../domain/mocks/resources/"
+
 	// Mock path to create new certificate
 	rootCaPath := "../domain/mocks/resources/"
 	//Path for any certificate containing file, so instead of creating new use existing one
@@ -52,7 +51,7 @@ func NewFakeCertificatesStore() *models.CertificatesStore {
 			Certificates: nil,
 		},
 		models.CaCertTypesEndorsementCa.String(): &models.CertificateStore{
-			CertPath:     ecCaPath,
+			CertPath:     rootCaPath,
 			Certificates: nil,
 		},
 		models.CaCertTypesPrivacyCa.String(): &models.CertificateStore{

@@ -10,6 +10,8 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"net/http"
 	"net/http/httptest"
 
@@ -27,24 +29,20 @@ import (
 var _ = Describe("CertifyHostAiksController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	var pCAFileStore *controllers.PrivacyCAFileStore
 	var certifyHostAiksController *controllers.CertifyHostAiksController
 	var cacert *x509.Certificate
-	eCAPath = "../domain/mocks/resources/EndorsementCA-external.pem"
-	caCertPath = "../domain/mocks/privacyca-cert.pem"
-	caKeyPath = "../domain/mocks/privacycaKey.pem"
-	aikRequestsDir = "../domain/mocks/resources/aik/"
+	ecStore := mocks.MockTpmEndorsementStore{}
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		cacert, _ = crypt.GetCertFromPemFile(caCertPath)
+		cacert = &(*certStore)[models.CaCertTypesPrivacyCa.String()].Certificates[0]
+		certifyHostAiksController = controllers.NewCertifyHostAiksController(certStore, &ecStore, 2, "../domain/mocks/resources/aik-reqs-dir/")
 	})
 
 	Describe("Create Identity Proof request", func() {
 		Context("Provide valid data in request", func() {
 			It("Return Identity Proof request", func() {
-				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
+
 				router.Handle("/privacyca/identity-challenge-request", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge))).Methods("POST")
 
 				// Mock TA Flow for generating data for identityChallengeRequest
@@ -82,10 +80,90 @@ var _ = Describe("CertifyHostAiksController", func() {
 			})
 		})
 
+		Context("ek root ca not present in endorsement certificate and ek cert is registered", func() {
+			It("Return Identity Proof request", func() {
+				// mockEndorsement is having the ekcert
+				mockEndorsement := mocks.NewFakeTpmEndorsementStore()
+				certifyHostAiksController = controllers.NewCertifyHostAiksController(certStore, mockEndorsement, 2, "../domain/mocks/resources/aik-reqs-dir/")
+				router.Handle("/privacyca/identity-challenge-request", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge))).Methods("POST")
+
+				// Mock TA Flow for generating data for identityChallengeRequest
+				identityRequestBlock, _ := base64.StdEncoding.DecodeString("musrA8GOcUtcD3phno/e4XseAdzLG/Ff1qXBIZ/GWdQUKTvOQlUq5P+BJLD1ifp7bpyvXdpesnHZuhXpi4AM8D2uJYTs4MeamMJ2LKAu/zSk9IDz4Z4gnQACSGSWzqafXv8OAh6D7/EOjzUh/sjkZdTVjsKzyHGp7GbY+G+mt9/PdF1e4/TJlp41s6rQ6BAJ0mA4gNdkrJLW2iedM1MZJn2JgYWDtxej5wD6Gm7/BGD+Rn9wqyU4U6fjEsNqeXj0E0DtkreMAi9cAQuoagckvh/ru1o8psyzTM+Bk+EqpFrfg3nz4nDC+Nrz+IBjuJuFGNUUFbxC6FrdtX4c2jnQIQ==")
+				aikModulus, _ := base64.StdEncoding.DecodeString("musrA8GOcUtcD3phno/e4XseAdzLG/Ff1qXBIZ/GWdQUKTvOQlUq5P+BJLD1ifp7bpyvXdpesnHZuhXpi4AM8D2uJYTs4MeamMJ2LKAu/zSk9IDz4Z4gnQACSGSWzqafXv8OAh6D7/EOjzUh/sjkZdTVjsKzyHGp7GbY+G+mt9/PdF1e4/TJlp41s6rQ6BAJ0mA4gNdkrJLW2iedM1MZJn2JgYWDtxej5wD6Gm7/BGD+Rn9wqyU4U6fjEsNqeXj0E0DtkreMAi9cAQuoagckvh/ru1o8psyzTM+Bk+EqpFrfg3nz4nDC+Nrz+IBjuJuFGNUUFbxC6FrdtX4c2jnQIQ==")
+				aikBlob, _ := base64.StdEncoding.DecodeString("gQGAAA==")
+				aikName, _ := base64.StdEncoding.DecodeString("AAuTbAaKYOG2opc4QXq0QzsUHFRMsV0m5lcmRK4SLrzdRA==")
+				identityReq := taModel.IdentityRequest{
+					TpmVersion:           "2.0",
+					IdentityRequestBlock: identityRequestBlock,
+					AikModulus:           aikModulus,
+					AikBlob:              aikBlob,
+					AikName:              aikName,
+				}
+
+				privacycaTpm2, err := privacyca.NewPrivacyCA(identityReq)
+				Expect(err).NotTo(HaveOccurred())
+				identityChallengeRequest := taModel.IdentityChallengePayload{}
+				identityChallengeRequest.IdentityRequest = identityReq
+				ekCertBytes, _ := base64.StdEncoding.DecodeString("MIID3DCCA4GgAwIBAgILALfUewXBMLJq9oQwCgYIKoZIzj0EAwIwVTFTMB8GA1UEAxMYTnV2b3RvbiBUUE0gUm9vdCBDQSAxMTEwMCUGA1UEChMeTnV2b3RvbiBUZWNobm9sb2d5IENvcnBvcmF0aW9uMAkGA1UEBhMCVFcwHhcNMTgwNDMwMDkwOTQyWhcNMzgwNDI2MDkwOTQyWjAAMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsLVF8PTReeg3wX7/8ia6mzsHmz6uU2gNATYDfD+BD138oZoEokfvyNEwmcgl4946ABBEi7equO3Xg7GzoBbZko2g4nL8B7bTUGldMLR/D2CKxmRKnN6aTNp0k+PTk7Kg/Q/rdc3ANxseW4z5MPKVais1pCflHLrfatrTKvfob3WrhFpTzvxP4N4NdrQ0QWsezreRi6RwbmKyuUTCUryt8KNvQ6+jnR0jK7zYW6fHbwwHWNHMfGP/E3CSVrdje/gqUXyWKPRIBLcOuYKA82UPoB9dP+/lc5K7yaTRdRRvR0x07XqORva4Y0f+K6uDxkfs9uiOFyjcnW/L/E/gMyyc4QIDAQABo4IBwDCCAbwwSgYDVR0RAQH/BEAwPqQ8MDoxODAUBgVngQUCARMLaWQ6NEU1NDQzMDAwEAYFZ4EFAgITB05QQ1Q2eHgwDgYFZ4EFAgMTBWlkOjEzMAwGA1UdEwEB/wQCMAAwEAYDVR0lBAkwBwYFZ4EFCAEwHwYDVR0jBBgwFoAUFZHUtur5jQEEhktpA6SN0AJgd9MwDgYDVR0PAQH/BAQDAgUgMHAGA1UdCQRpMGcwFgYFZ4EFAhAxDTALDAMyLjACAQACAXQwTQYFZ4EFAhIxRDBCAgEAAQH/oAMKAQGhAwoBAKIDCgEAoxUwExYDMy4xCgEECgEBAQH/oAMKAQKkDzANFgUxNDAtMgoBAgEBAKUDAQEAMEEGA1UdIAQ6MDgwNgYEVR0gADAuMCwGCCsGAQUFBwIBFiBodHRwOi8vd3d3Lm51dm90b24uY29tL3NlY3VyaXR5LzBoBggrBgEFBQcBAQRcMFowWAYIKwYBBQUHMAKGTGh0dHA6Ly93d3cubnV2b3Rvbi5jb20vc2VjdXJpdHkvTlRDLVRQTS1FSy1DZXJ0L051dm90b24gVFBNIFJvb3QgQ0EgMTExMC5jZXIwCgYIKoZIzj0EAwIDSQAwRgIhAIZW5ub47c5tw7JFhMH7X9LBYKuk5wPYmV8NMLPz3W2qAiEAgo9he9tU504eatKnvOmL97DnKPlc8qTgev0v9dx1wM4=")
+				// Get the Identity challenge request
+				identityChallengeRequest, err = privacycaTpm2.GetIdentityChallengeRequest(ekCertBytes, cacert.PublicKey.(*rsa.PublicKey), identityChallengeRequest.IdentityRequest)
+				Expect(err).NotTo(HaveOccurred())
+				jsonData, _ := json.Marshal(identityChallengeRequest)
+
+				req, err := http.NewRequest(
+					"POST",
+					"/privacyca/identity-challenge-request",
+					bytes.NewBuffer(jsonData),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(200))
+			})
+		})
+
+		Context("ek root ca not present in endorsement certificate and ek cert is not registered", func() {
+			It("Should get HTTP Status: 400 ", func() {
+				router.Handle("/privacyca/identity-challenge-request", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge))).Methods("POST")
+
+				// Mock TA Flow for generating data for identityChallengeRequest
+				identityRequestBlock, _ := base64.StdEncoding.DecodeString("musrA8GOcUtcD3phno/e4XseAdzLG/Ff1qXBIZ/GWdQUKTvOQlUq5P+BJLD1ifp7bpyvXdpesnHZuhXpi4AM8D2uJYTs4MeamMJ2LKAu/zSk9IDz4Z4gnQACSGSWzqafXv8OAh6D7/EOjzUh/sjkZdTVjsKzyHGp7GbY+G+mt9/PdF1e4/TJlp41s6rQ6BAJ0mA4gNdkrJLW2iedM1MZJn2JgYWDtxej5wD6Gm7/BGD+Rn9wqyU4U6fjEsNqeXj0E0DtkreMAi9cAQuoagckvh/ru1o8psyzTM+Bk+EqpFrfg3nz4nDC+Nrz+IBjuJuFGNUUFbxC6FrdtX4c2jnQIQ==")
+				aikModulus, _ := base64.StdEncoding.DecodeString("musrA8GOcUtcD3phno/e4XseAdzLG/Ff1qXBIZ/GWdQUKTvOQlUq5P+BJLD1ifp7bpyvXdpesnHZuhXpi4AM8D2uJYTs4MeamMJ2LKAu/zSk9IDz4Z4gnQACSGSWzqafXv8OAh6D7/EOjzUh/sjkZdTVjsKzyHGp7GbY+G+mt9/PdF1e4/TJlp41s6rQ6BAJ0mA4gNdkrJLW2iedM1MZJn2JgYWDtxej5wD6Gm7/BGD+Rn9wqyU4U6fjEsNqeXj0E0DtkreMAi9cAQuoagckvh/ru1o8psyzTM+Bk+EqpFrfg3nz4nDC+Nrz+IBjuJuFGNUUFbxC6FrdtX4c2jnQIQ==")
+				aikBlob, _ := base64.StdEncoding.DecodeString("gQGAAA==")
+				aikName, _ := base64.StdEncoding.DecodeString("AAuTbAaKYOG2opc4QXq0QzsUHFRMsV0m5lcmRK4SLrzdRA==")
+				identityReq := taModel.IdentityRequest{
+					TpmVersion:           "2.0",
+					IdentityRequestBlock: identityRequestBlock,
+					AikModulus:           aikModulus,
+					AikBlob:              aikBlob,
+					AikName:              aikName,
+				}
+
+				privacycaTpm2, err := privacyca.NewPrivacyCA(identityReq)
+				Expect(err).NotTo(HaveOccurred())
+				identityChallengeRequest := taModel.IdentityChallengePayload{}
+				identityChallengeRequest.IdentityRequest = identityReq
+				ekCertBytes, _ := base64.StdEncoding.DecodeString("MIID3DCCA4GgAwIBAgILALfUewXBMLJq9oQwCgYIKoZIzj0EAwIwVTFTMB8GA1UEAxMYTnV2b3RvbiBUUE0gUm9vdCBDQSAxMTEwMCUGA1UEChMeTnV2b3RvbiBUZWNobm9sb2d5IENvcnBvcmF0aW9uMAkGA1UEBhMCVFcwHhcNMTgwNDMwMDkwOTQyWhcNMzgwNDI2MDkwOTQyWjAAMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsLVF8PTReeg3wX7/8ia6mzsHmz6uU2gNATYDfD+BD138oZoEokfvyNEwmcgl4946ABBEi7equO3Xg7GzoBbZko2g4nL8B7bTUGldMLR/D2CKxmRKnN6aTNp0k+PTk7Kg/Q/rdc3ANxseW4z5MPKVais1pCflHLrfatrTKvfob3WrhFpTzvxP4N4NdrQ0QWsezreRi6RwbmKyuUTCUryt8KNvQ6+jnR0jK7zYW6fHbwwHWNHMfGP/E3CSVrdje/gqUXyWKPRIBLcOuYKA82UPoB9dP+/lc5K7yaTRdRRvR0x07XqORva4Y0f+K6uDxkfs9uiOFyjcnW/L/E/gMyyc4QIDAQABo4IBwDCCAbwwSgYDVR0RAQH/BEAwPqQ8MDoxODAUBgVngQUCARMLaWQ6NEU1NDQzMDAwEAYFZ4EFAgITB05QQ1Q2eHgwDgYFZ4EFAgMTBWlkOjEzMAwGA1UdEwEB/wQCMAAwEAYDVR0lBAkwBwYFZ4EFCAEwHwYDVR0jBBgwFoAUFZHUtur5jQEEhktpA6SN0AJgd9MwDgYDVR0PAQH/BAQDAgUgMHAGA1UdCQRpMGcwFgYFZ4EFAhAxDTALDAMyLjACAQACAXQwTQYFZ4EFAhIxRDBCAgEAAQH/oAMKAQGhAwoBAKIDCgEAoxUwExYDMy4xCgEECgEBAQH/oAMKAQKkDzANFgUxNDAtMgoBAgEBAKUDAQEAMEEGA1UdIAQ6MDgwNgYEVR0gADAuMCwGCCsGAQUFBwIBFiBodHRwOi8vd3d3Lm51dm90b24uY29tL3NlY3VyaXR5LzBoBggrBgEFBQcBAQRcMFowWAYIKwYBBQUHMAKGTGh0dHA6Ly93d3cubnV2b3Rvbi5jb20vc2VjdXJpdHkvTlRDLVRQTS1FSy1DZXJ0L051dm90b24gVFBNIFJvb3QgQ0EgMTExMC5jZXIwCgYIKoZIzj0EAwIDSQAwRgIhAIZW5ub47c5tw7JFhMH7X9LBYKuk5wPYmV8NMLPz3W2qAiEAgo9he9tU504eatKnvOmL97DnKPlc8qTgev0v9dx1wM4=")
+				// Get the Identity challenge request
+				identityChallengeRequest, err = privacycaTpm2.GetIdentityChallengeRequest(ekCertBytes, cacert.PublicKey.(*rsa.PublicKey), identityChallengeRequest.IdentityRequest)
+				Expect(err).NotTo(HaveOccurred())
+				jsonData, _ := json.Marshal(identityChallengeRequest)
+
+				req, err := http.NewRequest(
+					"POST",
+					"/privacyca/identity-challenge-request",
+					bytes.NewBuffer(jsonData),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(400))
+			})
+		})
+
 		Context("Provide invalid ekcert in request", func() {
 			It("Should get HTTP Status: 400", func() {
-				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
+
 				router.Handle("/privacyca/identity-challenge-request", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge))).Methods("POST")
 
 				//// Mock TA Flow for generating data for identityChallengeRequest
@@ -127,8 +205,6 @@ var _ = Describe("CertifyHostAiksController", func() {
 	Describe("Create Identity Proof request response", func() {
 		Context("Provide valid data in request", func() {
 			It("Return Identity Proof request response", func() {
-				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
 				router.Handle("/privacyca/identity-challenge-response", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse))).Methods("POST")
 
 				// Mock TA Flow for generating data for identityChallengeRequestReponse
@@ -172,8 +248,6 @@ var _ = Describe("CertifyHostAiksController", func() {
 
 		Context("Provide invalid ekcert in request", func() {
 			It("Should get HTTP Status: 400", func() {
-				pCAFileStore = controllers.NewPrivacyCAFileStore(caKeyPath, caCertPath, eCAPath, aikRequestsDir)
-				certifyHostAiksController = &controllers.CertifyHostAiksController{PcaStore: pCAFileStore}
 				router.Handle("/privacyca/identity-challenge-response", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse))).Methods("POST")
 
 				// Mock TA Flow for generating data for identityChallengeRequestReponse

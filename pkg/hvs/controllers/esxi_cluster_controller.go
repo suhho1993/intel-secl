@@ -55,12 +55,12 @@ func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Re
 	err := dec.Decode(&reqESXiCluster)
 	if err != nil {
 		secLog.WithError(err).Errorf("controllers/esxi_cluster_controller:Create() %s :  Failed to decode"+
-			" request body as ESXi cluster type", commLogMsg.AppRuntimeErr)
+			" request body as ESXi cluster type", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	if err := validateESXiClusterRequest(*reqESXiCluster); err != nil {
-		secLog.Errorf("controllers/esxi_cluster_controller:Create()  %s", err.Error())
+		secLog.WithError(err).Errorf("controllers/esxi_cluster_controller:Create() %s Error while validating the ESXi Request parameters", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid request body provided"}
 	}
 
@@ -131,7 +131,7 @@ func (controller ESXiClusterController) Search(w http.ResponseWriter, r *http.Re
 	defaultLog.WithField("query", r.URL.Query()).Trace("Query ESXi cluster")
 
 	if filter, err = getECCriteria(r.URL.Query()); err != nil {
-		secLog.Errorf("controllers/esxi_cluster_controller:Search()  %s", err.Error())
+		secLog.WithError(err).Errorf("controllers/esxi_cluster_controller:Search() %s", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid search criteria provided"}
 	}
 

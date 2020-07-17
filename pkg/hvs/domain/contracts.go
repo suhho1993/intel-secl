@@ -70,7 +70,6 @@ type (
 		Search(*models.TpmEndorsementFilterCriteria) (*hvs.TpmEndorsementCollection, error)
 		Delete(uuid.UUID) error
 	}
-	// TODO: Define all contract methods here
 
 	// HostStatusStore specifies the DB operations that must be implemented for the Host Status API
 	HostStatusStore interface {

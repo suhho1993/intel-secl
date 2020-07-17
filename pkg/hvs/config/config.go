@@ -26,9 +26,10 @@ type Configuration struct {
 	SAML          SAMLConfig                   `yaml:"saml" mapstructure:"saml"`
 	FlavorSigning commConfig.SigningCertConfig `yaml:"flavor-signing" mapstructure:"flavor-signing"`
 
-	PrivacyCA     commConfig.SelfSignedCertConfig `yaml:"privacy-ca" mapstructure:"privacy-ca"`
-	EndorsementCA commConfig.SelfSignedCertConfig `yaml:"endorsement-ca" mapstructure:"endorsement-ca"`
-	TagCA         commConfig.SelfSignedCertConfig `yaml:"tag-ca" mapstructure:"tag-ca"`
+	PrivacyCA       commConfig.SelfSignedCertConfig `yaml:"privacy-ca" mapstructure:"privacy-ca"`
+	EndorsementCA   commConfig.SelfSignedCertConfig `yaml:"endorsement-ca" mapstructure:"endorsement-ca"`
+	TagCA           commConfig.SelfSignedCertConfig `yaml:"tag-ca" mapstructure:"tag-ca"`
+	AikCertValidity int                             `yaml:"aik-certificate-validity-years" mapstructure:"aik-certificate-validity-years"`
 
 	Server commConfig.ServerConfig `yaml:"server" mapstructure:"server"`
 	Log    commConfig.LogConfig    `yaml:"log" mapstructure:"log"`

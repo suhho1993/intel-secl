@@ -68,6 +68,9 @@ func init() {
 	viper.SetDefault("privacy-ca-cert-validity", constants.DefaultPrivacyCACertValidity)
 	viper.SetDefault("privacy-ca-id-issuer", constants.DefaultPrivacyCaIdentityIssuer)
 
+	// set default value for aik
+	viper.SetDefault("aik-certificate-validity-years", constants.DefaultAikCertificateValidity)
+
 	// set default values for server
 	viper.SetDefault("server-port", constants.DefaultHVSListenerPort)
 	viper.SetDefault("server-read-timeout", constants.DefaultReadTimeout)
@@ -106,6 +109,7 @@ func defaultConfig() *config.Configuration {
 		AASApiUrl:        viper.GetString("aas-base-url"),
 		CMSBaseURL:       viper.GetString("cms-base-url"),
 		CmsTlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
+		AikCertValidity:  viper.GetInt("aik-certificate-validity-years"),
 		HVS: config.HVSConfig{
 			Username: viper.GetString("hvs-service-username"),
 			Password: viper.GetString("hvs-service-password"),

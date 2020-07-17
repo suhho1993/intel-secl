@@ -43,13 +43,13 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 
 	err := dec.Decode(&reqFlavorGroup)
 	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/flavorgroup_controller:Create() %s :  Failed to decode request body as FlavorGroup", commLogMsg.AppRuntimeErr)
+		secLog.WithError(err).Errorf("controllers/flavorgroup_controller:Create() %s :  Failed to decode request body as FlavorGroup", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	if err := ValidateFlavorGroup(reqFlavorGroup); err != nil {
-		secLog.Errorf("controllers/flavorgroup_controller:Create()  %s", err.Error())
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		secLog.WithError(err).Errorf("controllers/flavorgroup_controller:Create() %s", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid flavorgroup data "}
 	}
 
 	existingFlavorGroups, err := controller.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{
@@ -63,7 +63,7 @@ func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Re
 	// Persistence
 	newFlavorGroup, err := controller.FlavorGroupStore.Create(&reqFlavorGroup)
 	if err != nil {
-		secLog.WithError(err).Error("controllers/flavorgroup_controller:Create() Flavorgroup save failed")
+		defaultLog.WithError(err).Error("controllers/flavorgroup_controller:Create() Flavorgroup save failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("Error while inserting a new Flavorgroup")
 	}
 	secLog.WithField("Name", reqFlavorGroup.Name).Infof("%s: FlavorGroup created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
@@ -95,8 +95,8 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 			HostId:       hostId,
 		}
 		if err := ValidateFgCriteria(*filter); err != nil {
-			secLog.Errorf("controllers/flavorgroup_controller:Search()  %s", err.Error())
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+			secLog.WithError(err).Errorf("controllers/flavorgroup_controller:Search()  %s", commLogMsg.InvalidInputBadParam)
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid filter criteria"}
 		}
 	}
 

@@ -9,12 +9,13 @@ import "github.com/google/uuid"
 
 // TpmEndorsement struct
 type TpmEndorsement struct {
-	ID           uuid.UUID `json:"id,omitempty"`
-	HardwareUUID uuid.UUID `json:"hardware_uuid"`
-	Issuer       string    `json:"issuer,omitempty"`
-	Revoked      bool      `json:"revoked,omitempty"`
-	Certificate  string    `json:"certificate"`
-	Comment      string    `json:"comment,omitempty"`
+	ID                uuid.UUID `json:"id,omitempty"`
+	HardwareUUID      uuid.UUID `json:"hardware_uuid"`
+	Issuer            string    `json:"issuer,omitempty"`
+	Revoked           bool      `json:"revoked,omitempty"`
+	Certificate       string    `json:"certificate"`
+	Comment           string    `json:"comment,omitempty"`
+	CertificateDigest string    `json:"certificate_digest,omitempty"`
 }
 
 type TpmEndorsementCollection struct {

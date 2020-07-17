@@ -56,15 +56,15 @@ func (cs *CertificatesStore) AddCertificatesToStore(certType, certFile string, c
 	return nil
 }
 
-func (cs *CertificatesStore) GetCertificates(certType string) ([]x509.Certificate, error) {
-	defaultLog.Trace("models/certificate_store:GetCertificates() Entering")
-	defer defaultLog.Trace("models/certificate_store:GetCertificates() Leaving")
+func (cs *CertificatesStore) GetKeyAndCertificates(certType string) (crypto.PrivateKey, []x509.Certificate, error) {
+	defaultLog.Trace("models/certificate_store:GetKeyAndCertificates() Entering")
+	defer defaultLog.Trace("models/certificate_store:GetKeyAndCertificates() Leaving")
 
 	certStore := (*cs)[certType]
-	if certStore != nil {
-		return certStore.Certificates, nil
+	if certStore != nil{
+		return certStore.Key, certStore.Certificates, nil
 	}
-	return nil, nil
+	return nil, nil, errors.Errorf("Certificate store is empty for certType: %s", certType)
 }
 
 // This function expects CN to be unique, use this only in that scenario

@@ -5,7 +5,6 @@
 package controllers
 
 import (
-	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
@@ -52,33 +51,16 @@ type TagCertificateController struct {
 func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore models.CertificatesStore, tcs domain.TagCertificateStore,
 	hs domain.HostStore, fs domain.FlavorStore, fgs domain.FlavorGroupStore, hcp hostConnector.HostConnectorProvider) *TagCertificateController {
 
-	// certStore should have an entry for Tag CA Cert
-	if _, found := certStore[models.CaCertTypesTagCa.String()]; !found {
-		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Tag Certificate KeyPair not found in CertStore", commLogMsg.AppRuntimeErr)
+	// CertStore should have an entry for Tag CA Cert
+	tagKey, tagCerts, err := certStore.GetKeyAndCertificates(models.CaCertTypesTagCa.String())
+	if err != nil || tagKey == nil || tagCerts == nil{
+		defaultLog.Errorf("Error while retrieving certificate and key for certType %s", models.CaCertTypesTagCa.String())
 		return nil
 	}
 
-	// Tag CA cert entry should have certificates
-	var tagCACert *x509.Certificate
-	for _, cert := range certStore[models.CaCertTypesTagCa.String()].Certificates {
-		tagCACert = &cert
-	}
-
-	if tagCACert == nil {
-		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Tag CA Certificate not found in TagCertStore", commLogMsg.AppRuntimeErr)
-		return nil
-	}
-
-	// certStore should have an entry for Flavor Signing CA
-	if _, found := certStore[models.CertTypesFlavorSigning.String()]; !found {
-		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Flavor Signing KeyPair not found in CertStore", commLogMsg.AppRuntimeErr)
-		return nil
-	}
-
-	var fsKey crypto.PrivateKey
-	fsKey = certStore[models.CertTypesFlavorSigning.String()].Key
-	if fsKey == nil {
-		defaultLog.Errorf("controllers/tagcertificates_controller:NewTagCertificateController() %s : Flavor Signing Key not found in CertStore", commLogMsg.AppRuntimeErr)
+	flvrSigningkey, _, err := certStore.GetKeyAndCertificates(models.CertTypesFlavorSigning.String())
+	if err != nil || flvrSigningkey == nil{
+		defaultLog.Errorf("Error while retrieving certificate and key for certType %s", models.CertTypesFlavorSigning.String())
 		return nil
 	}
 
@@ -116,14 +98,14 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 
 	err := dec.Decode(&reqTCCriteria)
 	if err != nil {
-		defaultLog.WithError(err).Warnf("controllers/tagcertificate_controller:Create() %s : Failed to decode request body as TagCertificateCreateCriteria", commLogMsg.InvalidInputBadParam)
+		defaultLog.WithError(err).Warnf("controllers/tagcertificate_controller:Create() %s : Failed to decode request body as TagCertificateCreateCriteria", commLogMsg.InvalidInputBadEncoding)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	// validate Tag Certificate creation params
 	if err := validateTagCertCreateCriteria(reqTCCriteria); err != nil {
-		secLog.Warnf("controllers/tagcertificate_controller:Create() %s : Error during Tag Certificate creation: %s", commLogMsg.InvalidInputBadParam, err.Error())
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		secLog.WithError(err).Warnf("controllers/tagcertificate_controller:Create() %s : Error during Tag Certificate creation", commLogMsg.InvalidInputBadParam)
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error during Tag Certificate creation"}
 	}
 
 	// get the Tag CA Cert from the certstore
@@ -192,7 +174,7 @@ func (controller TagCertificateController) Search(w http.ResponseWriter, r *http
 	filter, err := getTCFilterCriteria(r.URL.Query())
 	if err != nil {
 		defaultLog.Warnf("controllers/tagcertificate_controller:Search() %s : %s", commLogMsg.InvalidInputBadParam, err.Error())
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid filter criteria"}
 	}
 
 	tagCertResultSet, err := controller.Store.Search(filter)

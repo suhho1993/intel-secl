@@ -5,12 +5,15 @@
 
 package models
 
+import "github.com/google/uuid"
+
 type TpmEndorsementFilterCriteria struct {
-	Id                  string
-	HardwareUuidEqualTo string
-	IssuerEqualTo       string
-	IssuerContains      string
-	RevokedEqualTo      string
-	CommentEqualTo      string
-	CommentContains     string
+	Id                       uuid.UUID
+	HardwareUuidEqualTo      uuid.UUID
+	IssuerEqualTo            string
+	IssuerContains           string
+	RevokedEqualTo           bool
+	CommentEqualTo           string
+	CommentContains          string
+	CertificateDigestEqualTo string
 }

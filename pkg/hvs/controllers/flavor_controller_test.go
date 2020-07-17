@@ -132,16 +132,6 @@ var _ = Describe("FlavorController", func() {
 				Expect(w.Code).To(Equal(204))
 			})
 		})
-		Context("Delete Flavor by incorrect ID from data store", func() {
-			It("Should fail to delete Flavor", func() {
-				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Delete))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE", "/flavors/73755fda-c910-46be-821f", nil)
-				Expect(err).NotTo(HaveOccurred())
-				w = httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(404))
-			})
-		})
 		Context("Delete Flavor by invalid ID from data store", func() {
 			It("Should fail to delete Flavor", func() {
 				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Delete))).Methods("DELETE")

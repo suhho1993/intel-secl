@@ -51,7 +51,7 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, hostControllerConfig domain.HostControllerConfig) {
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
-	
+
 	serviceApi := "/" + service + constants.ApiVersion
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
 	subRouter = SetVersionRoutes(subRouter)
@@ -67,9 +67,9 @@ func defineSubRoutes(router *mux.Router, service string, cfg *config.Configurati
 	subRouter = SetFlavorGroupRoutes(subRouter, dataStore, hostTrustManager)
 	subRouter = SetFlavorRoutes(subRouter, dataStore, certStore, hostControllerConfig)
 	subRouter = SetTpmEndorsementRoutes(subRouter, dataStore)
-	subRouter = SetCertifyAiksRoutes(subRouter, dataStore, certStore)
+	subRouter = SetCertifyAiksRoutes(subRouter, dataStore, certStore, cfg.AikCertValidity)
 	subRouter = SetHostStatusRoutes(subRouter, dataStore)
-	subRouter = SetCertifyHostKeysRoutes(subRouter)
+	subRouter = SetCertifyHostKeysRoutes(subRouter, certStore)
 	subRouter = SetHostRoutes(subRouter, dataStore, hostTrustManager, hostControllerConfig)
 	subRouter = SetReportRoutes(subRouter, dataStore, hostTrustManager)
 	subRouter = SetCreateCaCertificatesRoutes(subRouter, certStore)
