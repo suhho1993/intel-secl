@@ -7,19 +7,25 @@
 
 ## env file
 
-Category | Field | Required | Type | Default
----------|-------|----------|------|---------|
-General | AAS_BASE_URL | `Required` | `string` | |
+Category | Field | Required | Type | Default | Alternative
+---------|-------|----------|------|---------|-------------
+General | AAS_API_URL | `Required` | `string` | |
 \- | CMS_BASE_URL | `Required` |`string` | |
 \- | CMS_CERT_DIGEST | `Required` |`string` | |
-\- | BEARER_TOKEN | `Required` |`string` | |
+\- | BEARER_TOKEN | `Required` | `string` | |
+\- | HVS_NOSETUP | - | `string` | |
+HVS | HVS_SERVICE_USERNAME | `Required` |`string` | |
+\- | HVS_SERVICE_PASSWORD | `Required` |`string` | |
+\- | HVS_DATA_ENCRYPTION_KEY | - |`string` | |
 TLS | TLS_CERT_FILE | - |`string` | |
 \- | TLS_KEY_FILE | - |`string` | |
 \- | TLS_COMMON_NAME | - |`string` | |
-\- | TLS_SAN_LIST | - |`string` | |
+\- | TLS_SAN_LIST | - |`string` | | SAN_LIST
 SAML | SAML_CERT_FILE | - |`string` | |
 \- | SAML_KEY_FILE | - |`string` | |
 \- | SAML_COMMON_NAME | - |`string` | |
+\- | SAML_ISSUER_NAME | - |`string` | |
+\- | SAML_VALIDITY_DAYS | - |`int` | |
 Flavor Signing | FLAVOR_SIGNING_CERT_FILE | - |`string` || 
 \- | FLAVOR_SIGNING_KEY_FILE | - |`string` | |
 \- | FLAVOR_SIGNING_COMMON_NAME | - |`string` | |
@@ -41,22 +47,22 @@ Endorsement CA | ENDORSEMENT_CA_CERT_FILE | - |`string` | |
 \- | ENDORSEMENT_CA_COMMON_NAME | - |`string` | |
 \- | ENDORSEMENT_CA_ISSUER | - |`string` | |
 \- | ENDORSEMENT_CA_VALIDITY_DAYS | - |`int` | |
-Server | SERVER_PORT | - |`int` | |
-\- | SERVER_READ_TIMEOUT | - |`Duration` | |
-\- | SERVER_READ_HEADER_TIMEOUT | - |`Duration` | |
-\- | SERVER_WRITE_TIMEOUT | - |`Duration` | |
-\- | SERVER_IDLE_TIMEOUT | - |`Duration` | |
-\- | SERVER_MAX_HEADER_BYTES | - |`int` | |
-Database | DATABASE_VENDOR | `Required` |`string` | |
-\- | DATABASE_HOST | `Required` |`string` | |
-\- | DATABASE_PORT | `Required` |`int` | |
-\- | DATABASE_DB_NAME | `Required` |`string` | |
-\- | DATABASE_USERNAME | `Required` |`string` | |
-\- | DATABASE_PASSWORD | `Required` |`string` | |
-\- | DATABASE_SSL_MODE | - |`string` | |
-\- | DATABASE_SSL_CERT | - |`string` | |
-\- | DATABASE_SSL_CERT_SOURCE | - |`string` | |
-\- | DATABASE_CONN_RETRY_ATTEMPTS | - |`int` | |
-\- | DATABASE_CONN_RETRY_TIME | - |`int` | |
+Server | SERVER_PORT | - |`int` | | HVS_PORT
+\- | SERVER_READ_TIMEOUT | - |`Duration` | | HVS_SERVER_READ_TIMEOUT
+\- | SERVER_READ_HEADER_TIMEOUT | - |`Duration` | | HVS_SERVER_READ_HEADER_TIMEOUT
+\- | SERVER_WRITE_TIMEOUT | - |`Duration` | | HVS_SERVER_WRITE_TIMEOUT
+\- | SERVER_IDLE_TIMEOUT | - |`Duration` | | HVS_SERVER_IDLE_TIMEOUT
+\- | SERVER_MAX_HEADER_BYTES | - |`int` | | HVS_SERVER_MAX_HEADER_BYTES
+Database | DB_VENDOR |  |`string` | |
+\- | DB_HOST | `Required` |`string` | | HVS_DB_HOSTNAME
+\- | DB_PORT | `Required` |`int` | | HVS_DB_PORT
+\- | DB_NAME | `Required` |`string` | | HVS_DB_NAME
+\- | DB_USERNAME | `Required` |`string` | | HVS_DB_USERNAME
+\- | DB_PASSWORD | `Required` |`string` | | HVS_DB_PASSWORD
+\- | DB_SSL_MODE | - |`string` | verify-full | HVS_DB_SSL_MODE
+\- | DB_SSL_CERT | - |`string` | | HVS_DB_SSLCERT
+\- | DB_SSL_CERT_SOURCE | - |`string` | | HVS_DB_SSL_CERT_SOURCE
+\- | DB_CONN_RETRY_ATTEMPTS | - |`int` | 4 |
+\- | DB_CONN_RETRY_TIME | - |`int` | 1 |
 HRRS | HRRS_REFRESH_PERIOD | - |`Duration` | 2 minutes ("2m")|
 \- | HRRS_REFRESH_LOOK_AHEAD | - |`Duration` | 5 minutes ("5m")|

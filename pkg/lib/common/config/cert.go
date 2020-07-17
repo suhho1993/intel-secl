@@ -22,5 +22,5 @@ type SelfSignedCertConfig struct {
 	KeyFile      string `yaml:"key-file" mapstructure:"key-file"`
 	CommonName   string `yaml:"common-name" mapstructure:"common-name"`
 	Issuer       string `yaml:"issuer" mapstructure:"issuer"`
-	ValidityDays int    `yaml:"validity-days" mapstructure:"validity-days"`
+	ValidityDays int    `yaml:"validity-years" mapstructure:"validity-years"`
 }

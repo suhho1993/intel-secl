@@ -32,14 +32,14 @@ type Configuration struct {
 
 	Server commConfig.ServerConfig `yaml:"server" mapstructure:"server"`
 	Log    commConfig.LogConfig    `yaml:"log" mapstructure:"log"`
-	DB     commConfig.DBConfig     `yaml:"database" mapstructure:"database"`
+	DB     commConfig.DBConfig     `yaml:"db" mapstructure:"db"`
 	HRRS   hrrs.HRRSConfig         `yaml:"hrrs" mapstructure:"hrrs"`
 	FVS    FVSConfig               `yaml:"fvs" mapstructure:"fvs"`
 }
 
 type HVSConfig struct {
-	Username string `yaml:"username" mapstructure:"username"`
-	Password string `yaml:"password" mapstructure:"password"`
+	Username string `yaml:"service-username" mapstructure:"service-username"`
+	Password string `yaml:"service-password" mapstructure:"service-password"`
 	Dek      string `yaml:"data-encryption-key" mapstructure:"data-encryption-key"`
 }
 

@@ -140,8 +140,8 @@ if [ "${HVS_NOSETUP,,}" == "true" ]; then
     echo "Installation completed successfully!"
 else 
     $COMPONENT_NAME setup all -f $env_file
-    chown -R hvs:hvs /etc/hvs/
     SETUPRESULT=$?
+    chown -R hvs:hvs /etc/hvs/
     if [ ${SETUPRESULT} == 0 ]; then 
         systemctl start $COMPONENT_NAME
         echo "Waiting for daemon to settle down before checking status"

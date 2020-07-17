@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/tasks"
@@ -54,7 +55,7 @@ func (a *App) setup(args []string) error {
 	cmd := args[1]
 	if cmd == "all" {
 		if err = runner.RunAll(force); err != nil {
-			errCmds := runner.GetFailedCommands()
+			errCmds := runner.FailedCommands()
 			fmt.Fprintln(a.errorWriter(), "Error(s) encountered when running all setup commands:")
 			for errCmd, failErr := range errCmds {
 				fmt.Fprintln(a.errorWriter(), errCmd+": "+failErr.Error())
@@ -100,23 +101,31 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 		},
 		ConsoleWriter: a.consoleWriter(),
 	})
+	runner.AddTask("service", "", &tasks.ServiceSetup{
+		SvcConfigPtr: &a.Config.HVS,
+		HVSConfig: config.HVSConfig{
+			Username: viper.GetString("hvs-service-username"),
+			Password: viper.GetString("hvs-service-password"),
+		},
+		ConsoleWriter: a.consoleWriter(),
+	})
 	dbConf := commConfig.DBConfig{
-		Vendor:   viper.GetString("database-vendor"),
-		Host:     viper.GetString("database-host"),
-		Port:     viper.GetString("database-port"),
-		DBName:   viper.GetString("database-db-name"),
-		Username: viper.GetString("database-username"),
-		Password: viper.GetString("database-password"),
-		SSLMode:  viper.GetString("database-ssl-mode"),
-		SSLCert:  viper.GetString("database-ssl-cert"),
+		Vendor:   viper.GetString("db-vendor"),
+		Host:     viper.GetString("db-host"),
+		Port:     viper.GetString("db-port"),
+		DBName:   viper.GetString("db-name"),
+		Username: viper.GetString("db-username"),
+		Password: viper.GetString("db-password"),
+		SSLMode:  viper.GetString("db-ssl-mode"),
+		SSLCert:  viper.GetString("db-ssl-cert"),
 
-		ConnectionRetryAttempts: viper.GetInt("database-conn-retry-attempts"),
-		ConnectionRetryTime:     viper.GetInt("database-conn-retry-time"),
+		ConnectionRetryAttempts: viper.GetInt("db-conn-retry-attempts"),
+		ConnectionRetryTime:     viper.GetInt("db-conn-retry-time"),
 	}
 	runner.AddTask("database", "", &tasks.DBSetup{
 		DBConfigPtr:   &a.Config.DB,
 		DBConfig:      dbConf,
-		SSLCertSource: viper.GetString("database-ssl-cert-source"),
+		SSLCertSource: viper.GetString("db-ssl-cert-source"),
 		ConsoleWriter: a.consoleWriter(),
 	})
 	runner.AddTask("create-default-flavorgroup", "", &tasks.CreateDefaultFlavor{
@@ -200,7 +209,7 @@ func (a *App) selfSignTask(name string) setup.Task {
 		updateConfig.CertFile = viper.GetString(name + "-cert-file")
 		updateConfig.CommonName = viper.GetString(name + "-common-name")
 		updateConfig.Issuer = viper.GetString(name + "-issuer")
-		updateConfig.ValidityDays = viper.GetInt(name + "-validity-days")
+		updateConfig.ValidityDays = viper.GetInt(name + "-validity-years")
 	}
 	return &setup.SelfSignedCert{
 		CertFile:     viper.GetString(name + "-cert-file"),
@@ -208,7 +217,7 @@ func (a *App) selfSignTask(name string) setup.Task {
 		CommonName:   viper.GetString(name + "-common-name"),
 		Issuer:       viper.GetString(name + "-issuer"),
 		SANList:      viper.GetString(name + "-san-list"),
-		ValidityDays: viper.GetInt(name + "-validity-days"),
+		ValidityDays: viper.GetInt(name + "-validity-years"),
 
 		ConsoleWriter: a.consoleWriter(),
 	}

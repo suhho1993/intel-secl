@@ -36,9 +36,10 @@ type SelfSignedCert struct {
 	KeyFile  string
 	CertFile string
 
-	CommonName   string
-	SANList      string
-	Issuer       string
+	CommonName string
+	SANList    string
+	Issuer     string
+	// this actually means years
 	ValidityDays int
 
 	PublicKey     crypto.PublicKey
@@ -92,7 +93,7 @@ func (t *SelfSignedCert) Run() error {
 			CommonName: t.Issuer,
 		},
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().AddDate(0, 0, t.ValidityDays),
+		NotAfter:  time.Now().AddDate(t.ValidityDays, 0, 0),
 
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,

@@ -39,42 +39,42 @@ const defaultSSLCertFilePath = constants.ConfigDir + "hvsdbsslcert.pem"
 const dbEnvHelpPrompt = "Following environment variables are required for Database related setups:"
 
 var dbEnvHelp = map[string]string{
-	"DATABASE_VENDOR":              "Vendor of database",
-	"DATABASE_HOST":                "Database host name",
-	"DATABASE_PORT":                "Database port",
-	"DATABASE_DB_NAME":             "Database name",
-	"DATABASE_USERNAME":            "Database username",
-	"DATABASE_PASSWORD":            "Database password",
-	"DATABASE_SSL_MODE":            "Database SSL mode",
-	"DATABASE_SSL_CERT":            "Database SSL certificate",
-	"DATABASE_SSL_CERT_SOURCE":     "Database SSL certificate to be copied from",
-	"DATABASE_CONN_RETRY_ATTEMPTS": "Database connection retry attempts",
-	"DATABASE_CONN_RETRY_TIME":     "Database connection retry time",
+	"DB_VENDOR":              "Vendor of database, or use HVS_DB_VENDOR alternatively",
+	"DB_HOST":                "Database host name, or use HVS_DB_HOSTNAME alternatively",
+	"DB_PORT":                "Database port, or use HVS_DB_PORT alternatively",
+	"DB_NAME":                "Database name, or use HVS_DB_NAME alternatively",
+	"DB_USERNAME":            "Database username, or use HVS_DB_USERNAME alternatively",
+	"DB_PASSWORD":            "Database password, or use HVS_DB_PASSWORD alternatively",
+	"DB_SSL_MODE":            "Database SSL mode, or use HVS_DB_SSL_MODE alternatively",
+	"DB_SSL_CERT":            "Database SSL certificate, or use HVS_DB_SSLCERT alternatively",
+	"DB_SSL_CERT_SOURCE":     "Database SSL certificate to be copied from, or use HVS_DB_SSLCERTSRC alternatively",
+	"DB_CONN_RETRY_ATTEMPTS": "Database connection retry attempts",
+	"DB_CONN_RETRY_TIME":     "Database connection retry time",
 }
 
 func (t *DBSetup) Run() error {
 	// populates the configuration structure
 	if t.DBConfigPtr == nil {
-		return errors.New("Pointer to configuration structure can not be nil")
+		return errors.New("Pointer to database configuration structure can not be nil")
 	}
 	// validate input values
 	if t.Vendor == "" {
-		return errors.New("DATABASE_VENDOR is not set")
+		return errors.New("DB_VENDOR is not set, or use HVS_DB_VENDOR alternatively")
 	}
 	if t.Host == "" {
-		return errors.New("DATABASE_HOST is not set")
+		return errors.New("DB_HOST is not set, or use HVS_DB_HOSTNAME alternatively")
 	}
 	if t.Port == "" {
-		return errors.New("DATABASE_PORT is not set")
+		return errors.New("DB_PORT is not set, or use HVS_DB_PORT alternatively")
 	}
 	if t.DBName == "" {
-		return errors.New("DATABASE_DB_NAME is not set")
+		return errors.New("DB_NAME is not set, or use HVS_DB_NAME alternatively")
 	}
 	if t.Username == "" {
-		return errors.New("DATABASE_USERNAME is not set")
+		return errors.New("DB_USERNAME is not set, or use HVS_DB_USERNAME alternatively")
 	}
 	if t.Password == "" {
-		return errors.New("DATABASE_PASSWORD is not set")
+		return errors.New("DB_PASSWORD is not set, or use HVS_DB_PASSWORD alternatively")
 	}
 	if t.SSLMode == "" {
 		t.SSLMode = constants.SslModeAllow
@@ -125,7 +125,7 @@ func (t *DBSetup) Validate() error {
 	fmt.Fprintln(t.ConsoleWriter, "Validating DB args")
 	// check if SSL certificate exists
 	if t.DBConfigPtr == nil {
-		return errors.New("Pointer to configuration structure can not be nil")
+		return errors.New("Pointer to database configuration structure can not be nil")
 	}
 	if t.DBConfigPtr.SSLMode == constants.SslModeVerifyCa ||
 		t.DBConfigPtr.SSLMode == constants.SslModeVerifyFull {

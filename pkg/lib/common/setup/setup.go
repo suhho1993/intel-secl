@@ -132,7 +132,7 @@ func (r *Runner) PrintHelp(taskName string) error {
 	return nil
 }
 
-// LastFailedCommand returns the last command that failed to run
-func (r *Runner) GetFailedCommands() map[string]error {
+// FailedCommands returns the last command that failed to run
+func (r *Runner) FailedCommands() map[string]error {
 	return r.failedCommands
 }

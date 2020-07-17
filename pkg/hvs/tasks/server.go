@@ -27,12 +27,12 @@ type ServerSetup struct {
 const svrEnvHelpPrompt = "Following environment variables are required for Server setup:"
 
 var svrEnvHelp = map[string]string{
-	"SERVER_PORT": "The port on which to listen",
+	"SERVER_PORT": "The port on which to listen, or use HVS_PORT alternatively",
 }
 
 func (t *ServerSetup) Run() error {
 	if t.SvrConfigPtr == nil {
-		return errors.New("Pointer to configuration structure can not be nil")
+		return errors.New("Pointer to server configuration structure can not be nil")
 	}
 	if t.Port < 1024 ||
 		t.Port > 65535 {
@@ -49,7 +49,7 @@ func (t *ServerSetup) Run() error {
 
 func (t *ServerSetup) Validate() error {
 	if t.SvrConfigPtr == nil {
-		return errors.New("Pointer to configuration structure can not be nil")
+		return errors.New("Pointer to server configuration structure can not be nil")
 	}
 	if t.SvrConfigPtr.Port < 1024 ||
 		t.SvrConfigPtr.Port > 65535 {

@@ -96,12 +96,20 @@ const (
 
 // general constants for certificates
 const (
-	DefaultCN           = "HVS Certificate"
-	DefaultSANList      = "127.0.0.1,localhost"
-	DefaultCertIssuer   = "intel-secl"
-	DefaultCertValidity = 5
+	DefaultSAMLCN           = "HVS SAML Certificate"
+	DefaultSAMLCertIssuer   = "AttestationService"
+	DefaultSAMLCertValidity = 1
 
-	NAString = "N/A"
+	DefaultFlavorSigningCN = "HVS Flavor Signing Certificate"
+	DefaultPrivacyCACN     = "HVS Privacy Certificate"
+	DefaultEndorsementCACN = "HVS Endorsement Certificate"
+	DefaultTagCACN         = "HVS Tag Certificate"
+
+	DefaultSelfSignedCertIssuer        = "intel-secl"
+	DefaultSelfSignedCertValidityYears = 5
+
+	DefaultCertIssuer = "HVS Default Issuer"
+	DefaultCN         = "HVS Default Common Name"
 
 	DefaultTagCertValiditySeconds = 60 * 60 * 24 * 365
 )

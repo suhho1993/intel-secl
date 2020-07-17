@@ -4,7 +4,7 @@ type DBConfig struct {
 	Vendor   string `yaml:"vendor" mapstructure:"vendor"`
 	Host     string `yaml:"host" mapstructure:"host"`
 	Port     string `yaml:"port" mapstructure:"port"`
-	DBName   string `yaml:"db-name" mapstructure:"db-name"`
+	DBName   string `yaml:"name" mapstructure:"name"`
 	Username string `yaml:"username" mapstructure:"username"`
 	Password string `yaml:"password" mapstructure:"password"`
 	SSLMode  string `yaml:"ssl-mode" mapstructure:"ssl-mode"`
