@@ -31,8 +31,9 @@ func (store *MockReportStore) Create(report *models.HVSReport) (*models.HVSRepor
 	return report, nil
 }
 
-func (store *MockReportStore) Update(*models.HVSReport) (*models.HVSReport, error) {
-	return nil, errors.New("Update not implemented")
+func (store *MockReportStore) Update(report *models.HVSReport) (*models.HVSReport, error) {
+	store.reportStore[report.ID] = *report
+	return report, nil
 }
 
 // Retrieve returns HVSReport

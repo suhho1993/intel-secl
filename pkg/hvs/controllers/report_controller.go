@@ -79,8 +79,8 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCrite
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Error while searching host")
 	}
 
-	if hosts == nil {
-		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Host does not exist")
+	if hosts == nil || len(hosts) == 0{
+		return nil, errors.New("controllers/report_controller:createReport() Host for given criteria does not exist")
 	}
 	//Always only one record is returned for the particular criteria
 	hostId := hosts[0].Id

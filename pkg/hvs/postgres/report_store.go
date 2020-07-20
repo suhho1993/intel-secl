@@ -67,6 +67,7 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
 		}
+		return vsReport, nil
 	} else {
 		vsReport = hvsReports[0]
 	}

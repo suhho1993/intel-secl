@@ -181,9 +181,9 @@ func (v *Verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustRepo
 		Expiration:  samlReport.ExpiryTime,
 		Saml:        samlReport.Assertion,
 	}
-	_, err := v.ReportStore.Update(&hvsReport)
+	report, err := v.ReportStore.Update(&hvsReport)
 	if err != nil {
 		log.WithError(err).Errorf("hosttrust/verifier:storeTrustReport() Failed to store Report")
 	}
-	return &hvsReport
+	return report
 }
