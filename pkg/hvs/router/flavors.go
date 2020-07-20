@@ -16,7 +16,7 @@ import (
 )
 
 // SetFlavorRoutes registers routes for flavors
-func SetFlavorRoutes(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore, flavorControllerConfig domain.HostControllerConfig) *mux.Router {
+func SetFlavorRoutes(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, flavorControllerConfig domain.HostControllerConfig) *mux.Router {
 	defaultLog.Trace("router/flavors:SetFlavorRoutes() Entering")
 	defer defaultLog.Trace("router/flavors:SetFlavorRoutes() Leaving")
 
@@ -24,7 +24,7 @@ func SetFlavorRoutes(router *mux.Router, store *postgres.DataStore, certStore *m
 	flavorStore := postgres.NewFlavorStore(store)
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	tagCertStore := postgres.NewTagCertificateStore(store)
-	flavorController := controllers.NewFlavorController(flavorStore, flavorGroupStore, hostStore, tagCertStore, certStore, flavorControllerConfig)
+	flavorController := controllers.NewFlavorController(flavorStore, flavorGroupStore, hostStore, tagCertStore, hostTrustManager, certStore, flavorControllerConfig)
 
 	flavorIdExpr := fmt.Sprintf("%s%s", "/flavors/", validation.IdReg)
 

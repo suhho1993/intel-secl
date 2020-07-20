@@ -53,13 +53,13 @@ func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore mo
 
 	// CertStore should have an entry for Tag CA Cert
 	tagKey, tagCerts, err := certStore.GetKeyAndCertificates(models.CaCertTypesTagCa.String())
-	if err != nil || tagKey == nil || tagCerts == nil{
+	if err != nil || tagKey == nil || tagCerts == nil {
 		defaultLog.Errorf("Error while retrieving certificate and key for certType %s", models.CaCertTypesTagCa.String())
 		return nil
 	}
 
 	flvrSigningkey, _, err := certStore.GetKeyAndCertificates(models.CertTypesFlavorSigning.String())
-	if err != nil || flvrSigningkey == nil{
+	if err != nil || flvrSigningkey == nil {
 		defaultLog.Errorf("Error while retrieving certificate and key for certType %s", models.CertTypesFlavorSigning.String())
 		return nil
 	}
@@ -67,6 +67,7 @@ func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore mo
 	fCon := FlavorController{
 		FStore:  fs,
 		FGStore: fgs,
+		HStore:  hs,
 	}
 
 	return &TagCertificateController{
@@ -471,20 +472,12 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
 	}
 
-	/*// add newly created flavor to flavor store
-	sf, err := controller.FlavorController.FStore.Create(&signedFlavors[0])
-
-	if err != nil {
-		defaultLog.WithField("Certid", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to persist SignedFlavor %s to FlavorStore", commLogMsg.AppRuntimeErr, err.Error())
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
-	}*/
-
 	sf := signedFlavors[0]
 	// Link signed asset tag flavor to the Host Unique FlavorGroup
 	var flavorPartMap = make(map[fc.FlavorPart][]hvs.SignedFlavor)
 	flavorPartMap[fc.FlavorPartAssetTag] = []hvs.SignedFlavor{sf}
 
-	linkedSf, err := controller.FlavorController.addFlavorToFlavorgroup(flavorPartMap, uuid.Nil)
+	linkedSf, err := controller.FlavorController.addFlavorToFlavorgroup(flavorPartMap, nil)
 	if err != nil || linkedSf == nil {
 		defaultLog.WithError(err).WithField("Certid", dtcReq.CertID).WithField("flavorID", sf.Flavor.Meta.ID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to link SignedFlavor to Host Unique FlavorGroup", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error during Tag Certificate Deploy"}

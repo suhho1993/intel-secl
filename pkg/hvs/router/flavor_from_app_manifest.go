@@ -16,7 +16,7 @@ import (
 
 //SetFlavorFromAppManifestRoute registers routes for APIs that return software flavor from manifest
 func SetFlavorFromAppManifestRoute(router *mux.Router, store *postgres.DataStore, certStore *models.CertificatesStore,
-	hcConfig domain.HostControllerConfig) *mux.Router {
+	hostTrustManager domain.HostTrustManager, hcConfig domain.HostControllerConfig) *mux.Router {
 	defaultLog.Trace("router/flavor-from-app-manifest:SetFlavorFromAppManifestRoute() Entering")
 	defer defaultLog.Trace("router/flavor-from-app-manifest:SetFlavorFromAppManifestRoute() Leaving")
 
@@ -24,7 +24,7 @@ func SetFlavorFromAppManifestRoute(router *mux.Router, store *postgres.DataStore
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	hostStore := postgres.NewHostStore(store)
 	tagCertStore := postgres.NewTagCertificateStore(store)
-	flavorController := controllers.NewFlavorController(flavorStore, flavorGroupStore, hostStore, tagCertStore, certStore, hcConfig)
+	flavorController := controllers.NewFlavorController(flavorStore, flavorGroupStore, hostStore, tagCertStore, hostTrustManager, certStore, hcConfig)
 	flavorFromAppManifestController := controllers.NewFlavorFromAppManifestController(*flavorController)
 
 	router.Handle("/flavor-from-app-manifest",

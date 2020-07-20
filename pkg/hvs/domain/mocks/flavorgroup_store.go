@@ -76,6 +76,9 @@ func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCrit
 
 // Create inserts a Flavorgroup
 func (store *MockFlavorgroupStore) Create(flavorgroup *hvs.FlavorGroup) (*hvs.FlavorGroup, error) {
+	if flavorgroup.ID == uuid.Nil {
+		flavorgroup.ID = uuid.New()
+	}
 	store.FlavorgroupStore[flavorgroup.ID] = flavorgroup
 	return flavorgroup, nil
 }

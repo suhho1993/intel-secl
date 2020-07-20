@@ -37,11 +37,12 @@ type FlavorController struct {
 	FGStore   domain.FlavorGroupStore
 	HStore    domain.HostStore
 	TCStore   domain.TagCertificateStore
+	HTManager domain.HostTrustManager
 	CertStore *dm.CertificatesStore
 	HostCon   HostController
 }
 
-func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs domain.HostStore, tcs domain.TagCertificateStore, certStore *dm.CertificatesStore, hcConfig domain.HostControllerConfig) *FlavorController {
+func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs domain.HostStore, tcs domain.TagCertificateStore, htm domain.HostTrustManager, certStore *dm.CertificatesStore, hcConfig domain.HostControllerConfig) *FlavorController {
 	// certStore should have an entry for Flavor Signing CA
 	if _, found := (*certStore)[dm.CertTypesFlavorSigning.String()]; !found {
 		defaultLog.Errorf("controllers/flavor_controller:NewFlavorController() %s : Flavor Signing KeyPair not found in CertStore", commLogMsg.AppRuntimeErr)
@@ -65,6 +66,7 @@ func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs 
 		FGStore:   fgs,
 		HStore:    hs,
 		TCStore:   tcs,
+		HTManager: htm,
 		CertStore: certStore,
 		HostCon:   hController,
 	}
@@ -140,7 +142,7 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 		}
 		tagCertificates, err := fcon.TCStore.Search(&tcFilterCriteria)
 		if err != nil {
-			defaultLog.Debugf("controllers/flavor_controller: Unabled to retrieve tag certificate for host with hardware UUID %s", hostManifest.HostInfo.HardwareUUID)
+			defaultLog.Debugf("Unable to retrieve tag certificate for host with hardware UUID %s", hostManifest.HostInfo.HardwareUUID)
 		}
 		if len(tagCertificates) >= 1 {
 			tagCertificate = *tagCertificates[0]
@@ -248,7 +250,7 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 		defaultLog.Error("controllers/flavor_controller:createFlavors() Cannot create flavors")
 		return nil, errors.New("Unable to create Flavors")
 	}
-	return fcon.addFlavorToFlavorgroup(flavorFlavorPartMap, flavorgroup.ID)
+	return fcon.addFlavorToFlavorgroup(flavorFlavorPartMap, flavorgroup)
 }
 
 func (fcon *FlavorController) getHostManifest(cs string) (*hcType.HostManifest, error) {
@@ -262,16 +264,22 @@ func (fcon *FlavorController) getHostManifest(cs string) (*hcType.HostManifest, 
 	return &hostManifest, err
 }
 
-func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.FlavorPart][]hvs.SignedFlavor, flavorgroupId uuid.UUID) ([]hvs.SignedFlavor, error) {
+func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.FlavorPart][]hvs.SignedFlavor, fg *hvs.FlavorGroup) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("controllers/flavor_controller:addFlavorToFlavorgroup() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:addFlavorToFlavorgroup() Leaving")
 
 	defaultLog.Debug("Adding flavors to flavorgroup")
 	var returnSignedFlavors []hvs.SignedFlavor
-	var flavorIds []uuid.UUID
+	// map of flavorgroup to flavor UUID's to create the association
+	flavorgroupFlavorMap := make(map[uuid.UUID][]uuid.UUID)
+	var flavorgroupsForQueue []hvs.FlavorGroup
+	fetchHostData := false
+	var fgHostIds []uuid.UUID
 
 	for flavorPart, signedFlavors := range flavorFlavorPartMap {
+		defaultLog.Debugf("Creating flavors for fp %s", flavorPart.String())
 		for _, signedFlavor := range signedFlavors {
+			flavorgroup := &hvs.FlavorGroup{}
 			signedFlavorCreated, err := fcon.FStore.Create(&signedFlavor)
 			if err != nil {
 				defaultLog.Error("controllers/flavor_controller: addFlavorToFlavorgroup() : Unable to create flavors")
@@ -281,121 +289,135 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 			if signedFlavorCreated != nil && signedFlavorCreated.Flavor.Meta.ID.String() != "" {
 				// add the created flavor to the list of flavors to be returned
 				returnSignedFlavors = append(returnSignedFlavors, *signedFlavorCreated)
-				if flavorPart == fc.FlavorPartAssetTag {
-					if err = fcon.addFlavorToUniqueFlavorgroup(signedFlavorCreated.Flavor, true); err != nil {
-						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Unable to add flavor to ASSET_TAG flavorgroup")
+				if flavorPart == fc.FlavorPartAssetTag || flavorPart == fc.FlavorPartHostUnique {
+					flavorgroup, err = fcon.createFGIfNotExists(dm.FlavorGroupsHostUnique.String())
+					if err != nil || flavorgroup.ID == uuid.Nil {
+						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Error getting host_unique flavorgroup")
 						return nil, err
 					}
-				} else if flavorPart == fc.FlavorPartHostUnique {
-					if err = fcon.addFlavorToUniqueFlavorgroup(signedFlavorCreated.Flavor, false); err != nil {
-						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Unable to add flavor to HOST_UNIQUE flavorgroup")
+					flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
+					// get hostId
+					var hostHardwareUUID uuid.UUID
+					if !reflect.DeepEqual(signedFlavorCreated.Flavor.Meta, fm.Meta{}) &&
+						!reflect.DeepEqual(signedFlavorCreated.Flavor.Meta.Description, fm.Description{}) &&
+						signedFlavorCreated.Flavor.Meta.Description.HardwareUUID != nil {
+						hostHardwareUUID = *signedFlavorCreated.Flavor.Meta.Description.HardwareUUID
+					} else {
+						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() hardware UUID must be specified in the flavor document")
+						return nil, errors.New("hardware UUID must be specified in the HOST_UNIQUE flavor")
+					}
+
+					hosts, err := fcon.HStore.Search(&dm.HostFilterCriteria{
+						HostHardwareId: hostHardwareUUID,
+					})
+					if len(hosts) == 0 || err != nil {
+						defaultLog.Infof("controllers/flavor_controller:addFlavorToFlavorgroup(): Host with matching hardware UUID not registered")
+					}
+					// add hosts to the list of host Id's to be added into flavor-verification queue
+					for _, host := range hosts {
+						fgHostIds = append(fgHostIds, host.Id)
+					}
+					if flavorPart == fc.FlavorPartAssetTag {
+						fetchHostData = true
+					}
+				} else if flavorPart == fc.FlavorPartSoftware {
+					var softwareFgName string
+					if strings.Contains(signedFlavorCreated.Flavor.Meta.Description.Label, fConst.DefaultSoftwareFlavorPrefix) {
+						softwareFgName = dm.FlavorGroupsPlatformSoftware.String()
+					} else {
+						softwareFgName = dm.FlavorGroupsWorkloadSoftware.String()
+					}
+					flavorgroup, err = fcon.createFGIfNotExists(softwareFgName)
+					if err != nil || flavorgroup.ID == uuid.Nil {
+						defaultLog.Errorf("controllers/flavor_controller:addFlavorToFlavorgroup() Error getting %v flavorgroup", softwareFgName)
 						return nil, err
 					}
-				} else if flavorPart == fc.FlavorPartSoftware && strings.Contains(signedFlavorCreated.Flavor.Meta.Description.Label, fConst.DefaultSoftwareFlavorPrefix) {
-					if err = fcon.addFlavorToIseclSoftwareFlavorgroup(signedFlavorCreated.Flavor, dm.FlavorGroupsPlatformSoftware.String()); err != nil {
-						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Unable to add flavor to default platform software flavorgroup")
-						return nil, err
-					}
-				} else if flavorPart == fc.FlavorPartSoftware && strings.Contains(signedFlavorCreated.Flavor.Meta.Description.Label, fConst.DefaultWorkloadFlavorPrefix) {
-					if err = fcon.addFlavorToIseclSoftwareFlavorgroup(signedFlavorCreated.Flavor, dm.FlavorGroupsWorkloadSoftware.String()); err != nil {
-						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Unable to add flavor to default workload software flavorgroup")
-						return nil, err
-					}
-				} else {
-					flavorIds = append(flavorIds, signedFlavorCreated.Flavor.Meta.ID)
+					flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
+					fetchHostData = true
+				} else if flavorPart == fc.FlavorPartPlatform || flavorPart == fc.FlavorPartOs {
+					flavorgroup = fg
+					flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
 				}
 			} else {
 				defaultLog.Error("controllers/flavor_controller: addFlavorToFlavorgroup(): Unable to create flavors")
 				return nil, errors.New("Unable to create flavors")
 			}
+			if _, ok := flavorgroupFlavorMap[flavorgroup.ID]; ok {
+				flavorgroupFlavorMap[flavorgroup.ID] = append(flavorgroupFlavorMap[flavorgroup.ID], signedFlavorCreated.Flavor.Meta.ID)
+			} else {
+				flavorgroupFlavorMap[flavorgroup.ID] = []uuid.UUID{signedFlavorCreated.Flavor.Meta.ID}
+			}
 		}
 	}
 
-	if flavorgroupId == uuid.Nil || len(flavorIds) == 0 {
-		defaultLog.Info("controllers/flavor_controller: addFlavorToFlavorgroup(): Missing flavorgroupID or flavorId's")
-		return returnSignedFlavors, nil
-	}
-
-	// for flavorparts PLATFORM and OS, we have to associate it to a particular flavorgroup
-	// add falvors to flavorgroup
-	if len(flavorIds) >= 1 {
-		_, err := fcon.FGStore.AddFlavors(flavorgroupId, flavorIds)
+	// for each flavorgroup, we have to associate it with flavors
+	for fgId, fIds := range flavorgroupFlavorMap {
+		_, err := fcon.FGStore.AddFlavors(fgId, fIds)
 		if err != nil {
-			defaultLog.Errorf("controllers/flavor_controller: addFlavorToFlavorgroup(): Error while adding flavors to flavorgroup %s", flavorgroupId.String())
+			defaultLog.Errorf("controllers/flavor_controller: addFlavorToFlavorgroup(): Error while adding flavors to flavorgroup %s", fgId.String())
 			return nil, err
 		}
 	}
-	// TODO: add host to flavor verify queue
+	// get all the hosts that belong to the same flavor group and add them to flavor-verify queue
+	err := fcon.addFlavorgroupHostsToFlavorVerifyQueue(flavorgroupsForQueue, fgHostIds, fetchHostData)
+	if err != nil {
+		defaultLog.Errorf("controllers/flavor_controller: addFlavorToFlavorgroup(): Error while adding hosts to flavor-verify queue")
+		return nil, err
+	}
 	return returnSignedFlavors, nil
 }
 
-func (fcon FlavorController) addFlavorToUniqueFlavorgroup(flavor hvs.Flavor, forceUpdate bool) error {
-	defaultLog.Trace("controllers/flavor_controller:addFlavorToUniqueFlavorgroup() Entering")
-	defer defaultLog.Trace("controllers/flavor_controller:addFlavorToUniqueFlavorgroup() Leaving")
-	var err error
-	// check if HOST_UNIQUE flavorgroup exists
-	flavorgroup, err := fcon.createFGIfNotExists(dm.FlavorGroupsHostUnique.String())
-	if err != nil || flavorgroup.ID == uuid.Nil {
-		defaultLog.Error("controllers/flavor_controller:createFlavors() Error getting flavorgroup")
-		return err
-	}
-	// create flavor-flavorgroup link association
-	_, err = fcon.FGStore.AddFlavors(flavorgroup.ID, []uuid.UUID{flavor.Meta.ID})
-	if err != nil {
-		defaultLog.Errorf("controllers/flavor_controller: addFlavorToUniqueFlavorgroup(): Error while adding flavors to flavorgroup %s", flavorgroup.ID.String())
-		return err
-	}
-	// retrive hostID and host hardwareUUID and host to flavor verify queue
-	var hostName string
-	var hostHardwareUUID uuid.UUID
+func (fcon FlavorController) addFlavorgroupHostsToFlavorVerifyQueue(fgs []hvs.FlavorGroup, hostIds []uuid.UUID, forceUpdate bool) error {
+	defaultLog.Trace("controllers/flavor_controller:addFlavorgroupHostsToFlavorVerifyQueue() Entering")
+	defer defaultLog.Trace("controllers/flavor_controller:addFlavorgroupHostsToFlavorVerifyQueue() Leaving")
+	fgHosts := make(map[uuid.UUID]bool)
 
-	if !reflect.DeepEqual(flavor.Meta, fm.Meta{}) && !reflect.DeepEqual(flavor.Meta.Description, fm.Description{}) && flavor.Meta.Description.Label != "" {
-		hostName = flavor.Meta.Description.Label
-	}
-
-	if !reflect.DeepEqual(flavor.Meta, fm.Meta{}) && !reflect.DeepEqual(flavor.Meta.Description, fm.Description{}) && flavor.Meta.Description.HardwareUUID != &uuid.Nil {
-		hostHardwareUUID = *flavor.Meta.Description.HardwareUUID
-	}
-
-	if hostName == "" && hostHardwareUUID == uuid.Nil {
-		defaultLog.Error("controllers/flavor_controller:addFlavorToUniqueFlavorgroup() Host name or hardware UUID must be specified in the flavor document")
-		return errors.New("Host name or hardware UUID must be specified in the HOST_UNIQUE flavor")
+	// for each flavorgroup, find the hosts that belong to the flavorgroup
+	// and add it to the list of host ID's
+	for _, fg := range fgs {
+		defaultLog.Debugf("Adding hosts that belong to %s flavorgroup", fg.Name)
+		if fg.Name == dm.FlavorGroupsHostUnique.String() && len(hostIds) >= 1 {
+			for _, hId := range hostIds {
+				if _, ok := fgHosts[hId]; !ok {
+					fgHosts[hId] = true
+				}
+			}
+		} else {
+			hIds, err := fcon.FGStore.SearchHostsByFlavorGroup(fg.ID)
+			if err != nil {
+				defaultLog.Errorf("controllers/flavor_controller:addFlavorgroupHostsToFlavorVerifyQueue(): Failed to fetch hosts linked to FlavorGroup")
+				return err
+			}
+			for _, hId := range hIds {
+				// adding to the list only if not already added
+				if _, ok := fgHosts[hId]; !ok {
+					fgHosts[hId] = true
+				}
+			}
+		}
 	}
 
-	hosts, err := fcon.HStore.Search(&dm.HostFilterCriteria{
-		HostHardwareId: hostHardwareUUID,
-		NameEqualTo:    hostName,
-	})
-	if len(hosts) == 0 && err != nil {
-		defaultLog.Infof("controllers/flavor_controller: addFlavorToUniqueFlavorgroup(): Host with matching name and hardware UUID not registered")
-		return nil
+	var hostIdsForQueue []uuid.UUID
+	for hId := range fgHosts {
+		hostIdsForQueue = append(hostIdsForQueue, hId)
 	}
-	// TODO: add host to flavor-verify queue
-	return nil
-}
 
-func (fcon FlavorController) addFlavorToIseclSoftwareFlavorgroup(flavor hvs.Flavor, softwareFgName string) error {
-	defaultLog.Trace("controllers/flavor_controller:addFlavorToIseclSoftwareFlavorgroup() Entering")
-	defer defaultLog.Trace("controllers/flavor_controller:addFlavorToIseclSoftwareFlavorgroup() Leaving")
-	var err error
-	// check if platform_software or workload_software flavorgroup exists, if not create a new one
-	flavorgroup, err := fcon.createFGIfNotExists(softwareFgName)
-	if err != nil || flavorgroup.ID == uuid.Nil {
-		defaultLog.Error("controllers/flavor_controller:addFlavorToIseclSoftwareFlavorgroup() Error getting flavorgroup")
-		return err
+	defaultLog.Debugf("Found %v hosts to be added to flavor-verify queue", len(hostIdsForQueue))
+	// adding all the host linked to flavorgroup to flavor-verify queue
+	if len(hostIdsForQueue) >= 1 {
+		err := fcon.HTManager.VerifyHostsAsync(hostIdsForQueue, forceUpdate, false)
+		if err != nil {
+			defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Host to Flavor Verify Queue addition failed")
+			return err
+		}
 	}
-	_, err = fcon.FGStore.AddFlavors(flavorgroup.ID, []uuid.UUID{flavor.Meta.ID})
-	if err != nil {
-		defaultLog.Errorf("controllers/flavor_controller: addFlavorToIseclSoftwareFlavorgroup(): Error while adding flavors to flavorgroup %s", flavorgroup.ID.String())
-		return err
-	}
-	// TODO: add all hosts belonging to the flavorgroup to flavor-verify queue
 	return nil
 }
 
 func (fcon FlavorController) retrieveFlavorCollection(platformFlavor *fType.PlatformFlavor, fgId uuid.UUID, flavorParts []fc.FlavorPart) map[fc.FlavorPart][]hvs.SignedFlavor {
 	defaultLog.Trace("controllers/flavor_controller:retrieveFlavorCollection() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:retrieveFlavorCollection() Leaving")
+
 	flavorFlavorPartMap := make(map[fc.FlavorPart][]hvs.SignedFlavor)
 	flavorSignKey := (*fcon.CertStore)[dm.CertTypesFlavorSigning.String()].Key
 
@@ -508,13 +530,13 @@ func validateFlavorFilterCriteria(id, key, value, flavorgroupId string, flavorPa
 
 	filterCriteria := dm.FlavorFilterCriteria{}
 	var err error
-	if id != ""{
-			parsedId, err := uuid.Parse(id)
-			if err != nil {
-				return nil, errors.New("Invalid UUID format of the flavor identifier")
-			}
-			filterCriteria.Ids = []uuid.UUID{parsedId}
+	if id != "" {
+		parsedId, err := uuid.Parse(id)
+		if err != nil {
+			return nil, errors.New("Invalid UUID format of the flavor identifier")
 		}
+		filterCriteria.Ids = []uuid.UUID{parsedId}
+	}
 	if key != "" {
 		if err = validation.ValidateNameString(key); err != nil {
 			return nil, errors.Wrap(err, "Valid contents for filter Key must be specified")

@@ -33,5 +33,5 @@ type TagCertificateCollection struct {
 func (tc *TagCertificate) SetAssetTagDigest() {
 	// get Tag Cert hash
 	tcHash, _ := crypt.GetHashData(tc.Certificate, crypto.SHA384)
-	tc.TagCertDigest = base64.URLEncoding.EncodeToString(tcHash)
+	tc.TagCertDigest = base64.StdEncoding.EncodeToString(tcHash)
 }
