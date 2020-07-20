@@ -387,7 +387,7 @@ func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostID, hostHardwareID 
 
 	// Since report id is unique and only one record can be returned by the query.
 	if reportID != uuid.Nil {
-		tx = tx.Where("id = '%s'", reportID.String())
+		tx = tx.Where("id = ?", reportID.String())
 		return tx
 	}
 
