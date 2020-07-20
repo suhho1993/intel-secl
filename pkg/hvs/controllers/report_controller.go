@@ -28,10 +28,10 @@ type ReportController struct {
 	reportStore     domain.ReportStore
 	hostStore       domain.HostStore
 	hostStatusStore domain.HostStatusStore
-	HTManager 		domain.HostTrustManager
+	HTManager       domain.HostTrustManager
 }
 
-func NewReportController(rs domain.ReportStore, hs domain.HostStore, hsts domain.HostStatusStore, ht domain.HostTrustManager ) *ReportController {
+func NewReportController(rs domain.ReportStore, hs domain.HostStore, hsts domain.HostStatusStore, ht domain.HostTrustManager) *ReportController {
 	return &ReportController{rs, hs, hsts, ht}
 }
 
@@ -41,7 +41,7 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/report_controller:Create() The request body is not provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body is not provided"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
 	}
 
 	var reqReportCreateCriteria hvs.ReportCreateCriteria
@@ -52,7 +52,7 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 	err := dec.Decode(&reqReportCreateCriteria)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/report_controller:Create() %s :  Failed to decode request body as Report Create Criteria", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	if err := validateReportCreateCriteria(reqReportCreateCriteria); err != nil {
@@ -75,17 +75,17 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCrite
 	defer defaultLog.Trace("controllers/report_controller:createReport() Leaving")
 	hsCriteria := getHostFilterCriteria(rsCriteria)
 	hosts, err := controller.hostStore.Search(&hsCriteria)
-	if err != nil{
+	if err != nil {
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Error while searching host")
 	}
 
-	if hosts == nil{
+	if hosts == nil {
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Host does not exist")
 	}
 	//Always only one record is returned for the particular criteria
 	hostId := hosts[0].Id
 	hostStatusCollection, err := controller.hostStatusStore.Search(&models.HostStatusFilterCriteria{
-		HostId:         hostId,
+		HostId:        hostId,
 		LatestPerHost: true,
 	})
 	if len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
@@ -106,7 +106,7 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/report_controller:CreateSaml() The request body is not provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body is not provided"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
 	}
 
 	var reqReportCreateCriteria hvs.ReportCreateCriteria
@@ -117,7 +117,7 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 	err := dec.Decode(&reqReportCreateCriteria)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() %s :  Failed to decode request body as Report Create Criteria", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	if err := validateReportCreateCriteria(reqReportCreateCriteria); err != nil {
@@ -130,10 +130,13 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml()  Error while creating report from Flavor verify queue")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
 	}
-
-	report := ConvertToReport(hvsReport)
-	secLog.WithField("Name", report.HostInfo.HostName).Infof("%s: saml report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
-	return report.Saml, http.StatusCreated, nil
+	samlReport, err := hvsReport.GetSaml()
+	if err != nil {
+		defaultLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() Error while retrieving saml from report")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while retrieving saml from report"}
+	}
+	secLog.WithField("Host Name", hvsReport.TrustReport.HostManifest.HostInfo.HostName).Infof("%s: saml report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
+	return samlReport, http.StatusCreated, nil
 }
 
 func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -147,7 +150,7 @@ func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Reque
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", id).Info(
 				"controllers/report_controller:Retrieve() Report with given ID does not exist")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Report with given ID does not exist"}
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Report with given ID does not exist"}
 		} else {
 			secLog.WithError(err).WithField("id", id).Info(
 				"controllers/report_controller:Retrieve() failed to retrieve Report")
@@ -164,7 +167,6 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 	defaultLog.Trace("controllers/report_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/report_controller:Search() Leaving")
 
-	
 	// get the ReportFilterCriteria
 	reportFilterCriteria, err := getReportFilterCriteria(r.URL.Query())
 	if err != nil {
@@ -181,7 +183,7 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 	reportCollection := hvs.ReportCollection{
 		Reports: []*hvs.Report{},
 	}
-	for _, hvsReport := range hvsReportCollection{
+	for _, hvsReport := range hvsReportCollection {
 		reportCollection.Reports = append(reportCollection.Reports, ConvertToReport(hvsReport))
 	}
 	secLog.Infof("%s: Reports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
@@ -208,7 +210,7 @@ func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Req
 	var samlStruct hvs.Saml
 
 	var samlCollection []hvs.Saml
-	for _, hvsReport := range hvsReportCollection{
+	for _, hvsReport := range hvsReportCollection {
 		samlStruct, err = hvsReport.GetSaml()
 		if err != nil {
 			defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml() Error while retrieving saml from report")
@@ -333,7 +335,6 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	return &rfc, nil
 }
 
-
 func validateReportCreateCriteria(re hvs.ReportCreateCriteria) error {
 	defaultLog.Trace("controllers/report_controller:validateReportCreateCriteria() Entering")
 	defer defaultLog.Trace("controllers/report_controller:validateReportCreateCriteria() Leaving")
@@ -354,13 +355,13 @@ func ConvertToReport(hvsReport *models.HVSReport) *hvs.Report {
 	trustInformation := buildTrustInformation(hvsReport.TrustReport)
 
 	report := hvs.Report{
-		ID: hvsReport.ID,
-		HostID: hvsReport.HostID,
-		CreatedAt: hvsReport.CreatedAt,
-		Expiration: hvsReport.Expiration,
-		TrustReport: hvsReport.TrustReport,
+		ID:               hvsReport.ID,
+		HostID:           hvsReport.HostID,
+		CreatedAt:        hvsReport.CreatedAt,
+		Expiration:       hvsReport.Expiration,
+		TrustReport:      hvsReport.TrustReport,
 		TrustInformation: *trustInformation,
-		HostInfo: hvsReport.TrustReport.HostManifest.HostInfo,
+		HostInfo:         hvsReport.TrustReport.HostManifest.HostInfo,
 	}
 	return &report
 }
@@ -370,26 +371,26 @@ func buildTrustInformation(trustReport hvs.TrustReport) *hvs.TrustInformation {
 	flavorParts := common.GetFlavorTypes()
 	flavorsTrustStatus := make(map[common.FlavorPart]hvs.FlavorTrustStatus)
 	tr := hvs.NewTrustReport(trustReport)
-	for _, flavorPart := range flavorParts{
-		if len(tr.GetResultsForMarker(flavorPart.String()))>0{
+	for _, flavorPart := range flavorParts {
+		if len(tr.GetResultsForMarker(flavorPart.String())) > 0 {
 			flavorsTrustStatus[flavorPart] = hvs.FlavorTrustStatus{
-				Trust: tr.IsTrustedForMarker(flavorPart.String()),
+				Trust:                tr.IsTrustedForMarker(flavorPart.String()),
 				RuleResultCollection: tr.GetResultsForMarker(flavorPart.String()),
 			}
 		}
 	}
-	return &hvs.TrustInformation{Overall: tr.IsTrusted(),  FlavorTrust: flavorsTrustStatus}
+	return &hvs.TrustInformation{Overall: tr.IsTrusted(), FlavorTrust: flavorsTrustStatus}
 }
 
-func getHostFilterCriteria(rsCriteria hvs.ReportCreateCriteria) models.HostFilterCriteria{
+func getHostFilterCriteria(rsCriteria hvs.ReportCreateCriteria) models.HostFilterCriteria {
 	var hsCriteria models.HostFilterCriteria
-	if rsCriteria.HostName != ""{
+	if rsCriteria.HostName != "" {
 		hsCriteria.NameEqualTo = rsCriteria.HostName
 	}
-	if rsCriteria.HostID != uuid.Nil{
+	if rsCriteria.HostID != uuid.Nil {
 		hsCriteria.Id = rsCriteria.HostID
 	}
-	if rsCriteria.HardwareUUID != uuid.Nil{
+	if rsCriteria.HardwareUUID != uuid.Nil {
 		hsCriteria.HostHardwareId = rsCriteria.HardwareUUID
 	}
 	return hsCriteria

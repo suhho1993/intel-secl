@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
-	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
@@ -60,17 +59,9 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 	var vsReport *models.HVSReport
 	hvsReports, err := r.Search(&refilter)
 	if err != nil {
-		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			vsReport, err = r.Create(re)
-			if err != nil {
-				return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
-			}
-		} else {
-			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while searching report")
-		}
+		return nil, errors.Wrapf(err, "postgres/report_store:Update() Error while retrieving report for hostId %s", refilter.HostID)
 	}
 
-	//TODO: Remove this once error is thrown
 	if len(hvsReports) == 0 {
 		vsReport, err = r.Create(re)
 		if err != nil {

@@ -25,7 +25,7 @@ type HVSReport struct {
 
 func (hvsReport *HVSReport) GetSaml() (hvs.Saml, error) {
 	var samlStruct hvs.Saml
-	err := xml.Unmarshal([]byte(hvsReport.Saml), samlStruct)
+	err := xml.Unmarshal([]byte(hvsReport.Saml), &samlStruct)
 	if err != nil {
 		return hvs.Saml{}, errors.Wrap(err, "models/hvsreport:GetSaml() Error while unmarshalling saml report")
 	}
