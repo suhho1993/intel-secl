@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
+	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"reflect"
@@ -51,22 +52,33 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		return nil, errors.New("Host ID must be specified")
 	} else {
 		refilter = models.ReportFilterCriteria{
-			HostID: re.HostID,
+			HostID:         re.HostID,
+			LatestPerHost:  true,
 		}
 	}
 
-	hvsReports, err := r.Search(&refilter)
 	var vsReport *models.HVSReport
+	hvsReports, err := r.Search(&refilter)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			vsReport, err = r.Create(re)
 			if err != nil {
 				return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
 			}
+		} else {
+			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while searching report")
 		}
-		return nil, errors.Wrap(err, "postgres/report_store:Update() Error while searching report")
 	}
-	vsReport = hvsReports[0]
+
+	//TODO: Remove this once error is thrown
+	if len(hvsReports) == 0 {
+		vsReport, err = r.Create(re)
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
+		}
+	} else {
+		vsReport = hvsReports[0]
+	}
 
 	dbReport := report{}
 	if vsReport.HostID != uuid.Nil {
@@ -78,7 +90,7 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 	if !vsReport.Expiration.IsZero() {
 		dbReport.Expiration = vsReport.Expiration
 	}
-	if vsReport.TrustReport.PolicyName != "" {
+	if !reflect.DeepEqual(vsReport.TrustReport, hvs.TrustReport{}) {
 		dbReport.TrustReport = PGTrustReport(vsReport.TrustReport)
 	}
 	if vsReport.Saml != "" {
@@ -152,6 +164,11 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 	if !criteria.FromDate.IsZero() {
 		fromDate = criteria.FromDate
 	}
+	if criteria.Limit == 0 && criteria.LatestPerHost {
+		criteria.Limit = 1
+	} else {
+		criteria.Limit = 2000
+	}
 	latestPerHost = criteria.LatestPerHost
 
 	if criteria.NumberOfDays != 0 {
@@ -173,7 +190,7 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 		}
 		defer rows.Close()
 
-		var reports []*models.HVSReport
+		reports := []*models.HVSReport{}
 
 		for rows.Next() {
 			result := models.HVSReport{}
@@ -198,7 +215,7 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 		}
 		defer rows.Close()
 
-		var reports []*models.HVSReport
+		reports := []*models.HVSReport{}
 		for rows.Next() {
 			result := models.AuditLogEntry{}
 			if err := rows.Scan(&result.ID, &result.EntityID, &result.EntityType, &result.CreatedAt, &result.Action, (*PGAuditLogData)(&result.Data)); err != nil {
@@ -365,7 +382,7 @@ func buildReportSearchQueryWithCriteria(tx *gorm.DB, hostHardwareID, hostID uuid
 }
 
 // buildLatestReportSearchQuery is a helper function to build the query object for a latest report search.
-func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostHardwareID, hostID uuid.UUID, hostName, hostState string, limit int) *gorm.DB {
+func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostID, hostHardwareID  uuid.UUID, hostName, hostState string, limit int) *gorm.DB {
 	defaultLog.Trace("postgres/report_store:buildLatestReportSearchQuery() Entering")
 	defer defaultLog.Trace("postgres/report_store:buildLatestReportSearchQuery() Leaving")
 
@@ -382,7 +399,7 @@ func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostHardwareID, hostID 
 		return tx
 	}
 
-	if hostName != "" || hostHardwareID != uuid.Nil {
+	if  hostID != uuid.Nil || hostName != "" || hostHardwareID != uuid.Nil {
 		tx = tx.Joins("INNER JOIN host h on h.id = host_id")
 	}
 

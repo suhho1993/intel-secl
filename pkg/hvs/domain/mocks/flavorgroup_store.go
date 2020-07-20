@@ -49,10 +49,13 @@ func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCrit
 
 	if criteria == nil {
 		return flvrGroups, nil
-	} else if criteria.Id != "" {
-		id := uuid.MustParse(criteria.Id)
-		fg, _ := store.Retrieve(id)
-		return []*hvs.FlavorGroup{fg}, nil
+	} else if len(criteria.Ids) > 0 {
+		flavorgroups := []*hvs.FlavorGroup{}
+		for _, id := range criteria.Ids {
+			fg, _ := store.Retrieve(id)
+			flavorgroups = append(flavorgroups, fg)
+		}
+		return flavorgroups, nil
 	} else if criteria.NameEqualTo != "" {
 		for _, fg := range store.FlavorgroupStore {
 			if fg.Name == criteria.NameEqualTo {
@@ -64,15 +67,6 @@ func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCrit
 		for _, fg := range store.FlavorgroupStore {
 			if strings.Contains(fg.Name, criteria.NameContains) {
 				flavorgroups = append(flavorgroups, fg)
-			}
-		}
-		return flavorgroups, nil
-	} else if criteria.HostId != "" {
-		var flavorgroups []*hvs.FlavorGroup
-		for _, hsFg := range store.HostFlavorgroupStore {
-			if criteria.HostId == hsFg.HostId.String() {
-				flavorgroup, _ := store.Retrieve(hsFg.FlavorgroupId)
-				flavorgroups = append(flavorgroups, flavorgroup)
 			}
 		}
 		return flavorgroups, nil

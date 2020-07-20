@@ -19,8 +19,16 @@ type AllOfFlavors struct {
 	AllOfFlavors []*model.SignedFlavor
 	Result       *hvs.RuleResult
 	Markers      []common.FlavorPart
+	SkipFlavorSignatureVerification bool
 }
 
+func NewAllOfFlavors(flavors []*model.SignedFlavor, markers []common.FlavorPart, skipFlavorSignatureVerification bool) AllOfFlavors {
+	return AllOfFlavors{
+		AllOfFlavors:                    flavors,
+		Markers:                         markers,
+		SkipFlavorSignatureVerification: skipFlavorSignatureVerification,
+	}
+}
 var defaultLog = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
@@ -34,7 +42,7 @@ func (aof *AllOfFlavors) AddFaults(verifierCerts flavorVerifier.VerifierCertific
 		if flavor == nil {
 			continue
 		}
-		ruleFactory := flavorVerifier.NewRuleFactory(verifierCerts, hostManifest, flavor, false)
+		ruleFactory := flavorVerifier.NewRuleFactory(verifierCerts, hostManifest, flavor, aof.SkipFlavorSignatureVerification)
 		policyRules, _, err := ruleFactory.GetVerificationRules()
 		if err != nil{
 			return nil, err

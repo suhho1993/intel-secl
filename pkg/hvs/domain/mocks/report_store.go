@@ -105,6 +105,11 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 				reports = append(reports, &r)
 			}
 		}
+	} else { // criteria is all empty return all records
+		for _, r := range store.reportStore {
+			reports = append(reports, &r)
+		}
+
 	}
 
 	return reports, nil

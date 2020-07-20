@@ -20,18 +20,20 @@ type flvGrpHostTrustReqs struct {
 	AllOfFlavors                  []*hvs.SignedFlavor
 	DefinedAndRequiredFlavorTypes map[cf.FlavorPart]bool
 	FlavorPartMatchPolicy         map[cf.FlavorPart]hvs.MatchPolicy
+	SkipFlavorSignatureVerification bool
 }
 
-func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGroup, fs domain.FlavorStore, hostData *types.HostManifest) (*flvGrpHostTrustReqs, error) {
+func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGroup, fs domain.FlavorStore, hostData *types.HostManifest, SkipFlavorSignatureVerification bool) (*flvGrpHostTrustReqs, error) {
 	defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Entering")
 	defer defaultLog.Trace("hosttrust/trust_requirements:NewFlvGrpHostTrustReqs() Leaving")
 
 	reqs := flvGrpHostTrustReqs{
-		HostId: hostId,
+		HostId:              hostId,
 		FlavorGroupId:       fg.ID,
 		FlavorMatchPolicies: fg.MatchPolicies,
 		//Initialize empty map.
-		DefinedAndRequiredFlavorTypes: make(map[cf.FlavorPart]bool),
+		DefinedAndRequiredFlavorTypes:   make(map[cf.FlavorPart]bool),
+		SkipFlavorSignatureVerification: SkipFlavorSignatureVerification,
 	}
 
 	var fgRequirePolicyMap map[hvs.FlavorRequiredPolicy][]cf.FlavorPart
@@ -59,7 +61,7 @@ func NewFlvGrpHostTrustReqs(hostId uuid.UUID, hwUUID uuid.UUID, fg hvs.FlavorGro
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "error searching flavor for "+hwUUID.String())
-	}
+		}
 		defaultLog.Debugf("%v from Flavorgroup %v Flavors retrieved with ALL_OF policy", fg.ID, len(reqs.AllOfFlavors))
 	}
 
@@ -119,25 +121,22 @@ func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(trustCache hostTrustCache) bo
 	defaultLog.Trace("hosttrust/trust_requirements:MeetsFlavorGroupReqs() Entering")
 	defer defaultLog.Trace("hosttrust/trust_requirements:MeetsFlavorGroupReqs() Leaving")
 
-	if trustCache.isTrustCacheEmpty(){
+	if len(trustCache.trustedFlavors) == 0 {
 		defaultLog.Debugf("No results found in trust cache for host: %s", r.HostId.String())
 		return false
 	}
 
 	reqAndDefFlavorTypes := r.DefinedAndRequiredFlavorTypes
 	missingRequiredFlavorPartsWithLatest := getMissingRequiredFlavorPartsWithLatest(r.HostId, *r, reqAndDefFlavorTypes, trustCache.trustReport)
-	if len(missingRequiredFlavorPartsWithLatest) > 0{
+	if len(missingRequiredFlavorPartsWithLatest) > 0 {
 		defaultLog.Debugf("Host %s has missing required and defined flavor parts: %s", r.HostId.String(), reflect.ValueOf(missingRequiredFlavorPartsWithLatest).MapKeys())
 		return false
 	}
 
-	ruleAllOfFlavors := rules.AllOfFlavors{
-		AllOfFlavors: r.AllOfFlavors,
-		Markers:      r.getAllOfMarkers(),
-	}
+	ruleAllOfFlavors := rules.NewAllOfFlavors(r.AllOfFlavors, r.getAllOfMarkers(), r.SkipFlavorSignatureVerification)
 
 	if areAllOfFlavorsMissingInCachedTrustReport(trustCache.trustReport, ruleAllOfFlavors) {
-		defaultLog.Debugf("All of flavors exist in policy for host: %s", r.HostId.String());
+		defaultLog.Debugf("All of flavors exist in policy for host: %s", r.HostId.String())
 		defaultLog.Debugf("Some all of flavors do not match what is in the trust cache for host: %s", r.HostId.String())
 		return false
 	}
@@ -151,8 +150,8 @@ func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(trustCache hostTrustCache) bo
 func (r *flvGrpHostTrustReqs) getAllOfMarkers() []cf.FlavorPart {
 	defaultLog.Trace("hosttrust/trust_requirements:getAllOfMarkers() Entering")
 	defer defaultLog.Trace("hosttrust/trust_requirements:getAllOfMarkers() Leaving")
-	markers := make([]cf.FlavorPart, len(r.MatchTypeFlavorParts[hvs.MatchTypeAllOf]))
-	for _, flavorPart := range r.MatchTypeFlavorParts[hvs.MatchTypeAllOf]{
+	markers := make([]cf.FlavorPart, 0, len(r.MatchTypeFlavorParts[hvs.MatchTypeAllOf]))
+	for _, flavorPart := range r.MatchTypeFlavorParts[hvs.MatchTypeAllOf] {
 		markers = append(markers, flavorPart)
 	}
 	return markers

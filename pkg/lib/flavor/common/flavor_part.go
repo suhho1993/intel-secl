@@ -49,9 +49,6 @@ func GetFlavorTypesString(flavorParts []FlavorPart) []string {
 
 
 func (fp FlavorPart) String() string {
-	log.Trace("flavor/common/flavor_part/FlavorPart:String() Entering")
-	defer log.Trace("flavor/common/flavor_part/FlavorPart:String() Leaving")
-
 	return string(fp)
 }
 

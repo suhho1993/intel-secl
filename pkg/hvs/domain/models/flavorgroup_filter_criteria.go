@@ -4,9 +4,10 @@
  */
 package models
 
+import "github.com/google/uuid"
+
 type FlavorGroupFilterCriteria struct {
-	Id           string
+	Ids          []uuid.UUID
 	NameEqualTo  string
 	NameContains string
-	HostId       string
 }

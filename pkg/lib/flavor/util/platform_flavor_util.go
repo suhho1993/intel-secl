@@ -70,7 +70,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		biosName = strings.TrimSpace(hostDetails.BiosName)
 		biosVersion = strings.TrimSpace(hostDetails.BiosVersion)
 		description.TbootInstalled = strconv.FormatBool(hostDetails.TbootInstalled)
-		vmmName = strings.TrimSpace(hostDetails.VMMVersion)
+		vmmName = strings.TrimSpace(hostDetails.VMMName)
 		vmmVersion = strings.TrimSpace(hostDetails.VMMVersion)
 		osName = strings.TrimSpace(hostDetails.OSName)
 		osVersion = strings.TrimSpace(hostDetails.OSVersion)

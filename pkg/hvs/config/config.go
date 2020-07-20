@@ -45,9 +45,9 @@ type HVSConfig struct {
 }
 
 type FVSConfig struct {
-	NumberOfVerifiers               int  `yaml:"fvs-number-of-verifiers" mapstructure:"fvs-number-of-verifiers"`
-	NumberOfDataFetchers            int  `yaml:"fvs-number-of-data-fetchers" mapstructure:"fvs-number-of-data-fetchers"`
-	SkipFlavorSignatureVerification bool `yaml:"fvs-skip-flavor-signature-verification" mapstructure:"fvs-skip-flavor-signature-verification"`
+	NumberOfVerifiers               int  `yaml:"number-of-verifiers" mapstructure:"number-of-verifiers"`
+	NumberOfDataFetchers            int  `yaml:"number-of-data-fetchers" mapstructure:"number-of-data-fetchers"`
+	SkipFlavorSignatureVerification bool `yaml:"skip-flavor-signature-verification" mapstructure:"skip-flavor-signature-verification"`
 }
 
 type SAMLConfig struct {

@@ -113,16 +113,6 @@ var _ = Describe("FlavorgroupController", func() {
 				Expect(len(fgCollection.Flavorgroups)).To(Equal(2))
 			})
 		})
-		Context("Search FlavorGroups from data store with invalid id", func() {
-			It("Should return bad request error", func() {
-				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/flavorgroups?id=e57e5ea0-d465-461e-882d-", nil)
-				Expect(err).NotTo(HaveOccurred())
-				w = httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(400))
-			})
-		})
 	})
 
 	// Specs for HTTP Get to "/flavorgroups/{flavorgroup_id}"
@@ -387,21 +377,9 @@ var _ = Describe("FlavorgroupController", func() {
 		Context("FlavorGroupFilterCriteria with incorrect content", func() {
 			It("should fail FlavorGroupFilterCriteria validation", func() {
 				filterCriteria := models.FlavorGroupFilterCriteria{
-					Id: "123",
-				}
-				err := controllers.ValidateFgCriteria(filterCriteria)
-				Ω(err).Should(HaveOccurred())
-
-				filterCriteria = models.FlavorGroupFilterCriteria{
-					HostId: "123",
-				}
-				err = controllers.ValidateFgCriteria(filterCriteria)
-				Ω(err).Should(HaveOccurred())
-
-				filterCriteria = models.FlavorGroupFilterCriteria{
 					NameContains: "----",
 				}
-				err = controllers.ValidateFgCriteria(filterCriteria)
+				err := controllers.ValidateFgCriteria(filterCriteria)
 				Ω(err).Should(HaveOccurred())
 
 				filterCriteria = models.FlavorGroupFilterCriteria{

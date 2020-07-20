@@ -34,10 +34,12 @@ func (f *FlavorStore) Create(signedFlavor *hvs.SignedFlavor) (*hvs.SignedFlavor,
 		return nil, errors.New("postgres/flavor_store:Create()- invalid input : must have content, signature and the label for the flavor")
 	}
 
-	fId := uuid.New()
-	signedFlavor.Flavor.Meta.ID = fId
+	if signedFlavor.Flavor.Meta.ID == uuid.Nil {
+		signedFlavor.Flavor.Meta.ID = uuid.New()
+	}
+
 	dbf := flavor{
-		ID:         fId,
+		ID:         signedFlavor.Flavor.Meta.ID,
 		Content:    PGFlavorContent(signedFlavor.Flavor),
 		CreatedAt:  time.Time{},
 		Label:      signedFlavor.Flavor.Meta.Description.Label,
@@ -149,7 +151,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 				osQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartOs.String(), fgId.String(), osQuery)
 				// build biosQuery
 				osQuery.LogMode(true)
-				if len(flavorMetaMap) >= 1 && len(flavorMetaMap[fc.FlavorPartPlatform]) >= 1 {
+				if len(flavorMetaMap) >= 1 && len(flavorMetaMap[fc.FlavorPartOs]) >= 1 {
 					osFlavorMetaInfo := flavorMetaMap[fc.FlavorPartOs]
 					// check if tboot_installed exists in the map
 					if _, ok := osFlavorMetaInfo["tboot_installed"]; ok {
@@ -192,11 +194,11 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 
 			case fc.FlavorPartSoftware:
 				softwareQuery = tx
-				softwareQuery = buildFlavorPartQueryStringWithFlavorParts(flavorPart.String(), fgId.String(), softwareQuery)
+				softwareQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartSoftware.String(), fgId.String(), softwareQuery)
 				softwareQuery.LogMode(true)
 				softwareFlavorMetaInfo := flavorMetaMap[fc.FlavorPartSoftware]
 				if _, ok := softwareFlavorMetaInfo["measurementXML_labels"]; ok {
-					softwareQuery = softwareQuery.Where("f.label IN (?)", strings.Join(softwareFlavorMetaInfo["measurementXML_labels"].([]string), ","))
+					softwareQuery = softwareQuery.Where("f.label IN (?)", softwareFlavorMetaInfo["measurementXML_labels"])
 				}
 				if flavorPartsWithLatest[fc.FlavorPartSoftware] {
 					softwareQuery = softwareQuery.Order("f.created_at desc").Limit(1)
@@ -266,7 +268,6 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 			subQuery = subQuery.Where("f.id IN ?", hostUniqueSubQuery)
 		}
 	}
-
 	// check if none of the flavor part queries are not formed,
 	if subQuery != nil && (biosQuery != nil || aTagQuery != nil || softwareQuery != nil || hostUniqueQuery != nil || osQuery != nil) {
 		tx = subQuery
@@ -274,7 +275,6 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 		fgSubQuery := buildFlavorPartQueryStringWithFlavorgroup(fgId.String(), tx).SubQuery()
 		tx = tx.Where("f.id IN ?", fgSubQuery)
 	}
-
 	return tx
 }
 
@@ -282,9 +282,9 @@ func buildFlavorPartQueryStringWithFlavorParts(flavorpart, flavorgroupId string,
 	defaultLog.Trace("postgres/flavor_store:buildFlavorPartQueryStringWithFlavorParts() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:buildFlavorPartQueryStringWithFlavorParts() Leaving")
 
-	if len(flavorgroupId) <= 0 || flavorgroupId == "" {
+	if flavorgroupId != "" {
 		subQuery := buildFlavorPartQueryStringWithFlavorgroup(flavorgroupId, tx)
-		tx = subQuery.Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?")
+		tx = subQuery.Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorpart)
 	} else {
 		tx = tx.Table("flavor f").Select("f.id").Joins("INNER JOIN flavorgroup_flavor fgf ON f.id = fgf.flavor_id")
 		tx = tx.Joins("INNER JOIN flavor_group fg ON fgf.flavorgroup_id = fg.id")
@@ -304,7 +304,7 @@ func buildFlavorPartQueryStringWithFlavorgroup(flavorgroupId string, tx *gorm.DB
 }
 
 // helper function used to add the list of flavor parts in the map[flavorPart]bool, indicating if latest flavor is required
-func getFlavorPartsWithLatestMap(flavorParts []fc.FlavorPart, flavorPartsWithLatestMap map[fc.FlavorPart]bool) (map[fc.FlavorPart]bool) {
+func getFlavorPartsWithLatestMap(flavorParts []fc.FlavorPart, flavorPartsWithLatestMap map[fc.FlavorPart]bool) map[fc.FlavorPart]bool {
 	if len(flavorParts) <= 0 {
 		return flavorPartsWithLatestMap
 	}
@@ -438,12 +438,14 @@ func (f *FlavorStore) isHostHavingFlavorType(hwId, flavorType string) (bool, err
 func (f *FlavorStore) flavorgroupContainsFlavorType(fgId, flavorPart string) (bool, error) {
 	var tx *gorm.DB
 	var count int
-	tx = f.Store.Db.Model(&flavor{}).Joins("INNER JOIN flavorgroup_flavor as l ON flavor.id = l.flavor_id").
-		Joins("INNER JOIN flavor_group as fg ON l.flavorgroup_id = fg.id, fg.flavor_type_match_policy").
-		Where("fg.id = ?", fgId).
-		Where("fg.flavor_type_match_policy ->> 'flavor_part' = ?", flavorPart).
-		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorPart)
 
+	tx = f.Store.Db.Model(&flavor{}).Joins("INNER JOIN flavorgroup_flavor as l ON flavor.id = l.flavor_id").
+		Joins("INNER JOIN flavor_group as fg ON l.flavorgroup_id = fg.id, jsonb_array_elements(fg.flavor_type_match_policy) policies").
+		Where("fg.id = ?", fgId).
+		Where("fg.name != ?", models.FlavorGroupsHostUnique.String()).
+		Where("policies ->> 'flavor_part' = ?", flavorPart).
+		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorPart)
+	tx.LogMode(true)
 	if err := tx.Count(&count).Error; err != nil {
 		return false, errors.Wrap(err, "postgres/flavor_store:flavorgroupContainsFlavorType() failed to execute query")
 	}

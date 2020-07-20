@@ -65,7 +65,7 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 		defaultLog.WithError(err).Error("controllers/report_controller:Create() Error while creating report from Flavor verify queue")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
 	}
-	report := convertToReport(hvsReport)
+	report := ConvertToReport(hvsReport)
 	secLog.WithField("Name", report.HostInfo.HostName).Infof("%s: report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	return report, http.StatusCreated, nil
 }
@@ -84,8 +84,11 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCrite
 	}
 	//Always only one record is returned for the particular criteria
 	hostId := hosts[0].Id
-	hostStatus, err := controller.hostStatusStore.Retrieve(hostId)
-	if hostStatus.HostStatusInformation.HostState != hvs.HostStateConnected{
+	hostStatusCollection, err := controller.hostStatusStore.Search(&models.HostStatusFilterCriteria{
+		HostId:         hostId,
+		LatestPerHost: true,
+	})
+	if len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Host is not in CONNECTED state")
 	}
 
@@ -128,7 +131,7 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
 	}
 
-	report := convertToReport(hvsReport)
+	report := ConvertToReport(hvsReport)
 	secLog.WithField("Name", report.HostInfo.HostName).Infof("%s: saml report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	return report.Saml, http.StatusCreated, nil
 }
@@ -152,7 +155,7 @@ func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	report := convertToReport(hvsReport)
+	report := ConvertToReport(hvsReport)
 	secLog.WithField("report", report).Infof("%s: Report retrieved by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
 	return report, http.StatusOK, nil
 }
@@ -175,9 +178,11 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 		return nil, http.StatusInternalServerError, errors.Errorf("HVSReport search operation failed")
 	}
 
-	var reportCollection hvs.ReportCollection
+	reportCollection := hvs.ReportCollection{
+		Reports: []*hvs.Report{},
+	}
 	for _, hvsReport := range hvsReportCollection{
-		reportCollection.Reports = append(reportCollection.Reports, convertToReport(hvsReport))
+		reportCollection.Reports = append(reportCollection.Reports, ConvertToReport(hvsReport))
 	}
 	secLog.Infof("%s: Reports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
 	return reportCollection, http.StatusOK, nil
@@ -345,7 +350,7 @@ func validateReportCreateCriteria(re hvs.ReportCreateCriteria) error {
 	return nil
 }
 
-func convertToReport(hvsReport *models.HVSReport) *hvs.Report {
+func ConvertToReport(hvsReport *models.HVSReport) *hvs.Report {
 	trustInformation := buildTrustInformation(hvsReport.TrustReport)
 
 	report := hvs.Report{

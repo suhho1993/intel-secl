@@ -61,9 +61,9 @@ type Service struct {
 	quit              chan struct{}
 	serviceDone       bool
 	retryIntervalMins int
-	hcCfg domain.HostConnectionConfig
-	hcf hc.HostConnectorFactory
-	hs  domain.HostStatusStore
+	hcCfg             domain.HostConnectionConfig
+	hcf               hc.HostConnectorFactory
+	hs                domain.HostStatusStore
 }
 
 func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain.HostDataFetcher, error) {
@@ -118,7 +118,6 @@ func (svc *Service) startRetryChannelProcessor(retryMins int) {
 	defaultLog.Trace("hostfetcher/Service:startRetryChannelProcessor() Entering")
 	defer defaultLog.Trace("hostfetcher/Service:startRetryChannelProcessor() Leaving")
 
-
 	// start worker go routines
 	svc.wg.Add(1)
 	go func() {
@@ -143,7 +142,6 @@ func (svc *Service) startRetryChannelProcessor(retryMins int) {
 func (svc *Service) startWorkers(workers int) {
 	defaultLog.Trace("hostfetcher/Service:startWorkers() Entering")
 	defer defaultLog.Trace("hostfetcher/Service:startWorkers() Leaving")
-
 
 	// start worker go routines
 	for i := 0; i < workers; i++ {
@@ -206,7 +204,6 @@ func (svc *Service) doWork() {
 			svc.wmLock.Lock()
 			frs := svc.workMap[hId]
 			connUrl = frs[0].host.ConnectionString
-			// TODO : move this out of here to the FetchDataAndRespond function
 			getData := false
 			for i, req := range frs {
 				select {
@@ -244,8 +241,7 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 	if err != nil {
 		hostStatus.HostStatusInformation.HostState = hvs.HostStateUnknown
 		if _, err := svc.hs.Create(hostStatus); err != nil {
-
-			log.Error("could not update host status to store")
+			defaultLog.Error("could not update host status to store")
 		}
 		return nil, err
 	}
@@ -253,7 +249,7 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 	hostStatus.HostManifest = *hostData
 
 	if _, err := svc.hs.Create(hostStatus); err != nil {
-		log.Error("could not update host status and manifest to store")
+		defaultLog.Error("could not update host status and manifest to store")
 	}
 
 	return hostData, nil
@@ -262,7 +258,6 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 func (svc *Service) RetriveAsync(ctx context.Context, host hvs.Host, rcvrs ...domain.HostDataReceiver) error {
 	defaultLog.Trace("hostfetcher/Service:RetriveAsync() Entering")
 	defer defaultLog.Trace("hostfetcher/Service:RetriveAsync() Leaving")
-
 
 	if svc.serviceDone {
 		return errors.New("Host Fetcher has been shut down - cannot accept any more requests")
@@ -281,7 +276,7 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 
 	hostData, err := svc.GetHostData(connUrl)
 	if err != nil {
-		defaultLog.WithError(err).Errorf("hostfetcher/Service:FetchDataAndRespond() Leaving")
+		defaultLog.WithError(err).Errorf("hostfetcher/Service:FetchDataAndRespond() Failed to get data	")
 		//TODO - presume that error is due to connection failure and we need to retry operation
 		svc.retryRqstChan <- retryRequest{
 			retryTime: time.Now().Add(time.Duration(svc.retryIntervalMins) * time.Minute),
@@ -336,7 +331,7 @@ func (svc *Service) GetHostData(connUrl string) (*types.HostManifest, error) {
 		svc.hcCfg.ServicePassword,
 		svc.hcCfg.HCStore)
 	if err != nil {
-		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Could not generate formatted connection string")
+		defaultLog.WithError(err).Error("hostfetcher/Service:GetHostData() Could not generate formatted connection string")
 	}
 
 	connector, err := svc.hcf.NewHostConnector(connectionString)

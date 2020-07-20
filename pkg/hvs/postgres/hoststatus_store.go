@@ -80,7 +80,7 @@ func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) ([
 			return nil, errors.New("postgres/hoststatus_store:Search() Unexpected Error. Could not build" +
 				" a gorm query object in HostStatus Search function.")
 		}
-
+		tx.LogMode(true)
 		rows, err := tx.Rows()
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/hoststatus_store:Search() failed to retrieve records from db")
@@ -101,7 +101,7 @@ func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) ([
 			return nil, errors.New("postgres/hoststatus_store:Search() Unexpected Error. Could not build" +
 				" a gorm query object in HostStatus Search function.")
 		}
-
+		tx.LogMode(true)
 		rows, err := tx.Rows()
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/hoststatus_store:Search() failed to retrieve records from db")
@@ -341,7 +341,11 @@ func buildLatestHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFi
 	if hsFilter.HostStatus != "" {
 		tx = tx.Where(`status @> '{"host_state": "` + strings.ToUpper(hsFilter.HostStatus) + `"}'`)
 	}
-
+	if hsFilter.Limit == 0 && hsFilter.LatestPerHost {
+		hsFilter.Limit = 1
+	} else {
+		hsFilter.Limit = 2000
+	}
 	// apply result limits
 	tx = tx.Limit(hsFilter.Limit)
 

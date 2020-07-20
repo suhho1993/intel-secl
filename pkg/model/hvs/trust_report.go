@@ -32,7 +32,7 @@ type RuleResult struct {
 }
 
 type RuleInfo struct {
-	Name                  string                     `json:"rule_name"`
+	Name                  string                     `json:"rule_name,omitempty"`
 	Markers               []common.FlavorPart        `json:"markers,omitempty"`
 	ExpectedPcr           *types.Pcr                 `json:"expected_pcr,omitempty"`
 	FlavorID              *uuid.UUID                 `json:"flavor_id,omitempty"`

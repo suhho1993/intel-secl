@@ -103,7 +103,7 @@ type (
 
 	PGTrustReport hvs.TrustReport
 	report        struct {
-		ID          uuid.UUID     `gorm:"id,omitempty" gorm:"primary_key;"`
+		ID          uuid.UUID     `gorm:"column:id" gorm:"primary_key;"`
 		HostID      uuid.UUID     `gorm:"column:host_id;type:uuid REFERENCES host(Id) ON UPDATE CASCADE ON DELETE CASCADE;not null;index:idx_report_host_id"`
 		TrustReport PGTrustReport `gorm:"column:trust_report; not null" sql:"type:JSONB"`
 		CreatedAt   time.Time     `gorm:"column:created;not null"`
@@ -112,13 +112,13 @@ type (
 	}
 
 	tpmEndorsement struct {
-		ID                uuid.UUID `gorm:"id" gorm:"primary_key;type:uuid"`
-		HardwareUUID      uuid.UUID `gorm:"hardware_uuid;not null"`
-		Issuer            string    `gorm:"issuer;not null"`
-		Revoked           bool      `gorm:"revoked" `
-		Certificate       string    `gorm:"certificate;not null"`
-		Comment           string    `gorm:"comment"`
-		CertificateDigest string    `gorm:"certificate_digest;not null"`
+		ID                uuid.UUID `gorm:"primary_key;type:uuid"`
+		HardwareUUID      uuid.UUID `gorm:"column:hardware_uuid;not null;type:uuid"`
+		Issuer            string    `gorm:"column:issuer;not null"`
+		Revoked           bool      `gorm:"column:revoked" `
+		Certificate       string    `gorm:"column:certificate;not null"`
+		Comment           string    `gorm:"column:comment"`
+		CertificateDigest string    `gorm:"column:certificate_digest;not null"`
 	}
 
 	//TODO add triggers

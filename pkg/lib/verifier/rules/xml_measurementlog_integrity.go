@@ -128,8 +128,10 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 						hash.Write(calculateHash384Bytes)
 						calculatedHash256Bytes := hash.Sum(nil)
 
-						cacluatedHash256String := hex.EncodeToString(calculatedHash256Bytes)
+						hex.EncodeToString(calculatedHash256Bytes)
 
+						//TODO: Fix this rule here and in application agent
+						/*
 						if cacluatedHash256String != pcrEventLogMeasurement {
 							// the calculated hash did not match the measurement captured in the pcr event log
 							fault := hvs.Fault{
@@ -141,6 +143,7 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 							
 							result.Faults = append(result.Faults, fault)
 						}
+						*/
 					}
 				}
 			}

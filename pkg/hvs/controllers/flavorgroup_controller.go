@@ -79,7 +79,6 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 	id := r.URL.Query().Get("id")
 	nameEqualTo := r.URL.Query().Get("nameEqualTo")
 	nameContains := r.URL.Query().Get("nameContains")
-	hostId := r.URL.Query().Get("hostId")
 	includeFlavorContent, err := strconv.ParseBool(r.URL.Query().Get("includeFlavorContent"))
 	if err != nil {
 		includeFlavorContent = false
@@ -87,12 +86,18 @@ func (controller FlavorgroupController) Search(w http.ResponseWriter, r *http.Re
 
 	var filter *models.FlavorGroupFilterCriteria = nil
 
-	if id != "" || nameEqualTo != "" || nameContains != "" || hostId != "" {
+	if id != "" || nameEqualTo != "" || nameContains != "" {
 		filter = &models.FlavorGroupFilterCriteria{
-			Id:           id,
 			NameEqualTo:  nameEqualTo,
 			NameContains: nameContains,
-			HostId:       hostId,
+		}
+		if id != "" {
+			flavorgroupId, err := uuid.Parse(id)
+			if err != nil {
+				secLog.WithError(err).Error("controllers/flavorgroup_controller:Search() Invalid id query param value, must be UUID")
+				return nil, http.StatusBadRequest, &commErr.ResourceError{"Invalid id query param value, must be UUID"}
+			}
+			filter.Ids = []uuid.UUID{flavorgroupId}
 		}
 		if err := ValidateFgCriteria(*filter); err != nil {
 			secLog.WithError(err).Errorf("controllers/flavorgroup_controller:Search()  %s", commLogMsg.InvalidInputBadParam)
@@ -190,11 +195,6 @@ func ValidateFgCriteria(filterCriteria models.FlavorGroupFilterCriteria) error {
 	defaultLog.Trace("controllers/flavorgroup_controller:ValidateFgCriteria() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:ValidateFgCriteria() Leaving")
 
-	if filterCriteria.Id != "" {
-		if _, errs := uuid.Parse(filterCriteria.Id); errs != nil {
-			return errors.New("Invalid UUID format of the Flavorgroup Identifier")
-		}
-	}
 	if filterCriteria.NameEqualTo != "" {
 		if errs := validation.ValidateNameString(filterCriteria.NameEqualTo); errs != nil {
 			return errors.Wrap(errs, "Valid contents for NameEqualTo must be specified")
@@ -203,11 +203,6 @@ func ValidateFgCriteria(filterCriteria models.FlavorGroupFilterCriteria) error {
 	if filterCriteria.NameContains != "" {
 		if errs := validation.ValidateNameString(filterCriteria.NameContains); errs != nil {
 			return errors.Wrap(errs, "Valid contents for NameContains must be specified")
-		}
-	}
-	if filterCriteria.HostId != "" {
-		if _, errs := uuid.Parse(filterCriteria.HostId); errs != nil {
-			return errors.New("Invalid UUID format of the Host Identifier")
 		}
 	}
 	return nil

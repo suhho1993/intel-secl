@@ -108,8 +108,8 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *models.FlavorGroupFilter
 		return tx
 	}
 
-	if fgFilter.Id != "" {
-		tx = tx.Where("id = ?", fgFilter.Id)
+	if len(fgFilter.Ids) > 0 {
+		tx = tx.Where("id in (?)", fgFilter.Ids)
 	} else if fgFilter.NameEqualTo != "" {
 		tx = tx.Where("name = ?", fgFilter.NameEqualTo)
 	} else if fgFilter.NameContains != "" {

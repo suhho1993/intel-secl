@@ -138,6 +138,16 @@ func initHostControllerConfig(cfg *config.Configuration, certStore *models.Certi
 	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]
 	hcProvider := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
 
+	hcc := domain.HostControllerConfig{
+		HostConnectorProvider: hcProvider,
+		DataEncryptionKey:     getDecodedDek(cfg),
+		Username:              cfg.HVS.Username,
+		Password:              cfg.HVS.Password,
+	}
+	return hcc
+}
+
+func getDecodedDek(cfg *config.Configuration) []byte {
 	dekBase64 := cfg.HVS.Dek
 	if dekBase64 == "" {
 		defaultLog.Warn("Data encryption key is not defined")
@@ -146,14 +156,7 @@ func initHostControllerConfig(cfg *config.Configuration, certStore *models.Certi
 	if err != nil {
 		defaultLog.WithError(err).Warn("Data encryption key is not base64 encoded")
 	}
-
-	hcc := domain.HostControllerConfig{
-		HostConnectorProvider: hcProvider,
-		DataEncryptionKey:     dek,
-		Username:              cfg.HVS.Username,
-		Password:              cfg.HVS.Password,
-	}
-	return hcc
+	return dek
 }
 
 func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore) domain.HostTrustManager {
@@ -162,15 +165,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 
 	//Load store
 	hs := postgres.NewHostStore(dataStore)
-	dekBase64 := cfg.HVS.Dek
-	if dekBase64 == "" {
-		defaultLog.Warn("Data encryption key is not defined")
-	}
-	dek, err := base64.StdEncoding.DecodeString(dekBase64)
-	if err != nil {
-		defaultLog.WithError(err).Warn("Data encryption key is not base64 encoded")
-	}
-	hc := postgres.NewHostCredentialStore(dataStore, dek)
+	hc := postgres.NewHostCredentialStore(dataStore, getDecodedDek(cfg))
 	fs := postgres.NewFlavorStore(dataStore)
 	fgs := postgres.NewFlavorGroupStore(dataStore)
 	qs := postgres.NewDBQueueStore(dataStore)
@@ -184,7 +179,9 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	privacyCAs := (*certStore)[models.CaCertTypesPrivacyCa.String()]
 	signingCerts := (*certStore)[models.CertTypesFlavorSigning.String()]
 	rootCApool := crypt.GetCertPool(rootCAs.Certificates)
-	rootCApool.AddCert(&signingCerts.Certificates[1]) //Add intermediate CA
+	for _, val := range signingCerts.Certificates[1:] {
+		rootCApool.AddCert(&val) //Add intermediate CA
+	}
 
 	verifierCerts := verifier.VerifierCertificates{
 		PrivacyCACertificates:    crypt.GetCertPool(privacyCAs.Certificates),
@@ -203,14 +200,14 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	}
 
 	htv := domain.HostTrustVerifierConfig{
-		FlavorStore:         fs,
-		FlavorGroupStore:    fgs,
-		HostStore:           hs,
-		ReportStore:         rs,
-		FlavorVerifier:      libVerifier,
-		CertsStore:          *certStore,
-		SamlIssuerConfig:    samlIssuerConfig,
-		SkipFlavorSignature: cfg.FVS.SkipFlavorSignatureVerification,
+		FlavorStore:                     fs,
+		FlavorGroupStore:                fgs,
+		HostStore:                       hs,
+		ReportStore:                     rs,
+		FlavorVerifier:                  libVerifier,
+		CertsStore:                      *certStore,
+		SamlIssuerConfig:                samlIssuerConfig,
+		SkipFlavorSignatureVerification: cfg.FVS.SkipFlavorSignatureVerification,
 	}
 
 	// Initialize Host Fetcher service

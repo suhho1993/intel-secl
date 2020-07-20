@@ -1,6 +1,7 @@
 package hosttrust
 
 import (
+	"encoding/xml"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/rules"
@@ -14,7 +15,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"encoding/xml"
 )
 
 // FlavorVerify.java: 529
@@ -40,11 +40,8 @@ func (v *Verifier) CreateFlavorGroupReport(hostId uuid.UUID, reqs flvGrpHostTrus
 		return v.createTrustReport(hostId, hostData, reqs, trustCache, missingRequiredFlavorPartsWithLatest)
 	}
 
-	ruleAllOfFlavors := rules.AllOfFlavors{
-		AllOfFlavors: reqs.AllOfFlavors,
-		Markers:      reqs.getAllOfMarkers(),
-	}
-	if areAllOfFlavorsMissingInCachedTrustReport(trustCache.trustReport, ruleAllOfFlavors){
+	ruleAllOfFlavors := rules.NewAllOfFlavors(reqs.AllOfFlavors, reqs.getAllOfMarkers(), v.SkipFlavorSignatureVerification)
+	if areAllOfFlavorsMissingInCachedTrustReport(trustCache.trustReport, ruleAllOfFlavors) {
 		defaultLog.Trace("hosttrust/trust_report:CreateFlavorGroupReport() All Of Flavors Missing In Cached TrustReport")
 		return v.createTrustReport(hostId, hostData, reqs, trustCache, latestReqAndDefFlavorTypes)
 	}
@@ -59,7 +56,7 @@ func areAllOfFlavorsMissingInCachedTrustReport(cachedTrustReport hvs.TrustReport
 func getMissingRequiredFlavorPartsWithLatest(hostId uuid.UUID, reqs flvGrpHostTrustReqs, reqAndDefFlavorTypes map[cf.FlavorPart]bool, cachedTrustReport hvs.TrustReport) map[cf.FlavorPart]bool {
 	defaultLog.Trace("hosttrust/trust_report:getMissingRequiredFlavorPartsWithLatest() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:getMissingRequiredFlavorPartsWithLatest() Leaving")
-	var missingRequiredFlavorPartsWithLatest map[cf.FlavorPart]bool
+	missingRequiredFlavorPartsWithLatest := make(map[cf.FlavorPart]bool)
 	for flavorPart, _ := range reqAndDefFlavorTypes {
 		defaultLog.Debugf("hosttrust/trust_report:getMissingRequiredFlavorPartsWithLatest() Checking if required flavor type %s for host %s is missing", flavorPart.String(), hostId.String())
 		if areRequiredFlavorsMissing(cachedTrustReport, flavorPart) {
@@ -84,7 +81,7 @@ func (v *Verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManif
 	defaultLog.Trace("hosttrust/trust_report:createTrustReport() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:createTrustReport() Leaving")
 
-	flavorParts := make([]cf.FlavorPart, len(latestReqAndDefFlavorTypes))
+	flavorParts := []cf.FlavorPart{}
 	for flavorPart, _ := range latestReqAndDefFlavorTypes {
 		flavorParts = append(flavorParts, flavorPart)
 	}
@@ -99,7 +96,7 @@ func (v *Verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManif
 	}
 	trustReport, err := v.verifyFlavors(hostId, flavorsToVerify, hostData, reqs)
 	if err != nil {
-		return hvs.TrustReport{}, errors.Wrap(err,"hosttrust/trust_report:createTrustReport() Error while verifying flavors" )
+		return hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:createTrustReport() Error while verifying flavors")
 	}
 	if !trustCache.isTrustCacheEmpty() {
 		for _, ruleResult := range trustCache.trustReport.Results {
@@ -108,22 +105,18 @@ func (v *Verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManif
 	}
 
 	for flavorPart, _ := range reqs.DefinedAndRequiredFlavorTypes {
-		//To check only flavorpart=true?
 		rule := rules.NewRequiredFlavorTypeExists(flavorPart)
 		trustReport = rule.Apply(*trustReport)
 	}
 
-	ruleAllOfFlavors := rules.AllOfFlavors{
-		AllOfFlavors: reqs.AllOfFlavors,
-		Markers:      reqs.getAllOfMarkers(),
-	}
+	ruleAllOfFlavors := rules.NewAllOfFlavors(reqs.AllOfFlavors, reqs.getAllOfMarkers(), v.SkipFlavorSignatureVerification)
+
 	trustReport, err = ruleAllOfFlavors.AddFaults(v.FlavorVerifier.GetVerifierCerts(), trustReport)
 	if err != nil {
 		return hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:createTrustReport() Error applying ruleAllOfFlavors")
 	}
 	return *trustReport, nil
 }
-
 
 func getMatchPolicy(flvMatchPolicies hvs.FlavorMatchPolicies, part cf.FlavorPart) *hvs.MatchPolicy {
 	defaultLog.Trace("hosttrust/trust_report:getMatchPolicy() Entering")
@@ -255,16 +248,11 @@ func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTyp
 	defaultLog.Trace("hosttrust/trust_report:findFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:findFlavors() Leaving")
 
-	flavorPartsWithLatestMap := make(map[cf.FlavorPart]bool)
-	for flavorPart, _ := range latestReqAndDefFlavorTypes {
-		flavorPartsWithLatestMap[flavorPart] = true
-	}
-
 	flvrFilterCriteria := models.FlavorVerificationFC{
 		FlavorFC: models.FlavorFilterCriteria{
 			FlavorgroupID: flavorGroupID,
 		},
-		FlavorPartsWithLatest: flavorPartsWithLatestMap,
+		FlavorPartsWithLatest: latestReqAndDefFlavorTypes,
 		FlavorMeta:            hostManifestMap,
 	}
 
@@ -272,7 +260,7 @@ func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTyp
 	if err != nil {
 		return nil, err
 	}
-	defaultLog.Debugf("%v from Flavorgroup %d Flavors retrieved for verification",  flavorGroupID, len(signedFlavors))
+	defaultLog.Debugf("%v from Flavorgroup %d Flavors retrieved for verification", flavorGroupID, len(signedFlavors))
 	return signedFlavors, nil
 }
 
@@ -344,9 +332,7 @@ func getHostManifestMap(hostManifest *types.HostManifest, flavorParts []cf.Flavo
 					hostInfoValues["measurementXML_labels"] = measurementLabels
 				}
 			} else {
-				defaultLog.Errorf("Invalid flavor part - " + fp.String())
-				//TODO: update to return error once trust_requirements:NewFlvGrpHostTrustReqs->getHostManifestMap is fixed
-				//return nil, errors.New("Invalid flavor part - " + fp.String())
+				return nil, errors.New("Invalid flavor part - " + fp.String())
 			}
 			hostInfoMap[fp] = hostInfoValues
 		}

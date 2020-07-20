@@ -41,7 +41,7 @@ func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
 		FlavorVerifier:                  cfg.FlavorVerifier,
 		CertsStore:                      cfg.CertsStore,
 		SamlIssuer:                      cfg.SamlIssuerConfig,
-		SkipFlavorSignatureVerification: cfg.SkipFlavorSignature,
+		SkipFlavorSignatureVerification: cfg.SkipFlavorSignatureVerification,
 	}
 }
 
@@ -59,7 +59,8 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	}
 
 	// TODO : remove this when we remove the intermediate collection
-	flvGroups, err := v.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{HostId: hostId.String()})
+	flvGroupIds, err := v.HostStore.SearchFlavorgroups(hostId)
+	flvGroups, err := v.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{Ids:flvGroupIds})
 	if err != nil {
 		return nil, errors.New("hosttrust/verifier:Verify() Store access error")
 	}
@@ -72,7 +73,7 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 	for _, fg := range flvGroups {
 		//TODO - handle errors in case of DB transaction
-		fgTrustReqs, err := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore, hostData)
+		fgTrustReqs, err := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore, hostData, v.SkipFlavorSignatureVerification)
 		if err != nil {
 			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving NewFlvGrpHostTrustReqs")
 		}
@@ -80,22 +81,28 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 		if err != nil {
 			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving getCachedFlavors")
 		}
-		//Check for empty map, FlavorVerify.java 345
-		if fgCachedFlavors != nil {
-			fgTrustCache, _ := v.validateCachedFlavors(hostId, hostData, fgCachedFlavors)
-			fgTrustReport := fgTrustCache.trustReport
-			if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache) {
-				log.Debug("hosttrust/verifier:Verify() Trust cache  doesn't meet flavorgroup requirements")
-				finalReportValid = false
-				fgTrustReport, err = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
-				if err != nil {
-					return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while crating flavorgroup report")
-				}
+
+		var fgTrustCache hostTrustCache
+		if len(fgCachedFlavors) > 0 {
+			fgTrustCache, err = v.validateCachedFlavors(hostId, hostData, fgCachedFlavors)
+			if err != nil {
+				return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while validating cache")
 			}
-			log.Debug("hosttrust/verifier:Verify() Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.IsTrusted())
-			// append the results
-			finalTrustReport.Results = append(finalTrustReport.Results, fgTrustReport.Results...)
 		}
+
+		fgTrustReport := fgTrustCache.trustReport
+
+		if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache) {
+			log.Debug("hosttrust/verifier:Verify() Trust cache  doesn't meet flavorgroup requirements")
+			finalReportValid = false
+			fgTrustReport, err = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
+			if err != nil {
+				return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while crating flavorgroup report")
+			}
+		}
+		log.Debug("hosttrust/verifier:Verify() Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.IsTrusted())
+		// append the results
+		finalTrustReport.Results = append(finalTrustReport.Results, fgTrustReport.Results...)
 	}
 	// create a new report if we actually have any results and either the Final Report is untrusted or
 	// we have new Data from the host and therefore need to update based on the new report.
@@ -116,8 +123,11 @@ func (v *Verifier) getCachedFlavors(hostId uuid.UUID, flavGrpId uuid.UUID) ([]hv
 	defaultLog.Trace("hosttrust/verifier:getCachedFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/verifier:getCachedFlavors() Leaving")
 	// retrieve the IDs of the trusted flavors from the host store
-	if flIds, err := v.HostStore.RetrieveTrustCacheFlavors(hostId, flavGrpId); err != nil {
-		return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving TrustCacheFlavors")
+	if flIds, err := v.HostStore.RetrieveTrustCacheFlavors(hostId, flavGrpId); err != nil && len(flIds) == 0 {
+		if err != nil {
+			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving TrustCacheFlavors")
+		}
+		return nil, nil
 	} else {
 		result := make([]hvs.SignedFlavor, 0, len(flIds))
 		for _, flvId := range flIds {
@@ -171,7 +181,7 @@ func (v *Verifier) storeTrustReport(hostID uuid.UUID, trustReport *hvs.TrustRepo
 		Expiration:  samlReport.ExpiryTime,
 		Saml:        samlReport.Assertion,
 	}
-	_, err := v.ReportStore.Create(&hvsReport)
+	_, err := v.ReportStore.Update(&hvsReport)
 	if err != nil {
 		log.WithError(err).Errorf("hosttrust/verifier:storeTrustReport() Failed to store Report")
 	}
