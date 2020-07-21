@@ -264,13 +264,15 @@ func (controller FlavorgroupController) AddFlavor(w http.ResponseWriter, r *http
 	}
 
 	// now check if there is already a link between Flavor and FlavorGroup
-	_, err = controller.FlavorGroupStore.RetrieveFlavor(fgID, linkRequest.FlavorID)
+	fgfl, err := controller.FlavorGroupStore.RetrieveFlavor(fgID, linkRequest.FlavorID)
 	if err != nil {
-		if err.Error() != commErr.RowsNotFound {
+		if !strings.Contains(err.Error(), commErr.RowsNotFound) {
 			defaultLog.WithField("flavorGroup", fgID).WithField("flavor", linkRequest.FlavorID).WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  Failed to fetch linked flavors for FlavorGroup", commLogMsg.AppRuntimeErr)
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to create FlavorGroup-Flavor link"}
 		}
-	} else {
+	}
+
+	if fgfl != nil {
 		defaultLog.WithField("flavorGroup", fgID).WithField("flavor", linkRequest.FlavorID).WithError(err).Errorf("controllers/flavorgroup_controller:AddFlavor() %s :  FlavorGroup-Flavor link already exists", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "FlavorGroup-Flavor link already exists"}
 	}
@@ -405,10 +407,10 @@ func (controller FlavorgroupController) RetrieveFlavor(w http.ResponseWriter, r 
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			defaultLog.WithField("flavorGroup", fID).WithField("flavor", fID).WithError(err).Errorf("controllers/flavorgroup_controller:RetrieveFlavor() %s :  Linked Flavors not found ", commLogMsg.AppRuntimeErr)
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Unable to retrieve linked FlavorGroup-Flavor links"}
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Unable to retrieve FlavorGroup-Flavor links"}
 		} else {
 			defaultLog.WithField("flavorGroup", fID).WithField("flavor", fID).WithError(err).Errorf("controllers/flavorgroup_controller:RetrieveFlavor() %s :  Error retrieving linked flavor", commLogMsg.AppRuntimeErr)
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to retrieve linked FlavorGroup-Flavor links"}
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Unable to retrieve FlavorGroup-Flavor links"}
 		}
 	}
 
@@ -417,7 +419,7 @@ func (controller FlavorgroupController) RetrieveFlavor(w http.ResponseWriter, r 
 }
 
 func (controller FlavorgroupController) getAssociatedFlavor(flavorgroupList []*hvs.FlavorGroup, includeFlavorContent bool) (*hvs.
-FlavorgroupCollection, error) {
+	FlavorgroupCollection, error) {
 	defaultLog.Trace("controllers/flavorgroup_controller:getAssociatedFlavor() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:getAssociatedFlavor() Leaving")
 
@@ -429,10 +431,9 @@ FlavorgroupCollection, error) {
 		}
 		flavorgroupList[index].FlavorIds = flavorIds
 		if includeFlavorContent {
-			signedFlavorList, err := controller.FlavorStore.Search(&models.FlavorVerificationFC{ FlavorFC:
-				models.FlavorFilterCriteria { Ids: flavorIds}})
+			signedFlavorList, err := controller.FlavorStore.Search(&models.FlavorVerificationFC{FlavorFC: models.FlavorFilterCriteria{Ids: flavorIds}})
 			if err != nil {
-				return nil, errors.Wrap(err, "Error retrieving flavors " +
+				return nil, errors.Wrap(err, "Error retrieving flavors "+
 					"linked to flavor group")
 			}
 			for _, signedFlavor := range signedFlavorList {
