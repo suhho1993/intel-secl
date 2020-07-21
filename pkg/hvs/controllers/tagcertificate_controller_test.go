@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2020 Intel Corporation
- * SPDX-License-Identifier: BSD-3-Clause
- */
+* Copyright (C) 2020 Intel Corporation
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 package controllers_test
 
 import (
@@ -104,7 +104,7 @@ var _ = Describe("TagCertificateController", func() {
 			ServicePassword: "fakepassword",
 		}
 
-		tagCertController = controllers.NewTagCertificateController(tcc, *caCertsStore, tagCertStore, hostStore, flavorStore, flavorGroupStore, hcp)
+		tagCertController = controllers.NewTagCertificateController(tcc, *caCertsStore, tagCertStore, nil, hostStore, flavorStore, flavorGroupStore, hcp)
 	})
 
 	Describe("Create TagCertificates", func() {
@@ -724,6 +724,7 @@ func TestNewTagCertificateController(t *testing.T) {
 		fs        domain.FlavorStore
 		fgs       domain.FlavorGroupStore
 		hcp       host_connector.HostConnectorProvider
+		htm       domain.HostTrustManager
 	}
 	tests := []struct {
 		name string
@@ -747,7 +748,7 @@ func TestNewTagCertificateController(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := controllers.NewTagCertificateController(domain.TagCertControllerConfig{}, *tt.args.certStore, tt.args.tcs, tt.args.hs, tt.args.fs, tt.args.fgs, tt.args.hcp); got != nil {
+			if got := controllers.NewTagCertificateController(domain.TagCertControllerConfig{}, *tt.args.certStore, tt.args.tcs, tt.args.htm, tt.args.hs, tt.args.fs, tt.args.fgs, tt.args.hcp); got != nil {
 				t.Errorf("TagCertificateController should be non-nil")
 			}
 		})

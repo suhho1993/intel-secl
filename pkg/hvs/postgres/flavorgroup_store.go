@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
-	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
@@ -204,14 +203,9 @@ func (f *FlavorGroupStore) RetrieveFlavor(fgId uuid.UUID, fId uuid.UUID) (*hvs.F
 
 	var result hvs.FlavorgroupFlavorLink
 
-	tx := f.Store.Db.Model(&flavorgroupFlavor{}).Where("flavorgroup_id = ? and flavor_id = ?", fgId, fId).First(&result)
-	if tx == nil {
-		return nil, errors.New("postgres/flavorgroup_store:RetrieveFlavor() Unexpected Error. Could not build" +
-			" a gorm query object in FlavorGroupsFlavors RetrieveFlavor function.")
-	}
-
-	if &result == nil {
-		return nil, errors.New(commErr.RowsNotFound)
+	row := f.Store.Db.Model(&flavorgroupFlavor{}).Where(&flavorgroupFlavor{FlavorgroupId: fgId, FlavorId: fId}).Row()
+	if err := row.Scan(&result.FlavorGroupID, &result.FlavorID); err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:RetrieveFlavor() failed to scan record")
 	}
 
 	return &result, nil

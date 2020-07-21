@@ -49,7 +49,7 @@ type TagCertificateController struct {
 }
 
 func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore models.CertificatesStore, tcs domain.TagCertificateStore,
-	hs domain.HostStore, fs domain.FlavorStore, fgs domain.FlavorGroupStore, hcp hostConnector.HostConnectorProvider) *TagCertificateController {
+	htm domain.HostTrustManager, hs domain.HostStore, fs domain.FlavorStore, fgs domain.FlavorGroupStore, hcp hostConnector.HostConnectorProvider) *TagCertificateController {
 
 	// CertStore should have an entry for Tag CA Cert
 	tagKey, tagCerts, err := certStore.GetKeyAndCertificates(models.CaCertTypesTagCa.String())
@@ -68,6 +68,7 @@ func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore mo
 		FStore:  fs,
 		FGStore: fgs,
 		HStore:  hs,
+		HTManager: htm,
 	}
 
 	return &TagCertificateController{

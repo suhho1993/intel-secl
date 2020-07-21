@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"reflect"
@@ -72,24 +71,15 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		vsReport = hvsReports[0]
 	}
 
-	dbReport := report{}
-	dbReport.ID = vsReport.ID
+	dbReport := report{
+		ID:          vsReport.ID,
+		HostID:      re.HostID,
+		TrustReport: PGTrustReport(re.TrustReport),
+		CreatedAt:   re.CreatedAt,
+		Expiration:  re.Expiration,
+		Saml:        re.Saml,
+	}
 
-	if vsReport.HostID != uuid.Nil {
-		dbReport.HostID = re.HostID
-	}
-	if !vsReport.CreatedAt.IsZero() {
-		dbReport.CreatedAt = re.CreatedAt
-	}
-	if !vsReport.Expiration.IsZero() {
-		dbReport.Expiration = re.Expiration
-	}
-	if !reflect.DeepEqual(vsReport.TrustReport, hvs.TrustReport{}) {
-		dbReport.TrustReport = PGTrustReport(re.TrustReport)
-	}
-	if vsReport.Saml != "" {
-		dbReport.Saml = re.Saml
-	}
 	if db := r.Store.Db.Model(&dbReport).Updates(&dbReport); db.Error != nil || db.RowsAffected != 1 {
 		if db.Error != nil {
 			return nil, errors.Wrap(db.Error, "postgres/report_store:Update() failed to update HVSReport  "+dbReport.ID.String())

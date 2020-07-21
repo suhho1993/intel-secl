@@ -24,7 +24,7 @@ const (
 )
 
 // SetTagCertificateRoutes registers routes for tag-certificates API
-func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, certStore *models.CertificatesStore, store *postgres.DataStore) *mux.Router {
+func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, certStore *models.CertificatesStore, hostTrustManager domain.HostTrustManager, store *postgres.DataStore) *mux.Router {
 	defaultLog.Trace("router/tag_certificates:SetTagCertificateRoutes() Entering")
 	defer defaultLog.Trace("router/tag_certificates:SetTagCertificateRoutes() Leaving")
 
@@ -50,7 +50,7 @@ func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, cert
 		ServicePassword: cfg.HVS.Password,
 	}
 
-	tagCertificateController := controllers.NewTagCertificateController(tcConfig, *certStore, tagCertificateStore, hostStore,
+	tagCertificateController := controllers.NewTagCertificateController(tcConfig, *certStore, tagCertificateStore, hostTrustManager, hostStore,
 		flavorStore, flavorGroupStore, hcp)
 	if tagCertificateController != nil {
 		tagCertificateIdExpr := fmt.Sprintf("%s%s", TagCertificateEndpointPath+"/", validation.IdReg)
