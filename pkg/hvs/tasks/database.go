@@ -129,8 +129,12 @@ func (t *DBSetup) Validate() error {
 	}
 	if t.DBConfigPtr.SSLMode == constants.SslModeVerifyCa ||
 		t.DBConfigPtr.SSLMode == constants.SslModeVerifyFull {
-		_, err := os.Stat(t.SSLCert)
-		return err
+		if t.DBConfigPtr.SSLMode == constants.SslModeVerifyCa ||
+			t.DBConfigPtr.SSLMode == constants.SslModeVerifyFull {
+			if _, err := os.Stat(t.SSLCert); os.IsNotExist(err) {
+				return err
+			}
+		}
 	}
 	fmt.Fprintln(t.ConsoleWriter, "Connecting to DB and create schemas")
 	// Create conf for DBTypePostgres
