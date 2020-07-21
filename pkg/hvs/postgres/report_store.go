@@ -73,22 +73,23 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 	}
 
 	dbReport := report{}
+	dbReport.ID = vsReport.ID
+
 	if vsReport.HostID != uuid.Nil {
-		dbReport.HostID = vsReport.HostID
+		dbReport.HostID = re.HostID
 	}
 	if !vsReport.CreatedAt.IsZero() {
-		dbReport.CreatedAt = vsReport.CreatedAt
+		dbReport.CreatedAt = re.CreatedAt
 	}
 	if !vsReport.Expiration.IsZero() {
-		dbReport.Expiration = vsReport.Expiration
+		dbReport.Expiration = re.Expiration
 	}
 	if !reflect.DeepEqual(vsReport.TrustReport, hvs.TrustReport{}) {
-		dbReport.TrustReport = PGTrustReport(vsReport.TrustReport)
+		dbReport.TrustReport = PGTrustReport(re.TrustReport)
 	}
 	if vsReport.Saml != "" {
-		dbReport.Saml = vsReport.Saml
+		dbReport.Saml = re.Saml
 	}
-
 	if db := r.Store.Db.Model(&dbReport).Updates(&dbReport); db.Error != nil || db.RowsAffected != 1 {
 		if db.Error != nil {
 			return nil, errors.Wrap(db.Error, "postgres/report_store:Update() failed to update HVSReport  "+dbReport.ID.String())
