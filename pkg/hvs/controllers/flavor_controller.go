@@ -465,7 +465,7 @@ func (fcon *FlavorController) Search(w http.ResponseWriter, r *http.Request) (in
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	flavorCollection, err := fcon.FStore.Search(&dm.FlavorVerificationFC{
+	signedFlavors, err := fcon.FStore.Search(&dm.FlavorVerificationFC{
 		FlavorFC: *filterCriteria,
 	})
 	if err != nil {
@@ -473,8 +473,10 @@ func (fcon *FlavorController) Search(w http.ResponseWriter, r *http.Request) (in
 		return nil, http.StatusInternalServerError, errors.Errorf("Unable to search Flavors")
 	}
 
+	signedFlavorCollection := hvs.SignedFlavorCollection{SignedFlavors: signedFlavors}
+
 	secLog.Infof("%s: Return flavor query to: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
-	return flavorCollection, http.StatusOK, nil
+	return signedFlavorCollection, http.StatusOK, nil
 }
 
 func (fcon *FlavorController) Delete(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {

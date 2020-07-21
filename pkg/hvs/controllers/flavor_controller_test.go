@@ -50,11 +50,11 @@ var _ = Describe("FlavorController", func() {
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
 
-				var sfs []*hvs.SignedFlavor
+				var sfs *hvs.SignedFlavorCollection
 				err = json.Unmarshal(w.Body.Bytes(), &sfs)
 				Expect(err).ToNot(HaveOccurred())
 				//TODO Requires changes in mock flavor search method for this criteria
-				Expect(len(sfs)).To(Equal(0))
+				Expect(len(sfs.SignedFlavors)).To(Equal(0))
 			})
 		})
 
@@ -67,10 +67,10 @@ var _ = Describe("FlavorController", func() {
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
 
-				var sfs []*hvs.SignedFlavor
+				var sfs *hvs.SignedFlavorCollection
 				err = json.Unmarshal(w.Body.Bytes(), &sfs)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(sfs)).To(Equal(1))
+				Expect(len(sfs.SignedFlavors)).To(Equal(1))
 			})
 		})
 		Context("When filtered by Flavor meta description key-value pair", func() {
@@ -82,11 +82,11 @@ var _ = Describe("FlavorController", func() {
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
 
-				var sfs []*hvs.SignedFlavor
+				var sfs *hvs.SignedFlavorCollection
 				err = json.Unmarshal(w.Body.Bytes(), &sfs)
 				Expect(err).NotTo(HaveOccurred())
 				//TODO Requires changes in mock flavor search method for this criteria
-				Expect(len(sfs)).To(Equal(0))
+				Expect(len(sfs.SignedFlavors)).To(Equal(0))
 			})
 		})
 	})
