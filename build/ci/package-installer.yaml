@@ -1,9 +1,4 @@
 installer:
-  rules:
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /integration/'
-      when: always
-    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "v3.0/feature/go-hvs"'
-      when: always
   stage: package
   tags:
     - k8s
