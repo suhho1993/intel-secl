@@ -68,10 +68,10 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		}
 		return vsReport, nil
 	}
-	vsReport = hvsReports[0]
-	
+
+	re.ID = hvsReports[0].ID
 	dbReport := report{
-		ID:          vsReport.ID,
+		ID:          re.ID,
 		HostID:      re.HostID,
 		TrustReport: PGTrustReport(re.TrustReport),
 		CreatedAt:   re.CreatedAt,
@@ -87,7 +87,7 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		}
 	}
 
-	return vsReport, nil
+	return re, nil
 }
 
 // Create method creates a new record in report table
