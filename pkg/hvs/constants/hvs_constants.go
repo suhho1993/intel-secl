@@ -160,5 +160,5 @@ const (
 const (
 	DefaultFvsNumberOfVerifiers            = 20
 	DefaultFvsNumberOfDataFetchers         = 20
-	DefaultSkipFlavorSignatureVerification = true
+	DefaultSkipFlavorSignatureVerification = false
 )
