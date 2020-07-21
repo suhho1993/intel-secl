@@ -638,7 +638,7 @@ var _ = Describe("FlavorgroupController", func() {
 		})
 
 		Context("Search FlavorGroup-Flavor link with non-existent FlavorGroup ID", func() {
-			It("Should return an empty list of FlavorGroupFlavor links and 200 response code", func() {
+			It("Should return 404 response code", func() {
 				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.SearchFlavors))).Methods("GET")
 				req, err := http.NewRequest(
 					"GET",
@@ -648,10 +648,7 @@ var _ = Describe("FlavorgroupController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(http.StatusOK))
-				var fgfl hvs.FlavorgroupFlavorLinkCollection
-				Expect(json.Unmarshal(w.Body.Bytes(), &fgfl)).NotTo(HaveOccurred())
-				Expect(len(fgfl.FGFLinks) == 0).To(BeTrue())
+				Expect(w.Code).To(Equal(http.StatusNotFound))
 			})
 		})
 	})
