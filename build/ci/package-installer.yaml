@@ -9,12 +9,12 @@ installer:
 
     - echo "[http \"https://${GITLAB_SERVER}\"]" >> ~/.gitconfig
     - echo "        proxy = \"\"" >> ~/.gitconfig
-    - apt-get update -y
+    - apt-get update -y -o Acquire::Max-FutureTime=31536000
     - cd $CI_PROJECT_DIR
   script:
     - apt-get install -yq makeself
     - make installer
   artifacts:
     paths:
-    - deployments/installer
+      - deployments/installer
     expire_in: 24 hour
