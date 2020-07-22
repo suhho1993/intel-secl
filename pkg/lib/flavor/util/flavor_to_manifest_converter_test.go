@@ -30,7 +30,7 @@ func TestFlavorToManifestConverter_GetManifestXML(t *testing.T) {
 	_ = json.Unmarshal(flavorBytes, &myflavor)
 
 	// convert to manifest
-	mmanifest := fmc.getManifestFromFlavor(myflavor)
+	mmanifest := fmc.GetManifestFromFlavor(myflavor)
 	assert.NotNil(t, mmanifest)
 	t.Log(mmanifest)
 

@@ -7,14 +7,14 @@ package hvs
 import "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 
 // FlavorGroup response payload
-// swagger:response FlavorGroup
+// swagger:parameters FlavorGroup
 type FlavorGroup struct {
 	// in:body
 	Body hvs.FlavorGroup
 }
 
 // FlavorgroupCollection response payload
-// swagger:response FlavorgroupCollection
+// swagger:parameters FlavorgroupCollection
 type FlavorgroupCollection struct {
 	// in:body
 	Body hvs.FlavorgroupCollection

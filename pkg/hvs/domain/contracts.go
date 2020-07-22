@@ -56,7 +56,6 @@ type (
 	FlavorStore interface {
 		GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error)
 		GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error)
-
 		Create(*hvs.SignedFlavor) (*hvs.SignedFlavor, error)
 		Retrieve(uuid.UUID) (*hvs.SignedFlavor, error)
 		Search(*models.FlavorVerificationFC) ([]*hvs.SignedFlavor, error)

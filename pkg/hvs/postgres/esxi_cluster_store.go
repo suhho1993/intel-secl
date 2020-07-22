@@ -88,7 +88,7 @@ func (e *ESXiClusterStore) Search(ecFilter *models.ESXiClusterFilterCriteria) ([
 	}
 	defer rows.Close()
 
-	var clusters []hvs.ESXiCluster
+	clusters := []hvs.ESXiCluster{}
 	for rows.Next() {
 		cluster := hvs.ESXiCluster{}
 		if err := rows.Scan(&cluster.Id, &cluster.ConnectionString, &cluster.ClusterName); err != nil {

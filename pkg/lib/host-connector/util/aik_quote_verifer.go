@@ -407,7 +407,7 @@ func addPcrEntry(module types.Module, eventLogMap types.PcrEventLogMap) types.Pc
 			eventLogMap.Sha256EventLogs[index].EventLogs = append(eventLogMap.Sha256EventLogs[index].EventLogs, eventLog)
 		}
 	}
-	log.Debug("util/aik_quote_verifier:addPcrEntry() Successfully added all PCR log entries")
+	log.Debugf("util/aik_quote_verifier:addPcrEntry() Successfully added PCR log entries for module : %s", module.Name)
 	return eventLogMap
 }
 

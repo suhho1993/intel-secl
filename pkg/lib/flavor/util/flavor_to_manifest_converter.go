@@ -5,7 +5,7 @@
 package util
 
 import (
-	"encoding/json"
+	"encoding/xml"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
@@ -29,9 +29,9 @@ func (fmc FlavorToManifestConverter) GetManifestXML(flavor hvs.Flavor) (string, 
 	var manifest taModel.Manifest
 	var err error
 
-	manifest = fmc.getManifestFromFlavor(flavor)
+	manifest = fmc.GetManifestFromFlavor(flavor)
 
-	manifestXML, err := json.Marshal(manifest)
+	manifestXML, err := xml.Marshal(manifest)
 	if err != nil {
 		return "", errors.Wrap(err, "FlavorToManifestConverter: failed to parse Manifest XML")
 	}
@@ -39,7 +39,7 @@ func (fmc FlavorToManifestConverter) GetManifestXML(flavor hvs.Flavor) (string, 
 }
 
 // getManifestFromFlavor constructs the Manifest from the Flavor
-func (fmc FlavorToManifestConverter) getManifestFromFlavor(flavor hvs.Flavor) taModel.Manifest {
+func (fmc FlavorToManifestConverter) GetManifestFromFlavor(flavor hvs.Flavor) taModel.Manifest {
 	log.Trace("flavor/util/flavor_to_manifest_converter:getManifestFromFlavor() Entering")
 	defer log.Trace("flavor/util/flavor_to_manifest_converter:getManifestFromFlavor() Leaving")
 
@@ -72,7 +72,7 @@ func (fmc FlavorToManifestConverter) getManifestFromFlavor(flavor hvs.Flavor) ta
 func (fmc FlavorToManifestConverter) getManifestType(measurement taModel.FlavorMeasurement) interface{} {
 	log.Trace("flavor/util/flavor_to_manifest_converter:getManifestType() Entering")
 	defer log.Trace("flavor/util/flavor_to_manifest_converter:getManifestType() Leaving")
-	
+
 	var manType interface{}
 	switch measurement.Type {
 	case taModel.MeasurementTypeFile:

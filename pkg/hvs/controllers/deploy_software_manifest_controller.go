@@ -79,14 +79,9 @@ func (controller *DeploySoftwareManifestController) DeployManifest(w http.Respon
 	}
 
 	var fmc util.FlavorToManifestConverter
-	manifestString, err := fmc.GetManifestXML(signedFlavor.Flavor)
-	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/deploy_software_manifest_controller:"+
-			"DeployManifest() %s : Failed to get manifest from flavor", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to get manifest from flavor"}
-	}
+	manifest := fmc.GetManifestFromFlavor(signedFlavor.Flavor)
 
-	httpStatus, err := controller.deployManifestToHost(reqDeployManifest.HostId, manifestString)
+	httpStatus, err := controller.deployManifestToHost(reqDeployManifest.HostId, manifest)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/deploy_software_manifest_controller:"+
 			"DeployManifest() %s : Failed to deploy manifest to host", commLogMsg.AppRuntimeErr)
@@ -95,7 +90,7 @@ func (controller *DeploySoftwareManifestController) DeployManifest(w http.Respon
 	return nil, httpStatus, nil
 }
 
-func (controller *DeploySoftwareManifestController) deployManifestToHost(hostId uuid.UUID, manifestString string) (int, error) {
+func (controller *DeploySoftwareManifestController) deployManifestToHost(hostId uuid.UUID, manifest model.Manifest) (int, error) {
 	defaultLog.Trace("controllers/deploy_software_manifest_controller:deployManifestToHost() Entering")
 	defer defaultLog.Trace("controllers/deploy_software_manifest_controller:deployManifestToHost() Leaving")
 
@@ -116,12 +111,6 @@ func (controller *DeploySoftwareManifestController) deployManifestToHost(hostId 
 	hconnector, err := controller.HController.HCConfig.HostConnectorProvider.NewHostConnector(connectionString)
 	if err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "Could not instantiate host connector")
-	}
-
-	var manifest model.Manifest
-	err = json.Unmarshal([]byte(manifestString), &manifest)
-	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "Error unmarshalling manifest string")
 	}
 
 	err = hconnector.DeploySoftwareManifest(manifest)

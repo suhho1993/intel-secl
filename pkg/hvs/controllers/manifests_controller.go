@@ -53,13 +53,8 @@ func (controller ManifestsController) GetManifest(w http.ResponseWriter, r *http
 
 	var fmc util.FlavorToManifestConverter
 	if signedFlavor.Flavor.Meta.Description.FlavorPart == string(common.FlavorPartSoftware) {
-		manifestString, err := fmc.GetManifestXML(signedFlavor.Flavor)
-		if err != nil {
-			defaultLog.WithError(err).Errorf("controllers/manifests_controller:"+
-				"GetManifest() %s : Failed to get manifest from flavor", commLogMsg.AppRuntimeErr)
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to get manifest from flavor"}
-		}
-		return manifestString, http.StatusOK, nil
+		manifest := fmc.GetManifestFromFlavor(signedFlavor.Flavor)
+		return manifest, http.StatusOK, nil
 	} else {
 		secLog.WithError(err).Errorf("controllers/manifests_controller:"+
 			"GetManifest() %s : Flavor associated with the provided id is not a SOFTWARE flavor", commLogMsg.InvalidInputBadParam)
