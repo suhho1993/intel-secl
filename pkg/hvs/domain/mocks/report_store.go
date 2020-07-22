@@ -26,7 +26,9 @@ type MockReportStore struct {
 
 // Create inserts a HVSReport
 func (store *MockReportStore) Create(report *models.HVSReport) (*models.HVSReport, error) {
-	report.ID = uuid.New()
+	if report.ID == uuid.Nil {
+		report.ID = uuid.New()
+	}
 	store.reportStore[report.ID] = *report
 	return report, nil
 }
@@ -64,20 +66,22 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 	hostStatusStore := NewFakeHostStatusStore()
 	var reports []*models.HVSReport
 	var hosts []*hvs.Host
-	var hostStatuses []*hvs.HostStatus
+	var hostStatuses []hvs.HostStatus
 	if criteria.ID != uuid.Nil {
-		t, _ := store.Retrieve(criteria.ID)
-		reports = append(reports, t)
+		r, _ := store.Retrieve(criteria.ID)
+		if r != nil {
+			reports = append(reports, r)
+		}
 	} else if criteria.HostHardwareID != uuid.Nil || criteria.HostName != "" {
 		for _, t := range hostStore.hostStore {
 			if criteria.HostHardwareID == t.HardwareUuid || criteria.HostName == t.HostName {
 				hosts = append(hosts, t)
 			}
-			for _, h := range hosts {
-				for _, r := range store.reportStore {
-					if h.Id == r.HostID {
-						reports = append(reports, &r)
-					}
+		}
+		for _, h := range hosts {
+			for _, r := range store.reportStore {
+				if h.Id == r.HostID {
+					reports = append(reports, &r)
 				}
 			}
 		}
@@ -90,7 +94,7 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 	} else if criteria.HostStatus != "" {
 		for _, t := range hostStatusStore.HostStatusStore {
 			if hvs.GetHostState(criteria.HostStatus) == t.HostStatusInformation.HostState {
-				hostStatuses = append(hostStatuses, &t)
+				hostStatuses = append(hostStatuses, t)
 			}
 		}
 		for _, h := range hostStatuses {
@@ -132,8 +136,9 @@ func (store *MockReportStore) FindHostIdsFromExpiredReports(fromTime time.Time, 
 func NewMockReportStore() *MockReportStore {
 	//TODO add more data
 	store := &MockReportStore{}
-	saml1text, _ := ioutil.ReadFile("../resources/saml_report")
-	trustReportBytes, _ := ioutil.ReadFile("../resources/trust_report.json")
+	store.reportStore = make(map[uuid.UUID]models.HVSReport)
+	saml1text, _ := ioutil.ReadFile("../domain/mocks/resources/saml_report")
+	trustReportBytes, _ := ioutil.ReadFile("../domain/mocks/resources/trust_report.json")
 	var trustReport hvs.TrustReport
 	json.Unmarshal(trustReportBytes, &trustReport)
 	created, _ := time.Parse(constants.ParamDateFormat, "2020-06-21 07:18:00.57")
@@ -141,6 +146,15 @@ func NewMockReportStore() *MockReportStore {
 	store.Create(&models.HVSReport{
 		ID:          uuid.MustParse("15701f03-7b1d-49f9-ac62-6b9b0728bdb3"),
 		HostID:      uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
+		CreatedAt:   created,
+		Expiration:  expiration,
+		Saml:        string(saml1text),
+		TrustReport: trustReport,
+	})
+
+	store.Create(&models.HVSReport{
+		ID:          uuid.MustParse("15701f03-7b1d-49f9-ac62-6b9b0728bdb4"),
+		HostID:      uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
 		CreatedAt:   created,
 		Expiration:  expiration,
 		Saml:        string(saml1text),

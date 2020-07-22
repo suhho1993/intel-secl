@@ -6,13 +6,16 @@ package mocks
 
 import (
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 )
 
 type MockHostTrustManager struct{}
 
 func (mock *MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (*models.HVSReport, error) {
-	return nil, nil
+	store := mocks.NewMockReportStore()
+	report, _ := store.Search(&models.ReportFilterCriteria{HostID: hostId})
+	return report[0], nil
 }
 
 func (mock *MockHostTrustManager) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {

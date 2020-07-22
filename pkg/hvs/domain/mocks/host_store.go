@@ -67,7 +67,9 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 	var hosts []*hvs.Host
 	if criteria.Id != uuid.Nil {
 		h, _ := store.Retrieve(criteria.Id)
-		hosts = append(hosts, h)
+		if h != nil {
+			hosts = append(hosts, h)
+		}
 	}  else if criteria.HostHardwareId != uuid.Nil {
 		for _, h := range store.hostStore {
 			if h.HardwareUuid == criteria.HostHardwareId {
@@ -87,7 +89,6 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 			}
 		}
 	}
-
 	return hosts, nil
 }
 

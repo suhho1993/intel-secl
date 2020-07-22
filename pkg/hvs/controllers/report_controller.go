@@ -25,9 +25,9 @@ import (
 )
 
 type ReportController struct {
-	reportStore     domain.ReportStore
-	hostStore       domain.HostStore
-	hostStatusStore domain.HostStatusStore
+	ReportStore     domain.ReportStore
+	HostStore       domain.HostStore
+	HostStatusStore domain.HostStatusStore
 	HTManager       domain.HostTrustManager
 }
 
@@ -74,7 +74,7 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCrite
 	defaultLog.Trace("controllers/report_controller:createReport() Entering")
 	defer defaultLog.Trace("controllers/report_controller:createReport() Leaving")
 	hsCriteria := getHostFilterCriteria(rsCriteria)
-	hosts, err := controller.hostStore.Search(&hsCriteria)
+	hosts, err := controller.HostStore.Search(&hsCriteria)
 	if err != nil {
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Error while searching host")
 	}
@@ -84,12 +84,12 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCrite
 	}
 	//Always only one record is returned for the particular criteria
 	hostId := hosts[0].Id
-	hostStatusCollection, err := controller.hostStatusStore.Search(&models.HostStatusFilterCriteria{
+	hostStatusCollection, err := controller.HostStatusStore.Search(&models.HostStatusFilterCriteria{
 		HostId:        hostId,
 		LatestPerHost: true,
 	})
 	if len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
-		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Host is not in CONNECTED state")
+		return nil, errors.New("controllers/report_controller:createReport() Host is not in CONNECTED state")
 	}
 
 	hvsReport, err := controller.HTManager.VerifyHost(hostId, true, false)
@@ -145,7 +145,7 @@ func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Reque
 
 	id := uuid.MustParse(mux.Vars(r)["id"])
 
-	hvsReport, err := controller.reportStore.Retrieve(id)
+	hvsReport, err := controller.ReportStore.Retrieve(id)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", id).Info(
@@ -174,7 +174,7 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid Input given in request"}
 	}
 
-	hvsReportCollection, err := controller.reportStore.Search(reportFilterCriteria)
+	hvsReportCollection, err := controller.ReportStore.Search(reportFilterCriteria)
 	if err != nil {
 		defaultLog.WithError(err).Warnf("controllers/report_controller:Search() HVSReport search operation failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("HVSReport search operation failed")
@@ -201,7 +201,7 @@ func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Req
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid Input given in request"}
 	}
 
-	hvsReportCollection, err := controller.reportStore.Search(reportFilterCriteria)
+	hvsReportCollection, err := controller.ReportStore.Search(reportFilterCriteria)
 	if err != nil {
 		defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml() HVSReport search operation failed")
 		return nil, http.StatusInternalServerError, errors.Errorf("HVSReport search operation failed")
@@ -209,13 +209,13 @@ func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Req
 
 	var samlStruct hvs.Saml
 
-	var samlCollection []hvs.Saml
+	var samlCollection []*hvs.Saml
 	for _, hvsReport := range hvsReportCollection {
 		samlStruct, err = hvsReport.GetSaml()
 		if err != nil {
 			defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml() Error while retrieving saml from report")
 		}
-		samlCollection = append(samlCollection, samlStruct)
+		samlCollection = append(samlCollection, &samlStruct)
 	}
 	secLog.Infof("%s: SamlReports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
 	return samlCollection, http.StatusOK, nil
