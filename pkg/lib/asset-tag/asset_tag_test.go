@@ -47,9 +47,8 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse certificate: %v", err)
 	}
-	var subjectName string
-	asn1.Unmarshal([]byte(parsedCert.Subject.CommonName), &subjectName)
-	assert.Equal(t, "803f6068-06da-e811-906e-00163566263e", subjectName)
+	assert.Equal(t, "CN=803f6068-06da-e811-906e-00163566263e", parsedCert.Subject.String())
+	assert.Equal(t, "CN=HVS Tag Certificate", parsedCert.Issuer.String())
 
 	// validate tag key-value attributes
 	for _, extensions := range parsedCert.Extensions {
@@ -80,10 +79,10 @@ func TestAtag_CreateAssetTag(t *testing.T) {
 
 	// invalid tag-attributes test
 	tagConfig = TagCertConfig{
-		SubjectUUID: "803f6068-06da-e811-906e-00163566263e",
-		PrivateKey:  privKey,
-		TagCACert:   cert,
-		TagAttributes: []TagKvAttribute{},
+		SubjectUUID:       "803f6068-06da-e811-906e-00163566263e",
+		PrivateKey:        privKey,
+		TagCACert:         cert,
+		TagAttributes:     []TagKvAttribute{},
 		ValidityInSeconds: 1000,
 	}
 
@@ -156,7 +155,7 @@ func TestAtag_DeployAssetTag(t *testing.T) {
 	assert.NoError(t, err)
 	dtErr := newTag.DeployAssetTag(connector, "0966d97d182ee8fac40bee16018e762ae46a026f0bb437600e029a755f8745a9a6bb8b3da152ea37ef52f0d855b6622f\n", "803f6068-06da-e811-906e-00163566263e")
 	assert.NotNil(t, dtErr)
-	dtErrNew := newTag.DeployAssetTag(connector, "","")
+	dtErrNew := newTag.DeployAssetTag(connector, "", "")
 	assert.NotNil(t, dtErrNew)
 }
 
@@ -175,10 +174,10 @@ func createX509CertAndKey() (*rsa.PrivateKey, *x509.Certificate, error) {
 		ExtKeyUsage:        []x509.ExtKeyUsage{},
 		SignatureAlgorithm: x509.SHA384WithRSA,
 		Issuer: pkix.Name{
-			CommonName: "OU=mtwilson, CN=mtwilson-ca",
+			CommonName: "HVS CA",
 		},
 		Subject: pkix.Name{
-			CommonName: "803f6068-06da-e811-906e-00163566263e",
+			CommonName: "HVS Tag Certificate",
 		},
 	}
 	certDer, err := x509.CreateCertificate(rand.Reader, template, template, &privkey.PublicKey, privkey)

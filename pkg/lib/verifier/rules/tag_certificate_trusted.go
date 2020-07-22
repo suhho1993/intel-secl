@@ -7,6 +7,8 @@ package rules
 import (
 	"crypto/x509"
 	"fmt"
+	"time"
+
 	faultsConst "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
@@ -14,25 +16,24 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
-	"time"
 )
 
-func NewTagCertificateTrusted(trustedAuthorityCerts *x509.CertPool, attributeCertificate *model.X509AttributeCertificate) (Rule, error) {
-	if trustedAuthorityCerts == nil {
+func NewTagCertificateTrusted(assetTagCACertificates *x509.CertPool, attributeCertificate *model.X509AttributeCertificate) (Rule, error) {
+	if assetTagCACertificates == nil {
 		return nil, errors.New("The tag certificates cannot be nil")
 	}
 
-	rule := tagCertificateTrusted {
-		trustedAuthorityCerts: trustedAuthorityCerts,
-		attributeCertificate: attributeCertificate,
+	rule := tagCertificateTrusted{
+		assetTagCACertificates: assetTagCACertificates,
+		attributeCertificate:   attributeCertificate,
 	}
 
 	return &rule, nil
 }
 
 type tagCertificateTrusted struct {
-	trustedAuthorityCerts *x509.CertPool
-	attributeCertificate  *model.X509AttributeCertificate
+	assetTagCACertificates *x509.CertPool
+	attributeCertificate   *model.X509AttributeCertificate
 }
 
 // - If the X509AttributeCertificate is null, raise TagCertificateMissing fault.
@@ -50,7 +51,7 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartAssetTag)
 
 	if rule.attributeCertificate == nil {
-		fault = &hvs.Fault {
+		fault = &hvs.Fault{
 			Name:        faultsConst.FaultTagCertificateMissing,
 			Description: "Host trust policy requires tag validation but the tag certificate was not found",
 		}
@@ -62,7 +63,7 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 		}
 
 		opts := x509.VerifyOptions{
-			Roots: rule.trustedAuthorityCerts,
+			Roots: rule.assetTagCACertificates,
 		}
 
 		_, err = tagCertificate.Verify(opts)
@@ -84,7 +85,7 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 					Description: fmt.Sprintf("Tag certificate not valid before %s", rule.attributeCertificate.NotBefore),
 				}
 			}
-			
+
 			// check to see if teh attributes certificate's 'not after' is after today...
 			notAfter, err := time.Parse(constants.FlavorTimestampFormat, rule.attributeCertificate.NotAfter)
 			if err != nil {

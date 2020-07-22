@@ -112,7 +112,7 @@ func (builder *ruleBuilderIntelTpm20) GetAssetTagRules() ([]rules.Rule, error) {
 	//
 	// TagCertificateTrusted
 	//
-	tagCertificateTrusted, err := getTagCertificateTrustedRule(builder.verifierCertificates.PrivacyCACertificates, &builder.signedFlavor.Flavor)
+	tagCertificateTrusted, err := getTagCertificateTrustedRule(builder.verifierCertificates.AssetTagCACertificates, &builder.signedFlavor.Flavor)
 	if err != nil {
 		return nil, err
 	}

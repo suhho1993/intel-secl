@@ -20,7 +20,6 @@ type TagCertConfig struct {
 type TagCertBuilderConfig struct {
 	TagCertConfig    TagCertConfig
 	SerialNumber     *big.Int
-	IssuerName       pkix.Name
 	ValidityDuration time.Duration
 	SubjectName      pkix.Name
 	Extensions       []pkix.Extension

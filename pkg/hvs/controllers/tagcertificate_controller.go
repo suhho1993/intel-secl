@@ -65,9 +65,9 @@ func NewTagCertificateController(tc domain.TagCertControllerConfig, certStore mo
 	}
 
 	fCon := FlavorController{
-		FStore:  fs,
-		FGStore: fgs,
-		HStore:  hs,
+		FStore:    fs,
+		FGStore:   fgs,
+		HStore:    hs,
 		HTManager: htm,
 	}
 
@@ -148,7 +148,7 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 	newTagCert := hvs.TagCertificate{
 		Certificate:  newAssetTagBytes,
 		Subject:      tempX509AttrCert.Subject,
-		Issuer:       tagCACert.Issuer.CommonName,
+		Issuer:       tagCACert.Issuer.String(),
 		NotBefore:    newX509TC.NotBefore,
 		NotAfter:     newX509TC.NotAfter,
 		HardwareUUID: reqTCCriteria.HardwareUUID,
@@ -427,7 +427,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	}
 
 	// DeployAssetTag
-	err = hc.DeployAssetTag(targetHost.HardwareUuid.String(), tc.TagCertDigest)
+	err = asset_tag.NewAssetTag().DeployAssetTag(hc, tc.TagCertDigest, targetHost.HardwareUuid.String())
 	if err != nil {
 		defaultLog.WithError(err).WithField("Certid", dtcReq.CertID).Error("controllers/tagcertificate_controller:Deploy() Failed "+
 			"to deploy Asset Tag on Host %s", targetHost.HardwareUuid)
@@ -449,7 +449,6 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	}
 
 	// Create AssetTag Flavor for the Host
-	// create x509AttributeCert
 	fProvider, err := flavor.NewPlatformFlavorProvider(&hmanifest, newX509TC)
 	if err != nil {
 		defaultLog.WithField("Certid", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to initialize FlavorProvider %s", commLogMsg.AppRuntimeErr, err.Error())

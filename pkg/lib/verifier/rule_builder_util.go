@@ -162,7 +162,7 @@ func getAssetTagMatchesRule(flavor *hvs.Flavor) (rules.Rule, error) {
 	return rule, nil
 }
 
-func getTagCertificateTrustedRule(privacyCACertificates *x509.CertPool, flavor *hvs.Flavor) (rules.Rule, error) {
+func getTagCertificateTrustedRule(assetTagCACertificates *x509.CertPool, flavor *hvs.Flavor) (rules.Rule, error) {
 
 	var rule rules.Rule
 	var err error
@@ -172,7 +172,7 @@ func getTagCertificateTrustedRule(privacyCACertificates *x509.CertPool, flavor *
 		return nil, errors.New("'External' was not present in the flavor")
 	}
 
-	rule, err = rules.NewTagCertificateTrusted(privacyCACertificates, &flavor.External.AssetTag.TagCertificate)
+	rule, err = rules.NewTagCertificateTrusted(assetTagCACertificates, &flavor.External.AssetTag.TagCertificate)
 	if err != nil {
 		return nil, err
 	}
