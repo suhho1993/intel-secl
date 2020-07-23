@@ -67,14 +67,14 @@ func (hcs *HostCredentialStore) Retrieve(id uuid.UUID) (*models.HostCredential, 
 	return &hc, nil
 }
 
-func (hcs *HostCredentialStore) Update(hc *models.HostCredential) (*models.HostCredential, error) {
+func (hcs *HostCredentialStore) Update(hc *models.HostCredential) error {
 	defaultLog.Trace("postgres/host_credential_store:Update() Entering")
 	defer defaultLog.Trace("postgres/host_credential_store:Update() Leaving")
 
 	if hc.Credential != "" {
 		encCred, err := utils.EncryptString(hc.Credential, hcs.Dek)
 		if err != nil {
-			return nil, errors.Wrap(err, "postgres/host_credential_store:Update() failed to encrypt Host Credential")
+			return errors.Wrap(err, "postgres/host_credential_store:Update() failed to encrypt Host Credential")
 		}
 		hc.Credential = encCred
 	}
@@ -90,12 +90,12 @@ func (hcs *HostCredentialStore) Update(hc *models.HostCredential) (*models.HostC
 
 	if db := hcs.Store.Db.Model(&dbHostCredential).Updates(&dbHostCredential); db.Error != nil || db.RowsAffected != 1 {
 		if db.Error != nil {
-			return nil, errors.Wrap(db.Error, "postgres/host_credential_store:Update() failed to update Host Credential" + dbHostCredential.Id.String())
+			return errors.Wrap(db.Error, "postgres/host_credential_store:Update() failed to update Host Credential  " + dbHostCredential.Id.String())
 		} else {
-			return nil, errors.New("postgres/host_credential_store:Update() - no rows affected - Record not found = id :  " + dbHostCredential.Id.String())
+			return errors.New("postgres/host_credential_store:Update() - no rows affected - Record not found = id :  " + dbHostCredential.Id.String())
 		}
 	}
-	return hc, nil
+	return nil
 }
 
 func (hcs *HostCredentialStore) Delete(id uuid.UUID) error {

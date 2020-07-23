@@ -30,7 +30,7 @@ type (
 	HostStore interface {
 		Create(*hvs.Host) (*hvs.Host, error)
 		Retrieve(uuid.UUID) (*hvs.Host, error)
-		Update(*hvs.Host) (*hvs.Host, error)
+		Update(*hvs.Host) error
 		Delete(uuid.UUID) error
 		Search(*models.HostFilterCriteria) ([]*hvs.Host, error)
 		AddFlavorgroups(uuid.UUID, []uuid.UUID) error
@@ -47,7 +47,7 @@ type (
 	HostCredentialStore interface {
 		Create(*models.HostCredential) (*models.HostCredential, error)
 		Retrieve(uuid.UUID) (*models.HostCredential, error)
-		Update(*models.HostCredential) (*models.HostCredential, error)
+		Update(*models.HostCredential) error
 		Delete(uuid.UUID) error
 		FindByHostId(uuid.UUID) (*models.HostCredential, error)
 		FindByHostName(string) (*models.HostCredential, error)

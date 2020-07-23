@@ -37,14 +37,14 @@ func (store *MockHostStore) Retrieve(id uuid.UUID) (*hvs.Host, error) {
 }
 
 // Update modifies a Host
-func (store *MockHostStore) Update(host *hvs.Host) (*hvs.Host, error) {
+func (store *MockHostStore) Update(host *hvs.Host) error {
 	for i, h := range store.hostStore {
 		if h.Id == host.Id {
 			store.hostStore[i] = host
-			return host, nil
+			return nil
 		}
 	}
-	return nil, errors.New(commErr.RecordNotFound)
+	return errors.New(commErr.RecordNotFound)
 }
 
 // Delete deletes Host

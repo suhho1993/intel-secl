@@ -54,7 +54,7 @@ func (hs *HostStore) Retrieve(id uuid.UUID) (*hvs.Host, error) {
 	return &h, nil
 }
 
-func (hs *HostStore) Update(h *hvs.Host) (*hvs.Host, error) {
+func (hs *HostStore) Update(h *hvs.Host) error {
 	defaultLog.Trace("postgres/host_store:Update() Entering")
 	defer defaultLog.Trace("postgres/host_store:Update() Leaving")
 
@@ -66,10 +66,14 @@ func (hs *HostStore) Update(h *hvs.Host) (*hvs.Host, error) {
 		HardwareUuid:     h.HardwareUuid,
 	}
 
-	if err := hs.Store.Db.Save(&dbHost).Error; err != nil {
-		return nil, errors.Wrap(err, "postgres/host_store:Update() failed to update Host")
+	if db := hs.Store.Db.Model(&dbHost).Updates(&dbHost); db.Error != nil || db.RowsAffected != 1 {
+		if db.Error != nil {
+			return errors.Wrap(db.Error, "postgres/host_store:Update() failed to update Host  " + dbHost.Id.String())
+		} else {
+			return errors.New("postgres/host_store:Update() - no rows affected - Record not found = id :  " + dbHost.Id.String())
+		}
 	}
-	return h, nil
+	return nil
 }
 
 func (hs *HostStore) Delete(id uuid.UUID) error {

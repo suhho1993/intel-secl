@@ -33,14 +33,14 @@ func (store *MockHostCredentialStore) Retrieve(id uuid.UUID) (*models.HostCreden
 }
 
 // Update modifies a HostCredential
-func (store *MockHostCredentialStore) Update(hostCredential *models.HostCredential) (*models.HostCredential, error) {
+func (store *MockHostCredentialStore) Update(hostCredential *models.HostCredential) error {
 	for i, h := range store.hostCredentialStore {
 		if h.Id == hostCredential.Id {
 			store.hostCredentialStore[i] = hostCredential
-			return hostCredential, nil
+			return nil
 		}
 	}
-	return nil, errors.New(commErr.RecordNotFound)
+	return errors.New(commErr.RecordNotFound)
 }
 
 // Delete deletes HostCredential

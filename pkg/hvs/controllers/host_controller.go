@@ -348,18 +348,22 @@ func (hc *HostController) UpdateHost(reqHost hvs.Host) (interface{}, int, error)
 
 		if hostCredential != nil {
 			hostCredential.Credential = credential
-			_, err = hc.HCStore.Update(hostCredential)
-			if err != nil {
+			if err = hc.HCStore.Update(hostCredential); err != nil {
 				defaultLog.WithError(err).Error("controllers/host_controller:UpdateHost() Host Credential update failed")
 				return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host Credential"}
 			}
 		}
 	}
 
-	updatedHost, err := hc.HStore.Update(&reqHost)
-	if err != nil {
+	if err := hc.HStore.Update(&reqHost); err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:UpdateHost() Host update failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to update Host"}
+	}
+
+	updatedHost, err := hc.HStore.Retrieve(reqHost.Id)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:UpdateHost() Host retrieve failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host"}
 	}
 
 	if len(reqHost.FlavorgroupNames) != 0 {
