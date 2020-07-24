@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-
 var aasClient = aas.NewJWTClient("")
 var aasRWLock = sync.RWMutex{}
 
@@ -29,18 +28,18 @@ func addJWTToken(req *http.Request, aasURL, serviceUsername, servicePassword str
 	trustedCaCerts []x509.Certificate) error {
 	log.Trace("clients/send_http_request:addJWTToken() Entering")
 	defer log.Trace("clients/send_http_request:addJWTToken() Leaving")
+
+	var err error
 	if aasClient.BaseURL == "" {
 		aasClient = aas.NewJWTClient(aasURL)
 		if aasClient.HTTPClient == nil {
 			if len(trustedCaCerts) == 0 {
-				c := clients.HTTPClientTLSNoVerify()
-				aasClient.HTTPClient = c
+				aasClient.HTTPClient = clients.HTTPClientTLSNoVerify()
 			} else {
-				c, err := clients.HTTPClientWithCA(trustedCaCerts)
+				aasClient.HTTPClient, err = clients.HTTPClientWithCA(trustedCaCerts)
 				if err != nil {
 					return errors.Wrap(err, "clients/send_http_request.go:addJWTToken() Error initializing http client")
 				}
-				aasClient.HTTPClient = c
 			}
 		}
 	}
@@ -51,13 +50,14 @@ func addJWTToken(req *http.Request, aasURL, serviceUsername, servicePassword str
 
 	if err != nil {
 		aasRWLock.Lock()
+		aasClient.AddUser(serviceUsername, servicePassword)
+		err = aasClient.FetchAllTokens()
+		if err != nil {
+			return errors.Wrap(err, "clients/send_http_request.go:addJWTToken() Could not fetch token")
+		}
 		jwtToken, err = aasClient.GetUserToken(serviceUsername)
 		if err != nil {
-			aasClient.AddUser(serviceUsername, servicePassword)
-			err = aasClient.FetchAllTokens()
-			if err != nil {
-				return errors.Wrap(err, "clients/send_http_request.go:addJWTToken() Could not fetch token")
-			}
+			return errors.Wrap(err, "clients/send_http_request.go:addJWTToken() Error retrieving token from cache")
 		}
 		aasRWLock.Unlock()
 	}
@@ -72,21 +72,12 @@ func SendRequest(req *http.Request, aasURL, serviceUsername, servicePassword str
 	log.Trace("clients/send_http_request:SendRequest() Entering")
 	defer log.Trace("clients/send_http_request:SendRequest() Leaving")
 
-	var aasClient = aas.NewJWTClient(aasURL)
-	var err error
-	if len(trustedCaCerts) == 0 {
-		aasClient.HTTPClient = clients.HTTPClientTLSNoVerify()
-	} else {
-		aasClient.HTTPClient, err = clients.HTTPClientWithCA(trustedCaCerts)
-	}
-	log.Debug("clients/send_http_request:SendRequest() AAS client successfully created")
-	if err != nil {
-		return nil, errors.Wrap(err, "clients/send_http_request.go:SendRequest() Failed to create http client")
-	}
-	err = addJWTToken(req, aasURL, serviceUsername, servicePassword, trustedCaCerts)
+	err := addJWTToken(req, aasURL, serviceUsername, servicePassword, trustedCaCerts)
 	if err != nil {
 		return nil, errors.Wrap(err, "clients/send_http_request.go:SendRequest() Failed to add JWT token")
 	}
+
+	log.Debug("clients/send_http_request:SendRequest() AAS client successfully created")
 
 	response, err := aasClient.HTTPClient.Do(req)
 	if err != nil {
@@ -108,7 +99,7 @@ func SendRequest(req *http.Request, aasURL, serviceUsername, servicePassword str
 		}
 	}
 	if response.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(errors.New("HTTP Status :"  + strconv.Itoa(response.StatusCode)),
+		return nil, errors.Wrap(errors.New("HTTP Status :"+strconv.Itoa(response.StatusCode)),
 			"clients/send_http_request.go:SendRequest() Error from response")
 	}
 
