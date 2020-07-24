@@ -44,23 +44,23 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
 	}
 
-	var reqReportCreateCriteria hvs.ReportCreateCriteria
+	var reqReportCreateRequest hvs.ReportCreateRequest
 	// Decode the incoming json data to note struct
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	err := dec.Decode(&reqReportCreateCriteria)
+	err := dec.Decode(&reqReportCreateRequest)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/report_controller:Create() %s :  Failed to decode request body as Report Create Criteria", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
-	if err := validateReportCreateCriteria(reqReportCreateCriteria); err != nil {
+	if err := validateReportCreateCriteria(reqReportCreateRequest); err != nil {
 		secLog.WithError(err).Errorf("%s controllers/report_controller:Create() Error validating report create criteria", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Bad input given in input request"}
 	}
 
-	hvsReport, err := controller.createReport(reqReportCreateCriteria)
+	hvsReport, err := controller.createReport(reqReportCreateRequest)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/report_controller:Create() Error while creating report from Flavor verify queue")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
@@ -70,7 +70,7 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 	return report, http.StatusCreated, nil
 }
 
-func (controller ReportController) createReport(rsCriteria hvs.ReportCreateCriteria) (*models.HVSReport, error) {
+func (controller ReportController) createReport(rsCriteria hvs.ReportCreateRequest) (*models.HVSReport, error) {
 	defaultLog.Trace("controllers/report_controller:createReport() Entering")
 	defer defaultLog.Trace("controllers/report_controller:createReport() Leaving")
 	hsCriteria := getHostFilterCriteria(rsCriteria)
@@ -109,23 +109,23 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
 	}
 
-	var reqReportCreateCriteria hvs.ReportCreateCriteria
+	var reqReportCreateRequest hvs.ReportCreateRequest
 	// Decode the incoming json data to note struct
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	err := dec.Decode(&reqReportCreateCriteria)
+	err := dec.Decode(&reqReportCreateRequest)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() %s :  Failed to decode request body as Report Create Criteria", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
-	if err := validateReportCreateCriteria(reqReportCreateCriteria); err != nil {
+	if err := validateReportCreateCriteria(reqReportCreateRequest); err != nil {
 		secLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() %s : Error validating report create criteria", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Bad input given in input request"}
 	}
 
-	hvsReport, err := controller.createReport(reqReportCreateCriteria)
+	hvsReport, err := controller.createReport(reqReportCreateRequest)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml()  Error while creating report from Flavor verify queue")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
@@ -315,8 +315,8 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	numberOfDays := strings.TrimSpace(params.Get("numberOfDays"))
 	if numberOfDays != "" {
 		numDays, err := strconv.Atoi(numberOfDays)
-		if err != nil || numDays < 0 {
-			return nil, errors.New("NumberOfDays must be an integer >= 0")
+		if err != nil || numDays < 0 || numDays > 365 {
+			return nil, errors.New("NumberOfDays must be an integer >= 0 and <= 365")
 		}
 		rfc.NumberOfDays = numDays
 	}
@@ -335,7 +335,7 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	return &rfc, nil
 }
 
-func validateReportCreateCriteria(re hvs.ReportCreateCriteria) error {
+func validateReportCreateCriteria(re hvs.ReportCreateRequest) error {
 	defaultLog.Trace("controllers/report_controller:validateReportCreateCriteria() Entering")
 	defer defaultLog.Trace("controllers/report_controller:validateReportCreateCriteria() Leaving")
 
@@ -382,7 +382,7 @@ func buildTrustInformation(trustReport hvs.TrustReport) *hvs.TrustInformation {
 	return &hvs.TrustInformation{Overall: tr.IsTrusted(), FlavorTrust: flavorsTrustStatus}
 }
 
-func getHostFilterCriteria(rsCriteria hvs.ReportCreateCriteria) models.HostFilterCriteria {
+func getHostFilterCriteria(rsCriteria hvs.ReportCreateRequest) models.HostFilterCriteria {
 	var hsCriteria models.HostFilterCriteria
 	if rsCriteria.HostName != "" {
 		hsCriteria.NameEqualTo = rsCriteria.HostName

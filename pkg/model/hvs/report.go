@@ -37,7 +37,7 @@ type FlavorTrustStatus struct {
 	RuleResultCollection []RuleResult `json:"rules"`
 }
 
-type ReportCreateCriteria struct {
+type ReportCreateRequest struct {
 	HostID	            uuid.UUID   `json:"host_id"`
 	HardwareUUID        uuid.UUID   `json:"hardware_uuid"`
 	HostName            string      `json:"host_name"`
