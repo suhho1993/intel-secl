@@ -45,8 +45,8 @@ func DetermineHostState(err error) hvs.HostState {
 	defaultLog.Trace("utils/host:DetermineHostState() Entering")
 	defer defaultLog.Trace("utils/host:DetermineHostState() Leaving")
 
-	if strings.Contains(err.Error(), "connectex") {
-		if strings.Contains(err.Error(), "connection attempt failed") {
+	if strings.Contains(err.Error(), "connect") {
+		if strings.Contains(err.Error(), "connection timed out") {
 			defaultLog.Warnf("Failed connection to host, host has CONNECTION_TIMEOUT state with error message: %s", err.Error())
 			return hvs.HostStateConnectionTimeout
 		} else {

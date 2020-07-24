@@ -44,7 +44,7 @@ type (
 		Name             string    `gorm:"unique;type:varchar(255);not null"`
 		Description      string
 		ConnectionString string    `gorm:"not null"`
-		HardwareUuid     uuid.UUID `gorm:"unique;type:uuid"`
+		HardwareUuid     uuid.UUID `gorm:"type:uuid;index:idx_host_hardware_uuid"`
 	}
 
 	hostFlavorgroup struct {
@@ -134,7 +134,7 @@ type (
 
 	tagCertificate struct {
 		ID           uuid.UUID `gorm:"primary_key; type:uuid"`
-		HardwareUUID uuid.UUID `gorm:"not null; type:uuid; column:hardware_uuid" sql:"REFERENCES host(hardware_uuid)"`
+		HardwareUUID uuid.UUID `gorm:"not null; type:uuid; column:hardware_uuid"`
 		Certificate  []byte    `gorm:"not null; type:bytea"`
 		Subject      string    `gorm:"not null"`
 		Issuer       string    `gorm:"not null"`
