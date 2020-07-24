@@ -72,7 +72,17 @@ func SendRequest(req *http.Request, aasURL, serviceUsername, servicePassword str
 	log.Trace("clients/send_http_request:SendRequest() Entering")
 	defer log.Trace("clients/send_http_request:SendRequest() Leaving")
 
-	err := addJWTToken(req, aasURL, serviceUsername, servicePassword, trustedCaCerts)
+	var err error
+	//This has to be done for dynamic loading or unloading of certificates
+	if len(trustedCaCerts) == 0 {
+		aasClient.HTTPClient = clients.HTTPClientTLSNoVerify()
+	} else {
+		aasClient.HTTPClient, err = clients.HTTPClientWithCA(trustedCaCerts)
+		if err != nil {
+			return nil, errors.Wrap(err, "clients/send_http_request.go:SendRequest() Failed to create http client")
+		}
+	}
+	err = addJWTToken(req, aasURL, serviceUsername, servicePassword, trustedCaCerts)
 	if err != nil {
 		return nil, errors.Wrap(err, "clients/send_http_request.go:SendRequest() Failed to add JWT token")
 	}
