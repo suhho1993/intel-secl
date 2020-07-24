@@ -21,8 +21,8 @@ func SetCertifyHostKeysRoutes(router *mux.Router, certStore *models.Certificates
 	if certifyHostKeysController == nil{
 		defaultLog.Error("router/certify_host_keys:SetCertifyHostKeys() Could not instantiate CertifyHostKeysController")
 	}
-	router.HandleFunc("/rpc/certify-host-signing-key", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostKeysController.CertifySigningKey), []string{consts.CertifyHostSigningKey}))).Methods("POST")
-	router.HandleFunc("/rpc/certify-host-binding-key", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostKeysController.CertifyBindingKey), []string{consts.CertifyHostSigningKey}))).Methods("POST")
+	router.HandleFunc("/rpc/certify-host-signing-key", ErrorHandler(permissionsHandler(JsonResponseHandler(certifyHostKeysController.CertifySigningKey), []string{consts.CertifyHostSigningKey}))).Methods("POST")
+	router.HandleFunc("/rpc/certify-host-binding-key", ErrorHandler(permissionsHandler(JsonResponseHandler(certifyHostKeysController.CertifyBindingKey), []string{consts.CertifyHostSigningKey}))).Methods("POST")
 	return router
 }
 
@@ -33,9 +33,9 @@ func SetCertifyAiksRoutes(router *mux.Router, store *postgres.DataStore, certSto
 	tpmEndorsementStore := postgres.NewTpmEndorsementStore(store)
 	certifyHostAiksController := controllers.NewCertifyHostAiksController(certStore, tpmEndorsementStore, aikCertValidity, consts.AikRequestsDir)
 	if certifyHostAiksController != nil {
-		router.Handle("/privacyca/identity-challenge-request", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge),
+		router.Handle("/privacyca/identity-challenge-request", ErrorHandler(permissionsHandler(JsonResponseHandler(certifyHostAiksController.IdentityRequestGetChallenge),
 			[]string{consts.CertifyAik}))).Methods("POST")
-		router.Handle("/privacyca/identity-challenge-response", ErrorHandler(permissionsHandler(ResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse),
+		router.Handle("/privacyca/identity-challenge-response", ErrorHandler(permissionsHandler(JsonResponseHandler(certifyHostAiksController.IdentityRequestSubmitChallengeResponse),
 			[]string{consts.CertifyAik}))).Methods("POST")
 	}
 	return router

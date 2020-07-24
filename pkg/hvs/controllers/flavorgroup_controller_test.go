@@ -59,7 +59,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Get list of FlavorGroups", func() {
 		Context("Get all FlavorGroups from data store", func() {
 			It("Should get list of FlavorGroups", func() {
-				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Search))).Methods("GET")
+				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -73,7 +73,7 @@ var _ = Describe("FlavorgroupController", func() {
 		})
 		Context("Search FlavorGroups from data store", func() {
 			It("Should get filtered list of FlavorGroups", func() {
-				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Search))).Methods("GET")
+				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups?nameEqualTo=hvs_flavorgroup_test2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -87,7 +87,7 @@ var _ = Describe("FlavorgroupController", func() {
 		})
 		Context("Search FlavorGroups from data store", func() {
 			It("Should get filtered list of FlavorGroups", func() {
-				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Search))).Methods("GET")
+				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups?nameContains=hvs_flavorgroup", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -101,7 +101,7 @@ var _ = Describe("FlavorgroupController", func() {
 		})
 		Context("Get all FlavorGroups from data store with flavor content", func() {
 			It("Should get list of FlavorGroups with flavor content", func() {
-				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Search))).Methods("GET")
+				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups?includeFlavorContent=true", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -119,7 +119,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Get FlavorGroup by ID", func() {
 		Context("Retrieve FlavorGroup by ID from data store", func() {
 			It("Should retrieve FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
+				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -129,7 +129,7 @@ var _ = Describe("FlavorgroupController", func() {
 		})
 		Context("Try to retrieve FlavorGroup by invalid ID from data store", func() {
 			It("Should fail to retrieve FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
+				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -143,7 +143,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Delete FlavorGroup by ID", func() {
 		Context("Delete FlavorGroup by ID from data store", func() {
 			It("Should delete FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
+				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -154,7 +154,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Delete FlavorGroup by invalid ID from data store", func() {
 			It("Should fail to delete FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
+				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -168,7 +168,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Post a new Flavorgroup", func() {
 		Context("Provide a valid Flavorgroup data", func() {
 			It("Should create a new Flavorgroup and get HTTP Status: 201", func() {
-				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Create))).Methods("POST")
+				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Create))).Methods("POST")
 				flavorgroupJson := `{
 								"name": "hvs_flavorgroup_new",
 								"flavor_match_policy_collection": {
@@ -212,7 +212,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Provide a Flavorgroup data that contains duplicate flavorgroup name", func() {
 			It("Should get HTTP Status: 400", func() {
-				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Create))).Methods("POST")
+				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Create))).Methods("POST")
 				flavorgroupJson := `{
 								"name": "hvs_flavorgroup_test1",
 								"flavor_match_policy_collection": {
@@ -243,7 +243,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 	Context("Provide a empty data  in request", func() {
 		It("Should get HTTP Status: 400", func() {
-			router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Create))).Methods("POST")
+			router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Create))).Methods("POST")
 			flavorgroupJson := ``
 			req, err := http.NewRequest(
 				"POST",
@@ -259,7 +259,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 	Context("Provide a invalid Flavorgroup data", func() {
 		It("Should get HTTP Status: 400", func() {
-			router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Create))).Methods("POST")
+			router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Create))).Methods("POST")
 			flavorgroupJson := `{
 								"id": "hvs_flavorgroup_test1",
 								"flavor_match_policy_collection": {
@@ -285,7 +285,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 	Context("Provide a incorrect Flavorgroup data", func() {
 		It("Should get HTTP Status: 400", func() {
-			router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Create))).Methods("POST")
+			router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Create))).Methods("POST")
 			flavorgroupJson := `{
 								"name": "hvs_flavorgroup_test1",
 								"flavor_match_policy_collection": {
@@ -402,7 +402,7 @@ var _ = Describe("FlavorgroupController", func() {
 				flavorStore.Create(sf1)
 			})
 			It("Should create FlavorGroupFlavor link in store and return 201 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{
 								"flavor_id": "f452b331-87f7-4274-a3d2-e31a471d159e"
 							}`
@@ -421,7 +421,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with valid FlavorGroup ID and valid Flavor ID which is already linked to flavorgroup", func() {
 			It("Should return 400 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{
 								"flavor_id": "c36b5412-8c02-4e08-8a74-8bfa40425cf3"
 							}`
@@ -440,7 +440,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with empty POST body", func() {
 			It("Should return 400 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 
 				req, err := http.NewRequest(
 					"POST",
@@ -456,7 +456,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with invalid FlavorGroup and valid Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{
 								"flavor_id": "f452b331-87f7-4274-a3d2-e31a471d159e"
 							}`
@@ -475,7 +475,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with non-existent FlavorGroup and valid Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{
 								"flavor_id": "f452b331-87f7-4274-a3d2-e31a471d159e"
 							}`
@@ -494,7 +494,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with non-existent FlavorGroup and invalid Flavor ID", func() {
 			It("Should return 400 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{
 								"flavor_id": "thisisanINVALID-8c02-4e08-8a74-8bfa40425cf3"
 							}`
@@ -513,7 +513,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with valid FlavorGroup and invalid Flavor ID", func() {
 			It("Should return 400 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{
 								"flavor_id": "BLAHBLAHBLAHBLAH-8c02-4e08-8a74-8bfa40425cf3"
 							}`
@@ -532,7 +532,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with valid FlavorGroup and non-existent Flavor ID", func() {
 			It("Should return 400 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{
 								"flavor_id": "da24fa11-9e69-4f56-89fe-29deef6289af"
 							}`
@@ -550,7 +550,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Create FlavorGroup-Flavor link with valid FlavorGroup and nil Flavor ID", func() {
 			It("Should return 400 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.AddFlavor))).Methods("POST")
 				flavorJson := `{"flavor_id": ` + uuid.Nil.String() + `}`
 				req, err := http.NewRequest(
 					"POST",
@@ -571,7 +571,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Delete FlavorGroupFlavor Links", func() {
 		Context("Delete FlavorGroup-Flavor link with valid FlavorGroup ID and valid Flavor ID", func() {
 			It("Should Delete FlavorGroupFlavor link in store and return 204 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
 				req, err := http.NewRequest(
 					"DELETE",
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
@@ -586,7 +586,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Delete FlavorGroup-Flavor link with non-existent FlavorGroup and valid Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
 				req, err := http.NewRequest(
 					"DELETE",
 					"/flavorgroups/9c41f744-cf17-4c53-8d49-888ebb6af99f/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
@@ -601,7 +601,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Delete FlavorGroup-Flavor link with valid FlavorGroup and non-existent Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
 
 				req, err := http.NewRequest(
 					"DELETE",
@@ -621,7 +621,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Search FlavorGroupFlavor Links", func() {
 		Context("Search FlavorGroup-Flavor link with valid FlavorGroup ID", func() {
 			It("Should return a list of FlavorGroupFlavor links and 200 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.SearchFlavors))).Methods("GET")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.SearchFlavors))).Methods("GET")
 				req, err := http.NewRequest(
 					"GET",
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors",
@@ -639,7 +639,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Search FlavorGroup-Flavor link with non-existent FlavorGroup ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.SearchFlavors))).Methods("GET")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.SearchFlavors))).Methods("GET")
 				req, err := http.NewRequest(
 					"GET",
 					"/flavorgroups/0ae3f0a1-afe6-4efc-98de-c4e346441b94/flavors",
@@ -658,7 +658,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Retrieve FlavorGroupFlavor Links", func() {
 		Context("Retrieve FlavorGroup-Flavor link with valid FlavorGroup ID and valid Flavor ID", func() {
 			It("Should Retrieve FlavorGroupFlavor link in store and return 200 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RetrieveFlavor))).Methods("GET")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RetrieveFlavor))).Methods("GET")
 				req, err := http.NewRequest(
 					"GET",
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
@@ -673,7 +673,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Retrieve FlavorGroup-Flavor link with non-existent FlavorGroup and valid Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RetrieveFlavor))).Methods("GET")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RetrieveFlavor))).Methods("GET")
 				req, err := http.NewRequest(
 					"GET",
 					"/flavorgroups/9c41f744-cf17-4c53-8d49-888ebb6af99f/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
@@ -688,7 +688,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Retrieve FlavorGroup-Flavor link with valid FlavorGroup and non-existent Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RetrieveFlavor))).Methods("GET")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RetrieveFlavor))).Methods("GET")
 
 				req, err := http.NewRequest(
 					"GET",

@@ -134,27 +134,11 @@ func (t *DBSetup) Validate() error {
 			}
 	}
 	fmt.Fprintln(t.ConsoleWriter, "Connecting to DB and create schemas")
-	// Create conf for DBTypePostgres
-	conf := postgres.Config{
-		Vendor:            constants.DBTypePostgres,
-		Host:              t.Host,
-		Port:              t.Port,
-		User:              t.Username,
-		Password:          t.Password,
-		Dbname:            t.DBName,
-		SslMode:           t.SSLMode,
-		SslCert:           t.SSLCert,
-		ConnRetryAttempts: t.ConnectionRetryAttempts,
-		ConnRetryTime:     t.ConnectionRetryTime,
-	}
+
 	// test connection and create schemas
-	dataStore, err := postgres.New(&conf)
+	_, err := postgres.InitDatabase(&t.DBConfig)
 	if err != nil {
-		return errors.Wrap(err, "Failed to connect database")
-	}
-	err = dataStore.Migrate()
-	if err != nil {
-		return errors.Wrap(err, "Failed to create database tables")
+		return errors.Wrap(err, "An error occurred while initializing Database")
 	}
 	return nil
 }

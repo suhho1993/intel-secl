@@ -21,11 +21,11 @@ func SetHostStatusRoutes(router *mux.Router, store *postgres.DataStore) *mux.Rou
 	hoststatusStore := postgres.NewHostStatusStore(store)
 	hoststatusController := controllers.HostStatusController{Store: hoststatusStore}
 
-	router.Handle("/host-status", ErrorHandler(permissionsHandler(ResponseHandler(hoststatusController.Search),
+	router.Handle("/host-status", ErrorHandler(permissionsHandler(JsonResponseHandler(hoststatusController.Search),
 		[]string{constants.HostStatusSearch}))).Methods("GET")
 
 	hostStatusIdExpr := fmt.Sprintf("%s%s", "/host-status/", validation.IdReg)
-	router.Handle(hostStatusIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hoststatusController.Retrieve),
+	router.Handle(hostStatusIdExpr, ErrorHandler(permissionsHandler(JsonResponseHandler(hoststatusController.Retrieve),
 		[]string{constants.HostStatusRetrieve}))).Methods("GET")
 
 	return router

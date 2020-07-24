@@ -6,9 +6,9 @@ package tasks
 
 import (
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"io"
 
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
@@ -69,19 +69,7 @@ func (t *CreateDefaultFlavor) SetName(n, e string) {
 
 func (t *CreateDefaultFlavor) flvGroupStore() (*postgres.FlavorGroupStore, error) {
 	if t.flvGroupStorePtr == nil {
-		conf := postgres.Config{
-			Vendor:            constants.DBTypePostgres,
-			Host:              t.Host,
-			Port:              t.Port,
-			User:              t.Username,
-			Password:          t.Password,
-			Dbname:            t.DBName,
-			SslMode:           t.SSLMode,
-			SslCert:           t.SSLCert,
-			ConnRetryAttempts: t.ConnectionRetryAttempts,
-			ConnRetryTime:     t.ConnectionRetryTime,
-		}
-		dataStore, err := postgres.New(&conf)
+		dataStore, err := postgres.NewDataStore(postgres.NewDatabaseConfig(constants.DBTypePostgres, &t.DBConfig))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to connect database")
 		}

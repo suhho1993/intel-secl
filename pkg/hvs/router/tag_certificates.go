@@ -55,19 +55,19 @@ func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, cert
 	if tagCertificateController != nil {
 		tagCertificateIdExpr := fmt.Sprintf("%s%s", TagCertificateEndpointPath+"/", validation.IdReg)
 		router.Handle(TagCertificateEndpointPath,
-			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Create),
+			ErrorHandler(permissionsHandler(JsonResponseHandler(tagCertificateController.Create),
 				[]string{constants.TagCertificateCreate}))).Methods("POST")
 
 		router.Handle(TagCertificateEndpointPath,
-			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Search),
+			ErrorHandler(permissionsHandler(JsonResponseHandler(tagCertificateController.Search),
 				[]string{constants.TagCertificateSearch}))).Methods("GET")
 
 		router.Handle(tagCertificateIdExpr,
-			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Delete),
+			ErrorHandler(permissionsHandler(JsonResponseHandler(tagCertificateController.Delete),
 				[]string{constants.TagCertificateDelete}))).Methods("DELETE")
 
 		router.Handle(TagCertificateDeployEndpointPath,
-			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Deploy),
+			ErrorHandler(permissionsHandler(JsonResponseHandler(tagCertificateController.Deploy),
 				[]string{constants.TagCertificateDeploy}))).Methods("POST")
 	}
 	return router

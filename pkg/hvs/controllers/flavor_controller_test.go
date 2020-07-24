@@ -43,7 +43,7 @@ var _ = Describe("FlavorController", func() {
 	Describe("Search Flavors", func() {
 		Context("When no filter arguments are passed", func() {
 			It("All Flavors records are returned", func() {
-				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Search))).Methods("GET")
+				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -60,7 +60,7 @@ var _ = Describe("FlavorController", func() {
 
 		Context("When filtered by Flavor id", func() {
 			It("Should get a single flavor entry", func() {
-				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Search))).Methods("GET")
+				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors?id=c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -75,7 +75,7 @@ var _ = Describe("FlavorController", func() {
 		})
 		Context("When filtered by Flavor meta description key-value pair", func() {
 			It("Should get a single flavor entry", func() {
-				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Search))).Methods("GET")
+				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors?key=bios_name&&value=Intel Corporation", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -95,7 +95,7 @@ var _ = Describe("FlavorController", func() {
 	Describe("Retrieve Flavor", func() {
 		Context("Retrieve Flavor by valid ID from data store", func() {
 			It("Should retrieve Flavor", func() {
-				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Retrieve))).Methods("GET")
+				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -105,7 +105,7 @@ var _ = Describe("FlavorController", func() {
 		})
 		Context("Try to retrieve Flavor by non-existent ID from data store", func() {
 			It("Should fail to retrieve Flavor", func() {
-				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Retrieve))).Methods("GET")
+				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -124,7 +124,7 @@ var _ = Describe("FlavorController", func() {
 	Describe("Delete Flavor by ID", func() {
 		Context("Delete Flavor by ID from data store", func() {
 			It("Should delete Flavor", func() {
-				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Delete))).Methods("DELETE")
+				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -134,7 +134,7 @@ var _ = Describe("FlavorController", func() {
 		})
 		Context("Delete Flavor by invalid ID from data store", func() {
 			It("Should fail to delete Flavor", func() {
-				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Delete))).Methods("DELETE")
+				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavors/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()

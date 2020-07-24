@@ -32,7 +32,7 @@ var _ = Describe("ManifestsController", func() {
 	Describe("Get manifest from flavor", func() {
 		Context("Provide a valid flavor Id", func() {
 			It("Should create a manifest", func() {
-				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(manifestsController.GetManifest))).
+				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(manifestsController.GetManifest))).
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=339a7ac6-b8be-4356-ab34-be6e3bdfa1ed", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -46,7 +46,7 @@ var _ = Describe("ManifestsController", func() {
 	Describe("Get manifest from flavor", func() {
 		Context("Provide a flavor Id for a non SOFTWARE flavor", func() {
 			It("Should fail to create manifest", func() {
-				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(manifestsController.GetManifest))).
+				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(manifestsController.GetManifest))).
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=71e4c52e-595a-429d-9917-1965b437c353", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -60,7 +60,7 @@ var _ = Describe("ManifestsController", func() {
 	Describe("Get manifest from flavor", func() {
 		Context("Provide a flavor Id for a non existent flavor", func() {
 			It("Should fail to create manifest", func() {
-				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(manifestsController.GetManifest))).
+				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(manifestsController.GetManifest))).
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=339a7ac6-b8be-4356-ab34-be6e3bdfa1ee", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -74,7 +74,7 @@ var _ = Describe("ManifestsController", func() {
 	Describe("Get manifest from flavor", func() {
 		Context("Provide an invalid flavor Id", func() {
 			It("Should fail to create manifest", func() {
-				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(manifestsController.GetManifest))).
+				router.Handle("/manifests", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(manifestsController.GetManifest))).
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=71e4c52e-595a-000000000000000429d-9917-1965b437c353", nil)
 				Expect(err).NotTo(HaveOccurred())

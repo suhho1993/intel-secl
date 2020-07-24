@@ -68,7 +68,7 @@ var _ = Describe("ESXiClusterController", func() {
 	Describe("Search ESXi cluster", func() {
 		Context("Search esxi cluster records when no filter arguments are passed", func() {
 			It("All ESXi cluster records are returned", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -85,7 +85,7 @@ var _ = Describe("ESXiClusterController", func() {
 
 		Context("Search esxi cluster records when filtered by ESXi cluster id", func() {
 			It("Should get a single ESXi cluster entry", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster?id=40c6ec42-ee9a-4d8a-842b-cdcd0fefa9c0", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -102,7 +102,7 @@ var _ = Describe("ESXiClusterController", func() {
 
 		Context("Search esxi cluster records when filtered by an invalid ESXi cluster id", func() {
 			It("Should get a HTTP bad request status", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET",
 					"/esxi-cluster?id=13885605-a0ee-41f20000000000000000000000-b6fc-fd82edc487ad", nil)
@@ -120,7 +120,7 @@ var _ = Describe("ESXiClusterController", func() {
 
 		Context("Search esxi cluster records when filtered by ESXi cluster name", func() {
 			It("Should get a single ESXi cluster entry", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster?clusterName=Cluster 1", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -137,7 +137,7 @@ var _ = Describe("ESXiClusterController", func() {
 
 		Context("Search esxi cluster records when filtered by ESXi cluster name", func() {
 			It("Should not get any ESXi cluster entry", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster?clusterName=Unregistered cluster", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -156,7 +156,7 @@ var _ = Describe("ESXiClusterController", func() {
 	Describe("Retrieve ESXi cluster record", func() {
 		Context("Retrieve ESXi cluster by valid ID from data store", func() {
 			It("Should retrieve ESXi cluster", func() {
-				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster/f3c6a763-51cd-436c-a828-c2ce6964c823", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -168,7 +168,7 @@ var _ = Describe("ESXiClusterController", func() {
 
 		Context("Try to retrieve ESXi cluster by non-existent ID from data store", func() {
 			It("Should fail to retrieve ESXi cluster", func() {
-				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -187,7 +187,7 @@ var _ = Describe("ESXiClusterController", func() {
 	Describe("Create ESXi cluster entry", func() {
 		Context("Provide a valid ESXi cluster data", func() {
 			It("Should create ESXi cluster entry", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Create))).Methods("POST")
 				esxiClusterRequestJson := `{
 					"id" : "f3c6a763-51cd-436c-a828-c2ce6964c824",
@@ -203,7 +203,7 @@ var _ = Describe("ESXiClusterController", func() {
 		})
 		Context("Provide invalid cluster ID in ESXi cluster data", func() {
 			It("Should have HTTP bad request status", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Create))).Methods("POST")
 				esxiClusterRequestJson := `{
 					"id" : "f3c6a763-51cd-000000436c-a828-c2ce6964c824",
@@ -219,7 +219,7 @@ var _ = Describe("ESXiClusterController", func() {
 		})
 		Context("Provide an invalid request body to create a new ESXi cluster record", func() {
 			It("Should have HTTP bad request status", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Create))).Methods("POST")
 				esxiClusterRequestJson := `{
 					"connectionString": "https://ip3.com:443/sdk;u=username;p=password",
@@ -237,7 +237,7 @@ var _ = Describe("ESXiClusterController", func() {
 	Describe("Delete ESXi cluster entry", func() {
 		Context("Delete ESXi cluster by valid ID from data store", func() {
 			It("Should Delete ESXi cluster", func() {
-				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/esxi-cluster/f3c6a763-51cd-436c-a828-c2ce6964c823", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -249,7 +249,7 @@ var _ = Describe("ESXiClusterController", func() {
 
 		Context("Try to delete ESXi cluster by non-existent ID from data store", func() {
 			It("Should fail to delete ESXi cluster", func() {
-				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
+				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/esxi-cluster/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())

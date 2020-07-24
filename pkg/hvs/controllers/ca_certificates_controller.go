@@ -7,6 +7,7 @@ package controllers
 import (
 	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
@@ -82,19 +83,47 @@ func (ca CaCertificatesController) Search(w http.ResponseWriter, r *http.Request
 	defaultLog.Trace("controllers/ca_certificates_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:Search() Leaving")
 
-	domain := r.URL.Query().Get("domain")
+	certificates, status, err := ca.searchCertificates(r.URL.Query().Get("domain"))
+	if err != nil {
+		secLog.WithError(err).Info("controllers/ca_certificates_controller:Search() Error retrieving certificates")
+		return nil, status, err
+	}
+	return certificates, status, nil
+}
+
+// SearchPem returns a collection of Ca certificates in Pem format based on domain
+func (ca CaCertificatesController) SearchPem(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	defaultLog.Trace("controllers/ca_certificates_controller:SearchPem() Entering")
+	defer defaultLog.Trace("controllers/ca_certificates_controller:SearchPem() Leaving")
+
+	certificateCollection, status, err := ca.searchCertificates(r.URL.Query().Get("domain"))
+	if err != nil {
+		secLog.WithError(err).Info("controllers/ca_certificates_controller:SearchPem() Error retrieving certificates")
+		return nil, status, err
+	}
+
+	certificates := ""
+	for _, caCertificate := range certificateCollection.CaCerts {
+		certificateBlock := pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: caCertificate.Certificate,
+		}
+		certificates = certificates + string(pem.EncodeToMemory(&certificateBlock))
+	}
+	return certificates, status, nil
+}
+
+func (ca CaCertificatesController) searchCertificates(domain string) (*hvs.CaCertificateCollection, int, error)  {
 	domain = models.GetUniqueCertType(domain)
 	if !models.IsValidDomainType(domain) {
-		secLog.Info("controllers/ca_certificates_controller:Search() Invalid domain/Certificate Type provided")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid domain/Certificate Type provided"}
 	}
 
-	certificate, err := ReadCertificates(domain, ca.CertStore)
+	certificates, err := ReadCertificates(domain, ca.CertStore)
 	if err != nil {
-		defaultLog.WithError(err).Errorf("Certificates with specified domain have not been created/loaded")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Certificates with specified domain have not been created/loaded"}
 	}
-	return certificate, http.StatusOK, nil
+	return certificates, http.StatusOK, nil
 }
 
 // validateCaCertificates checks if input ca certificate is valid

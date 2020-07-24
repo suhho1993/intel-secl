@@ -37,7 +37,7 @@ var _ = Describe("CaCertificatesController", func() {
 	Describe("Create root CA certificates", func() {
 		Context("Create root CA certificates", func() {
 			It("Should create CA certificates with CN", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Create))).Methods("POST")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Create))).Methods("POST")
 				cert, _, _ := crypt.CreateKeyPairAndCertificate("root-test", "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
 				certificate := hvs.CaCertificate{
 					Name: 	     "root-test",
@@ -61,7 +61,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Create root CA certificates with invalid certificate type", func() {
 			It("Should return bad request", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Create))).Methods("POST")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Create))).Methods("POST")
 				certificate := hvs.CaCertificate{
 					Name: 	     "root-test",
 					Type:        models.CaCertTypesTagCa.String(),
@@ -80,7 +80,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Create root CA certificates with invalid payload", func() {
 			It("Should return bad request", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Create))).Methods("POST")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Create))).Methods("POST")
 				certificate := ""
 				payload, _ := json.Marshal(certificate)
 				req, err := http.NewRequest(
@@ -96,7 +96,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Create root CA certificates with empty body", func() {
 			It("Should return bad request", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Create))).Methods("POST")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Create))).Methods("POST")
 				req, err := http.NewRequest(
 					"POST",
 					"/ca-certificates",
@@ -114,7 +114,7 @@ var _ = Describe("CaCertificatesController", func() {
 	Describe("Get Endorsement CA certificates", func() {
 		Context("Get all Endorsement CA certificates with search endorsement", func() {
 			It("Should get list of Endorsement CA certificates", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Search))).Methods("GET")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates?domain=endorsement", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -128,7 +128,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Get all Endorsement CA certificates", func() {
 			It("Should get list of Endorsement CA certificates with search ek", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Search))).Methods("GET")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates?domain=ek", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -142,7 +142,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Get certificates with invalid domain", func() {
 			It("Should return bad request", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Search))).Methods("GET")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates?domain=dumb", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -156,7 +156,7 @@ var _ = Describe("CaCertificatesController", func() {
 	Describe("Get SAML certificates", func() {
 		Context("Get all SAML certificates", func() {
 			It("Should get list of SAML certificates with associated CA", func() {
-				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Search))).Methods("GET")
+				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates?domain=saml", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -174,7 +174,7 @@ var _ = Describe("CaCertificatesController", func() {
 	Describe("Get SAML certificate", func() {
 		Context("Get SAML certificate", func() {
 			It("Should get SAML certificate", func() {
-				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
+				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates/saml", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -188,7 +188,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Get certificate with invalid type", func() {
 			It("Should return bad request", func() {
-				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
+				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates/dumb", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -201,7 +201,7 @@ var _ = Describe("CaCertificatesController", func() {
 	Describe("Get Privacy CA certificate", func() {
 		Context("Get all Privacy CA certificate with keyword privacy", func() {
 			It("Should get Privacy CA certificate", func() {
-				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
+				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates/privacy", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -214,7 +214,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Get all Privacy CA certificate with keyword aik", func() {
 			It("Should get Privacy CA certificate", func() {
-				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
+				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates/aik", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -231,7 +231,7 @@ var _ = Describe("CaCertificatesController", func() {
 	Describe("Get Endorsement CA certificate", func() {
 		Context("Get all Endorsement CA certificate with keyword endorsement", func() {
 			It("Should get Endorsement CA certificate", func() {
-				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
+				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates/endorsement", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -244,7 +244,7 @@ var _ = Describe("CaCertificatesController", func() {
 		})
 		Context("Get all Endorsement CA certificate with keyword ek", func() {
 			It("Should get Endorsement CA certificate", func() {
-				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
+				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates/ek", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -260,7 +260,7 @@ var _ = Describe("CaCertificatesController", func() {
 	Describe("Get TLS certificate", func() {
 		Context("Get TLS certificate", func() {
 			It("Should get TLS certificate", func() {
-				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
+				router.Handle("/ca-certificates/{certType}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/ca-certificates/tls", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()

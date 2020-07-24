@@ -34,19 +34,19 @@ func SetESXiClusterRoutes(router *mux.Router, store *postgres.DataStore,
 	esxiClusterIdExpr := fmt.Sprintf("%s%s", "/esxi-cluster/", validation.IdReg)
 
 	router.Handle("/esxi-cluster",
-		ErrorHandler(permissionsHandler(ResponseHandler(esxiClusterController.Create),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(esxiClusterController.Create),
 			[]string{constants.ESXiClusterCreate}))).Methods("POST")
 
 	router.Handle("/esxi-cluster",
-		ErrorHandler(permissionsHandler(ResponseHandler(esxiClusterController.Search),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(esxiClusterController.Search),
 			[]string{constants.ESXiClusterSearch}))).Methods("GET")
 
 	router.Handle(esxiClusterIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(esxiClusterController.Delete),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(esxiClusterController.Delete),
 			[]string{constants.ESXiClusterDelete}))).Methods("DELETE")
 
 	router.Handle(esxiClusterIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(esxiClusterController.Retrieve),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(esxiClusterController.Retrieve),
 			[]string{constants.ESXiClusterRetrieve}))).Methods("GET")
 
 	return router

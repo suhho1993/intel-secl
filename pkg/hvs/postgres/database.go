@@ -5,38 +5,38 @@
 package postgres
 
 import (
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	"github.com/pkg/errors"
 )
 
-func InitDatabase(cfg *config.Configuration) *DataStore {
+func InitDatabase(cfg *commConfig.DBConfig) (*DataStore, error) {
 	defaultLog.Trace("postgres/database:InitDatabase() Entering")
 	defer defaultLog.Trace("postgres/database:InitDatabase() Leaving")
 
 	// Create conf for DBTypePostgres
 	conf := Config{
 		Vendor:            constants.DBTypePostgres,
-		Host:              cfg.DB.Host,
-		Port:              cfg.DB.Port,
-		User:              cfg.DB.Username,
-		Password:          cfg.DB.Password,
-		Dbname:            cfg.DB.DBName,
-		SslMode:           cfg.DB.SSLMode,
-		SslCert:           cfg.DB.SSLCert,
-		ConnRetryAttempts: cfg.DB.ConnectionRetryAttempts,
-		ConnRetryTime:     cfg.DB.ConnectionRetryTime,
+		Host:              cfg.Host,
+		Port:              cfg.Port,
+		User:              cfg.Username,
+		Password:          cfg.Password,
+		Dbname:            cfg.DBName,
+		SslMode:           cfg.SSLMode,
+		SslCert:           cfg.SSLCert,
+		ConnRetryAttempts: cfg.ConnectionRetryAttempts,
+		ConnRetryTime:     cfg.ConnectionRetryTime,
 	}
 
 	// Creates a DBTypePostgres DB instance
 	dataStore, err := NewDataStore(&conf)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "Error instantiating Database")
 	}
 	defaultLog.Info("Migrating Database")
 	dataStore.Migrate()
 
-	return dataStore
+	return dataStore, nil
 }
 
 func NewDataStore(config *Config) (*DataStore, error) {

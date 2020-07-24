@@ -28,7 +28,7 @@ func SetFlavorFromAppManifestRoute(router *mux.Router, store *postgres.DataStore
 	flavorFromAppManifestController := controllers.NewFlavorFromAppManifestController(*flavorController)
 
 	router.Handle("/flavor-from-app-manifest",
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorFromAppManifestController.CreateSoftwareFlavor),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorFromAppManifestController.CreateSoftwareFlavor),
 			[]string{constants.SoftwareFlavorCreate}))).Methods("POST")
 
 	return router

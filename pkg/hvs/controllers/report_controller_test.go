@@ -44,7 +44,7 @@ var _ = Describe("ReportController", func() {
 	Describe("Create a new Report", func() {
 		Context("Provide a valid Create request", func() {
 			It("Should create a new Report", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Create))).Methods("POST")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Create))).Methods("POST")
 				body := `{
 							"host_name": "localhost1"
 						}`
@@ -63,7 +63,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Provide a valid Create request for which host is not registered", func() {
 			It("Should return bad request", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Create))).Methods("POST")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Create))).Methods("POST")
 				body := `{
 							"host_id": "ee37c370-7ece-4250-a677-6ee12adce8e2"
 						}`
@@ -83,7 +83,7 @@ var _ = Describe("ReportController", func() {
 		Context("Provide a valid Create request for which host is registered and status is not connected", func() {
 			It("Should return bad request", func() {
 
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Create))).Methods("POST")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Create))).Methods("POST")
 				body := `{
 							"hardware_uuid": "ee37c360-7eae-4250-a677-6ee12adce8e2"
 						}`
@@ -102,7 +102,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Provide a Create request that contains malformed hostname", func() {
 			It("Should fail to create new Report", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Create))).Methods("POST")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Create))).Methods("POST")
 				hostJson := `{
 								"host_name": "localhost3<>"
 							}`
@@ -120,7 +120,7 @@ var _ = Describe("ReportController", func() {
 		})
 		Context("Provide a empty create request", func() {
 			It("Should see an 400 error", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Create))).Methods("POST")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Create))).Methods("POST")
 				hostJson := `{}`
 
 				req, err := http.NewRequest(
@@ -140,7 +140,7 @@ var _ = Describe("ReportController", func() {
 	Describe("Retrieve an existing Report", func() {
 		Context("Retrieve Report by ID", func() {
 			It("Should retrieve a Report", func() {
-				router.Handle("/reports/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Retrieve))).Methods("GET")
+				router.Handle("/reports/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports/15701f03-7b1d-49f9-ac62-6b9b0728bdb3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -151,7 +151,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Retrieve Report by non-existent ID", func() {
 			It("Should fail to retrieve Report", func() {
-				router.Handle("/reports/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Retrieve))).Methods("GET")
+				router.Handle("/reports/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -165,7 +165,7 @@ var _ = Describe("ReportController", func() {
 	Describe("Search for all the Reports", func() {
 		Context("Get all the Reports", func() {
 			It("Should get list of all the Reports", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Search))).Methods("GET")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -181,7 +181,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Get all the Report for host with given hardware UUID", func() {
 			It("Should get list of all the filtered Reports", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Search))).Methods("GET")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostHardwareId=e57e5ea0-d465-461e-882d-1600090caa0d", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -197,7 +197,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Get all the Report for host with given hostname", func() {
 			It("Should get list of all the filtered Reports", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Search))).Methods("GET")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostName=localhost1", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -213,7 +213,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Get all the Report for host with given hostId", func() {
 			It("Should get list of all the filtered Reports", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Search))).Methods("GET")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostId=ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -229,7 +229,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Get all the Report for hosts with status CONNECTED", func() {
 			It("Should get list of all the filtered Reports", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Search))).Methods("GET")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostStatus=CONNECTED", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -245,7 +245,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Search Report for given invalid report id", func() {
 			It("Should respond with bad request", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.Search))).Methods("GET")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?id=ee37c360-7eae-4250-a677-6ee12adce", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()

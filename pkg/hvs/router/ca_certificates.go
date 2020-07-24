@@ -7,6 +7,7 @@ package router
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 )
@@ -17,7 +18,8 @@ func SetCaCertificatesRoutes(router *mux.Router, certStore *models.CertificatesS
 
 	caCertController := controllers.CaCertificatesController{CertStore: certStore}
 
-	router.Handle("/ca-certificates/{certType}", ErrorHandler(ResponseHandler(caCertController.Retrieve))).Methods("GET")
-	router.Handle("/ca-certificates", ErrorHandler(ResponseHandler(caCertController.Search))).Methods("GET")
+	router.Handle("/ca-certificates/{certType}", ErrorHandler(JsonResponseHandler(caCertController.Retrieve))).Methods("GET")
+	router.Handle("/ca-certificates", ErrorHandler(ResponseHandler(caCertController.SearchPem))).Methods("GET").Headers("Accept", constants.HTTPMediaTypePemFile)
+	router.Handle("/ca-certificates", ErrorHandler(JsonResponseHandler(caCertController.Search))).Methods("GET")
 	return router
 }

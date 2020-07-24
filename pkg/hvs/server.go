@@ -58,7 +58,10 @@ func (a *App) startServer() error {
 	}
 
 	// Initialize Database
-	dataStore := postgres.InitDatabase(c)
+	dataStore, err := postgres.InitDatabase(&c.DB)
+	if err != nil {
+		return errors.Wrap(err, "An error occurred while initializing Database")
+	}
 
 	// Load Certificates
 	certStore := utils.LoadCertificates(a.loadCertPathStore())

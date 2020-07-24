@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"fmt"
+	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -27,6 +28,21 @@ var secLog = commLog.GetSecurityLogger()
 type Config struct {
 	Vendor, Host, Port, Dbname, User, Password, SslMode, SslCert string
 	ConnRetryAttempts, ConnRetryTime                             int
+}
+
+func NewDatabaseConfig(vendor string, dbConfig *commConfig.DBConfig) *Config {
+	return &Config{
+		Vendor:            vendor,
+		Host:              dbConfig.Host,
+		Port:              dbConfig.Port,
+		User:              dbConfig.Username,
+		Password:          dbConfig.Password,
+		Dbname:            dbConfig.DBName,
+		SslMode:           dbConfig.SSLMode,
+		SslCert:           dbConfig.SSLCert,
+		ConnRetryAttempts: dbConfig.ConnectionRetryAttempts,
+		ConnRetryTime:     dbConfig.ConnectionRetryTime,
+	}
 }
 
 type DataStore struct {
@@ -114,15 +130,13 @@ func (ds *DataStore) ExecuteSqlFile(file string) error {
 	return nil
 }
 
-func (ds *DataStore) Migrate() error {
+func (ds *DataStore) Migrate() {
 	defaultLog.Trace("postgres/postgres:Migrate() Entering")
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 
 	ds.Db.AutoMigrate(flavorGroup{}, host{}, flavor{}, trustCache{}, flavorgroupFlavor{}, hostStatus{}, esxiCluster{},
 	esxiClusterHost{}, tagCertificate{}, tpmEndorsement{}, report{}, hostCredential{}, hostFlavorgroup{}, auditLogEntry{},
 	queue{})
-
-	return nil
 }
 
 func (ds *DataStore) Close() {

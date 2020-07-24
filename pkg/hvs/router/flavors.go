@@ -29,19 +29,19 @@ func SetFlavorRoutes(router *mux.Router, store *postgres.DataStore, certStore *m
 	flavorIdExpr := fmt.Sprintf("%s%s", "/flavors/", validation.IdReg)
 
 	router.Handle("/flavors",
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorController.Create),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorController.Create),
 			[]string{constants.FlavorCreate}))).Methods("POST")
 
 	router.Handle("/flavors",
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorController.Search),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorController.Search),
 			[]string{constants.FlavorSearch}))).Methods("GET")
 
 	router.Handle(flavorIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorController.Delete),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorController.Delete),
 			[]string{constants.FlavorDelete}))).Methods("DELETE")
 
 	router.Handle(flavorIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorController.Retrieve),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorController.Retrieve),
 			[]string{constants.FlavorRetrieve}))).Methods("GET")
 
 	return router

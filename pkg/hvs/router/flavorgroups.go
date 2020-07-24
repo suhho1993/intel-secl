@@ -31,19 +31,19 @@ func SetFlavorGroupRoutes(router *mux.Router, store *postgres.DataStore, hostTru
 
 	flavorGroupIdExpr := fmt.Sprintf("%s%s", "/flavorgroups/", validation.IdReg)
 	router.Handle("/flavorgroups",
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Create),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.Create),
 			[]string{constants.FlavorGroupCreate}))).Methods("POST")
 
 	router.Handle("/flavorgroups",
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Search),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.Search),
 			[]string{constants.FlavorGroupSearch}))).Methods("GET")
 
 	router.Handle(flavorGroupIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Delete),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.Delete),
 			[]string{constants.FlavorGroupDelete}))).Methods("DELETE")
 
 	router.Handle(flavorGroupIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Retrieve),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.Retrieve),
 			[]string{constants.FlavorGroupRetrieve}))).Methods("GET")
 
 	// routes for FlavorGroupFlavorLink APIs
@@ -51,19 +51,19 @@ func SetFlavorGroupRoutes(router *mux.Router, store *postgres.DataStore, hostTru
 	fgFlavorLinkRetrieveDeleteExpr := fmt.Sprintf("/flavorgroups/{fgID:%s}/flavors/{fID:%s}", validation.UUIDReg, validation.UUIDReg)
 
 	router.Handle(fgFlavorLinkCreateSearchExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.AddFlavor),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.AddFlavor),
 			[]string{constants.FlavorGroupCreate}))).Methods("POST")
 
 	router.Handle(fgFlavorLinkRetrieveDeleteExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.RetrieveFlavor),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.RetrieveFlavor),
 			[]string{constants.FlavorGroupRetrieve}))).Methods("GET")
 
 	router.Handle(fgFlavorLinkRetrieveDeleteExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.RemoveFlavor),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.RemoveFlavor),
 			[]string{constants.FlavorGroupDelete}))).Methods("DELETE")
 
 	router.Handle(fgFlavorLinkCreateSearchExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.SearchFlavors),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.SearchFlavors),
 			[]string{constants.FlavorGroupSearch}))).Methods("GET")
 
 	return router

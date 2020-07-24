@@ -144,20 +144,8 @@ func (a *App) eraseData() error {
 		return errors.New("Failed to load configuration file")
 	}
 	dbConf := a.configuration().DB
-	conf := postgres.Config{
-		Vendor:            constants.DBTypePostgres,
-		Host:              dbConf.Host,
-		Port:              dbConf.Port,
-		User:              dbConf.Username,
-		Password:          dbConf.Password,
-		Dbname:            dbConf.DBName,
-		SslMode:           dbConf.SSLMode,
-		SslCert:           dbConf.SSLCert,
-		ConnRetryAttempts: dbConf.ConnectionRetryAttempts,
-		ConnRetryTime:     dbConf.ConnectionRetryTime,
-	}
 	// test connection and create schemas
-	dataStore, err := postgres.New(&conf)
+	dataStore, err := postgres.NewDataStore(postgres.NewDatabaseConfig(constants.DBTypePostgres, &dbConf))
 	if err != nil {
 		return errors.Wrap(err, "Failed to connect database")
 	}
@@ -165,9 +153,7 @@ func (a *App) eraseData() error {
 		sqlCmd := "DROP TABLE IF EXISTS " + t + " CASCADE;"
 		dataStore.ExecuteSql(&sqlCmd)
 	}
-	if err := dataStore.Migrate(); err != nil {
-		return errors.Wrap(err, "failed to create removed db tables")
-	}
+	dataStore.Migrate()
 	// create default flavor group
 	t := tasks.CreateDefaultFlavor{
 		DBConfig: dbConf,

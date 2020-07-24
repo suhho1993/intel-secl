@@ -69,7 +69,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	Describe("Create a new software flavor", func() {
 		Context("Provide a valid manifest request data", func() {
 			It("Should create a new software flavor", func() {
-				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorFromAppManifestController.
+				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorFromAppManifestController.
 					CreateSoftwareFlavor))).Methods("POST")
 				manifestRequestXml := `<ManifestRequest xmlns="lib:wml:manifests-req:1.0">
     								<connectionString>intel:https://ta-ip:1443</connectionString>
@@ -95,7 +95,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	Describe("Create a new software flavor", func() {
 		Context("Provide a manifest request data with no host ID or connection string", func() {
 			It("Should throw an error while creating a new software flavor", func() {
-				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorFromAppManifestController.
+				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorFromAppManifestController.
 					CreateSoftwareFlavor))).Methods("POST")
 				manifestRequestXml := `<ManifestRequest xmlns="lib:wml:manifests-req:1.0">
     								<Manifest xmlns="lib:wml:manifests:1.0" DigestAlg="SHA384" Label="Label1">
@@ -120,7 +120,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	Describe("Create a new software flavor", func() {
 		Context("Provide a manifest request data for default manifest", func() {
 			It("Should throw an error while creating a new software flavor", func() {
-				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorFromAppManifestController.
+				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorFromAppManifestController.
 					CreateSoftwareFlavor))).Methods("POST")
 				manifestRequestXml := `<ManifestRequest xmlns="lib:wml:manifests-req:1.0">
 									<connectionString>intel:https://ta-ip:1443</connectionString>
@@ -146,7 +146,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	Describe("Create a new software flavor", func() {
 		Context("Provide a manifest request data with invalid connection string", func() {
 			It("Should throw an error while creating a new software flavor", func() {
-				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorFromAppManifestController.
+				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorFromAppManifestController.
 					CreateSoftwareFlavor))).Methods("POST")
 				manifestRequestXml := `<ManifestRequest xmlns="lib:wml:manifests-req:1.0">
 									<connectionString>intel:https://ta ip:1443</connectionString>
@@ -172,7 +172,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	Describe("Create a new software flavor", func() {
 		Context("Provide a manifest request data with host ID", func() {
 			It("Should create a new software flavor", func() {
-				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorFromAppManifestController.
+				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorFromAppManifestController.
 					CreateSoftwareFlavor))).Methods("POST")
 				manifestRequestXml := `<ManifestRequest xmlns="lib:wml:manifests-req:1.0">
 									<hostId>ee37c360-7eae-4250-a677-6ee12adce8e2</hostId>
@@ -198,7 +198,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	Describe("Create a new software flavor", func() {
 		Context("Provide a manifest request data with non existent host ID", func() {
 			It("Should fail create a new software flavor", func() {
-				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorFromAppManifestController.
+				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorFromAppManifestController.
 					CreateSoftwareFlavor))).Methods("POST")
 				manifestRequestXml := `<ManifestRequest xmlns="lib:wml:manifests-req:1.0">
 									<hostId>ee37c360-7eae-4250-a677-6ee12adce8e3</hostId>
@@ -224,7 +224,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	Describe("Create a new software flavor", func() {
 		Context("Provide a manifest request data with invalid host ID", func() {
 			It("Should fail to create a new software flavor", func() {
-				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorFromAppManifestController.
+				router.Handle("/flavor-from-app-manifest", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorFromAppManifestController.
 					CreateSoftwareFlavor))).Methods("POST")
 				manifestRequestXml := `<ManifestRequest xmlns="lib:wml:manifests-req:1.0">
 									<hostId>ee37c360-7eae-00000000004250-a677-6ee12adce8e2</hostId>

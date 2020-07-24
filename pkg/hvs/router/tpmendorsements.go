@@ -23,27 +23,27 @@ func SetTpmEndorsementRoutes(router *mux.Router, store *postgres.DataStore) *mux
 	tpmEndorsementIdExpr := fmt.Sprintf("%s%s", "/tpm-endorsements/", validation.IdReg)
 
 	router.Handle("/tpm-endorsements",
-		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.Create),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.Create),
 			[]string{constants.TpmEndorsementCreate}))).Methods("POST")
 
 	router.Handle(tpmEndorsementIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.Update),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.Update),
 			[]string{constants.TpmEndorsementStore}))).Methods("PUT")
 
 	router.Handle("/tpm-endorsements",
-		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.Search),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.Search),
 			[]string{constants.TpmEndorsementSearch}))).Methods("GET")
 
 	router.Handle(tpmEndorsementIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.Delete),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.Delete),
 			[]string{constants.TpmEndorsementDelete}))).Methods("DELETE")
 
 	router.Handle("/tpm-endorsements",
-		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.DeleteCollection),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.DeleteCollection),
 			[]string{constants.TpmEndorsementSearch, constants.TpmEndorsementDelete}))).Methods("DELETE")
 
 	router.Handle(tpmEndorsementIdExpr,
-		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.Retrieve),
+		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.Retrieve),
 			[]string{constants.TpmEndorsementRetrieve}))).Methods("GET")
 
 	return router

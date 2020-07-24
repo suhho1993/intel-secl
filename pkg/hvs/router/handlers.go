@@ -7,6 +7,7 @@ package router
 import (
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/auth"
 	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
@@ -18,14 +19,30 @@ import (
 	"net/http"
 )
 
-// endpointHandler is the same as http.ResponseHandler, but returns an error that can be handled by a generic
-// middleware handler
+// endpointHandler which writes generic response
 type endpointHandler func(w http.ResponseWriter, r *http.Request) error
 
 // Generic handler for writing response header and body for all handler functions
 func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) endpointHandler {
 	defaultLog.Trace("router/handlers:ResponseHandler() Entering")
 	defer defaultLog.Trace("router/handlers:ResponseHandler() Leaving")
+
+	return func(w http.ResponseWriter, r *http.Request) error {
+		data, status, err := h(w, r) // execute application handler
+		if err != nil {
+			return errorFormatter(err, status)
+		}
+		w.Write([]byte(fmt.Sprintf("%v", data)))
+		w.WriteHeader(status)
+		return nil
+	}
+}
+
+// JsonResponseHandler  is the same as http.JsonResponseHandler, but returns an error that can be handled by a generic
+//// middleware handler
+func JsonResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) endpointHandler {
+	defaultLog.Trace("router/handlers:JsonResponseHandler() Entering")
+	defer defaultLog.Trace("router/handlers:JsonResponseHandler() Leaving")
 
 	return func(w http.ResponseWriter, r *http.Request) error {
 		data, status, err := h(w, r) // execute application handler
