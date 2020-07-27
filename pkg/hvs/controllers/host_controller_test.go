@@ -12,7 +12,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
-	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"net/http"
 	"net/http/httptest"
@@ -33,7 +33,7 @@ var _ = Describe("HostController", func() {
 	var hostController *controllers.HostController
 	var hostTrustManager *smocks.MockHostTrustManager
 	var hostControllerConfig domain.HostControllerConfig
-	var hostConnectorProvider hostconnector.MockHostConnectorFactory
+	var hostConnectorProvider mocks2.MockHostConnectorFactory
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		hostStore = mocks.NewMockHostStore()

@@ -26,7 +26,6 @@ const (
 )
 
 var defaultLog = commLog.GetDefaultLogger()
-var secLog = commLog.GetSecurityLogger()
 
 type retryRequest struct {
 	retryTime time.Time

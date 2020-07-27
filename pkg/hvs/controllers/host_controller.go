@@ -47,6 +47,9 @@ func NewHostController(hs domain.HostStore, hss domain.HostStatusStore,
 	}
 }
 
+var hostSearchParams = map[string]bool{"id": true, "nameEqualTo": true, "nameContains": true, "hostHardwareId": true,
+	"key": true, "value": true}
+
 func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/host_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Create() Leaving")
@@ -160,6 +163,11 @@ func (hc *HostController) Delete(w http.ResponseWriter, r *http.Request) (interf
 func (hc *HostController) Search(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/host_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Search() Leaving")
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), hostSearchParams); err != nil {
+		secLog.Errorf("controllers/host_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("query hosts")

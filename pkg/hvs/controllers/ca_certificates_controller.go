@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -20,6 +21,8 @@ import (
 type CaCertificatesController struct {
 	CertStore *models.CertificatesStore
 }
+
+var caCertificatesSearchParams = map[string]bool{"domain" : true}
 
 // Create stores new Ca certificate in the root certificates directory location
 func (ca CaCertificatesController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -83,6 +86,11 @@ func (ca CaCertificatesController) Search(w http.ResponseWriter, r *http.Request
 	defaultLog.Trace("controllers/ca_certificates_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:Search() Leaving")
 
+	if err := utils.ValidateQueryParams(r.URL.Query(), caCertificatesSearchParams); err != nil {
+		secLog.Errorf("controllers/ca_certificates_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
+
 	certificates, status, err := ca.searchCertificates(r.URL.Query().Get("domain"))
 	if err != nil {
 		secLog.WithError(err).Info("controllers/ca_certificates_controller:Search() Error retrieving certificates")
@@ -95,6 +103,11 @@ func (ca CaCertificatesController) Search(w http.ResponseWriter, r *http.Request
 func (ca CaCertificatesController) SearchPem(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/ca_certificates_controller:SearchPem() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:SearchPem() Leaving")
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), caCertificatesSearchParams); err != nil {
+		secLog.Errorf("controllers/ca_certificates_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	certificateCollection, status, err := ca.searchCertificates(r.URL.Query().Get("domain"))
 	if err != nil {
@@ -114,6 +127,7 @@ func (ca CaCertificatesController) SearchPem(w http.ResponseWriter, r *http.Requ
 }
 
 func (ca CaCertificatesController) searchCertificates(domain string) (*hvs.CaCertificateCollection, int, error)  {
+
 	domain = models.GetUniqueCertType(domain)
 	if !models.IsValidDomainType(domain) {
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid domain/Certificate Type provided"}

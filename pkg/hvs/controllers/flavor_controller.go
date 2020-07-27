@@ -42,6 +42,8 @@ type FlavorController struct {
 	HostCon   HostController
 }
 
+var flavorSearchParams = map[string]bool{"id" : true, "key": true, "value": true , "flavorgroupId": true, "flavorParts": true}
+
 func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs domain.HostStore, tcs domain.TagCertificateStore, htm domain.HostTrustManager, certStore *dm.CertificatesStore, hcConfig domain.HostControllerConfig) *FlavorController {
 	// certStore should have an entry for Flavor Signing CA
 	if _, found := (*certStore)[dm.CertTypesFlavorSigning.String()]; !found {
@@ -457,6 +459,12 @@ func (fcon *FlavorController) Search(w http.ResponseWriter, r *http.Request) (in
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("query flavors")
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), flavorSearchParams); err != nil {
+		secLog.Errorf("controllers/flavor_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
+
 	id := r.URL.Query().Get("id")
 	key := r.URL.Query().Get("key")
 	value := r.URL.Query().Get("value")

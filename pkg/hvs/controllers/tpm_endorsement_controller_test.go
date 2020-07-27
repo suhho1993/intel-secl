@@ -196,7 +196,7 @@ var _ = Describe("TpmEndorsementController", func() {
 		Context("Delete TpmEndorsement for filter revoked=false", func() {
 			It("Should delete TpmEndorsement", func() {
 				router.Handle("/tpm-endorsements", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tpmEndorsmentController.DeleteCollection))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE", "/tpm-endorsements?revoked=false", nil)
+				req, err := http.NewRequest("DELETE", "/tpm-endorsements?revokedEqualTo=false", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)

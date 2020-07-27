@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2020 Intel Corporation
- * SPDX-License-Identifier: BSD-3-Clause
+ *  Copyright (C) 2020 Intel Corporation
+ *  SPDX-License-Identifier: BSD-3-Clause
  */
-package host_connector
+package mocks
 
 //go:generate mockgen -destination=mock_intel_host_connector.go -package=host_connector github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector MockIntelConnector
 

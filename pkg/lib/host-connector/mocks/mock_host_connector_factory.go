@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2020 Intel Corporation
- * SPDX-License-Identifier: BSD-3-Clause
+ *  Copyright (C) 2020 Intel Corporation
+ *  SPDX-License-Identifier: BSD-3-Clause
  */
-package host_connector
+package mocks
 
 import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/xml"
-	"github.com/intel-secl/intel-secl/v3/pkg/clients/vmware"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
@@ -26,9 +26,9 @@ import (
 type MockHostConnectorFactory struct{}
 
 // NewHostConnector returns a mocked instance of VendorConnector passing in a MockedTAClient or a MockVMwareClient as required
-func (htcFactory MockHostConnectorFactory) NewHostConnector(connectionString string) (HostConnector, error) {
+func (htcFactory MockHostConnectorFactory) NewHostConnector(connectionString string) (host_connector.HostConnector, error) {
 	vendorConnector, _ := util.GetConnectorDetails(connectionString)
-	var connectorFactory VendorHostConnectorFactory
+	var connectorFactory host_connector.VendorHostConnectorFactory
 	switch vendorConnector.Vendor {
 	case constants.INTEL, constants.MICROSOFT:
 		connectorFactory = &MockIntelConnectorFactory{}
@@ -44,7 +44,7 @@ func (htcFactory MockHostConnectorFactory) NewHostConnector(connectionString str
 type MockIntelConnectorFactory struct{}
 
 // GetHostConnector returns an instance of IntelConnector passing in a MockedTAClient
-func (micf MockIntelConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string, trustedCaCerts []x509.Certificate) (HostConnector, error) {
+func (micf MockIntelConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string, trustedCaCerts []x509.Certificate) (host_connector.HostConnector, error) {
 	mhc := MockIntelConnector{}
 
 	// AnythingOfType allows us to wildcard the digest hash since this will be computed at runtime
@@ -83,20 +83,20 @@ func (micf MockIntelConnectorFactory) GetHostConnector(vendorConnector types.Ven
 type MockVmwareConnectorFactory struct{}
 
 // GetHostConnector returns an instance of VmwareConnector passing in a MockVMwareClient
-func (micf MockVmwareConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string, trustedCaCerts []x509.Certificate) (HostConnector, error) {
-	vmc, _ := vmware.NewMockVMWareClient()
+func (micf MockVmwareConnectorFactory) GetHostConnector(vendorConnector types.VendorConnector, aasApiUrl string, trustedCaCerts []x509.Certificate) (host_connector.HostConnector, error) {
+	vmc := MockVmwareConnector{}
 
 	var hostInfoList []mo.HostSystem
 	hostInfoList = append(hostInfoList, mo.HostSystem{ManagedEntity : mo.ManagedEntity{Name: "1.1.1.1"}, Summary:
 		vim25Types.HostListSummary{Hardware: &vim25Types.HostHardwareSummary{Uuid: "7a569dad-2d82-49e4-9156-069b0065b261"}}})
 	hostInfoList = append(hostInfoList, mo.HostSystem{ManagedEntity : mo.ManagedEntity{Name: "2.2.2.2"}, Summary:
 		vim25Types.HostListSummary{Hardware: &vim25Types.HostHardwareSummary{Uuid: "7a569dad-2d82-49e4-9156-069b0065b262"}}})
-	vmc.On("GetVmwareClusterReference", mock.AnythingOfType("string")).Return(hostInfoList, nil)
+	vmc.On("GetClusterReference", mock.AnythingOfType("string")).Return(hostInfoList, nil)
 
 	var hostInfo taModel.HostInfo
 	hostInfoJson, _ := ioutil.ReadFile("./test/sample_vmware_platform_info.json")
 	_ = json.Unmarshal(hostInfoJson, &hostInfo)
-	vmc.On("GetHostInfo").Return(hostInfo, nil)
+	vmc.On("GetHostDetails").Return(hostInfo, nil)
 
-	return &VmwareConnector{client: vmc}, nil
+	return &vmc, nil
 }

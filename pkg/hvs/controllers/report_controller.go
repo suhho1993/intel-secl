@@ -11,6 +11,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
@@ -166,6 +167,11 @@ func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Reque
 func (controller ReportController) Search(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/report_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/report_controller:Search() Leaving")
+	//Search params for reports is same as that of host status APIs
+	if err := utils.ValidateQueryParams(r.URL.Query(), hostStatusSearchParams); err != nil {
+		secLog.Errorf("controllers/report_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	// get the ReportFilterCriteria
 	reportFilterCriteria, err := getReportFilterCriteria(r.URL.Query())
@@ -193,6 +199,12 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/report_controller:SearchSaml() Entering")
 	defer defaultLog.Trace("controllers/report_controller:SearchSaml() Leaving")
+
+	//Search params for reports is same as that of host status APIs
+	if err := utils.ValidateQueryParams(r.URL.Query(), hostStatusSearchParams); err != nil {
+		secLog.Errorf("controllers/report_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	// get the ReportFilterCriteria
 	reportFilterCriteria, err := getReportFilterCriteria(r.URL.Query())

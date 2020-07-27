@@ -14,7 +14,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
-	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -34,7 +34,7 @@ var _ = Describe("ESXiClusterController", func() {
 	var hostCredentialStore *mocks.MockHostCredentialStore
 	var hostController *controllers.HostController
 	var hostTrustManager *smocks.MockHostTrustManager
-	var hostConnectorProvider hostconnector.MockHostConnectorFactory
+	var hostConnectorProvider mocks2.MockHostConnectorFactory
 
 	BeforeEach(func() {
 		router = mux.NewRouter()

@@ -38,6 +38,8 @@ func NewESXiClusterController(ec domain.ESXiClusterStore, hc HostController) *ES
 	}
 }
 
+var esxiClusterSearchParams = map[string]bool {"id": true, "clusterName" : true}
+
 func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/esxi_cluster_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/esxi_cluster_controller:Create() Leaving")
@@ -129,6 +131,11 @@ func (controller ESXiClusterController) Search(w http.ResponseWriter, r *http.Re
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("Query ESXi cluster")
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), esxiClusterSearchParams); err != nil {
+		secLog.Errorf("controllers/esxi_cluster_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	if filter, err = getECCriteria(r.URL.Query()); err != nil {
 		secLog.WithError(err).Errorf("controllers/esxi_cluster_controller:Search() %s", commLogMsg.InvalidInputBadParam)

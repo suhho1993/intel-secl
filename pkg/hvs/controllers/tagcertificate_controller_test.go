@@ -18,6 +18,7 @@ import (
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -97,7 +98,7 @@ var _ = Describe("TagCertificateController", func() {
 		flavorStore = mocks2.NewMockFlavorStore()
 		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
 		// inject MockHostConnector into the TagCertController
-		hcp := host_connector.MockHostConnectorFactory{}
+		hcp := mocks.MockHostConnectorFactory{}
 		tcc := domain.TagCertControllerConfig{
 			AASApiUrl:       "/fakeaas",
 			ServiceUsername: "fakeuser",

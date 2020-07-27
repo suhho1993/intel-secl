@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
@@ -27,6 +28,9 @@ import (
 type TpmEndorsementController struct {
 	Store domain.TpmEndorsementStore
 }
+
+var tpmEndorsementSearchParams = map[string]bool{"id": true, "hardwareUuidEqualTo": true, "issuerEqualTo": true, "revokedEqualTo": true,
+	"issuerContains": true, "commentEqualTo": true, "commentContains": true, "certificateDigestEqualTo": true}
 
 func (controller TpmEndorsementController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/tpm_endorsement_controller:Create() Entering")
@@ -167,6 +171,12 @@ func (controller TpmEndorsementController) Search(w http.ResponseWriter, r *http
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("query tpmendorsements")
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), tpmEndorsementSearchParams); err != nil {
+		secLog.Errorf("controllers/tpm_endorsement_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
+
 	filter, err := getAndValidateFilterCriteria(r.URL.Query())
 	if err != nil {
 		secLog.WithError(err).Errorf("controllers/tpm_endorsement_controller:Search() %s Invalid input provided in filter criteria", commLogMsg.InvalidInputBadParam)
@@ -239,6 +249,11 @@ func (controller TpmEndorsementController) DeleteCollection(w http.ResponseWrite
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("query tpmendorsements")
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), tpmEndorsementSearchParams); err != nil {
+		secLog.Errorf("controllers/tpm_endorsement_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	filter, err := getAndValidateFilterCriteria(r.URL.Query())
 	if err != nil {

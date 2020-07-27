@@ -12,7 +12,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
-	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"
@@ -28,7 +28,7 @@ var _ = Describe("DeploySoftwareManifestController", func() {
 	var hostStore *mocks.MockHostStore
 	var hostStatusStore *mocks.MockHostStatusStore
 	var hostTrustManager *smocks.MockHostTrustManager
-	var hostConnectorProvider hostconnector.MockHostConnectorFactory
+	var hostConnectorProvider mocks2.MockHostConnectorFactory
 	var hostControllerConfig domain.HostControllerConfig
 	var hostController controllers.HostController
 	var hostCredentialStore *mocks.MockHostCredentialStore

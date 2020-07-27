@@ -10,6 +10,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
@@ -28,10 +29,18 @@ type HostStatusController struct {
 	Store domain.HostStatusStore
 }
 
+var hostStatusSearchParams = map[string]bool {"id": true, "hostId": true, "hostHardwareId": true, "hostName": true, "hostStatus": true,
+	"fromDate": true, "toDate": true, "latestPerHost": true,"numberOfDays": true, "limit": true}
+
 // Search returns a collection of HostStatus based on HostStatusFilter criteria
 func (controller HostStatusController) Search(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/hoststatus_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/hoststatus_controller:Search() Leaving")
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), hostStatusSearchParams); err != nil {
+		secLog.Errorf("controllers/hoststatus_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	// get the HostStatusFilterCriteria
 	filter, err := getHSFilterCriteria(r.URL.Query())

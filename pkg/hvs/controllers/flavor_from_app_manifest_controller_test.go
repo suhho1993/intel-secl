@@ -14,7 +14,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	dm "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
-	hostconnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
+	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"
@@ -29,7 +29,7 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 	var flavorGroupStore *mocks.MockFlavorgroupStore
 	var hostStore *mocks.MockHostStore
 	var flavorController controllers.FlavorController
-	var hostConnectorProvider hostconnector.MockHostConnectorFactory
+	var hostConnectorProvider mocks2.MockHostConnectorFactory
 	var hostControllerConfig domain.HostControllerConfig
 	var hostController controllers.HostController
 	var flavorFromAppManifestController *controllers.FlavorFromAppManifestController
