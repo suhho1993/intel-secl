@@ -28,7 +28,7 @@ type Report struct {
 }
 
 type TrustInformation struct {
-	Overall  bool `json:"overall"`
+	Overall  bool `json:"OVERALL"`
 	FlavorTrust map[common.FlavorPart]FlavorTrustStatus `json:"flavors_trust"`
 }
 
