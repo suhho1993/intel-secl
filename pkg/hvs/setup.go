@@ -53,6 +53,15 @@ func (a *App) setup(args []string) error {
 	}
 	defer a.Config.Save(constants.DefaultConfigFilePath)
 	cmd := args[1]
+	// print help and return if applicable
+	if len(args) > 2 && args[2] == "--help" {
+		if cmd == "all" {
+			runner.PrintAllHelp()
+		} else {
+			runner.PrintHelp(cmd)
+		}
+		return nil
+	}
 	if cmd == "all" {
 		if err = runner.RunAll(force); err != nil {
 			errCmds := runner.FailedCommands()

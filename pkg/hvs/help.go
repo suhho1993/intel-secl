@@ -25,8 +25,9 @@ Avaliable Commands:
 		--purge            all configuration and data files will be removed if this flag is set
 
 Usage of hvs setup:
-	hvs setup <task> [--force] [-f <answer-file>]
-		--force                     existing configuration will e overwritten if this flag is set
+	hvs setup <task> [--help] [--force] [-f <answer-file>]
+		--help                      show help message for setup task
+		--force                     existing configuration will be overwritten if this flag is set
 		-f|--file <answer-file>     the answer file with required arguments
 
 Available Tasks for setup:

@@ -53,7 +53,6 @@ var dbEnvHelp = map[string]string{
 }
 
 func (t *DBSetup) Run() error {
-	// populates the configuration structure
 	if t.DBConfigPtr == nil {
 		return errors.New("Pointer to database configuration structure can not be nil")
 	}
@@ -89,6 +88,7 @@ func (t *DBSetup) Run() error {
 	if t.SSLCert == "" {
 		t.SSLCert = defaultSSLCertFilePath
 	}
+	// populates the configuration structure
 	t.DBConfigPtr.Vendor = t.Vendor
 	t.DBConfigPtr.Host = t.Host
 	t.DBConfigPtr.Port = t.Port
@@ -118,27 +118,42 @@ func (t *DBSetup) Run() error {
 	if validErr != nil {
 		return errors.Wrap(validErr, "setup database: Validation failed on ssl settings")
 	}
+	// test connection and create schemas
+	fmt.Fprintln(t.ConsoleWriter, "Connecting to DB and create schemas")
+	dataStore, err := postgres.New(pgConfig(t.DBConfigPtr))
+	if err != nil {
+		return errors.Wrap(err, "Failed to connect database")
+	}
+	dataStore.Migrate()
 	return nil
 }
 
 func (t *DBSetup) Validate() error {
-	fmt.Fprintln(t.ConsoleWriter, "Validating DB args")
-	// check if SSL certificate exists
 	if t.DBConfigPtr == nil {
 		return errors.New("Pointer to database configuration structure can not be nil")
 	}
+	fmt.Fprintln(t.ConsoleWriter, "Validating DB args")
+	// check everything set
+	if t.DBConfigPtr.Vendor == "" ||
+		t.DBConfigPtr.Host == "" ||
+		t.DBConfigPtr.Port == "" ||
+		t.DBConfigPtr.DBName == "" ||
+		t.DBConfigPtr.Username == "" ||
+		t.DBConfigPtr.Password == "" ||
+		t.DBConfigPtr.SSLMode == "" ||
+		t.DBConfigPtr.SSLCert == "" {
+		return errors.New("invalid database configuration")
+	}
+	// check if SSL certificate exists
 	if t.DBConfigPtr.SSLMode == constants.SslModeVerifyCa ||
 		t.DBConfigPtr.SSLMode == constants.SslModeVerifyFull {
-			if _, err := os.Stat(t.SSLCert); os.IsNotExist(err) {
-				return err
-			}
+		if _, err := os.Stat(t.SSLCert); os.IsNotExist(err) {
+			return err
+		}
 	}
-	fmt.Fprintln(t.ConsoleWriter, "Connecting to DB and create schemas")
-
-	// test connection and create schemas
-	_, err := postgres.InitDatabase(&t.DBConfig)
-	if err != nil {
-		return errors.Wrap(err, "An error occurred while initializing Database")
+	// test connection
+	if _, err := postgres.New(pgConfig(t.DBConfigPtr)); err != nil {
+		return errors.Wrap(err, "Failed to connect database")
 	}
 	return nil
 }
@@ -200,4 +215,8 @@ func prefixUnderscroll(e string) string {
 		e += "_"
 	}
 	return e
+}
+
+func pgConfig(t *commConfig.DBConfig) *postgres.Config {
+	return postgres.NewDatabaseConfig(t.Vendor, t)
 }
