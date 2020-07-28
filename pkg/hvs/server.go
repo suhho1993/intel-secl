@@ -182,6 +182,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	hss := postgres.NewHostStatusStore(dataStore)
 	hss.AuditLogWriter = alw
 	rs := postgres.NewReportStore(dataStore)
+	rs.AuditLogWriter = alw
 
 	//Load certificates
 	rootCAs := (*certStore)[models.CaCertTypesRootCa.String()]

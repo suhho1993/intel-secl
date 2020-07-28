@@ -91,7 +91,7 @@ func report2Cols(old, current *models.HVSReport) []models.AuditColumnData {
 		},
 		{
 			Name:      "saml",
-			Value:     current.ID,
+			Value:     current.Saml,
 			IsUpdated: old.Saml != current.Saml,
 		},
 	}
