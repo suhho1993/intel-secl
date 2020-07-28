@@ -178,27 +178,27 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 			}
 		}
 
-	} else if len(flavorReq.FlavorCollection) >= 1 || len(flavorReq.SignedFlavorCollection) >= 1 {
+	} else if len(flavorReq.FlavorCollection.Flavors) >= 1 || len(flavorReq.SignedFlavorCollection.SignedFlavors) >= 1 {
 		defaultLog.Debug("Creating flavors from flavor content")
 		var flavorSignKey = (*fcon.CertStore)[dm.CertTypesFlavorSigning.String()].Key
 		// create flavors from flavor content
 		// TODO: currently checking only the unsigned flavors
-		for _, flavor := range flavorReq.FlavorCollection {
+		for _, flavor := range flavorReq.FlavorCollection.Flavors {
 			// TODO : check if BIOS flavor part name is still accepted, if it is update the flavorpart to PLATFORM
 			defaultLog.Debug("Validating flavor meta content for flavor part")
-			if err := validateFlavorMetaContent(&flavor.Meta); err != nil {
+			if err := validateFlavorMetaContent(&flavor.Flavor.Meta); err != nil {
 				defaultLog.Error("controllers/flavor_controller:createFlavors() Valid flavor content must be given, invalid flavor meta data")
 				return nil, errors.Wrap(err, "Invalid flavor content")
 			}
 			// get flavor part form the content
 			var fp fc.FlavorPart
-			if err := (&fp).Parse(flavor.Meta.Description.FlavorPart); err != nil {
+			if err := (&fp).Parse(flavor.Flavor.Meta.Description.FlavorPart); err != nil {
 				defaultLog.Error("controllers/flavor_controller:createFlavors() Valid flavor part must be given")
 				return nil, errors.Wrap(err, "Error parsing flavor part")
 			}
 			// check if flavor part already exists in flavor-flavorPart map, else sign the flavor and add it to the map
 			var platformFlavorUtil fu.PlatformFlavorUtil
-			fBytes, err := json.Marshal(flavor)
+			fBytes, err := json.Marshal(flavor.Flavor)
 			if err != nil {
 				defaultLog.Error("controllers/flavor_controller:createFlavors() Error while marshalling flavor content")
 				return nil, errors.Wrap(err, "Error while marshalling flavor content")
@@ -581,7 +581,7 @@ func validateFlavorCreateRequest(criteria dm.FlavorCreateRequest) error {
 	defaultLog.Trace("controllers/flavor_controller:validateFlavorCreateRequest() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:validateFlavorCreateRequest() Leaving")
 
-	if criteria.ConnectionString == "" && len(criteria.FlavorCollection) == 0 && len(criteria.SignedFlavorCollection) == 0 {
+	if criteria.ConnectionString == "" && len(criteria.FlavorCollection.Flavors) == 0 && len(criteria.SignedFlavorCollection.SignedFlavors) == 0 {
 		secLog.Error("controllers/flavor_controller: validateFlavorCreateCriteria() Valid host connection string or flavor content must be given")
 		return errors.New("Valid host connection string or flavor content must be given")
 	}

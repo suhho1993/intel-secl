@@ -21,7 +21,7 @@ import (
 // measurements will be considered “trusted.”
 type Flavor struct {
 	// Meta section is mandatory for all Flavor types
-	Meta     Meta     `json:"meta"`
+	Meta     Meta      `json:"meta"`
 	Validity *Validity `json:"validity,omitempty"`
 	Bios     *Bios     `json:"bios,omitempty"`
 	// Hardware section is unique to Platform Flavor type
@@ -30,7 +30,7 @@ type Flavor struct {
 	// External section is unique to AssetTag Flavor type
 	External     *External `json:"external,omitempty"`
 	Software     *Software `json:"software,omitempty"`
-	flavorDigest []byte    // internal variable that stores the orignating flavor json digest used in 'SignedFlavor.Verify()'
+	flavorDigest []byte    // internal variable that stores the originating flavor json digest used in 'SignedFlavor.Verify()'
 }
 
 // NewFlavor returns a new instance of Flavor
