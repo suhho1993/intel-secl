@@ -23,6 +23,7 @@ func SetDeploySoftwareManifestRoute(router *mux.Router, store *postgres.DataStor
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	hostStore := postgres.NewHostStore(store)
 	hostStatusStore := postgres.NewHostStatusStore(store)
+
 	hostCredentialStore := postgres.NewHostCredentialStore(store, hcConfig.DataEncryptionKey)
 	hc := controllers.NewHostController(hostStore, hostStatusStore,
 		flavorGroupStore, hostCredentialStore, htm, hcConfig)

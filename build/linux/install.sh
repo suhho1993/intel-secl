@@ -142,7 +142,8 @@ else
     $COMPONENT_NAME setup all -f $env_file
     SETUPRESULT=$?
     chown -R hvs:hvs /etc/hvs/
-    if [ ${SETUPRESULT} == 0 ]; then 
+    if [ ${SETUPRESULT} == 0 ]; then
+        hvs config-db-rotation
         systemctl start $COMPONENT_NAME
         echo "Waiting for daemon to settle down before checking status"
         sleep 3

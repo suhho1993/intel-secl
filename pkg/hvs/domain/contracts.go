@@ -7,6 +7,7 @@ package domain
 import (
 	"context"
 	"time"
+
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
@@ -149,5 +150,20 @@ type (
 
 	HostTrustVerifier interface {
 		Verify(uuid.UUID, *types.HostManifest, bool) (*models.HVSReport, error)
+	}
+
+	AuditLogWriter interface {
+		// creates an entry of auditlog
+		CreateEntry(string, ...interface{}) (*models.AuditLogEntry, error)
+		// add entry to audit log
+		Log(*models.AuditLogEntry)
+		Stop()
+	}
+
+	AuditLogEntryStore interface {
+		Create(*models.AuditLogEntry) (*models.AuditLogEntry, error)
+		Retrieve(*models.AuditLogEntry) ([]models.AuditLogEntry, error)
+		Update(*models.AuditLogEntry) (*models.AuditLogEntry, error)
+		Delete(uuid.UUID) error
 	}
 )

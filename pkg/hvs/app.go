@@ -84,6 +84,11 @@ func (a *App) Run(args []string) error {
 			return errInvalidCmd
 		}
 		return a.eraseData()
+	case "config-db-rotation":
+		if len(args) != 2 {
+			return errInvalidCmd
+		}
+		return a.configDBRotation()
 	case "uninstall":
 		// the only allowed flag is --purge
 		purge := false

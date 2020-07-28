@@ -20,7 +20,8 @@ type Configuration struct {
 	CMSBaseURL       string `yaml:"cms-base-url" mapstructure:"cms-base-url"`
 	CmsTlsCertDigest string `yaml:"cms-tls-cert-sha384" mapstructure:"cms-tls-cert-sha384"`
 
-	HVS HVSConfig `yaml:"hvs" mapstructure:"hvs"`
+	HVS      HVSConfig      `yaml:"hvs" mapstructure:"hvs"`
+	AuditLog AuditLogConfig `yaml:"audit-log" mapstructure:"audit-log"`
 
 	TLS           commConfig.TLSCertConfig     `yaml:"tls" mapstructure:"tls"`
 	SAML          SAMLConfig                   `yaml:"saml" mapstructure:"saml"`
@@ -54,6 +55,12 @@ type SAMLConfig struct {
 	CommonConfig commConfig.SigningCertConfig `yaml:"common" mapstructure:"common"`
 	Issuer       string                       `yaml:"issuer" mapstructure:"issuer"`
 	ValidityDays int                          `yaml:"validity-days" mapstructure:"validity-days"`
+}
+
+type AuditLogConfig struct {
+	MaxRowCount int `yaml:"max-row" mapstructure:"max-row"`
+	NumRotated  int `yaml:"number-rotated" mapstructure:"number-rotated"`
+	BufferSize  int `yaml:"buffer-size" mapstructure:"buffer-size"`
 }
 
 // this function sets the configure file name and type

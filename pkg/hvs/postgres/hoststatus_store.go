@@ -7,23 +7,26 @@ package postgres
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"reflect"
-	"strings"
-	"time"
 )
 
 type HostStatusStore struct {
-	Store *DataStore
+	Store          *DataStore
+	AuditLogWriter domain.AuditLogWriter
 }
 
 func NewHostStatusStore(store *DataStore) *HostStatusStore {
-	return &HostStatusStore{store}
+	return &HostStatusStore{Store: store}
 }
 
 // Create creates a HostStatus record in the DB
@@ -31,8 +34,9 @@ func (hss *HostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) 
 	defaultLog.Trace("postgres/hoststatus_store:Create() Entering")
 	defer defaultLog.Trace("postgres/hoststatus_store:Create() Leaving")
 
+	hs.ID = uuid.New()
 	dbHostStatus := hostStatus{
-		ID:         uuid.New(),
+		ID:         hs.ID,
 		HostID:     hs.HostID,
 		Status:     PGHostStatusInformation(hs.HostStatusInformation),
 		HostReport: PGHostManifest(hs.HostManifest),
@@ -42,7 +46,13 @@ func (hss *HostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) 
 	if err := hss.Store.Db.Create(&dbHostStatus).Error; err != nil {
 		return nil, errors.Wrap(err, "postgres/hoststatus_store:Create() failed to create hostStatus")
 	}
-
+	// log to audit log
+	if hss.AuditLogWriter != nil {
+		auditEntry, err := hss.AuditLogWriter.CreateEntry("create", hs)
+		if err == nil {
+			hss.AuditLogWriter.Log(auditEntry)
+		}
+	}
 	return hs, nil
 }
 
@@ -134,6 +144,9 @@ func (hss *HostStatusStore) Update(hs *hvs.HostStatus) error {
 	if hs.ID == uuid.Nil {
 		return errors.New("postgres/hoststatus_store:Update() - ID is invalid")
 	}
+	// find record before update
+	oldHs := hostStatus{}
+	hss.Store.Db.Where(&hostStatus{ID: hs.ID}).First(&oldHs)
 
 	dbHostStatus := hostStatus{
 		ID:         hs.ID,
@@ -150,6 +163,13 @@ func (hss *HostStatusStore) Update(hs *hvs.HostStatus) error {
 		}
 
 	}
+	// log to audit log
+	if hss.AuditLogWriter != nil {
+		auditEntry, err := hss.AuditLogWriter.CreateEntry("update", oldHs, hs)
+		if err == nil {
+			hss.AuditLogWriter.Log(auditEntry)
+		}
+	}
 	return nil
 }
 
@@ -160,8 +180,17 @@ func (hss *HostStatusStore) Delete(hostStatusId uuid.UUID) error {
 	dbHostStatus := hostStatus{
 		ID: hostStatusId,
 	}
+	deletedHs := hostStatus{}
+	hss.Store.Db.Where(&dbHostStatus).First(&deletedHs)
 	if err := hss.Store.Db.Delete(&dbHostStatus).Error; err != nil {
 		return errors.Wrap(err, "postgres/hoststatus_store:Delete() failed to delete HostStatus")
+	}
+	// log to audit log
+	if hss.AuditLogWriter != nil {
+		auditEntry, err := hss.AuditLogWriter.CreateEntry("delete", deletedHs)
+		if err == nil {
+			hss.AuditLogWriter.Log(auditEntry)
+		}
 	}
 	return nil
 }

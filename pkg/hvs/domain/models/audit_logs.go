@@ -6,17 +6,18 @@
 package models
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-type  AuditLogEntry struct {
-	ID              uuid.UUID
-	EntityID        uuid.UUID
-	EntityType	string
-	CreatedAt       time.Time
-	Action          string
-	Data            AuditTableData
+type AuditLogEntry struct {
+	ID         uuid.UUID
+	EntityID   uuid.UUID
+	EntityType string
+	CreatedAt  time.Time
+	Action     string
+	Data       AuditTableData
 }
 
 type AuditTableData struct {
@@ -24,7 +25,7 @@ type AuditTableData struct {
 }
 
 type AuditColumnData struct {
-	Name            string
-	Value           interface{}
-	IsUpdated       bool
+	Name      string
+	Value     interface{}
+	IsUpdated bool
 }

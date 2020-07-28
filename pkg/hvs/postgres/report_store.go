@@ -8,21 +8,24 @@ package postgres
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
-	"github.com/jinzhu/gorm"
-	"github.com/pkg/errors"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 )
 
 type ReportStore struct {
-	Store *DataStore
+	Store          *DataStore
+	AuditLogWriter domain.AuditLogWriter
 }
 
 func NewReportStore(store *DataStore) *ReportStore {
-	return &ReportStore{store}
+	return &ReportStore{Store: store}
 }
 
 // Retrieve method fetches report for a given Id
@@ -50,8 +53,8 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		return nil, errors.New("Host ID must be specified")
 	} else {
 		refilter = models.ReportFilterCriteria{
-			HostID:         re.HostID,
-			LatestPerHost:  true,
+			HostID:        re.HostID,
+			LatestPerHost: true,
 		}
 	}
 
@@ -86,7 +89,13 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 			return nil, errors.New("postgres/report_store:Update() - rows affected with Id = %s" + dbReport.ID.String())
 		}
 	}
-
+	// log to audit log
+	if r.AuditLogWriter != nil {
+		auditEntry, err := r.AuditLogWriter.CreateEntry("update", hvsReports[0], re)
+		if err == nil {
+			r.AuditLogWriter.Log(auditEntry)
+		}
+	}
 	return re, nil
 }
 
@@ -107,7 +116,13 @@ func (r *ReportStore) Create(re *models.HVSReport) (*models.HVSReport, error) {
 	if err := r.Store.Db.Create(&dbReport).Error; err != nil {
 		return nil, errors.Wrap(err, "postgres/report_store:Create() failed to create HVSReport")
 	}
-
+	// log to audit log
+	if r.AuditLogWriter != nil {
+		auditEntry, err := r.AuditLogWriter.CreateEntry("create", re)
+		if err == nil {
+			r.AuditLogWriter.Log(auditEntry)
+		}
+	}
 	return re, nil
 }
 
@@ -223,7 +238,7 @@ func (r *ReportStore) FindHostIdsFromExpiredReports(fromTime time.Time, toTime t
 
 	// TODO: https://jira.devtools.intel.com/browse/ISECL-10985
 	query := "select h.id from host as h where exists (select t.host_id from (select row_number() over (partition by host_id order by expiration desc) rn, host_id from report where expiration > CAST(? AS TIMESTAMP) and expiration < CAST(? AS TIMESTAMP)) as t where h.id=t.host_id and t.rn=1);"
-	
+
 	hostIDs := []uuid.UUID{}
 	err := r.Store.Db.Raw(query, fromTime, toTime).Scan(&hostIDs).Error
 	if err != nil {
@@ -288,9 +303,19 @@ func auditlogEntryToReport(auRecord models.AuditLogEntry) (*models.HVSReport, er
 func (r *ReportStore) Delete(reportId uuid.UUID) error {
 	defaultLog.Trace("postgres/report_store:Delete() Entering")
 	defer defaultLog.Trace("postgres/report_store:Delete() Leaving")
+	// get the deleted record
+	re := report{}
+	r.Store.Db.Where(&report{ID: reportId}).First(&re)
 
 	if err := r.Store.Db.Delete(&report{ID: reportId}).Error; err != nil {
 		return errors.Wrap(err, "postgres/report_store:Delete() failed to delete Report")
+	}
+	// log to audit log
+	if r.AuditLogWriter != nil {
+		auditEntry, err := r.AuditLogWriter.CreateEntry("delete", re)
+		if err == nil {
+			r.AuditLogWriter.Log(auditEntry)
+		}
 	}
 	return nil
 }
@@ -364,7 +389,7 @@ func buildReportSearchQueryWithCriteria(tx *gorm.DB, hostHardwareID, hostID uuid
 }
 
 // buildLatestReportSearchQuery is a helper function to build the query object for a latest report search.
-func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostID, hostHardwareID  uuid.UUID, hostName, hostState string, limit int) *gorm.DB {
+func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostID, hostHardwareID uuid.UUID, hostName, hostState string, limit int) *gorm.DB {
 	defaultLog.Trace("postgres/report_store:buildLatestReportSearchQuery() Entering")
 	defer defaultLog.Trace("postgres/report_store:buildLatestReportSearchQuery() Leaving")
 
@@ -381,7 +406,7 @@ func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostID, hostHardwareID 
 		return tx
 	}
 
-	if  hostID != uuid.Nil || hostName != "" || hostHardwareID != uuid.Nil {
+	if hostID != uuid.Nil || hostName != "" || hostHardwareID != uuid.Nil {
 		tx = tx.Joins("INNER JOIN host h on h.id = host_id")
 	}
 

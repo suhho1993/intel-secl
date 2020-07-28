@@ -7,6 +7,9 @@ package hostfetcher
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
@@ -17,8 +20,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 const (

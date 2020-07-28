@@ -7,6 +7,7 @@ package router
 
 import (
 	"fmt"
+
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
@@ -25,6 +26,7 @@ func SetESXiClusterRoutes(router *mux.Router, store *postgres.DataStore,
 	esxiClusterStore := postgres.NewESXiCLusterStore(store, hostControllerConfig.DataEncryptionKey)
 	hostStore := postgres.NewHostStore(store)
 	hostStatusStore := postgres.NewHostStatusStore(store)
+
 	flavorGroupStore := postgres.NewFlavorGroupStore(store)
 	hostCredentialStore := postgres.NewHostCredentialStore(store, hostControllerConfig.DataEncryptionKey)
 	hc := controllers.NewHostController(hostStore, hostStatusStore,

@@ -64,6 +64,11 @@ func init() {
 	viper.SetDefault("log-enable-stdout", true)
 	viper.SetDefault("log-level", "info")
 
+	// set default for audit log
+	viper.SetDefault("audit-log-max-row-count", constants.DefaultMaxRowCount)
+	viper.SetDefault("audit-log-number-rotated", constants.DefaultNumRotated)
+	viper.SetDefault("audit-log-buffer-size", constants.DefaultChannelBufferSize)
+
 	// set default values for privacy ca
 	viper.SetDefault("privacy-ca-cert-validity", constants.DefaultPrivacyCACertValidity)
 	viper.SetDefault("privacy-ca-id-issuer", constants.DefaultPrivacyCaIdentityIssuer)
@@ -110,6 +115,11 @@ func defaultConfig() *config.Configuration {
 		CMSBaseURL:       viper.GetString("cms-base-url"),
 		CmsTlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
 		AikCertValidity:  viper.GetInt("aik-certificate-validity-years"),
+		AuditLog: config.AuditLogConfig{
+			MaxRowCount: viper.GetInt("audit-log-max-row-count"),
+			NumRotated:  viper.GetInt("audit-log-number-rotated"),
+			BufferSize:  viper.GetInt("audit-log-buffer-size"),
+		},
 		HVS: config.HVSConfig{
 			Username: viper.GetString("hvs-service-username"),
 			Password: viper.GetString("hvs-service-password"),

@@ -21,6 +21,7 @@ Avaliable Commands:
 	status                 Show the status of hvs
 	stop                   Stop hvs
 	erase-data             Reset all tables in database and create default flavor groups
+	config-db-rotation     Configure database table rotaition for audit log table, reference db_rotation.sql in documents
 	uninstall [--purge]    Uninstall hvs
 		--purge            all configuration and data files will be removed if this flag is set
 

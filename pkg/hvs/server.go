@@ -21,6 +21,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/auditlog"
 	hostfetcher "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/host-fetcher"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
@@ -63,14 +64,20 @@ func (a *App) startServer() error {
 		return errors.Wrap(err, "An error occurred while initializing Database")
 	}
 
+	// Initialize audit log
+	als := postgres.NewAuditLogEntryStore(dataStore)
+	alw, _ := auditlog.NewAuditLogDBWriter(als, c.AuditLog.BufferSize)
+
 	// Load Certificates
 	certStore := utils.LoadCertificates(a.loadCertPathStore())
 
 	// Initialize Host trust manager
-	hostTrustManager := initHostTrustManager(c, dataStore, certStore)
+	hostTrustManager := initHostTrustManager(c, dataStore, certStore, alw)
 
 	// create an instance of the HRRS and start it...
-	reportRefresher, err := hrrs.NewHostReportRefresher(c.HRRS, postgres.NewReportStore(dataStore), hostTrustManager)
+	reportStore := postgres.NewReportStore(dataStore)
+	reportStore.AuditLogWriter = alw
+	reportRefresher, err := hrrs.NewHostReportRefresher(c.HRRS, reportStore, hostTrustManager)
 	if err != nil {
 		return errors.Wrap(err, "An error occurred while initializing HRRS")
 	}
@@ -162,7 +169,7 @@ func getDecodedDek(cfg *config.Configuration) []byte {
 	return dek
 }
 
-func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore) domain.HostTrustManager {
+func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataStore, certStore *models.CertificatesStore, alw domain.AuditLogWriter) domain.HostTrustManager {
 	defaultLog.Trace("server:InitHostTrustManager() Entering")
 	defer defaultLog.Trace("server:InitHostTrustManager() Leaving")
 
@@ -173,6 +180,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	fgs := postgres.NewFlavorGroupStore(dataStore)
 	qs := postgres.NewDBQueueStore(dataStore)
 	hss := postgres.NewHostStatusStore(dataStore)
+	hss.AuditLogWriter = alw
 	rs := postgres.NewReportStore(dataStore)
 
 	//Load certificates
@@ -223,8 +231,8 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 			ServiceUsername: cfg.HVS.Username,
 			ServicePassword: cfg.HVS.Password,
 		},
-		RetryTimeMinutes:     5,
-		HostStatusStore:      hss,
+		RetryTimeMinutes: 5,
+		HostStatusStore:  hss,
 	}
 	_, hf, err := hostfetcher.NewService(c, cfg.FVS.NumberOfDataFetchers)
 	if err != nil {

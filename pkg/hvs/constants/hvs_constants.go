@@ -56,7 +56,7 @@ const (
 	PrivacyCAKeyFile  = TrustedKeysDir + "privacy-ca.key"
 
 	//TODO remove or dont use temporary files
-	AikRequestsDir = HomeDir + "privacyca-aik-requests/"
+	AikRequestsDir            = HomeDir + "privacyca-aik-requests/"
 	EndorsementCACertDir      = ConfigDir + "certs/endorsement/"
 	EndorsementCACertFile     = EndorsementCACertDir + "EndorsementCA-external.pem" //External ECA
 	SelfEndorsementCACertFile = EndorsementCACertDir + "EndorsementCA.pem"          //Self signed ECA
@@ -162,4 +162,11 @@ const (
 	DefaultFvsNumberOfVerifiers            = 20
 	DefaultFvsNumberOfDataFetchers         = 20
 	DefaultSkipFlavorSignatureVerification = false
+)
+
+// audit log constants
+const (
+	DefaultMaxRowCount       = 10000
+	DefaultNumRotated        = 10
+	DefaultChannelBufferSize = 5000
 )
