@@ -12,7 +12,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -59,21 +58,28 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]*hvs.
 
 	var tx *gorm.DB
 	var err error
-	if (flavorFilter == nil || reflect.DeepEqual(flavorFilter.FlavorFC, models.FlavorFilterCriteria{})) {
-		tx = f.Store.Db.Model(&flavor{}).Select("id, content, signature")
-	} else if len(flavorFilter.FlavorFC.Ids) > 0 {
-		tx = f.Store.Db.Model(&flavor{}).Select("id, content, signature").Where("id IN (?)", flavorFilter.FlavorFC.Ids)
-	} else if flavorFilter.FlavorFC.Key != "" && flavorFilter.FlavorFC.Value != "" {
-		tx = findFlavorByKeyValue(f.Store.Db, flavorFilter.FlavorFC.Key, flavorFilter.FlavorFC.Value)
-	} else if flavorFilter.FlavorFC.FlavorgroupID.String() != "" ||
+
+	tx = f.Store.Db.Table("flavor f").Select("f.id, f.content, f.signature")
+	tx.LogMode(true)
+	// build partial query with all the given flavor Id's
+	if len(flavorFilter.FlavorFC.Ids) > 0 {
+		var flavorIds []string
+		for _, fId := range flavorFilter.FlavorFC.Ids {
+			flavorIds = append(flavorIds, fId.String())
+		}
+		tx = tx.Where("f.id IN (?)", flavorFilter.FlavorFC.Ids)
+	}
+	// build partial query with the given key-value pair from falvor description
+	if flavorFilter.FlavorFC.Key != "" && flavorFilter.FlavorFC.Value != "" {
+		tx = tx.Where("f.content -> 'meta' -> 'description' ->> ? = ?", flavorFilter.FlavorFC.Key, flavorFilter.FlavorFC.Value)
+	}
+	if flavorFilter.FlavorFC.FlavorgroupID.String() != "" ||
 		len(flavorFilter.FlavorFC.FlavorParts) >= 1 || len(flavorFilter.FlavorPartsWithLatest) >= 1 || flavorFilter.FlavorMeta != nil || len(flavorFilter.FlavorMeta) >= 1 {
 		if len(flavorFilter.FlavorFC.FlavorParts) >= 1 {
 			flavorFilter.FlavorPartsWithLatest = getFlavorPartsWithLatestMap(flavorFilter.FlavorFC.FlavorParts, flavorFilter.FlavorPartsWithLatest)
 		}
 		// add all flavor parts in list of flavor Parts
-		tx = buildMultipleFlavorPartQueryString(f.Store.Db, flavorFilter.FlavorFC.FlavorgroupID, flavorFilter.FlavorMeta, flavorFilter.FlavorPartsWithLatest)
-	} else {
-		return nil, errors.New("postgres/flavor_store:Search() invalid flavor filter criteria set")
+		tx = f.buildMultipleFlavorPartQueryString(tx, flavorFilter.FlavorFC.FlavorgroupID, flavorFilter.FlavorMeta, flavorFilter.FlavorPartsWithLatest)
 	}
 
 	if tx == nil {
@@ -99,7 +105,7 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]*hvs.
 	return signedFlavors, nil
 }
 
-func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaMap map[fc.FlavorPart]map[string]interface{}, flavorPartsWithLatest map[fc.FlavorPart]bool) *gorm.DB {
+func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaMap map[fc.FlavorPart]map[string]interface{}, flavorPartsWithLatest map[fc.FlavorPart]bool) *gorm.DB {
 	defaultLog.Trace("postgres/flavor_store:buildMultipleFlavorPartQueryString() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:buildMultipleFlavorPartQueryString() Leaving")
 
@@ -113,7 +119,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 		for flavorPart, _ := range flavorPartsWithLatest {
 			switch flavorPart {
 			case fc.FlavorPartPlatform:
-				biosQuery = tx
+				biosQuery = f.Store.Db
 				biosQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartPlatform.String(), fgId.String(), biosQuery)
 				// build biosQuery
 				biosQuery.LogMode(true)
@@ -147,7 +153,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 				}
 
 			case fc.FlavorPartOs:
-				osQuery = tx
+				osQuery = f.Store.Db
 				osQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartOs.String(), fgId.String(), osQuery)
 				// build biosQuery
 				osQuery.LogMode(true)
@@ -179,7 +185,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 				}
 
 			case fc.FlavorPartHostUnique:
-				hostUniqueQuery = tx
+				hostUniqueQuery = f.Store.Db
 				hostUniqueFlavorMetaInfo := flavorMetaMap[fc.FlavorPartHostUnique]
 				hostUniqueQuery = hostUniqueQuery.Table("flavor f")
 				hostUniqueQuery.LogMode(true)
@@ -193,7 +199,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 				}
 
 			case fc.FlavorPartSoftware:
-				softwareQuery = tx
+				softwareQuery = f.Store.Db
 				softwareQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartSoftware.String(), fgId.String(), softwareQuery)
 				softwareQuery.LogMode(true)
 				softwareFlavorMetaInfo := flavorMetaMap[fc.FlavorPartSoftware]
@@ -205,7 +211,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 				}
 
 			case fc.FlavorPartAssetTag:
-				aTagQuery = tx
+				aTagQuery = f.Store.Db
 				aTagQuery = aTagQuery.Table("flavor f").Select("f.id").Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", fc.FlavorPartAssetTag)
 				aTagQuery.LogMode(true)
 				aTagFlavorMetaInfo := flavorMetaMap[fc.FlavorPartAssetTag]
@@ -224,7 +230,6 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 	}
 
 	// TODO : remove gorm log mode later
-	tx = tx.Table("flavor f").Select("f.id, f.content, f.signature")
 	subQuery := tx
 	subQuery.LogMode(true)
 	// add bios query to sub query
@@ -235,7 +240,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 	// add OS query string to sub query
 	if osQuery != nil {
 		osSubQuery := osQuery.SubQuery()
-		if subQuery != nil {
+		if biosQuery != nil {
 			subQuery = subQuery.Or("f.id IN ?", osSubQuery)
 		} else {
 			subQuery = subQuery.Where("f.id IN ?", osSubQuery)
@@ -244,7 +249,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 	// add software query to sub query
 	if softwareQuery != nil {
 		softwareSubQuery := softwareQuery.SubQuery()
-		if subQuery != nil {
+		if biosQuery != nil || osQuery != nil {
 			subQuery = subQuery.Or("f.id IN ?", softwareSubQuery)
 		} else {
 			subQuery = subQuery.Where("f.id IN ?", softwareSubQuery)
@@ -253,7 +258,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 	// add asset tag query to sub query
 	if aTagQuery != nil {
 		aTagSubQuery := aTagQuery.SubQuery()
-		if subQuery != nil {
+		if biosQuery != nil || osQuery != nil  || softwareQuery != nil {
 			subQuery = subQuery.Or("f.id IN ?", aTagSubQuery)
 		} else {
 			subQuery = subQuery.Where("f.id IN ?", aTagSubQuery)
@@ -262,7 +267,7 @@ func buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaM
 	// add host-unique query to sub query
 	if hostUniqueQuery != nil {
 		hostUniqueSubQuery := hostUniqueQuery.SubQuery()
-		if subQuery != nil {
+		if biosQuery != nil || osQuery != nil  || softwareQuery != nil || aTagQuery != nil {
 			subQuery = subQuery.Or("f.id IN ?", hostUniqueSubQuery)
 		} else {
 			subQuery = subQuery.Where("f.id IN ?", hostUniqueSubQuery)
@@ -282,7 +287,7 @@ func buildFlavorPartQueryStringWithFlavorParts(flavorpart, flavorgroupId string,
 	defaultLog.Trace("postgres/flavor_store:buildFlavorPartQueryStringWithFlavorParts() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:buildFlavorPartQueryStringWithFlavorParts() Leaving")
 
-	if flavorgroupId != "" {
+	if flavorgroupId != "" && uuid.MustParse(flavorgroupId) != uuid.Nil {
 		subQuery := buildFlavorPartQueryStringWithFlavorgroup(flavorgroupId, tx)
 		tx = subQuery.Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorpart)
 	} else {
@@ -318,18 +323,6 @@ func getFlavorPartsWithLatestMap(flavorParts []fc.FlavorPart, flavorPartsWithLat
 	}
 
 	return flavorPartsWithLatestMap
-}
-
-// helper function used to query through flavor description with a given key-value pair
-func findFlavorByKeyValue(tx *gorm.DB, key, value string) *gorm.DB {
-	defaultLog.Trace("postgres/flavor_store:findFlavorByKeyValue() Entering")
-	defer defaultLog.Trace("postgres/flavor_store:findFlavorByKeyValue() Leaving")
-
-	if tx == nil || key == "" || value == "" {
-		return nil
-	}
-	tx = tx.Model(&flavor{}).Select("id, content, signature").Where(`content @> '{ "meta": {"description": {"` + key + `":"` + value + `"}}}'`)
-	return tx
 }
 
 // retrieve flavors

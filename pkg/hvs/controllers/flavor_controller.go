@@ -465,13 +465,13 @@ func (fcon *FlavorController) Search(w http.ResponseWriter, r *http.Request) (in
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	id := r.URL.Query().Get("id")
+	ids := r.URL.Query()["id"]
 	key := r.URL.Query().Get("key")
 	value := r.URL.Query().Get("value")
 	flavorgroupId := r.URL.Query().Get("flavorgroupId")
 	flavorParts := r.URL.Query()["flavorParts"]
 
-	filterCriteria, err := validateFlavorFilterCriteria(id, key, value, flavorgroupId, flavorParts)
+	filterCriteria, err := validateFlavorFilterCriteria(key, value, flavorgroupId, ids, flavorParts)
 	if err != nil {
 		secLog.Errorf("controllers/flavor_controller:Search()  %s", err.Error())
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -536,18 +536,22 @@ func (fcon *FlavorController) Retrieve(w http.ResponseWriter, r *http.Request) (
 	return flavor, http.StatusOK, nil
 }
 
-func validateFlavorFilterCriteria(id, key, value, flavorgroupId string, flavorParts []string) (*dm.FlavorFilterCriteria, error) {
+func validateFlavorFilterCriteria(key, value, flavorgroupId string, ids, flavorParts []string) (*dm.FlavorFilterCriteria, error) {
 	defaultLog.Trace("controllers/flavor_controller:validateFlavorFilterCriteria() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:validateFlavorFilterCriteria() Leaving")
 
 	filterCriteria := dm.FlavorFilterCriteria{}
 	var err error
-	if id != "" {
-		parsedId, err := uuid.Parse(id)
-		if err != nil {
-			return nil, errors.New("Invalid UUID format of the flavor identifier")
+	if len(ids) > 0 {
+		var fIds []uuid.UUID
+		for _, fId := range ids {
+			parsedId, err := uuid.Parse(fId)
+			if err != nil {
+				return nil, errors.New("Invalid UUID format of the flavor identifier")
+			}
+			fIds = append(fIds, parsedId)
 		}
-		filterCriteria.Ids = []uuid.UUID{parsedId}
+		filterCriteria.Ids = fIds
 	}
 	if key != "" {
 		if err = validation.ValidateNameString(key); err != nil {
