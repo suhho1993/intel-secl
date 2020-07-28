@@ -33,7 +33,10 @@ func (hs *HostStore) Create(h *hvs.Host) (*hvs.Host, error) {
 		Name:             h.HostName,
 		Description:      h.Description,
 		ConnectionString: h.ConnectionString,
-		HardwareUuid:     h.HardwareUuid,
+	}
+
+	if h.HardwareUuid != nil {
+		dbHost.HardwareUuid = models.NewHwUUID(*h.HardwareUuid)
 	}
 
 	if err := hs.Store.Db.Create(&dbHost).Error; err != nil {
@@ -63,7 +66,10 @@ func (hs *HostStore) Update(h *hvs.Host) error {
 		Name:             h.HostName,
 		Description:      h.Description,
 		ConnectionString: h.ConnectionString,
-		HardwareUuid:     h.HardwareUuid,
+	}
+
+	if h.HardwareUuid != nil {
+		dbHost.HardwareUuid = models.NewHwUUID(*h.HardwareUuid)
 	}
 
 	if db := hs.Store.Db.Model(&dbHost).Updates(&dbHost); db.Error != nil || db.RowsAffected != 1 {

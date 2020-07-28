@@ -74,7 +74,7 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 		}
 	} else if criteria.HostHardwareID != uuid.Nil || criteria.HostName != "" {
 		for _, t := range hostStore.hostStore {
-			if criteria.HostHardwareID == t.HardwareUuid || criteria.HostName == t.HostName {
+			if criteria.HostHardwareID == *t.HardwareUuid || criteria.HostName == t.HostName {
 				hosts = append(hosts, t)
 			}
 		}

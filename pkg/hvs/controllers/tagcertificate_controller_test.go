@@ -573,14 +573,14 @@ var _ = Describe("TagCertificateController", func() {
 
 				hostUrl := "intel:/fakehost;u=fakeuser;p=fakepass"
 
-				hardwareUUID := "7a569dad-2d82-49e4-9156-069b0065b262"
+				hardwareUUID := uuid.MustParse("7a569dad-2d82-49e4-9156-069b0065b262")
 
 				_, _ = tagCertController.HostStore.Create(&hvs.Host{
 					Id:               uuid.New(),
 					HostName:         "MyFakeHost",
 					Description:      "Fakest Connected Host In The World",
 					ConnectionString: hostUrl,
-					HardwareUuid:     uuid.MustParse(hardwareUUID),
+					HardwareUuid:     &hardwareUUID,
 				})
 
 				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Deploy))).Methods("POST")
@@ -606,14 +606,14 @@ var _ = Describe("TagCertificateController", func() {
 
 				hostUrl := "intel:/fakebadhost;u=fakeuser;p=fakepass"
 
-				hardwareUUID := "00e4d709-8d72-44c3-89ae-c5edc395d6fe"
+				hardwareUUID := uuid.MustParse("00e4d709-8d72-44c3-89ae-c5edc395d6fe")
 
 				_, _ = tagCertController.HostStore.Create(&hvs.Host{
 					Id:               uuid.New(),
 					HostName:         "MyFakeBadHost",
 					Description:      "Fakest Disconnected Host In The World",
 					ConnectionString: hostUrl,
-					HardwareUuid:     uuid.MustParse(hardwareUUID),
+					HardwareUuid:     &hardwareUUID,
 				})
 
 				router.Handle(hvsRoutes.TagCertificateDeployEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Deploy))).Methods("POST")

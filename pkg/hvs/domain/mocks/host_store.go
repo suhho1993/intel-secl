@@ -72,7 +72,7 @@ func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.
 		}
 	}  else if criteria.HostHardwareId != uuid.Nil {
 		for _, h := range store.hostStore {
-			if h.HardwareUuid == criteria.HostHardwareId {
+			if *h.HardwareUuid == criteria.HostHardwareId {
 				hosts =  append(hosts, h)
 			}
 		}
@@ -158,10 +158,13 @@ func (store *MockHostStore) RetrieveTrustCacheFlavors(hId ,fgId uuid.UUID) ([]uu
 func NewMockHostStore() *MockHostStore {
 	store := &MockHostStore{}
 
+	uuid1 := uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d")
+	uuid2 := uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2")
+
 	store.Create(&hvs.Host{
 		Id:               uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		HostName:         "localhost1",
-		HardwareUuid:     uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
+		HardwareUuid:     &uuid1,
 		ConnectionString: "intel:https://ta.ip.com:1443",
 		Description:      "Intel Host",
 	})
@@ -169,16 +172,12 @@ func NewMockHostStore() *MockHostStore {
 	store.Create(&hvs.Host{
 		Id:               uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
 		HostName:         "localhost2",
-		HardwareUuid:     uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
+		HardwareUuid:     &uuid2,
 		ConnectionString: "vmware:https://vsphere.com:443/sdk;h=hostName;u=admin.local;p=password",
 		Description:      "Vmware Host",
 	})
 
-	var fgIds []uuid.UUID
-	hostId := uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2")
-	fgIds = append(fgIds, uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"))
-
-	store.AddFlavorgroups(hostId, fgIds)
+	store.AddFlavorgroups(uuid2, []uuid.UUID{uuid1})
 
 	return store
 }

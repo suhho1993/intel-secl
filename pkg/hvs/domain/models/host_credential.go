@@ -14,7 +14,7 @@ type HostCredential struct {
 	Id           uuid.UUID `json:"id"`
 	HostId       uuid.UUID `json:"host_id,omitempty"`
 	HostName     string    `json:"host_name,omitempty"`
-	HardwareUuid uuid.UUID `json:"hardware_uuid,omitempty"`
+	HardwareUuid HwUUID    `json:"hardware_uuid,omitempty"`
 	Credential   string    `json:"credential"`
 	CreatedTs    time.Time `json:"created_ts,omitempty"`
 }

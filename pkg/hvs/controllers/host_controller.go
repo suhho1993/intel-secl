@@ -242,11 +242,11 @@ func (hc *HostController) CreateHost(reqHost hvs.HostCreateRequest) (interface{}
 		defaultLog.Warnf("Could not connect to host, hardware UUID will not be set: %s", hostState.String())
 	}
 
-	var hwUuid uuid.UUID
+	var hwUuid *uuid.UUID = nil
 	if hostInfo != nil && hostInfo.HardwareUUID != "" {
 		hwid, err := uuid.Parse(hostInfo.HardwareUUID)
 		if err == nil {
-			hwUuid = hwid
+			hwUuid = &hwid
 		}
 	}
 
@@ -288,8 +288,8 @@ func (hc *HostController) CreateHost(reqHost hvs.HostCreateRequest) (interface{}
 	hostCredential.HostId = createdHost.Id
 	hostCredential.HostName = createdHost.HostName
 	hostCredential.Credential = credential
-	if createdHost.HardwareUuid != uuid.Nil {
-		hostCredential.HardwareUuid = createdHost.HardwareUuid
+	if createdHost.HardwareUuid != nil {
+		hostCredential.HardwareUuid = models.NewHwUUID(*createdHost.HardwareUuid)
 	}
 
 	_, err = hc.HCStore.Create(&hostCredential)

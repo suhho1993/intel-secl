@@ -30,12 +30,13 @@ func TestHostTrustManagerNewService(t *testing.T) {
 	qs := mocks.NewQueueStore()
 	hs := mocks.NewMockHostStore()
 	hss := mocks.NewFakeHostStatusStore()
+	hwUuid := uuid.New()
 
 	newHost, err := hs.Create(&hvs.Host{
 		HostName:         "test.domain.com",
 		Description:      "Host at test.domain.com",
 		ConnectionString: "intel://test.domain.com/ta",
-		HardwareUuid:     uuid.New(),
+		HardwareUuid:     &hwUuid,
 	})
 	assert.NoError(t, err)
 	hrec, err := hs.Retrieve(newHost.Id)
@@ -81,7 +82,7 @@ func TestVerifier_Verify(t *testing.T) {
 		HostName:         "hostname",
 		Description:      "Host at test.domain.com",
 		ConnectionString: "intel://test.domain.com/ta",
-		HardwareUuid:     hwUuid,
+		HardwareUuid:     &hwUuid,
 		Id:               hostId,
 	})
 	assert.NoError(t, err)

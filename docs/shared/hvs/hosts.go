@@ -110,7 +110,7 @@ type HostFlavorgroupCreateRequest struct {
 // x-sample-call-output: |
 //    {
 //        "id": "fc0cc779-22b6-4741-b0d9-e2e69635ad1e",
-//        "name":"Purley host1",
+//        "host_name":"Purley host1",
 //        "description": "RHEL TPM2.0 Purley",
 //        "connection_string": "https://trustagent.server.com:1443",
 //        "hardware_uuid": "80ecce40-04b8-e811-906e-00163566263e",
@@ -214,7 +214,7 @@ type HostFlavorgroupCreateRequest struct {
 // x-sample-call-output: |
 //    {
 //        "id": "fc0cc779-22b6-4741-b0d9-e2e69635ad1e",
-//        "name":"Purley host2",
+//        "host_name":"Purley host2",
 //        "description": "RHEL TPM2.0 Purley Host",
 //        "connection_string": "https://trustagent.server.com:1443",
 //        "hardware_uuid": "80ecce40-04b8-e811-906e-00163566263e",
@@ -246,7 +246,7 @@ type HostFlavorgroupCreateRequest struct {
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e
 
 // ---
-//
+
 // swagger:operation GET /hosts Hosts SearchHost
 // ---
 //
@@ -291,8 +291,13 @@ type HostFlavorgroupCreateRequest struct {
 //   type: string
 //   format: uuid
 //   required: false
-// - name: key & value
-//   description: User needs to specify values for both key and value fields. Keys can be any field in host info section of host report field in host status table.
+// - name: key
+//   description: User needs to specify values for both key and value fields. Key can be any field in host info section of host report field in host status table.
+//   in: query
+//   type: string
+//   required: false
+// - name: value
+//   description: User needs to specify values for both key and value fields. Value will be content of key field in host info section of host report field in host status table.
 //   in: query
 //   type: string
 //   required: false
@@ -444,7 +449,7 @@ type HostFlavorgroupCreateRequest struct {
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e/flavorgroups/c96da83d-b202-49b0-b266-fc6018883e12
 
 // ---
-//
+
 // swagger:operation GET /hosts/{host_id}/flavorgroups HostFlavorgroupLinks SearchHostFlavorgroupLink
 // ---
 //
@@ -482,4 +487,3 @@ type HostFlavorgroupCreateRequest struct {
 //            }
 //        ]
 //    }
-// ---

@@ -15,7 +15,7 @@ type Host struct {
 	HostName         string    `json:"host_name"`
 	Description      string    `json:"description,omitempty"`
 	ConnectionString string    `json:"connection_string"`
-	HardwareUuid     uuid.UUID `json:"hardware_uuid,omitempty"`
+	HardwareUuid     *uuid.UUID    `json:"hardware_uuid,omitempty"`
 	FlavorgroupNames []string  `json:"flavorgroup_names,omitempty"`
 }
 
