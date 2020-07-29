@@ -132,6 +132,9 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	// Host State
 	hostState := strings.TrimSpace(params.Get("hostStatus"))
 	if hostState != "" {
+		if err := validation.ValidateStrings([]string{hostState}); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for HostStatus must be specified")
+		}
 		if hvs.GetHostState(hostState) == hvs.HostStateInvalid {
 			return nil, errors.New("Valid contents for HostStatus must be specified")
 		}

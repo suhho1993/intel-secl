@@ -78,7 +78,7 @@ func New(cfg *Config) (*DataStore, error) {
 	var db *gorm.DB
 	var dbErr error
 	numAttempts := cfg.ConnRetryAttempts
-	if numAttempts < 1 {
+	if numAttempts < 0 || numAttempts > 100{
 		numAttempts = constants.DefaultDbConnRetryAttempts
 	}
 	for i := 0; i < numAttempts; i = i + 1 {
@@ -89,6 +89,9 @@ func New(cfg *Config) (*DataStore, error) {
 			defaultLog.WithError(dbErr).Infof("postgres/postgres:New() Failed to connect to DB, retrying attempt %d/%d", i, numAttempts)
 		} else {
 			break
+		}
+		if retryTime < 0 || retryTime > 100 {
+			retryTime = constants.DefaultDbConnRetryTime
 		}
 		time.Sleep(retryTime * time.Second)
 	}
@@ -135,8 +138,8 @@ func (ds *DataStore) Migrate() {
 	defer defaultLog.Trace("postgres/postgres:Migrate() Leaving")
 
 	ds.Db.AutoMigrate(flavorGroup{}, host{}, flavor{}, trustCache{}, flavorgroupFlavor{}, hostStatus{}, esxiCluster{},
-	esxiClusterHost{}, tagCertificate{}, tpmEndorsement{}, report{}, hostCredential{}, hostFlavorgroup{}, auditLogEntry{},
-	queue{})
+		esxiClusterHost{}, tagCertificate{}, tpmEndorsement{}, report{}, hostCredential{}, hostFlavorgroup{}, auditLogEntry{},
+		queue{})
 }
 
 func (ds *DataStore) Close() {
