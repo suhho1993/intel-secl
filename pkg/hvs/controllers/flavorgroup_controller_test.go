@@ -371,7 +371,7 @@ var _ = Describe("FlavorgroupController", func() {
 				err := controllers.ValidateFlavorGroup(flavorGroup)
 				Ω(err).Should(HaveOccurred())
 
-				flavorGroup.Name = "----"
+				flavorGroup.Name = "####"
 				err = controllers.ValidateFlavorGroup(flavorGroup)
 				Ω(err).Should(HaveOccurred())
 
@@ -395,13 +395,13 @@ var _ = Describe("FlavorgroupController", func() {
 		Context("FlavorGroupFilterCriteria with incorrect content", func() {
 			It("should fail FlavorGroupFilterCriteria validation", func() {
 				filterCriteria := models.FlavorGroupFilterCriteria{
-					NameContains: "----",
+					NameContains: "####",
 				}
 				err := controllers.ValidateFgCriteria(filterCriteria)
 				Ω(err).Should(HaveOccurred())
 
 				filterCriteria = models.FlavorGroupFilterCriteria{
-					NameEqualTo: "----",
+					NameEqualTo: "####",
 				}
 				err = controllers.ValidateFgCriteria(filterCriteria)
 				Ω(err).Should(HaveOccurred())

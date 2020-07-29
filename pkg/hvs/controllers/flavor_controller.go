@@ -560,16 +560,11 @@ func validateFlavorFilterCriteria(key, value, flavorgroupId string, ids, flavorP
 		}
 		filterCriteria.Ids = fIds
 	}
-	if key != "" {
-		if err = validation.ValidateNameString(key); err != nil {
-			return nil, errors.Wrap(err, "Valid contents for filter Key must be specified")
+	if key != "" && value != "" {
+		if err = validation.ValidateStrings([]string{key, value}); err != nil {
+			return nil, errors.Wrap(err, "Valid contents for filter Key and Value must be specified")
 		}
 		filterCriteria.Key = key
-	}
-	if value != "" {
-		if err = validation.ValidateStrings([]string{value}); err != nil {
-			return nil, errors.Wrap(err, "Valid contents for filter Value must be specified")
-		}
 		filterCriteria.Value = value
 	}
 	if flavorgroupId != "" {

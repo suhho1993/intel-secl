@@ -195,7 +195,7 @@ func ValidateFlavorGroup(flavorGroup hvs.FlavorGroup) error {
 		return errors.New("FlavorGroup Name must be specified")
 	}
 	if flavorGroup.Name != "" {
-		if errs := validation.ValidateNameString(flavorGroup.Name); errs != nil {
+		if errs := validation.ValidateStrings([]string{flavorGroup.Name}); errs != nil {
 			return errors.Wrap(errs, "Valid FlavorGroup Name must be specified")
 		}
 	}
@@ -210,12 +210,12 @@ func ValidateFgCriteria(filterCriteria models.FlavorGroupFilterCriteria) error {
 	defer defaultLog.Trace("controllers/flavorgroup_controller:ValidateFgCriteria() Leaving")
 
 	if filterCriteria.NameEqualTo != "" {
-		if errs := validation.ValidateNameString(filterCriteria.NameEqualTo); errs != nil {
+		if errs := validation.ValidateStrings([]string{filterCriteria.NameEqualTo}); errs != nil {
 			return errors.Wrap(errs, "Valid contents for NameEqualTo must be specified")
 		}
 	}
 	if filterCriteria.NameContains != "" {
-		if errs := validation.ValidateNameString(filterCriteria.NameContains); errs != nil {
+		if errs := validation.ValidateStrings([]string{filterCriteria.NameContains}); errs != nil {
 			return errors.Wrap(errs, "Valid contents for NameContains must be specified")
 		}
 	}
