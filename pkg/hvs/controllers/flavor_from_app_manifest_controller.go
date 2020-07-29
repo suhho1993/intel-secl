@@ -10,6 +10,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"github.com/google/uuid"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
@@ -34,6 +35,10 @@ func NewFlavorFromAppManifestController(fc FlavorController) *FlavorFromAppManif
 func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/flavor_from_app_manifest_controller:CreateSoftwareFlavor() Entering")
 	defer defaultLog.Trace("controllers/flavor_from_app_manifest_controller:CreateSoftwareFlavor() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeXml{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Errorf("controllers/flavor_from_app_manifest_controller:CreateSoftwareFlavor() %s : The request body"+

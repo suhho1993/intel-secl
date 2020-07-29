@@ -41,6 +41,11 @@ func NewCertifyHostKeysController(certStore *models.CertificatesStore) *CertifyH
 func (certifyHostKeysController *CertifyHostKeysController) CertifySigningKey(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/certify_host_keys_controller:CertifySigningKey() Entering")
 	defer defaultLog.Trace("controllers/certify_host_keys_controller:CertifySigningKey() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
+
 	var regKeyInfo model.RegisterKeyInfo
 	dec := json.NewDecoder(r.Body)
 	defaultLog.Info(dec)
@@ -66,6 +71,11 @@ func (certifyHostKeysController *CertifyHostKeysController) CertifySigningKey(w 
 func (certifyHostKeysController *CertifyHostKeysController) CertifyBindingKey(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/certify_host_keys_controller:CertifyBindingKey() Entering")
 	defer defaultLog.Trace("controllers/certify_host_keys_controller:CertifyBindingKey() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
+
 	var regKeyInfo model.RegisterKeyInfo
 	dec := json.NewDecoder(r.Body)
 	defaultLog.Info(dec)

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
@@ -54,6 +55,10 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 	defaultLog.Trace("controllers/host_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Create() Leaving")
 
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
+
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/host_controller:Create() The request body was not provided")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body was not provided"}
@@ -95,6 +100,10 @@ func (hc *HostController) Retrieve(w http.ResponseWriter, r *http.Request) (inte
 func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/host_controller:Update() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Update() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/host_controller:Update() The request body was not provided")
@@ -619,6 +628,10 @@ func populateHostFilterCriteria(params url.Values) (*models.HostFilterCriteria, 
 func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/host_controller:AddFlavorgroup() Entering")
 	defer defaultLog.Trace("controllers/host_controller:AddFlavorgroup() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/host_controller:AddFlavorgroup() The request body was not provided")

@@ -37,7 +37,7 @@ func SetFlavorRoutes(router *mux.Router, store *postgres.DataStore, certStore *m
 			[]string{constants.FlavorSearch}))).Methods("GET")
 
 	router.Handle(flavorIdExpr,
-		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorController.Delete),
+		ErrorHandler(permissionsHandler(ResponseHandler(flavorController.Delete),
 			[]string{constants.FlavorDelete}))).Methods("DELETE")
 
 	router.Handle(flavorIdExpr,

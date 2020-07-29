@@ -39,7 +39,7 @@ func SetFlavorGroupRoutes(router *mux.Router, store *postgres.DataStore, hostTru
 			[]string{constants.FlavorGroupSearch}))).Methods("GET")
 
 	router.Handle(flavorGroupIdExpr,
-		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.Delete),
+		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.Delete),
 			[]string{constants.FlavorGroupDelete}))).Methods("DELETE")
 
 	router.Handle(flavorGroupIdExpr,
@@ -59,7 +59,7 @@ func SetFlavorGroupRoutes(router *mux.Router, store *postgres.DataStore, hostTru
 			[]string{constants.FlavorGroupRetrieve}))).Methods("GET")
 
 	router.Handle(fgFlavorLinkRetrieveDeleteExpr,
-		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorgroupController.RemoveFlavor),
+		ErrorHandler(permissionsHandler(ResponseHandler(flavorgroupController.RemoveFlavor),
 			[]string{constants.FlavorGroupDelete}))).Methods("DELETE")
 
 	router.Handle(fgFlavorLinkCreateSearchExpr,

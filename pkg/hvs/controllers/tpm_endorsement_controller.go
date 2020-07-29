@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
@@ -35,6 +36,10 @@ var tpmEndorsementSearchParams = map[string]bool{"id": true, "hardwareUuidEqualT
 func (controller TpmEndorsementController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/tpm_endorsement_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/tpm_endorsement_controller:Create() Leaving")
+
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/tpm_endorsement_controller:Create() The request body is not provided")
@@ -95,6 +100,10 @@ func getCertDigestForCert(tpmEndorsement hvs.TpmEndorsement) (string, error) {
 func (controller TpmEndorsementController) Update(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/tpm_endorsement_controller:Update() Entering")
 	defer defaultLog.Trace("controllers/tpm_endorsement_controller:Update() Leaving")
+
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/tpm_endorsement_controller:Update() The request body is not provided")
@@ -171,7 +180,6 @@ func (controller TpmEndorsementController) Search(w http.ResponseWriter, r *http
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("query tpmendorsements")
-
 	if err := utils.ValidateQueryParams(r.URL.Query(), tpmEndorsementSearchParams); err != nil {
 		secLog.Errorf("controllers/tpm_endorsement_controller:Search() %s", err.Error())
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
@@ -249,11 +257,6 @@ func (controller TpmEndorsementController) DeleteCollection(w http.ResponseWrite
 
 	// check for query parameters
 	defaultLog.WithField("query", r.URL.Query()).Trace("query tpmendorsements")
-
-	if err := utils.ValidateQueryParams(r.URL.Query(), tpmEndorsementSearchParams); err != nil {
-		secLog.Errorf("controllers/tpm_endorsement_controller:Search() %s", err.Error())
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
-	}
 
 	filter, err := getAndValidateFilterCriteria(r.URL.Query())
 	if err != nil {

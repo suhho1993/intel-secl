@@ -40,6 +40,10 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 	defaultLog.Trace("controllers/report_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/report_controller:Create() Leaving")
 
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
+
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/report_controller:Create() The request body is not provided")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
@@ -104,6 +108,10 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateReque
 func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/report_controller:CreateSaml() Entering")
 	defer defaultLog.Trace("controllers/report_controller:CreateSaml() Leaving")
+
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/report_controller:CreateSaml() The request body is not provided")

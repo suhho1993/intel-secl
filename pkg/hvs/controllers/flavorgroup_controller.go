@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
@@ -33,6 +34,10 @@ var flavorGroupSearchParams = map[string]bool{"id": true, "nameEqualTo": true, "
 func (controller FlavorgroupController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/flavorgroup_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:Create() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/flavorgroup_controller:Create() The request body is not provided")
@@ -221,6 +226,10 @@ func ValidateFgCriteria(filterCriteria models.FlavorGroupFilterCriteria) error {
 func (controller FlavorgroupController) AddFlavor(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/flavorgroup_controller:AddFlavor() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:AddFlavor() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/flavorgroup_controller:AddFlavor() The request body is not provided")

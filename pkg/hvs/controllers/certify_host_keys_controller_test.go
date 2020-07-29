@@ -96,6 +96,8 @@ var _ = Describe("CertifyHostKeysController", func() {
 					"/rpc/certify-host-binding-key",
 					bytes.NewBuffer(jsonData),
 				)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -128,6 +130,8 @@ var _ = Describe("CertifyHostKeysController", func() {
 					"/rpc/certify-host-binding-key",
 					bytes.NewBuffer(jsonData),
 				)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -161,6 +165,8 @@ var _ = Describe("CertifyHostKeysController", func() {
 					"/rpc/certify-host-signing-key",
 					bytes.NewBuffer(jsonData),
 				)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -192,6 +198,8 @@ var _ = Describe("CertifyHostKeysController", func() {
 					"/rpc/certify-host-signing-key",
 					bytes.NewBuffer(jsonData),
 				)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -224,6 +232,8 @@ var _ = Describe("CertifyHostKeysController", func() {
 					"/rpc/certify-host-signing-key",
 					bytes.NewBuffer(jsonData),
 				)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)

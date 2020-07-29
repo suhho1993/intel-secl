@@ -7,6 +7,7 @@ package controllers_test
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	mocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
@@ -46,6 +47,7 @@ var _ = Describe("FlavorController", func() {
 				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -57,12 +59,12 @@ var _ = Describe("FlavorController", func() {
 				Expect(len(sfs.SignedFlavors)).To(Equal(0))
 			})
 		})
-
 		Context("When filtered by Flavor id", func() {
 			It("Should get a single flavor entry", func() {
 				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors?id=c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -78,6 +80,7 @@ var _ = Describe("FlavorController", func() {
 				router.Handle("/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors?key=bios_name&&value=Intel Corporation", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -98,6 +101,7 @@ var _ = Describe("FlavorController", func() {
 				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -109,6 +113,7 @@ var _ = Describe("FlavorController", func() {
 				req, err := http.NewRequest("GET", "/flavors/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))
 
@@ -124,7 +129,7 @@ var _ = Describe("FlavorController", func() {
 	Describe("Delete Flavor by ID", func() {
 		Context("Delete Flavor by ID from data store", func() {
 			It("Should delete Flavor", func() {
-				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Delete))).Methods("DELETE")
+				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -134,7 +139,7 @@ var _ = Describe("FlavorController", func() {
 		})
 		Context("Delete Flavor by invalid ID from data store", func() {
 			It("Should fail to delete Flavor", func() {
-				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorController.Delete))).Methods("DELETE")
+				router.Handle("/flavors/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavors/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()

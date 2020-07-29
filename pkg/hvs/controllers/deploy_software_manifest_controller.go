@@ -8,6 +8,7 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/google/uuid"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
@@ -35,6 +36,10 @@ func NewDeploySoftwareManifestController(fs domain.FlavorStore, hc HostControlle
 func (controller *DeploySoftwareManifestController) DeployManifest(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/deploy_software_manifest_controller:DeployManifest() Entering")
 	defer defaultLog.Trace("controllers/deploy_software_manifest_controller:DeployManifest() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Errorf("controllers/deploy_software_manifest_controller:DeployManifest() %s : The request body"+

@@ -44,7 +44,7 @@ func SetESXiClusterRoutes(router *mux.Router, store *postgres.DataStore,
 			[]string{constants.ESXiClusterSearch}))).Methods("GET")
 
 	router.Handle(esxiClusterIdExpr,
-		ErrorHandler(permissionsHandler(JsonResponseHandler(esxiClusterController.Delete),
+		ErrorHandler(permissionsHandler(ResponseHandler(esxiClusterController.Delete),
 			[]string{constants.ESXiClusterDelete}))).Methods("DELETE")
 
 	router.Handle(esxiClusterIdExpr,

@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	dm "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
@@ -77,6 +78,11 @@ func NewFlavorController(fs domain.FlavorStore, fgs domain.FlavorGroupStore, hs 
 func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/flavor_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:Create() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
+
 	secLog.Infof("Request to create flavors received")
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/flavor_controller:Create() The request body is not provided")

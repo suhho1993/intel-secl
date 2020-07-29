@@ -32,7 +32,9 @@ func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, in
 		if err != nil {
 			return errorFormatter(err, status)
 		}
-		w.Write([]byte(fmt.Sprintf("%v", data)))
+		if data != nil {
+			w.Write([]byte(fmt.Sprintf("%v", data)))
+		}
 		w.WriteHeader(status)
 		return nil
 	}
@@ -45,6 +47,12 @@ func JsonResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}
 	defer defaultLog.Trace("router/handlers:JsonResponseHandler() Leaving")
 
 	return func(w http.ResponseWriter, r *http.Request) error {
+		if r.Header.Get("Accept") != constants.HTTPMediaTypeJson {
+			return errorFormatter(&commErr.EndpointError{
+				Message: "Invalid Accept type",
+			}, http.StatusUnsupportedMediaType)
+		}
+
 		data, status, err := h(w, r) // execute application handler
 		if err != nil {
 			return errorFormatter(err, status)
@@ -69,6 +77,12 @@ func SamlAssertionResponseHandler(h func(http.ResponseWriter, *http.Request) (in
 	defer defaultLog.Trace("router/handlers:SamlAssertionResponseHandler() Leaving")
 
 	return func(w http.ResponseWriter, r *http.Request) error {
+		if r.Header.Get("Accept") != constants.HTTPMediaTypeSaml {
+			return errorFormatter(&commErr.EndpointError{
+				Message: "Invalid Accept type",
+			}, http.StatusUnsupportedMediaType)
+		}
+
 		data, status, err := h(w, r) // execute application handler
 		if err != nil {
 			return errorFormatter(err, status)
@@ -85,6 +99,11 @@ func XMLResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{},
 	defer defaultLog.Trace("router/handlers:XMLResponseHandler() Leaving")
 
 	return func(w http.ResponseWriter, r *http.Request) error {
+		if r.Header.Get("Accept") != constants.HTTPMediaTypeXml {
+			return errorFormatter(&commErr.EndpointError{
+				Message: "Invalid Accept type",
+			}, http.StatusUnsupportedMediaType)
+		}
 		data, status, err := h(w, r) // execute application handler
 		if err != nil {
 			return errorFormatter(err, status)
@@ -95,10 +114,9 @@ func XMLResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{},
 	}
 }
 
-func errorFormatter(err error, status int) error{
+func errorFormatter(err error, status int) error {
 	defaultLog.Trace("router/handlers:errorFormatter() Entering")
 	defer defaultLog.Trace("router/handlers:errorFormatter() Leaving")
-
 	switch t := err.(type) {
 	case *commErr.EndpointError:
 		err = &commErr.HandledError{StatusCode: status, Message: t.Message}
@@ -113,7 +131,7 @@ func errorFormatter(err error, status int) error{
 func xmlResponseWriter(w http.ResponseWriter, status int, data interface{}) {
 	defaultLog.Trace("router/handlers:xmlResponseWriter() Entering")
 	defer defaultLog.Trace("router/handlers:xmlResponseWriter() Leaving")
-	
+
 	w.WriteHeader(status)
 	if data != nil {
 		// Send XML response back to the client application
@@ -124,7 +142,6 @@ func xmlResponseWriter(w http.ResponseWriter, status int, data interface{}) {
 		}
 	}
 }
-
 
 func permissionsHandler(eh endpointHandler, permissionNames []string) endpointHandler {
 	defaultLog.Trace("router/handlers:permissionsHandler() Entering")

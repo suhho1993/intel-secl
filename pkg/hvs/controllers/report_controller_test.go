@@ -54,6 +54,8 @@ var _ = Describe("ReportController", func() {
 					"/reports",
 					strings.NewReader(body),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -73,6 +75,8 @@ var _ = Describe("ReportController", func() {
 					"/reports",
 					strings.NewReader(body),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -94,6 +98,8 @@ var _ = Describe("ReportController", func() {
 					strings.NewReader(body),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -113,6 +119,8 @@ var _ = Describe("ReportController", func() {
 					strings.NewReader(hostJson),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -129,6 +137,9 @@ var _ = Describe("ReportController", func() {
 					strings.NewReader(hostJson),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -143,6 +154,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports/15701f03-7b1d-49f9-ac62-6b9b0728bdb3", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -154,6 +166,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))
@@ -168,6 +181,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -184,6 +198,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostHardwareId=e57e5ea0-d465-461e-882d-1600090caa0d", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -200,6 +215,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostName=localhost1", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -216,6 +232,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostId=ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -232,6 +249,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?hostStatus=CONNECTED", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -248,6 +266,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(reportController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports?id=ee37c360-7eae-4250-a677-6ee12adce", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -270,6 +289,8 @@ var _ = Describe("ReportController", func() {
 					"/reports",
 					strings.NewReader(body),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeSaml)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -290,6 +311,8 @@ var _ = Describe("ReportController", func() {
 					"/reports",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeSaml)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -305,6 +328,7 @@ var _ = Describe("ReportController", func() {
 				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.SamlAssertionResponseHandler(reportController.SearchSaml))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeSaml)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))

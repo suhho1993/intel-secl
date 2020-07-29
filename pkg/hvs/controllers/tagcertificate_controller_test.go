@@ -122,6 +122,8 @@ var _ = Describe("TagCertificateController", func() {
 					strings.NewReader(createTcReq),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -141,6 +143,8 @@ var _ = Describe("TagCertificateController", func() {
 					strings.NewReader(createTcReq),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusCreated))
@@ -160,6 +164,8 @@ var _ = Describe("TagCertificateController", func() {
 					strings.NewReader(createTcReq),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -179,6 +185,8 @@ var _ = Describe("TagCertificateController", func() {
 					strings.NewReader(createTcReq),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -193,6 +201,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath, nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -209,6 +218,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?id=fda6105d-a340-42da-bc35-0555e7a5e360", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -225,6 +235,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?id=b47a13b1-0af2-47d6-91d0-717094bfda2d", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -241,6 +252,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?id=13885605-a0ee-41f20000000000000000000000-b6fc-fd82edc487ad", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -258,6 +270,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?hardwareUuid=80ecce40-04b8-e811-906e-00163566263e", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -274,6 +287,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?hardwareUuid=b47a13b1-0af2-47d6-91d0-717094bfda2d", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -290,6 +304,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?hardwareUuid=13885605-a0ee-41f20000000000000000000000-b6fc-fd82edc487ad", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -306,6 +321,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?subjectEqualTo=00ecd3ab-9af4-e711-906e-001560a04062", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -322,6 +338,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?subjectEqualTo=afc82547-0691-4be1-8b14-bcebfce86fd6", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -338,6 +355,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?subjectContains=001560a04062", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -354,6 +372,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?subjectContains=7a466a5beff9", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -370,6 +389,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?issuerEqualTo=CN=asset-tag-service", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -386,6 +406,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?issuerEqualTo=CN=nonexistent-tag-service", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -402,6 +423,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?issuerContains=asset-tag", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -418,6 +440,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?issuerContains=nonexistent-tag-service", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -434,6 +457,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -450,6 +474,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().AddDate(1, -6, 0).Format(constants.ParamDateFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -466,6 +491,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().AddDate(0, -6, 0).Format(constants.ParamDateFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -482,6 +508,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"0000000000000", nil)
 				Expect(err).ToNot(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -498,6 +525,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"01010101010", nil)
 				Expect(err).ToNot(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -514,6 +542,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"ABC", nil)
 				Expect(err).ToNot(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -531,7 +560,7 @@ var _ = Describe("TagCertificateController", func() {
 	Describe("Delete TagCertificate by ID", func() {
 		Context("Delete TagCertificate by ID from data store", func() {
 			It("Should delete TagCertificate and return a 200 response code", func() {
-				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Delete))).Methods("DELETE")
+				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", hvsRoutes.TagCertificateEndpointPath+"/fda6105d-a340-42da-bc35-0555e7a5e360", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -541,7 +570,7 @@ var _ = Describe("TagCertificateController", func() {
 		})
 		Context("Delete TagCertificate by incorrect ID from data store", func() {
 			It("Should fail to delete TagCertificate and return a 404 response code", func() {
-				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Delete))).Methods("DELETE")
+				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", hvsRoutes.TagCertificateEndpointPath+"/c00135a8-f5e9-4860-ae6c-4acce525d340", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -551,7 +580,7 @@ var _ = Describe("TagCertificateController", func() {
 		})
 		Context("Delete TagCertificate by invalid ID from data store", func() {
 			It("Should fail to delete TagCertificate and return a 400 response code", func() {
-				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Delete))).Methods("DELETE")
+				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", hvsRoutes.TagCertificateEndpointPath+"/73755fda-c910-46be-821f-xyxyz", nil)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -591,6 +620,8 @@ var _ = Describe("TagCertificateController", func() {
 					hvsRoutes.TagCertificateDeployEndpointPath,
 					strings.NewReader(deployTcReq),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -624,6 +655,8 @@ var _ = Describe("TagCertificateController", func() {
 					hvsRoutes.TagCertificateDeployEndpointPath,
 					strings.NewReader(deployTcReq),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -640,6 +673,9 @@ var _ = Describe("TagCertificateController", func() {
 					hvsRoutes.TagCertificateDeployEndpointPath,
 					strings.NewReader(deployTcReq),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -656,6 +692,9 @@ var _ = Describe("TagCertificateController", func() {
 					hvsRoutes.TagCertificateDeployEndpointPath,
 					strings.NewReader(deployTcReq),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -672,6 +711,9 @@ var _ = Describe("TagCertificateController", func() {
 					hvsRoutes.TagCertificateDeployEndpointPath,
 					strings.NewReader(deployTcReq),
 				)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -703,6 +745,8 @@ var _ = Describe("TagCertificateController", func() {
 					hvsRoutes.TagCertificateDeployEndpointPath,
 					strings.NewReader(deployTcReq),
 				)
+				req.Header.Set("Content-Type", constants.HTTPMediaTypeJson)
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)

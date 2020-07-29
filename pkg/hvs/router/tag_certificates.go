@@ -63,7 +63,7 @@ func SetTagCertificateRoutes(router *mux.Router, cfg *config.Configuration, cert
 				[]string{constants.TagCertificateSearch}))).Methods("GET")
 
 		router.Handle(tagCertificateIdExpr,
-			ErrorHandler(permissionsHandler(JsonResponseHandler(tagCertificateController.Delete),
+			ErrorHandler(permissionsHandler(ResponseHandler(tagCertificateController.Delete),
 				[]string{constants.TagCertificateDelete}))).Methods("DELETE")
 
 		router.Handle(TagCertificateDeployEndpointPath,

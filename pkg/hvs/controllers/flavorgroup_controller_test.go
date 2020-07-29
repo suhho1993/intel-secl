@@ -7,6 +7,7 @@ package controllers_test
 import (
 	"encoding/json"
 	"github.com/google/uuid"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
@@ -62,9 +63,11 @@ var _ = Describe("FlavorgroupController", func() {
 				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(200))
+
 
 				var fgCollection *hvs.FlavorgroupCollection
 				json.Unmarshal(w.Body.Bytes(), &fgCollection)
@@ -77,6 +80,7 @@ var _ = Describe("FlavorgroupController", func() {
 				req, err := http.NewRequest("GET", "/flavorgroups?nameEqualTo=hvs_flavorgroup_test2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(200))
 
@@ -90,6 +94,7 @@ var _ = Describe("FlavorgroupController", func() {
 				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups?nameContains=hvs_flavorgroup", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(200))
@@ -104,6 +109,7 @@ var _ = Describe("FlavorgroupController", func() {
 				router.Handle("/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups?includeFlavorContent=true", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(200))
@@ -122,6 +128,7 @@ var _ = Describe("FlavorgroupController", func() {
 				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(200))
@@ -132,6 +139,7 @@ var _ = Describe("FlavorgroupController", func() {
 				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(404))
@@ -143,7 +151,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Delete FlavorGroup by ID", func() {
 		Context("Delete FlavorGroup by ID from data store", func() {
 			It("Should delete FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
+				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -154,7 +162,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Delete FlavorGroup by invalid ID from data store", func() {
 			It("Should fail to delete FlavorGroup", func() {
-				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
+				router.Handle("/flavorgroups/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -203,6 +211,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups",
 					strings.NewReader(flavorgroupJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -233,6 +243,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups",
 					strings.NewReader(flavorgroupJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -250,6 +262,8 @@ var _ = Describe("FlavorgroupController", func() {
 				"/flavorgroups",
 				strings.NewReader(flavorgroupJson),
 			)
+			req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+			req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 			Expect(err).NotTo(HaveOccurred())
 			w = httptest.NewRecorder()
 			router.ServeHTTP(w, req)
@@ -276,6 +290,8 @@ var _ = Describe("FlavorgroupController", func() {
 				"/flavorgroups",
 				strings.NewReader(flavorgroupJson),
 			)
+			req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+			req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 			Expect(err).NotTo(HaveOccurred())
 			w = httptest.NewRecorder()
 			router.ServeHTTP(w, req)
@@ -298,6 +314,8 @@ var _ = Describe("FlavorgroupController", func() {
 				"/flavorgroups",
 				strings.NewReader(flavorgroupJson),
 			)
+			req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+			req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 			Expect(err).NotTo(HaveOccurred())
 			w = httptest.NewRecorder()
 			router.ServeHTTP(w, req)
@@ -412,6 +430,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -431,6 +451,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -447,6 +469,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors",
 					nil,
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -466,6 +490,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/invalid-7eae-4250-a677-6ee12adce8e2/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -485,6 +511,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/9c41f744-cf17-4c53-8d49-888ebb6af99f/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -504,6 +532,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/9c41f744-cf17-4c53-8d49-888ebb6af99f/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -523,6 +553,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -541,6 +573,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -557,6 +591,8 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors",
 					strings.NewReader(flavorJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -571,7 +607,7 @@ var _ = Describe("FlavorgroupController", func() {
 	Describe("Delete FlavorGroupFlavor Links", func() {
 		Context("Delete FlavorGroup-Flavor link with valid FlavorGroup ID and valid Flavor ID", func() {
 			It("Should Delete FlavorGroupFlavor link in store and return 204 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
 				req, err := http.NewRequest(
 					"DELETE",
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
@@ -586,7 +622,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Delete FlavorGroup-Flavor link with non-existent FlavorGroup and valid Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors/{fID:"+validation.UUIDReg+"}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
 				req, err := http.NewRequest(
 					"DELETE",
 					"/flavorgroups/9c41f744-cf17-4c53-8d49-888ebb6af99f/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
@@ -601,7 +637,7 @@ var _ = Describe("FlavorgroupController", func() {
 
 		Context("Delete FlavorGroup-Flavor link with valid FlavorGroup and non-existent Flavor ID", func() {
 			It("Should return 404 response code", func() {
-				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
+				router.Handle("/flavorgroups/{fgID:"+validation.UUIDReg+"}/flavors", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(flavorgroupController.RemoveFlavor))).Methods("DELETE")
 
 				req, err := http.NewRequest(
 					"DELETE",
@@ -628,6 +664,7 @@ var _ = Describe("FlavorgroupController", func() {
 					nil,
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -645,6 +682,7 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/0ae3f0a1-afe6-4efc-98de-c4e346441b94/flavors",
 					nil,
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -664,6 +702,7 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/ee37c360-7eae-4250-a677-6ee12adce8e2/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
 					nil,
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -679,6 +718,7 @@ var _ = Describe("FlavorgroupController", func() {
 					"/flavorgroups/9c41f744-cf17-4c53-8d49-888ebb6af99f/flavors/c36b5412-8c02-4e08-8a74-8bfa40425cf3",
 					nil,
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -696,6 +736,7 @@ var _ = Describe("FlavorgroupController", func() {
 					nil,
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))

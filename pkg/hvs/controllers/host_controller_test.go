@@ -7,6 +7,7 @@ package controllers_test
 import (
 	"encoding/base64"
 	"encoding/json"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
@@ -77,6 +78,8 @@ var _ = Describe("HostController", func() {
 					strings.NewReader(hostJson),
 				)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusCreated))
@@ -96,6 +99,8 @@ var _ = Describe("HostController", func() {
 					"/hosts",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -115,6 +120,8 @@ var _ = Describe("HostController", func() {
 					"/hosts",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -135,6 +142,8 @@ var _ = Describe("HostController", func() {
 					"/hosts",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -154,6 +163,8 @@ var _ = Describe("HostController", func() {
 					"/hosts",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -174,6 +185,8 @@ var _ = Describe("HostController", func() {
 					"/hosts",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -189,6 +202,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -199,6 +213,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))
@@ -221,6 +236,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -240,6 +257,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -259,6 +278,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -278,6 +299,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/73755fda-c910-46be-821f-e8ddeab189e9",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -290,7 +313,7 @@ var _ = Describe("HostController", func() {
 	Describe("Delete an existing Host", func() {
 		Context("Delete Host by ID", func() {
 			It("Should delete a Host", func() {
-				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Delete))).Methods("DELETE")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -300,7 +323,7 @@ var _ = Describe("HostController", func() {
 		})
 		Context("Delete Host by non-existent ID", func() {
 			It("Should fail to delete Host", func() {
-				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Delete))).Methods("DELETE")
+				router.Handle("/hosts/{hId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -318,6 +341,7 @@ var _ = Describe("HostController", func() {
 				req, err := http.NewRequest("GET", "/hosts", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
 
@@ -332,6 +356,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?key=os_name&value=RedHatEnterprise", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -347,6 +372,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?nameEqualTo=localhost1", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -362,6 +388,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?nameContains=localhost", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -377,6 +404,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?nameEqualTo=local host1", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -387,6 +415,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?nameContains=local host", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -397,6 +426,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?id=ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -412,6 +442,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?hostHardwareId=ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -427,6 +458,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?id=e57e5ea0-d465-461e-882d-", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -437,6 +469,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts?hostHardwareId=e57e5ea0-d465-461e-882d-", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -458,6 +491,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -476,6 +511,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -494,6 +531,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -512,6 +551,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -530,6 +571,8 @@ var _ = Describe("HostController", func() {
 					"/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups",
 					strings.NewReader(hostJson),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -545,6 +588,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.RetrieveFlavorgroup))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/e57e5ea0-d465-461e-882d-1600090caa0d", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -555,6 +599,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.RetrieveFlavorgroup))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups/e57e5ea0-d465-461e-882d-1600090caa0d", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))
@@ -565,6 +610,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.RetrieveFlavorgroup))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))
@@ -576,7 +622,7 @@ var _ = Describe("HostController", func() {
 	Describe("Delete an existing Host Flavorgroup link", func() {
 		Context("Delete by host Id and Flavorgroup Id", func() {
 			It("Should delete a Host Flavorgroup link", func() {
-				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/e57e5ea0-d465-461e-882d-1600090caa0d", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -586,7 +632,7 @@ var _ = Describe("HostController", func() {
 		})
 		Context("Delete by non-existent Host Id", func() {
 			It("Should fail to delete Host Flavorgroup link", func() {
-				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/73755fda-c910-46be-821f-e8ddeab189e9/flavorgroups/", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -596,7 +642,7 @@ var _ = Describe("HostController", func() {
 		})
 		Context("Delete by non-existent Flavorgroup Id", func() {
 			It("Should fail to delete Host Flavorgroup link", func() {
-				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
+				router.Handle("/hosts/{hId}/flavorgroups/{fgId}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(hostController.RemoveFlavorgroup))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -613,6 +659,7 @@ var _ = Describe("HostController", func() {
 				router.Handle("/hosts/{hId}/flavorgroups", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.SearchFlavorgroups))).Methods("GET")
 				req, err := http.NewRequest("GET", "/hosts/ee37c360-7eae-4250-a677-6ee12adce8e2/flavorgroups", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))

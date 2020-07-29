@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"github.com/gorilla/mux"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
@@ -28,6 +29,10 @@ var caCertificatesSearchParams = map[string]bool{"domain" : true}
 func (ca CaCertificatesController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/ca_certificates_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:Create() Leaving")
+
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/ca_certificates_controller:Create() The request body is not provided")

@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
@@ -72,6 +73,7 @@ var _ = Describe("ESXiClusterController", func() {
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -89,6 +91,7 @@ var _ = Describe("ESXiClusterController", func() {
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster?id=40c6ec42-ee9a-4d8a-842b-cdcd0fefa9c0", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -107,6 +110,7 @@ var _ = Describe("ESXiClusterController", func() {
 				req, err := http.NewRequest("GET",
 					"/esxi-cluster?id=13885605-a0ee-41f20000000000000000000000-b6fc-fd82edc487ad", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -125,6 +129,7 @@ var _ = Describe("ESXiClusterController", func() {
 				req, err := http.NewRequest("GET", "/esxi-cluster?clusterName=Cluster 1", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
 
@@ -141,6 +146,7 @@ var _ = Describe("ESXiClusterController", func() {
 					esxiClusterController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster?clusterName=Unregistered cluster", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -161,6 +167,7 @@ var _ = Describe("ESXiClusterController", func() {
 				req, err := http.NewRequest("GET", "/esxi-cluster/f3c6a763-51cd-436c-a828-c2ce6964c823", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
 			})
@@ -172,6 +179,7 @@ var _ = Describe("ESXiClusterController", func() {
 					esxiClusterController.Retrieve))).Methods("GET")
 				req, err := http.NewRequest("GET", "/esxi-cluster/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))
@@ -195,6 +203,8 @@ var _ = Describe("ESXiClusterController", func() {
 					"cluster_name": "New Cluster"
 				}`
 				req, err := http.NewRequest("POST", "/esxi-cluster", strings.NewReader(esxiClusterRequestJson))
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -211,6 +221,8 @@ var _ = Describe("ESXiClusterController", func() {
 					"cluster_name": "New Cluster"
 				}`
 				req, err := http.NewRequest("POST", "/esxi-cluster", strings.NewReader(esxiClusterRequestJson))
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -227,6 +239,8 @@ var _ = Describe("ESXiClusterController", func() {
 				}`
 				req, err := http.NewRequest("POST", "/esxi-cluster", strings.NewReader(esxiClusterRequestJson))
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -237,7 +251,7 @@ var _ = Describe("ESXiClusterController", func() {
 	Describe("Delete ESXi cluster entry", func() {
 		Context("Delete ESXi cluster by valid ID from data store", func() {
 			It("Should Delete ESXi cluster", func() {
-				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
+				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
 					esxiClusterController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/esxi-cluster/f3c6a763-51cd-436c-a828-c2ce6964c823", nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -249,7 +263,7 @@ var _ = Describe("ESXiClusterController", func() {
 
 		Context("Try to delete ESXi cluster by non-existent ID from data store", func() {
 			It("Should fail to delete ESXi cluster", func() {
-				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
+				router.Handle("/esxi-cluster/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(
 					esxiClusterController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/esxi-cluster/73755fda-c910-46be-821f-e8ddeab189e9", nil)
 				Expect(err).NotTo(HaveOccurred())

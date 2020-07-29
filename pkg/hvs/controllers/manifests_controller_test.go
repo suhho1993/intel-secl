@@ -7,6 +7,7 @@ package controllers_test
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
@@ -36,6 +37,7 @@ var _ = Describe("ManifestsController", func() {
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=339a7ac6-b8be-4356-ab34-be6e3bdfa1ed", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
@@ -50,6 +52,7 @@ var _ = Describe("ManifestsController", func() {
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=71e4c52e-595a-429d-9917-1965b437c353", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -64,6 +67,7 @@ var _ = Describe("ManifestsController", func() {
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=339a7ac6-b8be-4356-ab34-be6e3bdfa1ee", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
@@ -78,6 +82,7 @@ var _ = Describe("ManifestsController", func() {
 					Methods("GET")
 				req, err := http.NewRequest("GET", "/manifests?id=71e4c52e-595a-000000000000000429d-9917-1965b437c353", nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))

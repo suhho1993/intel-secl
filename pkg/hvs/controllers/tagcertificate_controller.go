@@ -87,6 +87,10 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 	defaultLog.Trace("controllers/tagcertificate_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/tagcertificate_controller:Create() Leaving")
 
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
+
 	if r.ContentLength == 0 {
 		secLog.Warnf("controllers/tagcertificate_controller:Create() %s : The request body is not provided", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
@@ -341,6 +345,10 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/tagcertificate_controller:Deploy() Entering")
 	defer defaultLog.Trace("controllers/tagcertificate_controller:Deploy() Leaving")
+
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	// body should be populated
 	if r.ContentLength == 0 {

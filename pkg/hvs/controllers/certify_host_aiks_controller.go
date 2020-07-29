@@ -130,6 +130,9 @@ func (certifyHostAiksController *CertifyHostAiksController) IdentityRequestGetCh
 	defaultLog.Trace("controllers/certify_host_aiks_controller:IdentityRequestGetChallenge() Entering")
 	defer defaultLog.Trace("controllers/certify_host_aiks_controller:IdentityRequestGetChallenge() Leaving")
 
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/certify_host_aiks_controller:IdentityRequestGetChallenge() %s - Error reading request body: %s for request %s", commLogMsg.AppRuntimeErr, string(data), r.URL.Path)
@@ -227,6 +230,10 @@ func (certifyHostAiksController *CertifyHostAiksController) isEkCertificateVerif
 func (certifyHostAiksController *CertifyHostAiksController) IdentityRequestSubmitChallengeResponse(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/certify_host_aiks_controller:IdentityRequestSubmitChallengeResponse() Entering")
 	defer defaultLog.Trace("controllers/certify_host_aiks_controller:IdentityRequestSubmitChallengeResponse() Leaving")
+
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+	}
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {

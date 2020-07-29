@@ -41,7 +41,7 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, hostTrustManag
 		[]string{constants.HostRetrieve}))).Methods("GET")
 	router.Handle(hostIdExpr, ErrorHandler(permissionsHandler(JsonResponseHandler(hostController.Update),
 		[]string{constants.HostUpdate}))).Methods("PUT")
-	router.Handle(hostIdExpr, ErrorHandler(permissionsHandler(JsonResponseHandler(hostController.Delete),
+	router.Handle(hostIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.Delete),
 		[]string{constants.HostDelete}))).Methods("DELETE")
 	router.Handle(hostExpr, ErrorHandler(permissionsHandler(JsonResponseHandler(hostController.Search),
 		[]string{constants.HostSearch}))).Methods("GET")
@@ -50,7 +50,7 @@ func SetHostRoutes(router *mux.Router, store *postgres.DataStore, hostTrustManag
 		[]string{constants.HostCreate}))).Methods("POST")
 	router.Handle(flavorgroupIdExpr, ErrorHandler(permissionsHandler(JsonResponseHandler(hostController.RetrieveFlavorgroup),
 		[]string{constants.HostRetrieve}))).Methods("GET")
-	router.Handle(flavorgroupIdExpr, ErrorHandler(permissionsHandler(JsonResponseHandler(hostController.RemoveFlavorgroup),
+	router.Handle(flavorgroupIdExpr, ErrorHandler(permissionsHandler(ResponseHandler(hostController.RemoveFlavorgroup),
 		[]string{constants.HostDelete}))).Methods("DELETE")
 	router.Handle(flavorgroupExpr, ErrorHandler(permissionsHandler(JsonResponseHandler(hostController.SearchFlavorgroups),
 		[]string{constants.HostSearch}))).Methods("GET")

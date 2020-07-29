@@ -35,11 +35,11 @@ func SetTpmEndorsementRoutes(router *mux.Router, store *postgres.DataStore) *mux
 			[]string{constants.TpmEndorsementSearch}))).Methods("GET")
 
 	router.Handle(tpmEndorsementIdExpr,
-		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.Delete),
+		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.Delete),
 			[]string{constants.TpmEndorsementDelete}))).Methods("DELETE")
 
 	router.Handle("/tpm-endorsements",
-		ErrorHandler(permissionsHandler(JsonResponseHandler(tpmEndorsementController.DeleteCollection),
+		ErrorHandler(permissionsHandler(ResponseHandler(tpmEndorsementController.DeleteCollection),
 			[]string{constants.TpmEndorsementSearch, constants.TpmEndorsementDelete}))).Methods("DELETE")
 
 	router.Handle(tpmEndorsementIdExpr,

@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"github.com/gorilla/mux"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
@@ -84,6 +85,8 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 					"/flavor-from-app-manifest",
 					strings.NewReader(manifestRequestXml),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeXml)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -109,6 +112,8 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 					"/flavor-from-app-manifest",
 					strings.NewReader(manifestRequestXml),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeXml)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -135,6 +140,8 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 					"/flavor-from-app-manifest",
 					strings.NewReader(manifestRequestXml),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeXml)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -161,6 +168,8 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 					"/flavor-from-app-manifest",
 					strings.NewReader(manifestRequestXml),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeXml)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -187,6 +196,8 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 					"/flavor-from-app-manifest",
 					strings.NewReader(manifestRequestXml),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeXml)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -213,6 +224,8 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 					"/flavor-from-app-manifest",
 					strings.NewReader(manifestRequestXml),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeXml)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -239,6 +252,8 @@ var _ = Describe("FlavorFromAppManifestController", func() {
 					"/flavor-from-app-manifest",
 					strings.NewReader(manifestRequestXml),
 				)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeXml)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
