@@ -15,6 +15,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"reflect"
 )
 
 type TrustReport struct {
@@ -106,27 +107,27 @@ func (t *TrustReport) GetResultsForMarker(marker string) []RuleResult {
 func (t *TrustReport) CheckResultExists(targetRuleResult RuleResult) bool {
 	//In TrustReport.java 107 marker := targetRuleResult.Rule.Markers[0] why dont we iterate all over the markers?
 	marker := targetRuleResult.Rule.Markers[0]
-	//TODO make all rule name constants even in verifier library?
 	combinedRuleResults := t.GetResultsForMarker(marker.String())
 	for _, ruleResult := range combinedRuleResults {
 		if targetRuleResult.equals(ruleResult) {
 			switch ruleResult.Rule.Name {
-			case constants.RulePcrEventLogEquals,
-				constants.RulePcrEventLogEqualsExcluding,
-				constants.RulePcrEventLogIncludes,
+			case constants.RulePcrEventLogEqualsExcluding,
 				constants.RulePcrEventLogIntegrity,
 				constants.RulePcrMatchesConstant:
-				if targetRuleResult.Rule.ExpectedPcr == nil ||
-					(targetRuleResult.Rule.ExpectedPcr != nil && targetRuleResult.Rule.ExpectedPcr != ruleResult.Rule.ExpectedPcr) {
+					// Compare pcrs for only these rules, all other rules will have pcr expected entry = nil
+				if targetRuleResult.Rule.ExpectedPcr == nil {
 					return false
+				} else if reflect.DeepEqual(targetRuleResult.Rule.ExpectedPcr, ruleResult.Rule.ExpectedPcr){
+					return true
+				} else {
+					continue
 				}
 			default:
-				continue
+				if len(targetRuleResult.Faults) > 0 {
+					return false
+				}
+				return true
 			}
-		} else if len(targetRuleResult.Faults) > 0 || targetRuleResult.FlavorId == uuid.Nil {
-			return false
-		} else {
-			return true
 		}
 	}
 	return false

@@ -40,7 +40,7 @@ func (v *Verifier) CreateFlavorGroupReport(hostId uuid.UUID, reqs flvGrpHostTrus
 		return v.createTrustReport(hostId, hostData, reqs, trustCache, missingRequiredFlavorPartsWithLatest)
 	}
 
-	ruleAllOfFlavors := rules.NewAllOfFlavors(reqs.AllOfFlavors, reqs.getAllOfMarkers(), v.SkipFlavorSignatureVerification)
+	ruleAllOfFlavors := rules.NewAllOfFlavors(reqs.AllOfFlavors, reqs.getAllOfMarkers(), v.SkipFlavorSignatureVerification, v.FlavorVerifier.GetVerifierCerts())
 	if areAllOfFlavorsMissingInCachedTrustReport(trustCache.trustReport, ruleAllOfFlavors) {
 		defaultLog.Trace("hosttrust/trust_report:CreateFlavorGroupReport() All Of Flavors Missing In Cached TrustReport")
 		return v.createTrustReport(hostId, hostData, reqs, trustCache, latestReqAndDefFlavorTypes)
@@ -109,9 +109,9 @@ func (v *Verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManif
 		trustReport = rule.Apply(*trustReport)
 	}
 
-	ruleAllOfFlavors := rules.NewAllOfFlavors(reqs.AllOfFlavors, reqs.getAllOfMarkers(), v.SkipFlavorSignatureVerification)
+	ruleAllOfFlavors := rules.NewAllOfFlavors(reqs.AllOfFlavors, reqs.getAllOfMarkers(), v.SkipFlavorSignatureVerification, v.FlavorVerifier.GetVerifierCerts())
 
-	trustReport, err = ruleAllOfFlavors.AddFaults(v.FlavorVerifier.GetVerifierCerts(), trustReport)
+	trustReport, err = ruleAllOfFlavors.AddFaults(trustReport)
 	if err != nil {
 		return hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:createTrustReport() Error applying ruleAllOfFlavors")
 	}
@@ -156,7 +156,8 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 	}
 
 	newTrustCaches := make([]uuid.UUID, 0, len(flavors))
-
+	var individualTrustReport *hvs.TrustReport
+	var err error
 	for _, signedFlavor := range flavors {
 		for _, flvMatchPolicy := range hostTrustReqs.FlavorMatchPolicies {
 			// TODO
@@ -165,12 +166,16 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 			flvPart := signedFlavor.Flavor.Meta.Description.FlavorPart
 			if flvPart == flvMatchPolicy.FlavorPart.String() {
 
-				individualTrustReport, err := v.FlavorVerifier.Verify(hostData, signedFlavor, v.SkipFlavorSignatureVerification)
+				individualTrustReport, err = v.FlavorVerifier.Verify(hostData, signedFlavor, v.SkipFlavorSignatureVerification)
 				if err != nil {
 					return &hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:verifyFlavors() Error verifying flavor")
 				}
 				if individualTrustReport.Trusted {
-					collectiveTrustReport.Results = append(collectiveTrustReport.Results, individualTrustReport.Results...)
+					if reflect.DeepEqual(collectiveTrustReport, hvs.TrustReport{}){
+						collectiveTrustReport = *individualTrustReport
+					} else{
+						collectiveTrustReport.Results = append(collectiveTrustReport.Results, individualTrustReport.Results...)
+					}
 					newTrustCaches = append(newTrustCaches, signedFlavor.Flavor.Meta.ID)
 				} else {
 					// will need the fault count later on... just iterate through the results and determine the fault count

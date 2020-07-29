@@ -7,6 +7,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/rules"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	flavorVerifier "github.com/intel-secl/intel-secl/v3/pkg/lib/verifier"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	"reflect"
@@ -117,7 +118,7 @@ func (r *flvGrpHostTrustReqs) GetLatestFlavorTypeMap() map[cf.FlavorPart]bool {
 	return result
 }
 
-func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(trustCache hostTrustCache) bool {
+func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(trustCache hostTrustCache, verifierCerts flavorVerifier.VerifierCertificates) bool {
 	defaultLog.Trace("hosttrust/trust_requirements:MeetsFlavorGroupReqs() Entering")
 	defer defaultLog.Trace("hosttrust/trust_requirements:MeetsFlavorGroupReqs() Leaving")
 
@@ -133,7 +134,7 @@ func (r *flvGrpHostTrustReqs) MeetsFlavorGroupReqs(trustCache hostTrustCache) bo
 		return false
 	}
 
-	ruleAllOfFlavors := rules.NewAllOfFlavors(r.AllOfFlavors, r.getAllOfMarkers(), r.SkipFlavorSignatureVerification)
+	ruleAllOfFlavors := rules.NewAllOfFlavors(r.AllOfFlavors, r.getAllOfMarkers(), r.SkipFlavorSignatureVerification, verifierCerts)
 
 	if areAllOfFlavorsMissingInCachedTrustReport(trustCache.trustReport, ruleAllOfFlavors) {
 		defaultLog.Debugf("All of flavors exist in policy for host: %s", r.HostId.String())

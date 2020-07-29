@@ -48,7 +48,6 @@ func NewVerifier(cfg domain.HostTrustVerifierConfig) domain.HostTrustVerifier {
 func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newData bool) (*models.HVSReport, error) {
 	defaultLog.Trace("hosttrust/verifier:Verify() Entering")
 	defer defaultLog.Trace("hosttrust/verifier:Verify() Leaving")
-
 	if hostData == nil {
 		return nil, ErrInvalidHostManiFest
 	}
@@ -64,7 +63,6 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 	if err != nil {
 		return nil, errors.New("hosttrust/verifier:Verify() Store access error")
 	}
-
 	// start with the presumption that final trust report would be true. It as some point, we get an invalid report,
 	// the Overall trust status would be negative
 	var finalReportValid = true // This is the final trust report - initialize
@@ -91,8 +89,7 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 		}
 
 		fgTrustReport := fgTrustCache.trustReport
-
-		if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache) {
+		if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache, v.FlavorVerifier.GetVerifierCerts()) {
 			log.Debug("hosttrust/verifier:Verify() Trust cache  doesn't meet flavorgroup requirements")
 			finalReportValid = false
 			fgTrustReport, err = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
