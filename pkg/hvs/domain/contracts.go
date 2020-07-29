@@ -59,7 +59,7 @@ type (
 		GetFlavorTypesInFlavorgroup(flvGrpId uuid.UUID, flvParts []cf.FlavorPart) (map[cf.FlavorPart]bool, error)
 		Create(*hvs.SignedFlavor) (*hvs.SignedFlavor, error)
 		Retrieve(uuid.UUID) (*hvs.SignedFlavor, error)
-		Search(*models.FlavorVerificationFC) ([]*hvs.SignedFlavor, error)
+		Search(*models.FlavorVerificationFC) ([]hvs.SignedFlavor, error)
 		Delete(uuid.UUID) error
 	}
 

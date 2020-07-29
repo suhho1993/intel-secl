@@ -107,14 +107,15 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating flavors"}
 	}
 
-	var signedFlavorCollection hvs.SignedFlavorCollection
-	signedFlavorCollection.SignedFlavors = signedFlavors
+	signedFlavorCollection := hvs.SignedFlavorCollection{
+		SignedFlavors: signedFlavors,
+	}
 
 	secLog.Info("Flavors created successfully")
 	return signedFlavorCollection, http.StatusCreated, nil
 }
 
-func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([]*hvs.SignedFlavor, error) {
+func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("controllers/flavor_controller:createFlavors() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:createFlavors() Leaving")
 
@@ -270,12 +271,12 @@ func (fcon *FlavorController) getHostManifest(cs string) (*hcType.HostManifest, 
 	return &hostManifest, err
 }
 
-func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.FlavorPart][]hvs.SignedFlavor, fg *hvs.FlavorGroup) ([]*hvs.SignedFlavor, error) {
+func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.FlavorPart][]hvs.SignedFlavor, fg *hvs.FlavorGroup) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("controllers/flavor_controller:addFlavorToFlavorgroup() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:addFlavorToFlavorgroup() Leaving")
 
 	defaultLog.Debug("Adding flavors to flavorgroup")
-	var returnSignedFlavors []*hvs.SignedFlavor
+	var returnSignedFlavors []hvs.SignedFlavor
 	// map of flavorgroup to flavor UUID's to create the association
 	flavorgroupFlavorMap := make(map[uuid.UUID][]uuid.UUID)
 	var flavorgroupsForQueue []hvs.FlavorGroup
@@ -294,7 +295,7 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 			// if the flavor is created, associate it with an appropriate flavorgroup
 			if signedFlavorCreated != nil && signedFlavorCreated.Flavor.Meta.ID.String() != "" {
 				// add the created flavor to the list of flavors to be returned
-				returnSignedFlavors = append(returnSignedFlavors, signedFlavorCreated)
+				returnSignedFlavors = append(returnSignedFlavors, *signedFlavorCreated)
 				if flavorPart == fc.FlavorPartAssetTag || flavorPart == fc.FlavorPartHostUnique {
 					flavorgroup, err = fcon.createFGIfNotExists(dm.FlavorGroupsHostUnique.String())
 					if err != nil || flavorgroup.ID == uuid.Nil {

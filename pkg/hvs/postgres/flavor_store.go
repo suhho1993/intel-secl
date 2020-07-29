@@ -52,7 +52,7 @@ func (f *FlavorStore) Create(signedFlavor *hvs.SignedFlavor) (*hvs.SignedFlavor,
 	return signedFlavor, nil
 }
 
-func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]*hvs.SignedFlavor, error) {
+func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("postgres/flavor_store:Search() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:Search() Leaving")
 
@@ -93,14 +93,14 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]*hvs.
 	}
 	defer rows.Close()
 
-	signedFlavors := []*hvs.SignedFlavor{}
+	signedFlavors := []hvs.SignedFlavor{}
 
 	for rows.Next() {
 		sf := hvs.SignedFlavor{}
 		if err := rows.Scan(&sf.Flavor.Meta.ID, (*PGFlavorContent)(&sf.Flavor), &sf.Signature); err != nil {
 			return nil, errors.Wrap(err, "postgres/flavor_store:Search() failed to scan record")
 		}
-		signedFlavors = append(signedFlavors, &sf)
+		signedFlavors = append(signedFlavors, sf)
 	}
 	return signedFlavors, nil
 }

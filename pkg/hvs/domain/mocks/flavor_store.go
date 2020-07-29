@@ -19,7 +19,7 @@ import (
 
 // MockFlavorStore provides a mocked implementation of interface hvs.FlavorStore
 type MockFlavorStore struct {
-	flavorStore            []*hvs.SignedFlavor
+	flavorStore            []hvs.SignedFlavor
 	FlavorFlavorGroupStore map[uuid.UUID][]uuid.UUID
 	FlavorgroupStore       map[uuid.UUID]*hvs.FlavorGroup
 }
@@ -369,7 +369,7 @@ var flavor = ` {
 func (store *MockFlavorStore) Delete(id uuid.UUID) error {
 	for i, f := range store.flavorStore {
 		if f.Flavor.Meta.ID == id {
-			store.flavorStore[i] = &hvs.SignedFlavor{}
+			store.flavorStore[i] = hvs.SignedFlavor{}
 			return nil
 		}
 	}
@@ -380,15 +380,15 @@ func (store *MockFlavorStore) Delete(id uuid.UUID) error {
 func (store *MockFlavorStore) Retrieve(id uuid.UUID) (*hvs.SignedFlavor, error) {
 	for _, f := range store.flavorStore {
 		if f.Flavor.Meta.ID == id {
-			return f, nil
+			return &f, nil
 		}
 	}
 	return nil, errors.New(commErr.RowsNotFound)
 }
 
 // Search returns a filtered list of flavors per the provided FlavorFilterCriteria
-func (store *MockFlavorStore) Search(criteria *models.FlavorVerificationFC) ([]*hvs.SignedFlavor, error) {
-	var sfs []*hvs.SignedFlavor
+func (store *MockFlavorStore) Search(criteria *models.FlavorVerificationFC) ([]hvs.SignedFlavor, error) {
+	var sfs []hvs.SignedFlavor
 	// flavor filter empty
 	if criteria == nil {
 		return store.flavorStore, nil
@@ -399,7 +399,7 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorVerificationFC) ([]*
 		return store.flavorStore, nil
 	}
 
-	var sfFiltered []*hvs.SignedFlavor
+	var sfFiltered []hvs.SignedFlavor
 	// Flavor ID filter
 	if len(criteria.FlavorFC.Ids) > 0 {
 		for _, f := range store.flavorStore {
@@ -424,7 +424,7 @@ func (store *MockFlavorStore) Search(criteria *models.FlavorVerificationFC) ([]*
 				var flvrPart cf.FlavorPart
 				(&flvrPart).Parse(f.Flavor.Meta.Description.FlavorPart)
 				if f, _ := store.Retrieve(fId); flavorPartsWithLatestMap[flvrPart] == true {
-					sfs = append(sfs, f)
+					sfs = append(sfs, *f)
 				}
 			}
 		}
@@ -439,14 +439,14 @@ func (store *MockFlavorStore) Create(sf *hvs.SignedFlavor) (*hvs.SignedFlavor, e
 		Flavor:    sf.Flavor,
 		Signature: sf.Signature,
 	}
-	store.flavorStore = append(store.flavorStore, &rec)
+	store.flavorStore = append(store.flavorStore, rec)
 	return sf, nil
 }
 
 func (store *MockFlavorStore) GetUniqueFlavorTypesThatExistForHost(hwId uuid.UUID) (map[cf.FlavorPart]bool, error) {
 	flavorParts := make(map[cf.FlavorPart]bool)
 	//find flavors for given hwId and either flavorPart is host_unique or asset_tag
-	var hwMatchedFlavors []*hvs.SignedFlavor
+	var hwMatchedFlavors []hvs.SignedFlavor
 	for _, flavor := range store.flavorStore {
 		//skip for flavor with not matching hwuuid
 		if flavor.Flavor.Meta.Description.HardwareUUID == nil {
@@ -495,7 +495,7 @@ func (store *MockFlavorStore) flavorgroupContainsFlavorType(flvrPart cf.FlavorPa
 	//Get flavors for given flavor part and store it in flvrMap
 	for _, flvr := range store.flavorStore {
 		if flvr.Flavor.Meta.Description.FlavorPart == flvrPart.String() {
-			flvrMap[flvr.Flavor.Meta.ID] = *flvr
+			flvrMap[flvr.Flavor.Meta.ID] = flvr
 		}
 	}
 

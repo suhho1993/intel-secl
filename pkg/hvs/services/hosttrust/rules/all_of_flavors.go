@@ -16,14 +16,14 @@ import (
 )
 
 type AllOfFlavors struct {
-	AllOfFlavors                    []*model.SignedFlavor
+	AllOfFlavors                    []model.SignedFlavor
 	Result                          *hvs.RuleResult
 	Markers                         []common.FlavorPart
 	SkipFlavorSignatureVerification bool
 	verifierCerts                   flavorVerifier.VerifierCertificates
 }
 
-func NewAllOfFlavors(flavors []*model.SignedFlavor, markers []common.FlavorPart, skipFlavorSignatureVerification bool, verifierCerts flavorVerifier.VerifierCertificates) AllOfFlavors {
+func NewAllOfFlavors(flavors []model.SignedFlavor, markers []common.FlavorPart, skipFlavorSignatureVerification bool, verifierCerts flavorVerifier.VerifierCertificates) AllOfFlavors {
 	return AllOfFlavors{
 		AllOfFlavors:                    flavors,
 		Markers:                         markers,
@@ -42,10 +42,7 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 	}
 	hostManifest := &report.HostManifest
 	for _, flavor := range aof.AllOfFlavors {
-		if flavor == nil {
-			continue
-		}
-		ruleFactory := flavorVerifier.NewRuleFactory(aof.verifierCerts, hostManifest, flavor, aof.SkipFlavorSignatureVerification)
+		ruleFactory := flavorVerifier.NewRuleFactory(aof.verifierCerts, hostManifest, &flavor, aof.SkipFlavorSignatureVerification)
 		policyRules, _, err := ruleFactory.GetVerificationRules()
 		if err != nil {
 			return nil, err
@@ -93,10 +90,7 @@ func (aof *AllOfFlavors) CheckAllOfFlavorsExist(report *hvs.TrustReport) bool {
 	}
 	hostManifest := &report.HostManifest
 	for _, flavor := range aof.AllOfFlavors {
-		if flavor == nil {
-			continue
-		}
-		ruleFactory := flavorVerifier.NewRuleFactory(aof.verifierCerts, hostManifest, flavor, aof.SkipFlavorSignatureVerification)
+		ruleFactory := flavorVerifier.NewRuleFactory(aof.verifierCerts, hostManifest, &flavor, aof.SkipFlavorSignatureVerification)
 		policyRules, _, err := ruleFactory.GetVerificationRules()
 		if err != nil {
 			defaultLog.WithError(err).Debug("hosttrust/all_of_flavors:checkAllOfFlavorsExist() Error applying vendor trust policy rule")

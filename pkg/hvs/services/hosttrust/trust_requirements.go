@@ -18,7 +18,7 @@ type flvGrpHostTrustReqs struct {
 	FlavorGroupId                 uuid.UUID
 	FlavorMatchPolicies           hvs.FlavorMatchPolicies
 	MatchTypeFlavorParts          map[hvs.MatchType][]cf.FlavorPart
-	AllOfFlavors                  []*hvs.SignedFlavor
+	AllOfFlavors                  []hvs.SignedFlavor
 	DefinedAndRequiredFlavorTypes map[cf.FlavorPart]bool
 	FlavorPartMatchPolicy         map[cf.FlavorPart]hvs.MatchPolicy
 	SkipFlavorSignatureVerification bool

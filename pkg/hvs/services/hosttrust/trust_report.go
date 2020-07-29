@@ -139,8 +139,7 @@ type flavorReport struct {
 }
 
 // FlavorVerify.java: 405
-func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
-	hostData *types.HostManifest, hostTrustReqs flvGrpHostTrustReqs) (*hvs.TrustReport, error) {
+func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []hvs.SignedFlavor, hostData *types.HostManifest, hostTrustReqs flvGrpHostTrustReqs) (*hvs.TrustReport, error) {
 	defaultLog.Trace("hosttrust/trust_report:verifyFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:verifyFlavors() Leaving")
 
@@ -156,8 +155,6 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 	}
 
 	newTrustCaches := make([]uuid.UUID, 0, len(flavors))
-	var individualTrustReport *hvs.TrustReport
-	var err error
 	for _, signedFlavor := range flavors {
 		for _, flvMatchPolicy := range hostTrustReqs.FlavorMatchPolicies {
 			// TODO
@@ -166,7 +163,7 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 			flvPart := signedFlavor.Flavor.Meta.Description.FlavorPart
 			if flvPart == flvMatchPolicy.FlavorPart.String() {
 
-				individualTrustReport, err = v.FlavorVerifier.Verify(hostData, signedFlavor, v.SkipFlavorSignatureVerification)
+				individualTrustReport, err := v.FlavorVerifier.Verify(hostData, &signedFlavor, v.SkipFlavorSignatureVerification)
 				if err != nil {
 					return &hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:verifyFlavors() Error verifying flavor")
 				}
@@ -249,7 +246,7 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []*hvs.SignedFlavor,
 
 // FlavorVerify.java: 684
 //TODO find flavors by required key value
-func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool, hostManifestMap map[cf.FlavorPart]map[string]interface{}) ([]*hvs.SignedFlavor, error) {
+func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool, hostManifestMap map[cf.FlavorPart]map[string]interface{}) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("hosttrust/trust_report:findFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:findFlavors() Leaving")
 
