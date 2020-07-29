@@ -232,7 +232,7 @@ func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCr
 
 	formattedQuery := "SELECT au.* FROM audit_log_entry au"
 
-	additionalOptionsQueryString = fmt.Sprintf("WHERE %s.entity_type = 'HostStatus' ", auditLogAbbrv)
+	additionalOptionsQueryString = fmt.Sprintf("WHERE %s.entity_type = 'host_status' ", auditLogAbbrv)
 
 	//Build table join string with host table if host identifier is set
 	if hsFilter.HostName != "" {
@@ -297,13 +297,13 @@ func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCr
 	if !hsFilter.FromDate.IsZero() || !hsFilter.ToDate.IsZero() {
 		// determine what dates params are set - try all combinations till one matches up
 		if !hsFilter.FromDate.IsZero() && hsFilter.ToDate.IsZero() {
-			fromDateQueryString := fmt.Sprintf("CAST(%s.created AS TIMESTAMP) >= CAST('%s' AS TIMESTAMP)", auditLogAbbrv, hsFilter.FromDate.Format(constants.ParamDateFormatUTC))
+			fromDateQueryString := fmt.Sprintf("CAST(%s.created AS TIMESTAMP) >= CAST('%s' AS TIMESTAMP)", auditLogAbbrv, hsFilter.FromDate.Format(constants.ParamDateTimeFormatUTC))
 			additionalOptionsQueryString = fmt.Sprintf("%s AND %s", additionalOptionsQueryString, fromDateQueryString)
 		} else if hsFilter.FromDate.IsZero() && !hsFilter.ToDate.IsZero() {
-			toDateQueryString := fmt.Sprintf("CAST(%s.created AS TIMESTAMP) <= CAST('%s' AS TIMESTAMP)", auditLogAbbrv, hsFilter.ToDate.Format(constants.ParamDateFormatUTC))
+			toDateQueryString := fmt.Sprintf("CAST(%s.created AS TIMESTAMP) <= CAST('%s' AS TIMESTAMP)", auditLogAbbrv, hsFilter.ToDate.Format(constants.ParamDateTimeFormatUTC))
 			additionalOptionsQueryString = fmt.Sprintf("%s AND %s", additionalOptionsQueryString, toDateQueryString)
 		} else if !hsFilter.FromDate.IsZero() && !hsFilter.ToDate.IsZero() {
-			fromToDateQueryString := fmt.Sprintf("CAST(%s.created AS TIMESTAMP) >= CAST('%s' AS TIMESTAMP) AND CAST(%s.created AS TIMESTAMP) <= CAST('%s' AS TIMESTAMP) ", auditLogAbbrv, hsFilter.FromDate.Format(constants.ParamDateFormatUTC), auditLogAbbrv, hsFilter.ToDate.Format(constants.ParamDateFormatUTC))
+			fromToDateQueryString := fmt.Sprintf("CAST(%s.created AS TIMESTAMP) >= CAST('%s' AS TIMESTAMP) AND CAST(%s.created AS TIMESTAMP) <= CAST('%s' AS TIMESTAMP) ", auditLogAbbrv, hsFilter.FromDate.Format(constants.ParamDateTimeFormatUTC), auditLogAbbrv, hsFilter.ToDate.Format(constants.ParamDateTimeFormatUTC))
 			additionalOptionsQueryString = fmt.Sprintf("%s AND %s", additionalOptionsQueryString, fromToDateQueryString)
 		}
 	}
@@ -399,7 +399,7 @@ func auditlogEntryToHostStatus(auRecord models.AuditLogEntry) (*hvs.HostStatus, 
 
 	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[2]) && auRecord.Data.Columns[2].Value != nil {
 		createdString := fmt.Sprintf("%v", auRecord.Data.Columns[2].Value)
-		hostStatus.Created, err = time.Parse(constants.ParamDateFormatUTC, createdString)
+		hostStatus.Created, err = time.Parse(time.RFC3339Nano, createdString)
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToHostStatus() - error parsing Created timestamp")
 		}

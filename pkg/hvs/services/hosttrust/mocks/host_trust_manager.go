@@ -15,7 +15,7 @@ type MockHostTrustManager struct{}
 func (mock *MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch bool) (*models.HVSReport, error) {
 	store := mocks.NewMockReportStore()
 	report, _ := store.Search(&models.ReportFilterCriteria{HostID: hostId})
-	return report[0], nil
+	return &report[0], nil
 }
 
 func (mock *MockHostTrustManager) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {

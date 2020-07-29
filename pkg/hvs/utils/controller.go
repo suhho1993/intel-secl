@@ -6,8 +6,10 @@
 package utils
 
 import (
-	"errors"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	"github.com/pkg/errors"
 	"net/url"
+	"time"
 )
 
 func ValidateQueryParams(params url.Values, validQueries map[string]bool) error {
@@ -20,4 +22,20 @@ func ValidateQueryParams(params url.Values, validQueries map[string]bool) error 
 		}
 	}
 	return nil
+}
+
+func ValidateDateQueryParam(dt string) (time.Time, error){
+	defaultLog.Trace("utils/controller:ValidateDateQueryParam() Entering")
+	defer defaultLog.Trace("utils/controller:ValidateDateQueryParam() Leaving")
+	pTime, err := time.Parse(constants.ParamDateFormat, dt)
+	if err != nil {
+		pTime, err = time.Parse(constants.ParamDateTimeFormat, dt)
+		if err != nil {
+			pTime, err = time.Parse(time.RFC3339Nano, dt)
+				if err != nil {
+					return time.Time{}, errors.Wrap(err, "One of Valid date formats (YYYY-MM-DD)|(YYYY-MM-DD hh:mm:ss)|(YYYY-MM-DDThh:mm:ss.000Z)|(YYYY-MM-DDThh:mm:ss.000000Z) must be specified")
+				}
+		}
+	}
+	return pTime, nil
 }

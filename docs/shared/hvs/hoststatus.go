@@ -80,13 +80,23 @@ type HostStatusCollection struct {
 //        - unsupported_tpm
 //      required: false
 //    - name: fromDate
-//      description: Filters HostStatus records created after this date.
+//      description: |
+//        Filters HostStatus records created after this date.
+//         date                                   Ex: fromDate=2006-01-02
+//         date+time                              Ex: fromDate=2006-01-02 15:04:05
+//         date+time(with milli seconds)          Ex: fromDate=2006-01-02T15:04:05.000Z
+//         date+time(with micro seconds)          Ex: fromDate=2006-01-02T15:04:05.000000Z
 //      in: query
 //      type: string
 //      format: date-time
 //      required: false
 //    - name: toDate
-//      description: Filters HostStatus records created before this date.
+//      description: |
+//        Filters HostStatus records created before this date.
+//         date                                   Ex: fromDate=2006-01-02
+//         date+time                              Ex: fromDate=2006-01-02 15:04:05
+//         date+time(with milli seconds)          Ex: fromDate=2006-01-02T15:04:05.000Z
+//         date+time(with micro seconds)          Ex: fromDate=2006-01-02T15:04:05.000000Z
 //      in: query
 //      type: string
 //      format: date-time

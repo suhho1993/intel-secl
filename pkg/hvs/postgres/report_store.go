@@ -127,7 +127,7 @@ func (r *ReportStore) Create(re *models.HVSReport) (*models.HVSReport, error) {
 }
 
 // Search retrieves collection of HVSReport pertaining to a user-provided ReportFilterCriteria
-func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.HVSReport, error) {
+func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]models.HVSReport, error) {
 	defaultLog.Trace("postgres/report_store:Search() Entering")
 	defer defaultLog.Trace("postgres/report_store:Search() Leaving")
 
@@ -187,7 +187,7 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 		}
 		defer rows.Close()
 
-		reports := []*models.HVSReport{}
+		var reports []models.HVSReport
 
 		for rows.Next() {
 			result := models.HVSReport{}
@@ -195,7 +195,7 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 			if err := rows.Scan(&result.ID, &result.HostID, (*PGTrustReport)(&result.TrustReport), &result.CreatedAt, &result.Expiration, &result.Saml); err != nil {
 				return nil, errors.Wrap(err, "postgres/report_store:Search() failed to scan record")
 			}
-			reports = append(reports, &result)
+			reports = append(reports, result)
 		}
 
 		return reports, nil
@@ -212,7 +212,7 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 		}
 		defer rows.Close()
 
-		reports := []*models.HVSReport{}
+		var reports []models.HVSReport
 		for rows.Next() {
 			result := models.AuditLogEntry{}
 			if err := rows.Scan(&result.ID, &result.EntityID, &result.EntityType, &result.CreatedAt, &result.Action, (*PGAuditLogData)(&result.Data)); err != nil {
@@ -225,7 +225,7 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.H
 			if err != nil {
 				return nil, errors.Wrap(err, "postgres/report_store:Search() convert auditloag entry into report")
 			}
-			reports = append(reports, hvsReport)
+			reports = append(reports, *hvsReport)
 		}
 
 		return reports, nil
@@ -276,8 +276,7 @@ func auditlogEntryToReport(auRecord models.AuditLogEntry) (*models.HVSReport, er
 	var err error
 	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[3]) && auRecord.Data.Columns[2].Value != nil {
 		createdString := fmt.Sprintf("%v", auRecord.Data.Columns[3].Value)
-		//TODO use standard UTC time in auditlog handler while inserting time from reports.
-		hvsReport.CreatedAt, err = time.Parse("2006-01-02T15:04:05-0700", createdString)
+		hvsReport.CreatedAt, err = time.Parse(time.RFC3339Nano, createdString)
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToReport() - error parsing time")
 		}
@@ -285,8 +284,7 @@ func auditlogEntryToReport(auRecord models.AuditLogEntry) (*models.HVSReport, er
 
 	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[4]) && auRecord.Data.Columns[4].Value != nil {
 		expString := fmt.Sprintf("%v", auRecord.Data.Columns[4].Value)
-		//TODO use standard UTC time in auditlog handler while inserting time from reports.
-		hvsReport.Expiration, err = time.Parse("2006-01-02T15:04:05-0700", expString)
+		hvsReport.Expiration, err = time.Parse(time.RFC3339Nano, expString)
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToReport() - error parsing time")
 		}
@@ -359,7 +357,7 @@ func buildReportSearchQueryWithCriteria(tx *gorm.DB, hostHardwareID, hostID uuid
 	}
 
 	//TODO rename after testing
-	tx = tx.Where(entity + ".entity_type = 'Report'")
+	tx = tx.Where(entity + ".entity_type = 'report'")
 
 	if hostName != "" {
 		tx = tx.Where("h.name = ?", hostName)

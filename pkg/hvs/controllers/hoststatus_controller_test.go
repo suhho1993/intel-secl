@@ -307,7 +307,7 @@ var _ = Describe("HostStatusController", func() {
 		Context("Search HostStatuses from data store with valid fromDate and toDate", func() {
 			It("Should return a list of HostStatus", func() {
 				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostStatusController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"&toDate="+time.Now().Format(constants.ParamDateFormat), nil)
+				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateTimeFormat)+"&toDate="+time.Now().Format(constants.ParamDateTimeFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -324,7 +324,7 @@ var _ = Describe("HostStatusController", func() {
 		Context("Search HostStatuses from data store with invalid fromDate and toDate", func() {
 			It("Should return a list of HostStatus", func() {
 				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostStatusController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"ABC"+"&toDate="+time.Now().Format(constants.ParamDateFormat), nil)
+				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateTimeFormat)+"ABC"+"&toDate="+time.Now().Format(constants.ParamDateTimeFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()

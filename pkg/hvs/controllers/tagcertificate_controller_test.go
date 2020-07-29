@@ -455,7 +455,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with valid ValidOn date", func() {
 			It("Should return a list of TagCertificates valid on the ValidOn date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateTimeFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -472,7 +472,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with valid ValidBefore date", func() {
 			It("Should return a list of TagCertificates which are valid before the ValidBefore date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().AddDate(1, -6, 0).Format(constants.ParamDateFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().AddDate(1, -6, 0).Format(constants.ParamDateTimeFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -489,7 +489,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with valid ValidAfter", func() {
 			It("Should return a list of TagCertificates which are valid after the ValidAfter date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().AddDate(0, -6, 0).Format(constants.ParamDateFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().AddDate(0, -6, 0).Format(constants.ParamDateTimeFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -506,7 +506,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with invalid ValidOn date", func() {
 			It("Should get an empty list of TagCertificates and a 400 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"0000000000000", nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateTimeFormat)+"0000000000000", nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -523,7 +523,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with invalid ValidBefore date", func() {
 			It("Should get an empty list of TagCertificates and a 400 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"01010101010", nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateTimeFormat)+"01010101010", nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -540,7 +540,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with invalid ValidAfter date", func() {
 			It("Should get an empty list of TagCertificates and a 400 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"ABC", nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateTimeFormat)+"ABC", nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()

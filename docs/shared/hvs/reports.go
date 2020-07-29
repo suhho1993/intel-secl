@@ -87,8 +87,10 @@ type ReportCreateRequest struct {
 // - name: fromDate
 //   description: |
 //     Results returned will be restricted to after this date. Currently the following ISO 8601 date formats are supported for date parameters
-//         date               Ex: fromDate=2006-01-02
-//         date+time          Ex: fromDate=2015-06-05T00:00Z
+//         date                                   Ex: fromDate=2006-01-02
+//         date+time                              Ex: fromDate=2006-01-02 15:04:05
+//         date+time(with milli seconds)          Ex: fromDate=2006-01-02T15:04:05.000Z
+//         date+time(with micro seconds)          Ex: fromDate=2006-01-02T15:04:05.000000Z
 //   in: query
 //   type: string
 //   format: date-time
@@ -96,8 +98,10 @@ type ReportCreateRequest struct {
 // - name: toDate
 //   description: |
 //     Results returned will be restricted to before this date. Currently the following ISO 8601 date formats are supported for date parameters
-//         date               Ex: toDate=2006-01-02
-//         date+time          Ex: toDate=2015-06-05T00:00Z
+//         date                                   Ex: toDate=2006-01-02
+//         date+time                              Ex: toDate=2006-01-02 15:04:05
+//         date+time(with milli seconds)          Ex: toDate=2006-01-02T15:04:05.000Z
+//         date+time(with micro seconds)          Ex: toDate=2006-01-02T15:04:05.000000Z
 //   in: query
 //   type: string
 //   format: date-time

@@ -21,7 +21,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // HostStatusController contains logic for handling HostStatus API requests
@@ -142,9 +141,9 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	// fromDate
 	fromDate := strings.TrimSpace(params.Get("fromDate"))
 	if fromDate != "" {
-		pTime, err := time.Parse(constants.ParamDateFormat, fromDate)
+		pTime, err := utils.ValidateDateQueryParam(fromDate)
 		if err != nil {
-			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for FromDate must be specified")
+			return nil, errors.Wrap(err, "Invalid fromDate specified")
 		}
 		hfc.FromDate = pTime
 	}
@@ -152,9 +151,9 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	// toDate
 	toDate := strings.TrimSpace(params.Get("toDate"))
 	if toDate != "" {
-		pTime, err := time.Parse(constants.ParamDateFormat, toDate)
+		pTime, err := utils.ValidateDateQueryParam(toDate)
 		if err != nil {
-			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ToDate must be specified")
+			return nil, errors.Wrap(err, "Invalid toDate specified")
 		}
 		hfc.ToDate = pTime
 	}
@@ -163,7 +162,7 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	latestPerHost := strings.TrimSpace(strings.ToLower(params.Get("latestPerHost")))
 	if latestPerHost != "" {
 		lph, err := strconv.ParseBool(latestPerHost)
-		if err != nil {
+		if err != nil 	{
 			return nil, errors.Wrap(err, "latestPerHost must be true or false")
 		}
 		hfc.LatestPerHost = lph

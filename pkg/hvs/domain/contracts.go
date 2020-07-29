@@ -90,7 +90,7 @@ type (
 	}
 
 	ReportStore interface {
-		Search(*models.ReportFilterCriteria) ([]*models.HVSReport, error)
+		Search(*models.ReportFilterCriteria) ([]models.HVSReport, error)
 		Retrieve(uuid.UUID) (*models.HVSReport, error)
 		Create(*models.HVSReport) (*models.HVSReport, error)
 		Update(*models.HVSReport) (*models.HVSReport, error)

@@ -57,20 +57,20 @@ func (store *MockReportStore) Delete(id uuid.UUID) error {
 }
 
 //Search returns a collection of HVSReports filtered as per ReportFilterCriteria
-func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*models.HVSReport, error) {
+func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]models.HVSReport, error) {
 	if criteria == nil || reflect.DeepEqual(*criteria, models.ReportFilterCriteria{}) {
 
 		return nil, nil
 	}
 	hostStore := NewMockHostStore()
 	hostStatusStore := NewFakeHostStatusStore()
-	var reports []*models.HVSReport
+	var reports []models.HVSReport
 	var hosts []*hvs.Host
 	var hostStatuses []hvs.HostStatus
 	if criteria.ID != uuid.Nil {
 		r, _ := store.Retrieve(criteria.ID)
 		if r != nil {
-			reports = append(reports, r)
+			reports = append(reports, *r)
 		}
 	} else if criteria.HostHardwareID != uuid.Nil || criteria.HostName != "" {
 		for _, t := range hostStore.hostStore {
@@ -81,14 +81,14 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 		for _, h := range hosts {
 			for _, r := range store.reportStore {
 				if h.Id == r.HostID {
-					reports = append(reports, &r)
+					reports = append(reports, r)
 				}
 			}
 		}
 	} else if criteria.HostID != uuid.Nil {
 		for _, r := range store.reportStore {
 			if criteria.HostID == r.HostID {
-				reports = append(reports, &r)
+				reports = append(reports, r)
 			}
 		}
 	} else if criteria.HostStatus != "" {
@@ -100,19 +100,19 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]*
 		for _, h := range hostStatuses {
 			for _, r := range store.reportStore {
 				if h.HostID == r.HostID {
-					reports = append(reports, &r)
+					reports = append(reports, r)
 				}
 			}
 		}
 	} else if !criteria.ToDate.IsZero() {
 		for _, r := range store.reportStore {
 			if r.Expiration.Before(criteria.ToDate) {
-				reports = append(reports, &r)
+				reports = append(reports, r)
 			}
 		}
 	} else { // criteria is all empty return all records
 		for _, r := range store.reportStore {
-			reports = append(reports, &r)
+			reports = append(reports, r)
 		}
 
 	}
@@ -141,8 +141,8 @@ func NewMockReportStore() *MockReportStore {
 	trustReportBytes, _ := ioutil.ReadFile("../domain/mocks/resources/trust_report.json")
 	var trustReport hvs.TrustReport
 	json.Unmarshal(trustReportBytes, &trustReport)
-	created, _ := time.Parse(constants.ParamDateFormat, "2020-06-21 07:18:00.57")
-	expiration, _ := time.Parse(constants.ParamDateFormat, "2020-06-22 07:18:00.57")
+	created, _ := time.Parse(constants.ParamDateTimeFormat, "2020-06-21 07:18:00.57")
+	expiration, _ := time.Parse(constants.ParamDateTimeFormat, "2020-06-22 07:18:00.57")
 	store.Create(&models.HVSReport{
 		ID:          uuid.MustParse("15701f03-7b1d-49f9-ac62-6b9b0728bdb3"),
 		HostID:      uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
@@ -165,7 +165,7 @@ func NewMockReportStore() *MockReportStore {
 }
 
 func NewEmptyMockReportStore() domain.ReportStore {
-	store := &MockReportStore{}
+	store := MockReportStore{}
 	store.reportStore = make(map[uuid.UUID]models.HVSReport)
-	return store
+	return &store
 }

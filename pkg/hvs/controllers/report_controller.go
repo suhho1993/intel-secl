@@ -22,7 +22,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type ReportController struct {
@@ -84,7 +83,7 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateReque
 		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Error while searching host")
 	}
 
-	if hosts == nil || len(hosts) == 0{
+	if hosts == nil || len(hosts) == 0 {
 		return nil, errors.New("controllers/report_controller:createReport() Host for given criteria does not exist")
 	}
 	//Always only one record is returned for the particular criteria
@@ -198,7 +197,7 @@ func (controller ReportController) Search(w http.ResponseWriter, r *http.Request
 		Reports: []*hvs.Report{},
 	}
 	for _, hvsReport := range hvsReportCollection {
-		reportCollection.Reports = append(reportCollection.Reports, ConvertToReport(hvsReport))
+		reportCollection.Reports = append(reportCollection.Reports, ConvertToReport(&hvsReport))
 	}
 	secLog.Infof("%s: Reports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
 	return reportCollection, http.StatusOK, nil
@@ -296,12 +295,9 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	// fromDate
 	fromDate := strings.TrimSpace(params.Get("fromDate"))
 	if fromDate != "" {
-		pTime, err := time.Parse(constants.ParamDateFormat, fromDate)
+		pTime, err := utils.ValidateDateQueryParam(fromDate)
 		if err != nil {
-			pTime, err = time.Parse(constants.ParamDateFormatUTC, fromDate)
-			if err != nil {
-				return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for fromDate must be specified")
-			}
+			return nil, errors.Wrap(err, "Invalid fromDate specified")
 		}
 		rfc.FromDate = pTime
 	}
@@ -309,12 +305,9 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	// toDate
 	toDate := strings.TrimSpace(params.Get("toDate"))
 	if toDate != "" {
-		pTime, err := time.Parse(constants.ParamDateFormat, toDate)
+		pTime, err := utils.ValidateDateQueryParam(toDate)
 		if err != nil {
-			pTime, err = time.Parse(constants.ParamDateFormatUTC, toDate)
-			if err != nil {
-				return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ToDate must be specified")
-			}
+			return nil, errors.Wrap(err, "Invalid toDate specified")
 		}
 		rfc.ToDate = pTime
 	}

@@ -15,8 +15,9 @@ const (
 	ServiceUserName = "hvs"
 
 	// Timestamp operations
-	ParamDateFormat    = "2006-01-02 15:04:05"
-	ParamDateFormatUTC = "2006-01-02T15:04:05.000Z"
+	ParamDateFormat                    = "2006-01-02"
+	ParamDateTimeFormat                = "2006-01-02 15:04:05"
+	ParamDateTimeFormatUTC             = "2006-01-02T15:04:05.000Z"
 
 	// service remove command
 	ServiceRemoveCmd = "systemctl disable hvs"
