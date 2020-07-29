@@ -1,4 +1,5 @@
-CREATE TABLE rotate_audit_log_args (
+DROP TABLE IF EXISTS rotate_audit_log_args;
+CREATE TABLE IF NOT EXISTS rotate_audit_log_args (
     max_row_count integer,
     num_rotations integer
 );

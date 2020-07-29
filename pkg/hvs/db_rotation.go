@@ -11,7 +11,8 @@ import (
 var dbScriptConfig = "INSERT INTO rotate_audit_log_args (max_row_count, num_rotations) VALUES (%d, %d);"
 
 var dbScript = `
-CREATE TABLE rotate_audit_log_args (
+DROP TABLE IF EXISTS rotate_audit_log_args;
+CREATE TABLE IF NOT EXISTS rotate_audit_log_args (
     max_row_count integer,
     num_rotations integer
 );
@@ -118,9 +119,7 @@ func (a *App) configDBRotation() error {
 	if c == nil {
 		return errors.New("Failed to load configuration file")
 	}
-	dbConf := a.configuration().DB
-	// test connection and create schemas
-	dataStore, err := postgres.NewDataStore(postgres.NewDatabaseConfig(constants.DBTypePostgres, &dbConf))
+	dataStore, err := postgres.NewDataStore(postgres.NewDatabaseConfig(constants.DBTypePostgres, &c.DB))
 	if err != nil {
 		return errors.Wrap(err, "Failed to connect database")
 	}

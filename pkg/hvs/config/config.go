@@ -58,7 +58,7 @@ type SAMLConfig struct {
 }
 
 type AuditLogConfig struct {
-	MaxRowCount int `yaml:"max-row" mapstructure:"max-row"`
+	MaxRowCount int `yaml:"max-row-count" mapstructure:"max-row-count"`
 	NumRotated  int `yaml:"number-rotated" mapstructure:"number-rotated"`
 	BufferSize  int `yaml:"buffer-size" mapstructure:"buffer-size"`
 }
