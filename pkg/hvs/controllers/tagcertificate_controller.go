@@ -87,7 +87,7 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 	defaultLog.Trace("controllers/tagcertificate_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/tagcertificate_controller:Create() Leaving")
 
-	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -346,7 +346,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	defaultLog.Trace("controllers/tagcertificate_controller:Deploy() Entering")
 	defer defaultLog.Trace("controllers/tagcertificate_controller:Deploy() Leaving")
 
-	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -413,13 +413,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Tag Certificate Deploy failure: Target Host lookup failed"}
 	}
 
-	// handle more than 1 record returned for HWUUID
-	if len(hosts) > 1 {
-		secLog.WithField("Certid", dtcReq.CertID).Warnf("controllers/tagcertificate_controller:Deploy() Multiple hosts with hardware UUID %s were found", tc.HardwareUUID)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Tag Certificate Deploy failure: multiple hosts linked to Tag Certificate found"}
-	}
-
-	// Unwrap Host record from the collection
+	// Unwrap the first Host record from the collection
 	targetHost := hosts[0]
 	defaultLog.WithField("HardwareUUID", targetHost.HardwareUuid).Debugf("controllers/tagcertificate_controller:Deploy() Found Host with ID %s", targetHost.Id)
 

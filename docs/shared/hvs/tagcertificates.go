@@ -249,7 +249,7 @@ type TagCertificateCollection struct {
 
 // ---
 //
-// swagger:operation POST /rpc/deploy-tag-certificates TagCertificates DeployTagCertificate
+// swagger:operation POST /rpc/deploy-tag-certificate TagCertificates DeployTagCertificate
 // ---
 //
 // description: |
