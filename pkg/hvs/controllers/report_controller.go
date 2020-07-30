@@ -111,7 +111,11 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
-
+	if r.Header.Get("Accept") != constants.HTTPMediaTypeSaml {
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{
+			Message: "Invalid Accept type",
+		}
+	}
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/report_controller:CreateSaml() The request body is not provided")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
@@ -138,13 +142,13 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml()  Error while creating report from Flavor verify queue")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
 	}
-	samlReport, err := hvsReport.GetSaml()
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() Error while retrieving saml from report")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while retrieving saml from report"}
 	}
 	secLog.WithField("Host Name", hvsReport.TrustReport.HostManifest.HostInfo.HostName).Infof("%s: saml report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
-	return samlReport, http.StatusCreated, nil
+	w.Header().Set("Content-Type", constants.HTTPMediaTypeSaml)
+	return hvsReport.Saml, http.StatusCreated, nil
 }
 
 func (controller ReportController) Retrieve(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -207,6 +211,12 @@ func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Req
 	defaultLog.Trace("controllers/report_controller:SearchSaml() Entering")
 	defer defaultLog.Trace("controllers/report_controller:SearchSaml() Leaving")
 
+	if r.Header.Get("Accept") != constants.HTTPMediaTypeSaml {
+		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{
+			Message: "Invalid Accept type",
+		}
+	}
+
 	//Search params for reports is same as that of host status APIs
 	if err := utils.ValidateQueryParams(r.URL.Query(), hostStatusSearchParams); err != nil {
 		secLog.Errorf("controllers/report_controller:Search() %s", err.Error())
@@ -226,18 +236,17 @@ func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Req
 		return nil, http.StatusInternalServerError, errors.Errorf("HVSReport search operation failed")
 	}
 
-	var samlStruct hvs.Saml
-
-	var samlCollection []*hvs.Saml
+	var samlCollection strings.Builder
 	for _, hvsReport := range hvsReportCollection {
-		samlStruct, err = hvsReport.GetSaml()
 		if err != nil {
 			defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml() Error while retrieving saml from report")
 		}
-		samlCollection = append(samlCollection, &samlStruct)
+		samlCollection.WriteString(hvsReport.Saml)
 	}
+
 	secLog.Infof("%s: SamlReports searched by: %s", commLogMsg.AuthorizedAccess, r.RemoteAddr)
-	return samlCollection, http.StatusOK, nil
+	w.Header().Set("Content-Type", constants.HTTPMediaTypeSaml)
+	return samlCollection.String(), http.StatusOK, nil
 }
 
 // getReportFilterCriteria checks for set filter params in the Search request and returns a valid ReportFilterCriteria

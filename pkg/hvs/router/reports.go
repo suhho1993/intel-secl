@@ -28,7 +28,7 @@ func SetReportRoutes(router *mux.Router, store *postgres.DataStore, hostTrustMan
 	reportIdExpr := fmt.Sprintf("%s%s", "/reports/", validation.IdReg)
 
 	router.Handle("/reports",
-		ErrorHandler(permissionsHandler(SamlAssertionResponseHandler(reportController.CreateSaml),
+		ErrorHandler(permissionsHandler(ResponseHandler(reportController.CreateSaml),
 			[]string{constants.ReportCreate}))).Methods("POST").Headers("Accept", constants.HTTPMediaTypeSaml)
 
 	router.Handle("/reports",
@@ -36,7 +36,7 @@ func SetReportRoutes(router *mux.Router, store *postgres.DataStore, hostTrustMan
 			[]string{constants.ReportCreate}))).Methods("POST")
 
 	router.Handle("/reports",
-		ErrorHandler(permissionsHandler(SamlAssertionResponseHandler(reportController.SearchSaml),
+		ErrorHandler(permissionsHandler(ResponseHandler(reportController.SearchSaml),
 			[]string{constants.ReportSearch}))).Methods("GET").Headers("Accept", constants.HTTPMediaTypeSaml)
 
 	router.Handle(reportIdExpr,

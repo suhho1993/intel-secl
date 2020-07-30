@@ -32,10 +32,10 @@ func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, in
 		if err != nil {
 			return errorFormatter(err, status)
 		}
+		w.WriteHeader(status)
 		if data != nil {
 			w.Write([]byte(fmt.Sprintf("%v", data)))
 		}
-		w.WriteHeader(status)
 		return nil
 	}
 }
@@ -67,28 +67,6 @@ func JsonResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}
 				secLog.WithError(err).Errorf("Error from Handler: %s\n", err.Error())
 			}
 		}
-		return nil
-	}
-}
-
-// SamlAssertionResponseHandler handler for writing response header and body for all handler functions that produces saml assertion
-func SamlAssertionResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) endpointHandler {
-	defaultLog.Trace("router/handlers:SamlAssertionResponseHandler() Entering")
-	defer defaultLog.Trace("router/handlers:SamlAssertionResponseHandler() Leaving")
-
-	return func(w http.ResponseWriter, r *http.Request) error {
-		if r.Header.Get("Accept") != constants.HTTPMediaTypeSaml {
-			return errorFormatter(&commErr.EndpointError{
-				Message: "Invalid Accept type",
-			}, http.StatusUnsupportedMediaType)
-		}
-
-		data, status, err := h(w, r) // execute application handler
-		if err != nil {
-			return errorFormatter(err, status)
-		}
-		w.Header().Set("Content-Type", constants.HTTPMediaTypeSaml)
-		xmlResponseWriter(w, status, data)
 		return nil
 	}
 }

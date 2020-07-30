@@ -21,7 +21,7 @@ type Report struct {
 	TrustInformation  TrustInformation    `json:"trust_information"`
 	HostID            uuid.UUID           `json:"host_id"`
 	TrustReport       TrustReport         `json:"-"`
-	Saml              Saml                `json:"-"`
+	Saml              string              `json:"-"`
 	HostInfo          taModel.HostInfo    `json:"host_info"`
 	CreatedAt         time.Time           `json:"created"`
 	Expiration        time.Time           `json:"expiration"`

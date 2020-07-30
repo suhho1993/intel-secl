@@ -279,7 +279,7 @@ var _ = Describe("ReportController", func() {
 	Describe("Create a new SAML Report", func() {
 		Context("Provide a valid Create request", func() {
 			It("Should create a new Report", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.SamlAssertionResponseHandler(reportController.CreateSaml))).Methods("POST")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.CreateSaml))).Methods("POST")
 				body := `{
 							"host_name": "localhost1"
 						}`
@@ -301,7 +301,7 @@ var _ = Describe("ReportController", func() {
 
 		Context("Provide a Create request that contains malformed hostname", func() {
 			It("Should fail to create Report", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.SamlAssertionResponseHandler(reportController.CreateSaml))).Methods("POST")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.CreateSaml))).Methods("POST")
 				hostJson := `{
 								"host_name": "localhost3<>"
 							}`
@@ -325,7 +325,7 @@ var _ = Describe("ReportController", func() {
 	Describe("Search for all Saml Reports", func() {
 		Context("Get all the Reports", func() {
 			It("Should get list of all Saml Reports", func() {
-				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.SamlAssertionResponseHandler(reportController.SearchSaml))).Methods("GET")
+				router.Handle("/reports", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(reportController.SearchSaml))).Methods("GET")
 				req, err := http.NewRequest("GET", "/reports", nil)
 				Expect(err).NotTo(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeSaml)
@@ -333,7 +333,7 @@ var _ = Describe("ReportController", func() {
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusOK))
 
-				var samlCollection []hvs.Saml
+				var samlCollection []string
 				xml.NewDecoder(w.Body).Decode(&samlCollection)
 				//TODO search should return actually 2
 				Expect(len(samlCollection)).To(Equal(1))
