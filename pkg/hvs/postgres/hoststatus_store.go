@@ -61,11 +61,7 @@ func (hss *HostStatusStore) Retrieve(hostStatusId uuid.UUID) (*hvs.HostStatus, e
 	defaultLog.Trace("postgres/hoststatus_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/hoststatus_store:Retrieve() Leaving")
 
-	dbHostStatus := hostStatus{
-		ID: hostStatusId,
-	}
-
-	row := hss.Store.Db.Model(&dbHostStatus).Where(&dbHostStatus).Row()
+	row := hss.Store.Db.Model(&hostStatus{}).Where("id = ?", hostStatusId).Row()
 	result := hvs.HostStatus{}
 	if err := row.Scan(&result.ID, &result.HostID, (*PGHostStatusInformation)(&result.HostStatusInformation), (*PGHostManifest)(&result.HostManifest), &result.Created); err != nil {
 		return nil, errors.Wrap(err, "postgres/hoststatus_store:Retrieve() failed to retrieve hostStatus")
@@ -313,7 +309,7 @@ func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCr
 	}
 
 	if hsFilter.LatestPerHost {
-		maxDateQueryString := fmt.Sprintf("INNER JOIN (SELECT entity_id, max(auj.created) AS max_date"+
+		maxDateQueryString := fmt.Sprintf("INNER JOIN (SELECT entity_id, max(auj.created) AS max_date "+
 			"FROM audit_log_entry auj %s GROUP BY entity_id) a "+
 			"ON a.entity_id = au.entity_id "+
 			"AND a.max_date = au.created", additionalOptionsQueryString)
@@ -382,8 +378,8 @@ func buildLatestHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFi
 }
 
 func auditlogEntryToHostStatus(auRecord models.AuditLogEntry) (*hvs.HostStatus, error) {
-	defaultLog.Trace("postgres/report_store:auditlogEntryToHostStatus() Entering")
-	defer defaultLog.Trace("postgres/report_store:auditlogEntryToHostStatus() Leaving")
+	defaultLog.Trace("postgres/hoststatus_store:auditlogEntryToHostStatus() Entering")
+	defer defaultLog.Trace("postgres/hoststatus_store:auditlogEntryToHostStatus() Leaving")
 
 	var hostStatus hvs.HostStatus
 	var err error
@@ -392,38 +388,37 @@ func auditlogEntryToHostStatus(auRecord models.AuditLogEntry) (*hvs.HostStatus, 
 		hostStatus.ID = auRecord.EntityID
 	}
 
-	// TODO remove duplicate data: first column and the entityID are both same
 	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[1]) && auRecord.Data.Columns[1].Value != nil {
 		hostStatus.HostID = uuid.MustParse(fmt.Sprintf("%v", auRecord.Data.Columns[1].Value))
 	}
 
 	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[2]) && auRecord.Data.Columns[2].Value != nil {
-		createdString := fmt.Sprintf("%v", auRecord.Data.Columns[2].Value)
-		hostStatus.Created, err = time.Parse(time.RFC3339Nano, createdString)
+		c, err := json.Marshal(auRecord.Data.Columns[2].Value)
 		if err != nil {
-			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToHostStatus() - error parsing Created timestamp")
+			return nil, errors.Wrap(err, "postgres/hoststatus_store:auditlogEntryToHostStatus() - marshalling HostStatusInformation failed")
+		}
+		err = json.Unmarshal(c, &hostStatus.HostStatusInformation)
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/hoststatus_store:auditlogEntryToHostStatus() - unmarshalling HostStatusInformation failed")
 		}
 	}
 
 	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[3]) && auRecord.Data.Columns[3].Value != nil {
 		c, err := json.Marshal(auRecord.Data.Columns[3].Value)
 		if err != nil {
-			return nil, errors.Wrap(err, "postgres/hoststatus_store:auditlogEntryToHostStatus() - marshalling HostStatusInformation failed")
-		}
-		err = json.Unmarshal(c, &hostStatus.HostStatusInformation)
-		if err != nil {
-			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToHostStatus() - unmarshalling HostStatusInformation failed")
-		}
-	}
-
-	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[4]) && auRecord.Data.Columns[4].Value != nil {
-		c, err := json.Marshal(auRecord.Data.Columns[4].Value)
-		if err != nil {
 			return nil, errors.Wrap(err, "postgres/hoststatus_store:auditlogEntryToHostStatus() - marshalling HostManifest failed")
 		}
 		err = json.Unmarshal(c, &hostStatus.HostManifest)
 		if err != nil {
-			return nil, errors.Wrap(err, "postgres/reports_store:auditlogEntryToHostStatus() - unmarshalling HostManifest failed")
+			return nil, errors.Wrap(err, "postgres/hoststatus_store:auditlogEntryToHostStatus() - unmarshalling HostManifest failed")
+		}
+	}
+
+	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[4]) && auRecord.Data.Columns[4].Value != nil {
+		createdString := fmt.Sprintf("%v", auRecord.Data.Columns[4].Value)
+		hostStatus.Created, err = time.Parse(time.RFC3339Nano, createdString)
+		if err != nil {
+			return nil, errors.Wrap(err, "postgres/hoststatus_store:auditlogEntryToHostStatus() - error parsing created timestamp")
 		}
 	}
 

@@ -12,7 +12,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -158,8 +157,7 @@ func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriter
 		var hscFiltered []hvs.HostStatus
 		// get the start and end dates
 		toDate := time.Now()
-		numDaysSub, _ := time.ParseDuration(strconv.Itoa(criteria.NumberOfDays*24) + "h")
-		fromDate := toDate.Add(-numDaysSub)
+		fromDate := toDate.AddDate(0, 0, -criteria.NumberOfDays)
 		for _, hs := range hsc {
 			if hs.Created.After(fromDate) && hs.Created.Before(toDate) {
 				hscFiltered = append(hscFiltered, hs)

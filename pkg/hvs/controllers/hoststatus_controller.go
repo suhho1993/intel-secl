@@ -14,6 +14,7 @@ import (
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
+	"time"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
@@ -28,8 +29,8 @@ type HostStatusController struct {
 	Store domain.HostStatusStore
 }
 
-var hostStatusSearchParams = map[string]bool {"id": true, "hostId": true, "hostHardwareId": true, "hostName": true, "hostStatus": true,
-	"fromDate": true, "toDate": true, "latestPerHost": true,"numberOfDays": true, "limit": true}
+var hostStatusSearchParams = map[string]bool{"id": true, "hostId": true, "hostHardwareId": true, "hostName": true, "hostStatus": true,
+	"fromDate": true, "toDate": true, "latestPerHost": true, "numberOfDays": true, "limit": true}
 
 // Search returns a collection of HostStatus based on HostStatusFilter criteria
 func (controller HostStatusController) Search(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
@@ -165,7 +166,7 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	latestPerHost := strings.TrimSpace(strings.ToLower(params.Get("latestPerHost")))
 	if latestPerHost != "" {
 		lph, err := strconv.ParseBool(latestPerHost)
-		if err != nil 	{
+		if err != nil {
 			return nil, errors.Wrap(err, "latestPerHost must be true or false")
 		}
 		hfc.LatestPerHost = lph
@@ -178,13 +179,17 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 	if numberOfDays != "" {
 		numDays, err := strconv.Atoi(numberOfDays)
 		if err != nil || numDays <= 0 {
-			return nil, errors.New("NumberOfDays must be an integer > 0")
+			return nil, errors.New("numberOfDays must be an integer > 0")
 		}
+
+		// override the existing fromDate/toDate params
+		hfc.ToDate = time.Now()
+		hfc.FromDate = hfc.ToDate.AddDate(0, 0, -numDays)
+
 		hfc.NumberOfDays = numDays
 	}
 
 	// rowLimit - defaults per set limit
-	//TODO: Archs to determine if this is still needed
 	rowLimit := strings.TrimSpace(params.Get("limit"))
 	if rowLimit != "" {
 		rLimit, err := strconv.Atoi(rowLimit)
