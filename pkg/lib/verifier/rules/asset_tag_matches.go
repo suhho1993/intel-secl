@@ -41,8 +41,13 @@ func (rule *assetTagMatches) Apply(hostManifest *types.HostManifest) (*hvs.RuleR
 	result := hvs.RuleResult{}
 	result.Trusted = true
 	result.Rule.Name = constants.RuleAssetTagMatches
+	result.Rule.ExpectedTag = rule.expectedAssetTagDigest
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartAssetTag)
-	result.Rule.Tags = rule.tags
+	tags := map[string]string{}
+	for _, kvAttr := range rule.tags {
+		tags[kvAttr.Key] = kvAttr.Value
+	}
+	result.Rule.Tags = tags
 
 	if len(hostManifest.AssetTagDigest) == 0 {
 		fault = &hvs.Fault{

@@ -141,8 +141,8 @@ func getTags(trustReport *hvs.TrustReport) map[string]string {
 	tagsMap := make(map[string]string)
 	for _, result := range trustReport.GetResultsForMarker(common.FlavorPartAssetTag.String()) {
 		if result.Rule.Name == faultsConst.RuleAssetTagMatches && len(result.Rule.Tags) > 0 {
-			for _, attribute := range result.Rule.Tags {
-				tagsMap[tagPrefix + attribute.Key] = attribute.Value
+			for key, value := range result.Rule.Tags {
+				tagsMap[tagPrefix + key] = value
 			}
 		}
 	}

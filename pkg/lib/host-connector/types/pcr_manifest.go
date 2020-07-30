@@ -13,8 +13,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"hash"
 	"github.com/pkg/errors"
+	"hash"
 	"strconv"
 	"strings"
 )
@@ -24,9 +24,10 @@ const (
 )
 
 type Pcr struct {
-	Index   PcrIndex     `json:"index"`
-	Value   string       `json:"value"`
-	PcrBank SHAAlgorithm `json:"pcr_bank"`
+	DigestType string       `json:"digest_type"`
+	Index      PcrIndex     `json:"index"`
+	Value      string       `json:"value"`
+	PcrBank    SHAAlgorithm `json:"pcr_bank"`
 }
 
 type EventLog struct {

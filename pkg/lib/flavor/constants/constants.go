@@ -20,6 +20,9 @@ const (
 	Cbnt  = "CBNT"
 	Suefi = "SUEFI"
 
+	//Pcr
+	PcrClassNamePrefix = "com.intel.mtwilson.core.common.model.PcrSha"
+
 	// Manifest / Measurement
 	MeasurementTypeClassNamePrefix = "com.intel.mtwilson.core.common.model.MeasurementSha"
 	IslMeasurementSchema           = "lib:wml:measurements:1.0"

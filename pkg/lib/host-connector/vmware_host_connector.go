@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/vmware"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
@@ -127,12 +128,14 @@ func createPCRManifest(hostTpmAttestationReport *vim25Types.HostTpmAttestationRe
 		}
 		if strings.EqualFold(pcrDetails.DigestMethod, "SHA256") {
 			pcrManifest.Sha256Pcrs = append(pcrManifest.Sha256Pcrs, types.Pcr{
+				DigestType: fmt.Sprintf(constants.PcrClassNamePrefix+"%d", 256),
 				Index:   pcrIndex,
 				Value:   intArrayToHexString(pcrDetails.DigestValue),
 				PcrBank: shaAlgorithm,
 			})
 		} else if strings.EqualFold(pcrDetails.DigestMethod, "SHA1") {
 			pcrManifest.Sha1Pcrs = append(pcrManifest.Sha1Pcrs, types.Pcr{
+				DigestType: fmt.Sprintf(constants.PcrClassNamePrefix+"%d", 1),
 				Index:   pcrIndex,
 				Value:   intArrayToHexString(pcrDetails.DigestValue),
 				PcrBank: shaAlgorithm,

@@ -11,7 +11,6 @@ package hvs
 import (
 	"github.com/google/uuid"
 	constants "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
-	asset_tag "github.com/intel-secl/intel-secl/v3/pkg/lib/asset-tag"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
@@ -43,7 +42,7 @@ type RuleInfo struct {
 	ExpectedEventLogs     []types.EventLog           `json:"expected,omitempty"`
 	ExpectedEventLogEntry *types.EventLogEntry       `json:"expected,omitempty"`
 	ExpectedTag           []byte                     `json:"expected_tag,omitempty"`
-	Tags                  []asset_tag.TagKvAttribute `json:"tags,omitempty"`
+	Tags                  map[string]string          `json:"tags,omitempty"`
 }
 
 type Fault struct {

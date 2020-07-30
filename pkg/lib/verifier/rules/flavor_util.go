@@ -6,7 +6,9 @@ package rules
 
 import (
 	"encoding/xml"
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/pkg/errors"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -36,10 +38,15 @@ func FlavorPcr2ManifestPcr(pcrEx *flavor_model.PcrEx, bank types.SHAAlgorithm, i
 		return nil, errors.New("The pcrex value cannot be nil")
 	}
 
-	return &types.Pcr {
-		Value: pcrEx.Value,
-		Index: index,
-		PcrBank : bank,
+	digestType := fmt.Sprintf(constants.PcrClassNamePrefix+"%d", 1)
+	if bank == types.SHA256 {
+		digestType = fmt.Sprintf(constants.PcrClassNamePrefix+"%d", 256)
+	}
+	return &types.Pcr{
+		DigestType: digestType,
+		Index:      index,
+		Value:      pcrEx.Value,
+		PcrBank:    bank,
 	}, nil
 }
 
