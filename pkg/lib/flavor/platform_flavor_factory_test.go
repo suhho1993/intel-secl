@@ -14,6 +14,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/util"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -393,8 +394,8 @@ func TestPlatformFlavorFactory_GetGenericPlatformFlavor(t *testing.T) {
 	hm, tagCert := loadManifestAndTagCert(ESXHostManifestPath, TagCertPath)
 
 	pffactory, err = NewPlatformFlavorProvider(hm, tagCert)
-
-	vendor := pfutil.GetVendorName(&hm.HostInfo)
+	var vendor hcConstants.Vendor
+	_ = (&vendor).GetVendorFromOSName(hm.HostInfo.OSName)
 	// get the flavor
 	pflavor, err := pffactory.GetGenericPlatformFlavor(vendor)
 	assert.NoError(t, err, "Error initializing GenericPlatformFlavor")

@@ -40,14 +40,14 @@ func (htcFactory *HostConnectorFactory) NewHostConnector(connectionString string
 	}
 
 	switch vendorConnector.Vendor {
-	case constants.INTEL, constants.MICROSOFT:
+	case constants.VendorIntel, constants.VendorMicrosoft:
 		log.Debug("host_connector/host_connector_factory:NewHostConnector() Connector type for provided connection string is INTEL")
 		connectorFactory = &IntelConnectorFactory{}
-	case constants.VMWARE:
+	case constants.VendorVMware:
 		log.Debug("host_connector/host_connector_factory:NewHostConnector() Connector type for provided connection string is VMWARE")
 		connectorFactory = &VmwareConnectorFactory{}
 	default:
-		return nil, errors.New("host_connector_factory:NewHostConnector() Vendor not supported yet: " + vendorConnector.Vendor)
+		return nil, errors.New("host_connector_factory:NewHostConnector() Vendor not supported yet: " + vendorConnector.Vendor.String())
 	}
 	return connectorFactory.GetHostConnector(vendorConnector, htcFactory.aasApiUrl, htcFactory.trustedCaCerts)
 }

@@ -4,8 +4,10 @@
  */
 package types
 
+import "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
+
 type VendorConnector struct {
-	Vendor        string
+	Vendor        constants.Vendor
 	Url           string
 	Configuration struct {
 		Hostname string

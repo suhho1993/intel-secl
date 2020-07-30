@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 )
@@ -21,7 +22,7 @@ import (
 // GenericPlatformFlavor represents a flavor that is not specific to any hardware platform
 type GenericPlatformFlavor struct {
 	TagCertificate *cm.X509AttributeCertificate
-	Vendor         string
+	Vendor         hcConstants.Vendor
 }
 
 // GetFlavorPartRaw constructs the Asset Tag flavor from the Tag Certificate of the Generic Platform Flavor

@@ -11,6 +11,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/util"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
@@ -215,7 +216,8 @@ func (rhelpf LinuxPlatformFlavor) getPlatformFlavor() ([]string, error) {
 	var filteredPcrDetails = pfutil.IncludeModulesToEventLog(
 		allPcrDetails, platformModules)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartPlatform, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartPlatform,
+		hcConstants.VendorIntel)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - failure in Meta section details")
 	}
@@ -261,7 +263,8 @@ func (rhelpf LinuxPlatformFlavor) getOsFlavor() ([]string, error) {
 	var filteredPcrDetails = pfutil.IncludeModulesToEventLog(
 		allPcrDetails, osModules)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartOs, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartOs,
+		hcConstants.VendorIntel)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
@@ -302,7 +305,8 @@ func (rhelpf LinuxPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
 	var filteredPcrDetails = pfutil.IncludeModulesToEventLog(
 		allPcrDetails, hostUniqueModules)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartHostUnique, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartHostUnique,
+		hcConstants.VendorIntel)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
@@ -340,7 +344,8 @@ func (rhelpf LinuxPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	}
 
 	// create meta section details
-	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartAssetTag, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(rhelpf.HostInfo, rhelpf.TagCertificate, "", cf.FlavorPartAssetTag,
+		hcConstants.VendorIntel)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}

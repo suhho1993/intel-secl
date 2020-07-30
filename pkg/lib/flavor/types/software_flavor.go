@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 )
@@ -43,7 +44,8 @@ func (sf *SoftwareFlavor) GetSoftwareFlavor() (string, error) {
 	}
 	var software = sfutil.GetSoftware(measurements)
 	// create meta section details
-	newMeta, err := pfutil.GetMetaSectionDetails(nil, nil, sf.Measurement, cf.FlavorPartSoftware, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(nil, nil, sf.Measurement, cf.FlavorPartSoftware,
+		hcConstants.VendorIntel)
 	if err != nil {
 		return "", errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}

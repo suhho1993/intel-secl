@@ -268,7 +268,7 @@ func validateESXiClusterRequest(esxiCluster hvs.ESXiCluster) error {
 
 	if strings.TrimSpace(esxiCluster.ConnectionString) != "" {
 		vc, _ := hcUtil.GetConnectorDetails(esxiCluster.ConnectionString)
-		if vc.Vendor != constants.VMWARE {
+		if vc.Vendor != constants.VendorVMware {
 			return errors.New("Only VMWARE connection strings are supported for this API")
 		}
 		if err := utils.ValidateConnectionString(esxiCluster.ConnectionString); err != nil {

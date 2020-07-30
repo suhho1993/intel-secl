@@ -4,7 +4,10 @@
  */
 package model
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
+)
 
 /**
  *
@@ -13,11 +16,11 @@ import "github.com/google/uuid"
 
 // Meta holds metadata information related to the Flavor
 type Meta struct {
-	Schema      *Schema     `json:"schema,omitempty"`
-	ID          uuid.UUID   `json:"id"`
-	Realm       string      `json:"realm,omitempty"`
-	Description Description `json:"description,omitempty"`
-	Vendor      string      `json:"vendor,omitempty"`
+	Schema      *Schema            `json:"schema,omitempty"`
+	ID          uuid.UUID          `json:"id"`
+	Realm       string             `json:"realm,omitempty"`
+	Description Description        `json:"description,omitempty"`
+	Vendor      hcConstants.Vendor `json:"vendor,omitempty"`
 }
 
 // Schema defines the Uri of the schema

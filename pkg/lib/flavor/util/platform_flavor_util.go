@@ -19,6 +19,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
@@ -41,20 +42,14 @@ type PlatformFlavorUtil struct {
 
 // GetMetaSectionDetails returns the Meta instance from the HostManifest
 func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.HostInfo, tagCertificate *cm.X509AttributeCertificate,
-	xmlMeasurement string, flavorPartName common.FlavorPart, vendor string) (*cm.Meta, error) {
+	xmlMeasurement string, flavorPartName common.FlavorPart, vendor hcConstants.Vendor) (*cm.Meta, error) {
 	log.Trace("flavor/util/platform_flavor_util:GetMetaSectionDetails() Entering")
 	defer log.Trace("flavor/util/platform_flavor_util:GetMetaSectionDetails() Leaving")
 
 	var meta cm.Meta
 	// Set UUID
 	meta.ID = uuid.New()
-
-	// Set Vendor
-	if strings.TrimSpace(vendor) == "" {
-		meta.Vendor = pfutil.GetVendorName(hostDetails)
-	} else {
-		meta.Vendor = vendor
-	}
+	meta.Vendor = vendor
 
 	var biosName string
 	var biosVersion string
@@ -80,7 +75,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 	switch flavorPartName {
 	case common.FlavorPartPlatform:
 		var features = pfutil.getSupportedHardwareFeatures(hostDetails)
-		description.Label = pfutil.getLabelFromDetails(meta.Vendor, biosName,
+		description.Label = pfutil.getLabelFromDetails(meta.Vendor.String(), biosName,
 			biosVersion, strings.Join(features, "_"), pfutil.getCurrentTimeStamp())
 		description.BiosName = biosName
 		description.BiosVersion = biosVersion
@@ -89,7 +84,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 			description.Source = strings.TrimSpace(hostDetails.HostName)
 		}
 	case common.FlavorPartOs:
-		description.Label = pfutil.getLabelFromDetails(meta.Vendor, osName, osVersion,
+		description.Label = pfutil.getLabelFromDetails(meta.Vendor.String(), osName, osVersion,
 			vmmName, vmmVersion, pfutil.getCurrentTimeStamp())
 		description.OsName = osName
 		description.OsVersion = osVersion
@@ -146,7 +141,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 				description.HardwareUUID = &hwuuid
 			}
 		}
-		description.Label = pfutil.getLabelFromDetails(meta.Vendor, (*description.HardwareUUID).String(), pfutil.getCurrentTimeStamp())
+		description.Label = pfutil.getLabelFromDetails(meta.Vendor.String(), (*description.HardwareUUID).String(), pfutil.getCurrentTimeStamp())
 
 	case common.FlavorPartHostUnique:
 		if hostDetails != nil {
@@ -164,7 +159,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 		description.OsName = osName
 		description.OsVersion = osVersion
 		description.FlavorPart = flavorPartName.String()
-		description.Label = pfutil.getLabelFromDetails(meta.Vendor, (*description.HardwareUUID).String(), pfutil.getCurrentTimeStamp())
+		description.Label = pfutil.getLabelFromDetails(meta.Vendor.String(), (*description.HardwareUUID).String(), pfutil.getCurrentTimeStamp())
 	default:
 		return nil, errors.Errorf("Invalid FlavorPart %s", flavorPartName.String())
 	}
@@ -358,26 +353,6 @@ func (pfutil PlatformFlavorUtil) GetExternalConfigurationDetails(tagCertificate 
 	assetTag.TagCertificate = *tagCertificate
 	externalconfiguration.AssetTag = assetTag
 	return &externalconfiguration, nil
-}
-
-// GetVendorName sets the vendor name for the Flavor
-func (pfutil PlatformFlavorUtil) GetVendorName(hostInfo *taModel.HostInfo) string {
-	log.Trace("flavor/util/platform_flavor_util:GetVendorName() Entering")
-	defer log.Trace("flavor/util/platform_flavor_util:GetVendorName() Leaving")
-
-	if hostInfo == nil {
-		return ""
-	}
-
-	var vendor string
-	switch strings.ToUpper(strings.TrimSpace(hostInfo.OSName)) {
-	case "VMWARE ESXI":
-		vendor = "VMWARE"
-	default:
-		vendor = "INTEL"
-	}
-
-	return vendor
 }
 
 // copyInstanceOfPcrDetails - returns a full-clone of the PCRManifest state from the HostManifest

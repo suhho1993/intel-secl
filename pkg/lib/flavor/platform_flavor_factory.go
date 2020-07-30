@@ -11,6 +11,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/types"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/pkg/errors"
 	"strings"
@@ -26,7 +27,7 @@ var log = commLog.GetDefaultLogger()
 // FlavorProvider is an interface for PlatformFlavorProvider for a PlatformFlavorProvider
 type FlavorProvider interface {
 	GetPlatformFlavor() (*types.PlatformFlavor, error)
-	GetGenericPlatformFlavor(string) (*types.PlatformFlavor, error)
+	GetGenericPlatformFlavor(hcConstants.Vendor) (*types.PlatformFlavor, error)
 }
 
 // PlatformFlavorProvider is a factory for the PlatformFlavor which is responsible for instantiating
@@ -86,7 +87,7 @@ func (pff PlatformFlavorProvider) GetPlatformFlavor() (*types.PlatformFlavor, er
 }
 
 // GetGenericPlatformFlavor creates an instance of a GenericPlatform flavor using tagCert and vendor
-func (pff PlatformFlavorProvider) GetGenericPlatformFlavor(vendor string) (*types.PlatformFlavor, error) {
+func (pff PlatformFlavorProvider) GetGenericPlatformFlavor(vendor hcConstants.Vendor) (*types.PlatformFlavor, error) {
 	log.Trace("flavor/platform_flavor_factory:GetGenericPlatformFlavor() Entering")
 	defer log.Trace("flavor/platform_flavor_factory:GetGenericPlatformFlavor() Leaving")
 

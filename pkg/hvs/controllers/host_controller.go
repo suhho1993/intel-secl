@@ -424,7 +424,7 @@ func GenerateConnectionString(cs, username, password string, hc domain.HostCrede
 	}
 
 	var credential string
-	if vc.Vendor != hcConstants.VMWARE {
+	if vc.Vendor != hcConstants.VendorVMware {
 		credential = fmt.Sprintf("u=%s;p=%s", username, password)
 		cs = fmt.Sprintf("%s;%s", cs, credential)
 	} else {

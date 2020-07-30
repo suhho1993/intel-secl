@@ -5,6 +5,7 @@
 package util
 
 import (
+	"errors"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"net/url"
@@ -17,14 +18,18 @@ func GetConnectorDetails(connectionString string) (types.VendorConnector, error)
 	defer log.Trace("util/connection_string:GetConnectorDetails() Leaving")
 	var vendorConnector types.VendorConnector
 	var vendorURL string
+	var vendorName string
 
 	vendor := GetVendorPrefix(connectionString)
-	if vendor != "" {
-		vendor = strings.ToUpper(vendor)
-		vendorURL = connectionString[len(vendor)+1:]
-	} else {
+	if vendor == constants.VendorUnknown {
+		if connectionString != "" && strings.ToLower(connectionString[:strings.Index(connectionString, ":")]) != "https" {
+			return types.VendorConnector{}, errors.New("Vendor provided at URL prefix is not supported")
+		}
 		vendor = GuessVendorFromURL(connectionString)
 		vendorURL = connectionString
+	} else {
+		vendorName = strings.ToUpper(vendor.String())
+		vendorURL = connectionString[len(vendorName)+1:]
 	}
 	vendorConnector.Url, vendorConnector.Configuration.Username, vendorConnector.Configuration.Password,
 		vendorConnector.Configuration.Hostname = ParseConnectionString(vendorURL)
@@ -36,31 +41,29 @@ func GetConnectorDetails(connectionString string) (types.VendorConnector, error)
 	return vendorConnector, nil
 }
 
-func GuessVendorFromURL(connectionString string) string {
+func GuessVendorFromURL(connectionString string) constants.Vendor {
 
 	log.Trace("util/connection_string:GuessVendorFromURL() Entering")
 	defer log.Trace("util/connection_string:GuessVendorFromURL() Leaving")
 	if strings.Contains(connectionString, "/sdk") {
-		return constants.VMWARE
+		return constants.VendorVMware
 	} else {
-		return constants.INTEL
+		return constants.VendorIntel
 	}
 }
 
-func GetVendorPrefix(connectionString string) string {
+func GetVendorPrefix(connectionString string) constants.Vendor {
 
 	log.Trace("util/connection_string:GetVendorPrefix() Entering")
 	defer log.Trace("util/connection_string:GetVendorPrefix() Leaving")
-	if strings.HasPrefix(strings.ToLower(connectionString), strings.ToLower(constants.INTEL+":")) {
-		return constants.INTEL
-	} else if strings.HasPrefix(strings.ToLower(connectionString), strings.ToLower(constants.VMWARE+":")) {
-		return constants.VMWARE
-	} else if strings.HasPrefix(strings.ToLower(connectionString), strings.ToLower(constants.MICROSOFT+":")) {
-		return constants.MICROSOFT
-	} else if connectionString != "" && strings.ToLower(connectionString[:strings.Index(connectionString, ":")]) != "https" {
-		return connectionString[:strings.Index(connectionString, ":")]
+	if strings.HasPrefix(strings.ToLower(connectionString), strings.ToLower(constants.VendorIntel.String()+":")) {
+		return constants.VendorIntel
+	} else if strings.HasPrefix(strings.ToLower(connectionString), strings.ToLower(constants.VendorVMware.String()+":")) {
+		return constants.VendorVMware
+	} else if strings.HasPrefix(strings.ToLower(connectionString), strings.ToLower(constants.VendorMicrosoft.String()+":")) {
+		return constants.VendorMicrosoft
 	}
-	return ""
+	return constants.VendorUnknown
 }
 
 func ParseConnectionString(vendorURL string) (string, string, string, string) {

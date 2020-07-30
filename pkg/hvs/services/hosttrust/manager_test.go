@@ -81,7 +81,7 @@ func TestVerifier_Verify(t *testing.T) {
 	_, err := hostStore.Create(&hvs.Host{
 		HostName:         "hostname",
 		Description:      "Host at test.domain.com",
-		ConnectionString: "intel://test.domain.com/ta",
+		ConnectionString: "https://ta.ip.com:1443;u=serviceUsername;p=servicePassword",
 		HardwareUuid:     &hwUuid,
 		Id:               hostId,
 	})

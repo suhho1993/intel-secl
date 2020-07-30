@@ -22,23 +22,23 @@ func TestGetConnectorDetails(t *testing.T) {
 
 	connectorDetails, err := GetConnectorDetails(sampleUrl1)
 	assert.NoError(t, err)
-	assert.Equal(t, constants.INTEL, connectorDetails.Vendor)
+	assert.Equal(t, constants.VendorIntel, connectorDetails.Vendor)
 
 	connectorDetails, err = GetConnectorDetails(sampleUrl2)
 	assert.NoError(t, err)
-	assert.Equal(t, constants.INTEL, connectorDetails.Vendor)
+	assert.Equal(t, constants.VendorIntel, connectorDetails.Vendor)
 
 	connectorDetails, err = GetConnectorDetails(sampleUrl3)
 	assert.NoError(t, err)
-	assert.Equal(t, constants.VMWARE, connectorDetails.Vendor)
+	assert.Equal(t, constants.VendorVMware, connectorDetails.Vendor)
 
 	connectorDetails, err = GetConnectorDetails(sampleUrl4)
 	assert.NoError(t, err)
-	assert.Equal(t, constants.VMWARE, connectorDetails.Vendor)
+	assert.Equal(t, constants.VendorVMware, connectorDetails.Vendor)
 
 	connectorDetails, err = GetConnectorDetails(sampleUrl5)
 	assert.NoError(t, err)
-	assert.Equal(t, constants.MICROSOFT, connectorDetails.Vendor)
+	assert.Equal(t, constants.VendorMicrosoft, connectorDetails.Vendor)
 
 	connectorDetails, err = GetConnectorDetails(invalidUrl)
 	assert.Error(t, err)

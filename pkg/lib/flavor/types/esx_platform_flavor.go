@@ -16,6 +16,7 @@ import (
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
@@ -204,7 +205,8 @@ func (esxpf ESXPlatformFlavor) getPlatformFlavor() ([]string, error) {
 	var includeEventLog = eventLogRequiredForEsx(esxpf.HostInfo.HardwareFeatures.TPM.Meta.TPMVersion, cf.FlavorPartPlatform)
 	var flavorPcrs = pfutil.GetPcrDetails(esxpf.HostManifest.PcrManifest, platformPcrs, includeEventLog)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartPlatform, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartPlatform,
+		hcConstants.VendorVMware)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - Failure in Meta section details")
 	}
@@ -252,7 +254,8 @@ func (esxpf ESXPlatformFlavor) getOsFlavor() ([]string, error) {
 	var filteredPcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx
 	filteredPcrDetails = pfutil.ExcludeModulesFromEventLog(pcrAllEventDetails, modulesToExclude)
 
-	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartOs, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartOs,
+		hcConstants.VendorVMware)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" - Failure in Meta section details")
 	}
@@ -295,7 +298,8 @@ func (esxpf ESXPlatformFlavor) getHostUniqueFlavor() ([]string, error) {
 	var flavorPcrs = pfutil.IncludeModulesToEventLog(pcrDetails, hostSpecificModules)
 
 	// Assemble Meta and Bios information for HOST_UNIQUE flavor
-	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartHostUnique, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartHostUnique,
+		hcConstants.VendorVMware)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
@@ -346,7 +350,8 @@ func (esxpf ESXPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	pcrDetails[crypt.SHA1()] = pcr22
 
 	// Assemble meta and bios details
-	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartAssetTag, "")
+	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartAssetTag,
+		hcConstants.VendorVMware)
 	if err != nil {
 		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}

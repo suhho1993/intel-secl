@@ -13,11 +13,11 @@ type Flavor = model.Flavor
 
 // FlavorCollection is a list of Flavor objects in response to a Flavor Search query
 type FlavorCollection struct {
-	Flavors []Flavors `json:"flavors" xml:"flavors"`
+	Flavors []Flavors `json:"flavors"`
 }
 
 type Flavors struct {
-	Flavor Flavor `json:"flavor" xml:"flavor"`
+	Flavor Flavor `json:"flavor"`
 }
 
 // SignedFlavor sourced from the lib/flavor - this is a external request/response on the HVS API
@@ -25,5 +25,5 @@ type SignedFlavor = model.SignedFlavor
 
 // SignedFlavorCollection is a list of SignedFlavor objects
 type SignedFlavorCollection struct {
-	SignedFlavors []SignedFlavor `json:"signed_flavors" xml:"signed_flavors"`
+	SignedFlavors []SignedFlavor `json:"signed_flavors"`
 }
