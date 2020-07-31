@@ -15,12 +15,13 @@ environment variables.
 
 The format of answer files are defined as followed
 - Lines started with pound sign (#) are comments thus ignored
+  - **No** inline comments support
 - All empty lines are ignored
 - Key-value pair for environment variables should match the format `<key>=<value>`
   - The line is split at the first equal sign (`=`)
   - Everything before the equal sign is set as key, while everything after is value
     - Mal-formatted includes
-      1. Key or value is empty
+      1. Either key or value is empty
       2. No equal sign found in line
     - Any `#` in a valid line is considered a part of key or value
   - All mal-formatted lines are ignored and will not return error
