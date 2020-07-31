@@ -6,7 +6,7 @@ Following env variable(s) are for configuring the behavior of hve installer. Suc
 be set in the shell running installer binary.
 
  Key | Required | Type | Description 
------|-------|----------|------|-------------
+-----|----------|------|-------------
  HVS_NOSETUP | - | `string` | If set to `true`, installer will not perform setup tasks
 
 ## Usage
@@ -25,7 +25,7 @@ These fields are used for running hvs setup tasks only. None of which is later s
 `/etc/hvs/config.yml`
 
 Field | Required | Type | Description | Alternative
----------|-------|----------|------|-------------|-------------
+------|----------|------|-------------|-------------
 BEARER_TOKEN | `Required` | `string` | The bearer token for accessing `CMS` |
 DB_SSL_CERT_SOURCE | - |`string` | The source file from which to copy database SSL certificate | HVS_DB_SSL_CERT_SOURCE
 
