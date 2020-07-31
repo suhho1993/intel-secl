@@ -91,7 +91,7 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 	}
 	// log to audit log
 	if r.AuditLogWriter != nil {
-		auditEntry, err := r.AuditLogWriter.CreateEntry("update", hvsReports[0], re)
+		auditEntry, err := r.AuditLogWriter.CreateEntry("update", &hvsReports[0], re)
 		if err == nil {
 			r.AuditLogWriter.Log(auditEntry)
 		}
@@ -169,11 +169,12 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]models.HV
 	latestPerHost = criteria.LatestPerHost
 
 	if criteria.NumberOfDays != 0 {
-		toDate = time.Now()
-		fromDate = toDate.AddDate(0, 0, -(criteria.NumberOfDays))
+		toDate = time.Now().UTC()
+		fromDate = toDate.AddDate(0, 0, -(criteria.NumberOfDays)).UTC()
 	}
+
 	var tx *gorm.DB
-	if criteria.FromDate.IsZero() && criteria.ToDate.IsZero() && criteria.LatestPerHost {
+	if fromDate.IsZero() && toDate.IsZero() && criteria.LatestPerHost {
 		tx = buildLatestReportSearchQuery(r.Store.Db, reportID, hostID, hostHardwareUUID, hostName, hostStatus, criteria.Limit)
 
 		if tx == nil {
@@ -330,7 +331,7 @@ func buildReportSearchQuery(tx *gorm.DB, hostHardwareID, hostID uuid.UUID, hostN
 	tx.LogMode(true)
 	if latestPerHost {
 		entity := "auj"
-		txSubQuery := tx.Table("audit_log_entry auj").Select("entity_id, max(auj.created) AS max_date")
+		txSubQuery := tx.Table("audit_log_entry auj").Select("entity_id, max(auj.created) AS max_date ")
 		txSubQuery = buildReportSearchQueryWithCriteria(txSubQuery, hostHardwareID, hostID, entity, hostName, hostState, fromDate, toDate)
 		txSubQuery = txSubQuery.Group("entity_id")
 		subQuery := txSubQuery.SubQuery()

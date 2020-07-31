@@ -183,8 +183,8 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 		}
 
 		// override the existing fromDate/toDate params
-		hfc.ToDate = time.Now()
-		hfc.FromDate = hfc.ToDate.AddDate(0, 0, -numDays)
+		hfc.ToDate = time.Now().UTC()
+		hfc.FromDate = hfc.ToDate.AddDate(0, 0, -numDays).UTC()
 
 		hfc.NumberOfDays = numDays
 	}
