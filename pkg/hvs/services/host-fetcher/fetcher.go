@@ -332,6 +332,7 @@ func (svc *Service) GetHostData(connUrl string) (*types.HostManifest, error) {
 		svc.hcCfg.HCStore)
 	if err != nil {
 		defaultLog.WithError(err).Error("hostfetcher/Service:GetHostData() Could not generate formatted connection string")
+		return nil, err
 	}
 
 	connector, err := svc.hcf.NewHostConnector(connectionString)
@@ -340,5 +341,4 @@ func (svc *Service) GetHostData(connUrl string) (*types.HostManifest, error) {
 	}
 	data, err := connector.GetHostManifest()
 	return &data, err
-
 }

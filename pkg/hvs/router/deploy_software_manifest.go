@@ -30,7 +30,7 @@ func SetDeploySoftwareManifestRoute(router *mux.Router, store *postgres.DataStor
 	dsmController := controllers.NewDeploySoftwareManifestController(flavorStore, *hc)
 
 	router.Handle("/rpc/deploy-software-manifest",
-		ErrorHandler(permissionsHandler(JsonResponseHandler(dsmController.DeployManifest),
+		ErrorHandler(permissionsHandler(ResponseHandler(dsmController.DeployManifest),
 			[]string{constants.SoftwareFlavorDeploy}))).Methods("POST")
 
 	return router
