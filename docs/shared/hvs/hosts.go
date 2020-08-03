@@ -91,6 +91,14 @@ type HostFlavorgroupCreateRequest struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/HostCreateRequest"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the host.
@@ -98,6 +106,12 @@ type HostFlavorgroupCreateRequest struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/Host"
+//   '400':
+//     description: Invalid request body provided
+//   '415':
+//     description: Invalid Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts
 // x-sample-call-input: |
@@ -139,6 +153,10 @@ type HostFlavorgroupCreateRequest struct {
 //   required: true
 //   type: string
 //   format: uuid
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the host.
@@ -146,6 +164,12 @@ type HostFlavorgroupCreateRequest struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/Host"
+//   '404':
+//     description: Host record not found
+//   '415':
+//     description: Invalid Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e
 // x-sample-call-output: |
@@ -197,6 +221,14 @@ type HostFlavorgroupCreateRequest struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/Host"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully updated the host.
@@ -204,6 +236,14 @@ type HostFlavorgroupCreateRequest struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/Host"
+//   '400':
+//     description: Invalid request body provided
+//   '404':
+//     description: Host record not found
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e
 // x-sample-call-input: |
@@ -240,9 +280,17 @@ type HostFlavorgroupCreateRequest struct {
 //   required: true
 //   type: string
 //   format: uuid
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '204':
 //     description: Successfully deleted the host.
+//   '404':
+//     description: Host record not found
+//   '500':
+//     description: Internal server error
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e
 
 // ---
@@ -301,6 +349,14 @@ type HostFlavorgroupCreateRequest struct {
 //   in: query
 //   type: string
 //   required: false
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the hosts.
@@ -308,6 +364,12 @@ type HostFlavorgroupCreateRequest struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/HostCollection"
+//   '400':
+//     description: Invalid values for request params
+//   '415':
+//     description: Invalid Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts
 // x-sample-call-output: |
@@ -360,6 +422,14 @@ type HostFlavorgroupCreateRequest struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/HostFlavorgroupCreateRequest"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the host flavorgroup link.
@@ -367,6 +437,13 @@ type HostFlavorgroupCreateRequest struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/HostFlavorgroup"
+//   '400':
+//     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
+//   '500':
+//     description: Internal server error
+
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/{host_id}/flavorgroups
 // x-sample-call-input: |
@@ -405,6 +482,14 @@ type HostFlavorgroupCreateRequest struct {
 //   required: true
 //   type: string
 //   format: uuid
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the host flavorgroup link.
@@ -412,6 +497,12 @@ type HostFlavorgroupCreateRequest struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/HostFlavorgroup"
+//   '404':
+//     description: Flavorgroup record not found
+//   '415':
+//     description: Invalid Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e/flavorgroups/c96da83d-b202-49b0-b266-fc6018883e12
 // x-sample-call-output: |
@@ -446,6 +537,10 @@ type HostFlavorgroupCreateRequest struct {
 // responses:
 //   '204':
 //     description: Successfully deleted the host flavorgroup link.
+//   '404':
+//     description: Flavorgroup record not found
+//   '500':
+//     description: Internal server error
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e/flavorgroups/c96da83d-b202-49b0-b266-fc6018883e12
 
 // ---
@@ -469,6 +564,10 @@ type HostFlavorgroupCreateRequest struct {
 //   type: string
 //   format: uuid
 //   required: true
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the host flavorgroup links.
@@ -476,6 +575,12 @@ type HostFlavorgroupCreateRequest struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/HostFlavorgroupCollection"
+//   '404':
+//     description: Flavorgroup record not found
+//   '415':
+//     description: Invalid Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/hosts/fc0cc779-22b6-4741-b0d9-e2e69635ad1e/flavorgroups
 // x-sample-call-output: |

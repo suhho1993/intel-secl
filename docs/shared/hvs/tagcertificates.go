@@ -104,6 +104,10 @@ type TagCertificateCollection struct {
 //   type: string
 //   format: uuid
 //   required: false
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 //
 // responses:
 //   '200':
@@ -114,6 +118,8 @@ type TagCertificateCollection struct {
 //       $ref: "#/definitions/TagCertificateCollection"
 //   '400':
 //     description: Invalid value for filter criteria.
+//   '415':
+//     description: Invalid Accept Header in Request
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/tag-certificates?hardwareUUID=00ecd3ab-9af4-e711-906e-001560a04062
 // x-sample-call-output: |
@@ -180,6 +186,14 @@ type TagCertificateCollection struct {
 //   in: body
 //   schema:
 //    $ref: "#/definitions/TagCertificateCreateCriteria"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the Tag Certificate.
@@ -189,6 +203,8 @@ type TagCertificateCollection struct {
 //       $ref: "#/definitions/TagCertificate"
 //   '400':
 //     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -266,12 +282,22 @@ type TagCertificateCollection struct {
 //  - bearerAuth: []
 // consumes:
 // - application/json
+// produces:
+// - application/json
 // parameters:
 // - name: request body
 //   required: true
 //   in: body
 //   schema:
 //     $ref: "#/definitions/TagCertificateDeployCriteria"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully deployed the TagCertificate to the host.
@@ -283,6 +309,8 @@ type TagCertificateCollection struct {
 //     description: Error decoding the TagCertificateDeployCriteria.
 //   '404':
 //     description: TagCertificate does not exist.
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
 //   '500':
 //     description: Error deploying the TagCertificate.
 //
@@ -384,6 +412,8 @@ type TagCertificateCollection struct {
 //       $ref: "#/definitions/TagCertificate"
 //   '404':
 //     description: TagCertificate does not exist
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/tag-certificates/fc0cc779-22b6-4741-b0d9-e2e69635ad1e

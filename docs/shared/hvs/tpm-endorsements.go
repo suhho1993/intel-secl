@@ -17,7 +17,7 @@ type TpmEndorsement struct {
 // TpmEndorsementCollection response payload
 // swagger:parameters TpmEndorsementCollection
 type TpmEndorsementCollection struct {
-//	in:body
+	//	in:body
 	Body hvs.TpmEndorsementCollection
 }
 
@@ -72,6 +72,10 @@ type TpmEndorsementCollection struct {
 //     in: query
 //     type: string
 //     required: false
+//   - name: Accept
+//     required: true
+//     in: header
+//     type: string
 // responses:
 //   "200":
 //     description: Successfully retrieved the tpm-endorsements.
@@ -80,6 +84,8 @@ type TpmEndorsementCollection struct {
 //       $ref: "#/definitions/TpmEndorsementCollection"
 //   '400':
 //     description: Invalid search criteria provided
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -128,8 +134,16 @@ type TpmEndorsementCollection struct {
 //     in: body
 //     schema:
 //       "$ref": "#/definitions/TpmEndorsement"
+//   - name: Content-Type
+//     required: true
+//     in: header
+//     type: string
+//   - name: Accept
+//     required: true
+//     in: header
+//     type: string
 // responses:
-//   "201":
+//   '201':
 //     description: Successfully created the tpm-endorsement.
 //     content:
 //       application/json
@@ -137,6 +151,8 @@ type TpmEndorsementCollection struct {
 //       $ref: "#/definitions/TpmEndorsement"
 //   '400':
 //     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -195,14 +211,24 @@ type TpmEndorsementCollection struct {
 //     in: body
 //     schema:
 //       "$ref": "#/definitions/TpmEndorsement"
+//   - name: Content-Type
+//     required: true
+//     in: header
+//     type: string
+//   - name: Accept
+//     required: true
+//     in: header
+//     type: string
 // responses:
-//   "200":
+//   '200':
 //     description: Successfully updated the tpm-endorsement.
 //     content: application/json
 //     schema:
 //       $ref: "#/definitions/TpmEndorsement"
 //   '400':
 //     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -245,14 +271,20 @@ type TpmEndorsementCollection struct {
 //     required: true
 //     type: string
 //     format: uuid
+//   - name: Accept
+//     required: true
+//     in: header
+//     type: string
 // responses:
-//   "200":
+//   '200':
 //     description: Successfully retrieved the TpmEndorsement.
 //     content: application/json
 //     schema:
 //       $ref: "#/definitions/TpmEndorsement"
 //   '404':
 //     description: No relevant TpmEndorsement record found.
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error.
 //
@@ -270,46 +302,25 @@ type TpmEndorsementCollection struct {
 
 // ---
 
-// swagger:operation DELETE /tpm-endorsements/{tpm-endorsement_id} TpmEndorsement
-// ---
-// description: |
-//   Deletes a TpmEndorsement.
-// x-permissions: tpm_endorsements:delete
-// security:
-//   - bearerAuth: []
-// parameters:
-//   - name: tpm-endorsement_id
-//     description: Unique ID of the TpmEndorsement.
-//     in: path
-//     required: true
-//     type: string
-//     format: uuid
-// responses:
-//   "204":
-//     description: Successfully deleted the TpmEndorsement.
-// x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/tpm-endorsements/826501bd-3c75-4839-a08f-db5f744f8498
-
-// ---
-
 // swagger:operation DELETE /tpm-endorsements/{tpm-endorsement_id} TpmEndorsements Delete-TpmEndorsement
 // ---
-// description: |
-//   Deletes a TpmEndorsement.
-// x-permissions: tpm_endorsements:delete
-// security:
-//   - bearerAuth: []
-// parameters:
-//   - name: tpm-endorsement_id
-//     description: Unique ID of the TpmEndorsement.
-//     in: path
-//     required: true
-//     type: string
-//     format: uuid
-// responses:
-//   "204":
-//     description: Successfully deleted the TpmEndorsement.
-//   '404':
-//     description: No TpmEndorsement records found.
-//   '500':
-//     description: Internal server error.
-// x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/tpm-endorsements/826501bd-3c75-4839-a08f-db5f744f8498
+//  description: |
+//    Deletes a TpmEndorsement.
+//  x-permissions: tpm_endorsements:delete
+//  security:
+//    - bearerAuth: []
+//  parameters:
+//    - name: tpm-endorsement_id
+//      description: Unique ID of the TpmEndorsement.
+//      in: path
+//      required: true
+//      type: string
+//      format: uuid
+//  responses:
+//    '204':
+//      description: Successfully deleted the TpmEndorsement.
+//    '404':
+//      description: No relevant TpmEndorsement record found.
+//    '500':
+//      description: Internal server error
+//  x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/tpm-endorsements/826501bd-3c75-4839-a08f-db5f744f8498

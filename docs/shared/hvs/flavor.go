@@ -16,6 +16,7 @@ type FlavorCreateRequest struct {
 	// in:body
 	Body models.FlavorCreateRequest
 }
+
 // Flavors API response payload
 // swagger:parameters Flavors
 type SignedFlavor struct {
@@ -29,7 +30,6 @@ type SignedFlavorCollection struct {
 	// in:body
 	Body hvs.SignedFlavorCollection
 }
-
 
 // ---
 //
@@ -79,6 +79,10 @@ type SignedFlavorCollection struct {
 //   in: query
 //   type: string
 //   required: false
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully searched and returned a signed flavor collection.
@@ -88,6 +92,8 @@ type SignedFlavorCollection struct {
 //       $ref: "#/definitions/SignedFlavorCollection"
 //   '400':
 //     description: Invalid search criteria provided
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -169,6 +175,14 @@ type SignedFlavorCollection struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/FlavorCreateRequest"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the flavors.
@@ -178,6 +192,8 @@ type SignedFlavorCollection struct {
 //       $ref: "#/definitions/SignedFlavorCollection"
 //   '400':
 //     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -376,6 +392,10 @@ type SignedFlavorCollection struct {
 //   required: true
 //   type: string
 //   format: uuid
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the flavor.
@@ -385,6 +405,8 @@ type SignedFlavorCollection struct {
 //       $ref: "#/definitions/SignedFlavor"
 //   '404':
 //     description: No flavor with the provided flavor ID found.
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error.
 //

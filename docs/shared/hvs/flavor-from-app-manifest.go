@@ -58,6 +58,14 @@ type Flavor struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/ManifestRequest"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the software flavor.
@@ -67,6 +75,8 @@ type Flavor struct {
 //       $ref: "#/definitions/Flavor"
 //   '400':
 //     description: Invalid request body provided
+//   '415':
+//     description: Invalid Accept/Content-Type Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -111,7 +121,3 @@ type Flavor struct {
 //      }
 //   }
 // ---
-
-
-
-

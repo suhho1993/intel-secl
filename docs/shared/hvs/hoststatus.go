@@ -48,7 +48,7 @@ type HostStatusCollection struct {
 //      in: query
 //      type: string
 //      required: false
-//    - name: Host ID
+//    - name: hostId
 //      description: Host UUID
 //      in: query
 //      type: string
@@ -121,14 +121,16 @@ type HostStatusCollection struct {
 //      default: 10000
 //      required: false
 //  responses:
-//    "200":
+//    '200':
 //      description: Successfully retrieved the HostStatus records. Also returned when no results are found.
 //      content: application/json
 //      schema:
 //        $ref: "#/definitions/HostStatusCollection"
-//    "400":
+//    '400':
 //      description: Invalid values for search criteria
-//    "500":
+//    '415':
+//      description: Invalid Accept Header in Request
+//    '500':
 //      description: Internal server error
 //
 //  x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/host-status
@@ -693,6 +695,7 @@ type HostStatusCollection struct {
 //    | UNKNOWN                        |  Host is in unknown state  |
 //
 //    Returns - The serialized Host Go struct object that was retrieved.
+//
 //  x-permissions: host_status:retrieve
 //  security:
 //    - bearerAuth: []
@@ -705,15 +708,21 @@ type HostStatusCollection struct {
 //      required: true
 //      type: string
 //      format: uuid
+//    - name: Accept
+//      required: true
+//      in: header
+//      type: string
 //  responses:
-//    "200":
+//    '200':
 //      description: Successfully retrieved the HostStatus record.
 //      content: application/json
 //      schema:
 //        $ref: "#/definitions/HostStatus"
-//    "404":
+//    '404':
 //      description: HostStatus record not found
-//    "500":
+//    '415':
+//      description: Invalid Accept Header in Request
+//    '500':
 //      description: Internal server error
 //
 //  x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/host-status/055dd911-6e59-4374-9761-837250ad0113

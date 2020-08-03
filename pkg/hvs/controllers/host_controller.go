@@ -55,7 +55,7 @@ func (hc *HostController) Create(w http.ResponseWriter, r *http.Request) (interf
 	defaultLog.Trace("controllers/host_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Create() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -101,13 +101,13 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	defaultLog.Trace("controllers/host_controller:Update() Entering")
 	defer defaultLog.Trace("controllers/host_controller:Update() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
 	if r.ContentLength == 0 {
 		secLog.Error("controllers/host_controller:Update() The request body was not provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"The request body was not provided"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body was not provided"}
 	}
 
 	dec := json.NewDecoder(r.Body)
@@ -117,7 +117,7 @@ func (hc *HostController) Update(w http.ResponseWriter, r *http.Request) (interf
 	err := dec.Decode(&reqHost)
 	if err != nil {
 		secLog.WithError(err).Errorf("controllers/host_controller:Update() %s :  Failed to decode request body as Host", commLogMsg.InvalidInputBadEncoding)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Unable to decode JSON request body"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
 	criteria := hvs.HostCreateRequest{
@@ -162,7 +162,7 @@ func (hc *HostController) Delete(w http.ResponseWriter, r *http.Request) (interf
 
 	if err := hc.HStore.Delete(id); err != nil {
 		defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:Delete() Host delete failed")
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to delete Host"}
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Host"}
 	}
 
 	secLog.WithField("host", host).Infof("Host deleted by: %s", r.RemoteAddr)
@@ -403,7 +403,7 @@ func (hc *HostController) retrieveHost(id uuid.UUID) (interface{}, int, error) {
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:retrieveHost() Host with specified id could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host with specified id does not exist"}
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Host with specified id does not exist"}
 		} else {
 			defaultLog.WithError(err).WithField("id", id).Error("controllers/host_controller:retrieveHost() Host retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host from database"}
@@ -629,7 +629,7 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 	defaultLog.Trace("controllers/host_controller:AddFlavorgroup() Entering")
 	defer defaultLog.Trace("controllers/host_controller:AddFlavorgroup() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -663,7 +663,7 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			defaultLog.WithError(err).WithField("id", reqHostFlavorgroup.FlavorgroupId).Error("controllers/host_controller:AddFlavorgroup() Flavorgroup with specified id could not be located")
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Flavorgroup with specified id does not exist"}
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavorgroup with specified id does not exist"}
 		} else {
 			defaultLog.WithError(err).WithField("id", reqHostFlavorgroup.FlavorgroupId).Error("controllers/host_controller:AddFlavorgroup() Flavorgroup retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Flavorgroup from database"}
@@ -677,7 +677,7 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 	}
 	if linkExists {
 		secLog.WithError(err).Warningf("%s: Trying to create duplicate Host Flavorgroup link", commLogMsg.InvalidInputBadParam)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Host Flavorgroup link with specified ids already exist"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Host Flavorgroup link with specified ids already exist"}
 	}
 
 	defaultLog.Debugf("Linking host %v with flavorgroup %v", hId, reqHostFlavorgroup.FlavorgroupId)
@@ -731,7 +731,7 @@ func (hc *HostController) RemoveFlavorgroup(w http.ResponseWriter, r *http.Reque
 
 	if err := hc.HStore.RemoveFlavorgroups(hId, []uuid.UUID{fgId}); err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:RemoveFlavorgroup() Host Flavorgroup link delete failed")
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to delete Host Flavorgroup link"}
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Host Flavorgroup link"}
 	}
 
 	secLog.WithField("host-flavorgroup-link", hostFlavorgroup).Infof("Host Flavorgroup link deleted by: %s", r.RemoteAddr)
@@ -770,7 +770,7 @@ func (hc *HostController) retrieveFlavorgroup(hId, fgId uuid.UUID) (interface{},
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			defaultLog.WithError(err).Error("controllers/host_controller:RetrieveFlavorgroup() Host Flavorgroup link with specified ids could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Host Flavorgroup link with specified ids does not exist"}
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Host Flavorgroup link with specified ids does not exist"}
 		} else {
 			defaultLog.WithError(err).Error("controllers/host_controller:RetrieveFlavorgroup() Host Foavorgroup link retrieve failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve Host Flavorgroup link from database"}

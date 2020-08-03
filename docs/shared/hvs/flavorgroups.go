@@ -20,7 +20,6 @@ type FlavorgroupCollection struct {
 	Body hvs.FlavorgroupCollection
 }
 
-
 // ---
 //
 // swagger:operation GET /flavorgroups Flavorgroups Search
@@ -68,7 +67,7 @@ type FlavorgroupCollection struct {
 //      |---------------------|-------------|
 //      |  automatic          | Default flavor group for flavor verification. |
 //      |  host_unique        | Default flavor group for host unique flavor parts. All host unique flavor parts are <br> associated with this flavor group regardless of user settings. This flavor group’s <br> policy is null, and the match policy for its flavor parts are defined in each <br> individual separate flavor group. This separation is required for backend processing <br> and handling of the host unique flavors. Host Unique Flavor Parts: ASSET_TAG, HOST_UNIQUE |
-//      |  platform_software  | Default flavor group for default platform software flavors for application integrity <br> of Trust Agent | 
+//      |  platform_software  | Default flavor group for default platform software flavors for application integrity <br> of Trust Agent |
 //      |  workload_software  | Default flavor group for default platform software flavors for application integrity <br> of Workload Agent |
 //
 //   <b>Searches for flavor groups</b>
@@ -108,6 +107,10 @@ type FlavorgroupCollection struct {
 //   in: query
 //   type: boolean
 //   required: false
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the flavorgroups.
@@ -115,6 +118,10 @@ type FlavorgroupCollection struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/FlavorgroupCollection"
+//   '400':
+//     description: Invalid values for search parameters
+//   '415':
+//     description: Invalid Accept Header in Request
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/flavorgroups
 // x-sample-call-output: |
@@ -190,6 +197,14 @@ type FlavorgroupCollection struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/FlavorGroup"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the flavorgroup.
@@ -197,6 +212,12 @@ type FlavorgroupCollection struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/FlavorGroup"
+//   '400':
+//     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/flavorgroups
 // x-sample-call-input: |
@@ -293,6 +314,10 @@ type FlavorgroupCollection struct {
 //   required: true
 //   type: string
 //   format: uuid
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the flavorgroup.
@@ -300,6 +325,12 @@ type FlavorgroupCollection struct {
 //       application/json
 //     schema:
 //       $ref: "#/definitions/FlavorGroup"
+//   '404':
+//     description: Flavorgroup record not found
+//   '415':
+//     description: Invalid Accept Header in Request
+//   '500':
+//     description: Internal server error
 //
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/flavorgroups/826501bd-3c75-4839-a08f-db5f744f8498
 // x-sample-call-output: |
@@ -362,6 +393,10 @@ type FlavorgroupCollection struct {
 //   format: uuid
 // responses:
 //   '204':
-//     description: Successfully deleted the flavorgroup.
+//     description: Successfully deleted the Flavorgroup.
+//   '404':
+//     description: Flavorgroup record not found
+//   '500':
+//     description: Internal server error
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/flavorgroups/826501bd-3c75-4839-a08f-db5f744f8498
 // ---

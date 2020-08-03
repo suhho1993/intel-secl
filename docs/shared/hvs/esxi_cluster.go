@@ -21,7 +21,6 @@ type ESXiClusterCollection struct {
 	Body hvs.ESXiClusterCollection
 }
 
-
 // ---
 //
 // swagger:operation GET /esxi-cluster ESXi-Cluster Search-ESXi-cluster-records
@@ -50,6 +49,10 @@ type ESXiClusterCollection struct {
 //   in: query
 //   type: string
 //   required: false
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the ESXi clusters.
@@ -59,6 +62,8 @@ type ESXiClusterCollection struct {
 //       $ref: "#/definitions/ESXiClusterCollection"
 //   '400':
 //     description: Invalid search criteria provided
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -105,6 +110,14 @@ type ESXiClusterCollection struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/ESXiCluster"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the Esxi cluster record.
@@ -114,6 +127,8 @@ type ESXiClusterCollection struct {
 //       $ref: "#/definitions/ESXiCluster"
 //   '400':
 //     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -150,6 +165,10 @@ type ESXiClusterCollection struct {
 //   required: true
 //   type: string
 //   format: uuid
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the ESXi cluster.
@@ -159,6 +178,8 @@ type ESXiClusterCollection struct {
 //       $ref: "#/definitions/ESXiCluster"
 //   '404':
 //     description: No relevant cluster records found.
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error.
 //

@@ -64,6 +64,11 @@ type ReportCreateRequest struct {
 //   type: string
 //   format: uuid
 //   required: false
+// - name: hostName
+//   description: Hostname of the host. If this parameter is specified, it will return report only for active host with specified host name.
+//   in: query
+//   type: string
+//   required: false
 // - name: hostHardwareId
 //   description: Hardware UUID of the host. If this parameter is specified, it will return report only for active host with specified host hardware uuid.
 //   in: query
@@ -118,6 +123,10 @@ type ReportCreateRequest struct {
 //   type: integer
 //   required: false
 //   default: 2000
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the reports.
@@ -127,6 +136,8 @@ type ReportCreateRequest struct {
 //       $ref: "#/definitions/ReportCollection"
 //   '400':
 //     description: Invalid search criteria provided
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error
 //
@@ -217,6 +228,14 @@ type ReportCreateRequest struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/ReportCreateRequest"
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '201':
 //     description: Successfully created the report.
@@ -226,6 +245,8 @@ type ReportCreateRequest struct {
 //       $ref: "#/definitions/Report"
 //   '400':
 //     description: Invalid search criteria provided
+//   '415':
+//     description: Invalid Content-Type/Accept Header in Request
 //   '500':
 //     description: Internal server error
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/reports
@@ -312,6 +333,14 @@ type ReportCreateRequest struct {
 //   required: true
 //   type: string
 //   format: uuid
+// - name: Content-Type
+//   required: true
+//   in: header
+//   type: string
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully retrieved the Report.
@@ -321,6 +350,8 @@ type ReportCreateRequest struct {
 //       $ref: "#/definitions/Report"
 //   '404':
 //     description: No relevant report record found.
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error.
 // x-sample-call-endpoint: https://hvs.com:8443/hvs/v2/reports/8a545a4f-d282-4d91-8ec5-bcbe439dcfbc

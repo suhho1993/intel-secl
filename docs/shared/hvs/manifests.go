@@ -37,6 +37,10 @@ type Manifest struct {
 //   type: string
 //   format: uuid
 //   required: true
+// - name: Accept
+//   required: true
+//   in: header
+//   type: string
 // responses:
 //   '200':
 //     description: Successfully generated manifest for the software flavor.
@@ -46,6 +50,8 @@ type Manifest struct {
 //       $ref: "#/definitions/Manifest"
 //   '400':
 //     description: Invalid flavor ID provided
+//   '415':
+//     description: Invalid Accept Header in Request
 //   '500':
 //     description: Internal server error
 //

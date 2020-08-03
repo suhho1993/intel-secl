@@ -41,6 +41,8 @@ type DeployManifestRequest struct {
 //     description: Successfully deployed application manifest to host.
 //   '400':
 //     description: Invalid request body provided
+//   '415':
+//     description: Invalid Content-Type Header
 //   '500':
 //     description: Internal server error
 //
