@@ -142,10 +142,6 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml()  Error while creating report from Flavor verify queue")
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
 	}
-	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/report_controller:CreateSaml() Error while retrieving saml from report")
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while retrieving saml from report"}
-	}
 	secLog.WithField("Host Name", hvsReport.TrustReport.HostManifest.HostInfo.HostName).Infof("%s: saml report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	w.Header().Set("Content-Type", constants.HTTPMediaTypeSaml)
 	return hvsReport.Saml, http.StatusCreated, nil
@@ -238,9 +234,6 @@ func (controller ReportController) SearchSaml(w http.ResponseWriter, r *http.Req
 
 	var samlCollection strings.Builder
 	for _, hvsReport := range hvsReportCollection {
-		if err != nil {
-			defaultLog.WithError(err).Warnf("controllers/report_controller:SearchSaml() Error while retrieving saml from report")
-		}
 		samlCollection.WriteString(hvsReport.Saml)
 	}
 

@@ -25,10 +25,10 @@ type TrustReport struct {
 }
 
 type RuleResult struct {
-	Rule     RuleInfo  `json:"rule"`
-	FlavorId uuid.UUID `json:"flavor_id,omitempty"`
-	Faults   []Fault   `json:"faults,omitempty"`
-	Trusted  bool      `json:"trusted"`
+	Rule     RuleInfo   `json:"rule"`
+	FlavorId *uuid.UUID `json:"flavor_id,omitempty"`
+	Faults   []Fault    `json:"faults,omitempty"`
+	Trusted  bool       `json:"trusted"`
 }
 
 type RuleInfo struct {

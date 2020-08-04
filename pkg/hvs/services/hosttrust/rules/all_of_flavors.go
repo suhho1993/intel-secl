@@ -50,7 +50,7 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 		faultsExist := false
 		for _, policyRule := range policyRules {
 			result, err := policyRule.Apply(hostManifest)
-			result.FlavorId = flavor.Flavor.Meta.ID
+			result.FlavorId = &flavor.Flavor.Meta.ID
 			if err != nil {
 				return report, errors.Wrap(err, "Failed to apply rule \""+report.PolicyName+"\" to host manifest of "+report.HostManifest.HostInfo.HostName)
 			}
@@ -67,7 +67,7 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 			ruleResult := hvs.RuleResult{
 				//FlavorVerify.java 585
 				Rule:     hvs.RuleInfo{Markers: aof.Markers},
-				FlavorId: flavor.Flavor.Meta.ID,
+				FlavorId: &flavor.Flavor.Meta.ID,
 				Faults: []hvs.Fault{
 					{
 						Name:        constants.FaultAllofFlavorsMissing,

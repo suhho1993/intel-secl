@@ -52,7 +52,7 @@ func (a *App) configDir() string {
 
 func (a *App) logDir() string {
 	if a.LogDir != "" {
-		return a.ConfigDir
+		return a.LogDir
 	}
 	return constants.LogDir
 }
@@ -128,14 +128,11 @@ var tablesToDrop = []string{
 	"report",
 	"tag_certificate",
 	"tpm_endorsement",
-	// link_flavor_host,
 	"flavorgroup_flavor",
 	"host_flavorgroup",
 	"queue",
 	"flavor",
 	"trust_cache",
-	// tag_certificate_request,
-	// host_tpm_password,
 	"audit_log_entry",
 }
 

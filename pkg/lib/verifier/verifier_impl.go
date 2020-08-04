@@ -79,7 +79,7 @@ func (v *verifierImpl) applyRules(rulesToApply []rules.Rule, hostManifest *types
 		}
 
 		// assign the flavor id to all rules
-		result.FlavorId = v.signedFlavor.Flavor.Meta.ID
+		result.FlavorId = &v.signedFlavor.Flavor.Meta.ID
 
 		results = append(results, *result)
 	}
