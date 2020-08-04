@@ -6,7 +6,7 @@
 package rules
 
 import (
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	constants "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
@@ -47,6 +47,7 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 		if err != nil {
 			return nil, err
 		}
+		faultsExist := false
 		for _, policyRule := range policyRules {
 			result, err := policyRule.Apply(hostManifest)
 			result.FlavorId = flavor.Flavor.Meta.ID
@@ -54,25 +55,28 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 				return report, errors.Wrap(err, "Failed to apply rule \""+report.PolicyName+"\" to host manifest of "+report.HostManifest.HostInfo.HostName)
 			}
 			if result != nil && !report.CheckResultExists(*result) {
-				// TODO:
-				// assign RuleInfo? FlavorID?
-				// Trusted is be default empty since Fault is not empty
-				// ref: lib-verifier: RuleResult.java
-				ruleResult := hvs.RuleResult{
-					//FlavorVerify.java 585
-					Rule: hvs.RuleInfo{Markers: aof.Markers},
-					Faults: []hvs.Fault{
-						{
-							Name:        constants.FaultAllofFlavorsMissing,
-							Description: "All of Flavor Types Missing : " + flavor.Flavor.Meta.Description.FlavorPart,
-						},
-					},
+				result.Trusted = result.IsTrusted()
+				if !result.Trusted {
+					faultsExist = true
 				}
-				if result.Rule.Name != "" {
-					ruleResult.Rule.Name = result.Rule.Name
-				}
-				report.AddResult(ruleResult)
+				report.AddResult(*result)
 			}
+
+		}
+		if faultsExist {
+			ruleResult := hvs.RuleResult{
+				//FlavorVerify.java 585
+				Rule:     hvs.RuleInfo{Markers: aof.Markers},
+				FlavorId: flavor.Flavor.Meta.ID,
+				Faults: []hvs.Fault{
+					{
+						Name:        constants.FaultAllofFlavorsMissing,
+						Description: "All of Flavor Types Missing : " + flavor.Flavor.Meta.Description.FlavorPart,
+					},
+				},
+			}
+
+			report.AddResult(ruleResult)
 		}
 	}
 	return report, nil
