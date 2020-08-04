@@ -49,7 +49,7 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 		}
 		for _, policyRule := range policyRules {
 			result, err := policyRule.Apply(hostManifest)
-			result.FlavorId = flavor.Flavor.Meta.ID
+			result.FlavorId = &flavor.Flavor.Meta.ID
 			if err != nil {
 				return report, errors.Wrap(err, "Failed to apply rule \""+report.PolicyName+"\" to host manifest of "+report.HostManifest.HostInfo.HostName)
 			}
