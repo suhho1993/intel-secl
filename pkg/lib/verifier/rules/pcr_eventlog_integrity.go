@@ -13,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewPcrEventLogIntegrity creates a rule that will check if a PCR (in the host-manifest only)
+// has a "calculated hash" (i.e. from event log replay) that matches its actual hash.
 func NewPcrEventLogIntegrity(expectedPcr *types.Pcr, marker common.FlavorPart) (Rule, error) {
 	if expectedPcr == nil {
 		return nil, errors.New("The expected pcr cannot be nil")
@@ -35,7 +37,7 @@ type pcrEventLogIntegrity struct {
 // - If the hostmanifest does not have an event log at 'expected' bank/index, create a 
 //   PcrEventLogMissing fault.
 // - Otherwise, replay the hostmanifest's event log at 'expected' bank/index and verify the 
-//   the cumulative hash matches the 'expected' pcr's 'value'.  If not, crete a PcrEventLogInvalid fault.
+//   the calculated hash matches the pcr value in the host-manifest.  If not, crete a PcrEventLogInvalid fault.
 func (rule *pcrEventLogIntegrity) Apply(hostManifest *types.HostManifest) (*hvs.RuleResult, error) {
 
 	result := hvs.RuleResult{}
@@ -69,7 +71,7 @@ func (rule *pcrEventLogIntegrity) Apply(hostManifest *types.HostManifest) (*hvs.
 					return nil, err
 				}
 
-				if calculatedValue != rule.expectedPcr.Value {
+				if calculatedValue != actualPcr.Value {
 					fault := hvs.Fault{
 						Name:        constants.FaultPcrEventLogInvalid,
 						Description: fmt.Sprintf("PCR %d Event Log is invalid", rule.expectedPcr.Index),
