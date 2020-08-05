@@ -37,6 +37,7 @@ type HostDataFetcherConfig struct {
 	HostConnectionConfig HostConnectionConfig
 	RetryTimeMinutes     int
 	HostStatusStore      HostStatusStore
+	HostStore            HostStore
 }
 
 type HostControllerConfig struct {

@@ -49,6 +49,7 @@ func TestHostTrustManagerNewService(t *testing.T) {
 		HostConnectorFactory: hc.HostConnectorFactory{},
 		RetryTimeMinutes:     7,
 		HostStatusStore:      hss,
+		HostStore:            hs,
 	}
 	_, f, _ := hostfetcher.NewService(cfg, 5)
 
