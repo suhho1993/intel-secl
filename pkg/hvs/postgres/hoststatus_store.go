@@ -334,6 +334,10 @@ func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCr
 		formattedQuery = fmt.Sprintf("%s %s", formattedQuery, additionalOptionsQueryString)
 	}
 
+	if hsFilter.Limit == 0 {
+		hsFilter.Limit = constants.DefaultSearchResultRowLimit
+	}
+
 	// finalize query
 	tx = tx.Raw(formattedQuery).Limit(hsFilter.Limit)
 
