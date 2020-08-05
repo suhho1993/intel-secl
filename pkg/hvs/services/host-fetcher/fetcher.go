@@ -240,7 +240,7 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 	}
 	if err != nil {
 		hostStatus.HostStatusInformation.HostState = hvs.HostStateUnknown
-		if _, err := svc.hs.Create(hostStatus); err != nil {
+		if err := svc.hs.Persist(hostStatus); err != nil {
 			defaultLog.Error("could not update host status to store")
 		}
 		return nil, err
@@ -248,7 +248,7 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 	hostStatus.HostStatusInformation.HostState = hvs.HostStateConnected
 	hostStatus.HostManifest = *hostData
 
-	if _, err := svc.hs.Create(hostStatus); err != nil {
+	if err := svc.hs.Persist(hostStatus); err != nil {
 		defaultLog.Error("could not update host status and manifest to store")
 	}
 
@@ -282,7 +282,7 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 			retryTime: time.Now().Add(time.Duration(svc.retryIntervalMins) * time.Minute),
 			hostId:    hId,
 		}
-		svc.hs.Create(&hvs.HostStatus{
+		_ = svc.hs.Persist(&hvs.HostStatus{
 			HostID: hId,
 			HostStatusInformation: hvs.HostStatusInformation{
 				HostState:         hvs.HostStateUnknown,
@@ -299,7 +299,7 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 	frs := svc.workMap[hId]
 	delete(svc.workMap, hId)
 	svc.wmLock.Unlock()
-	svc.hs.Create(&hvs.HostStatus{
+	_ = svc.hs.Persist(&hvs.HostStatus{
 		HostID: hId,
 		HostStatusInformation: hvs.HostStatusInformation{
 			HostState:         hvs.HostStateConnected,

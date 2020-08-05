@@ -275,7 +275,7 @@ func auditlogEntryToReport(auRecord models.AuditLogEntry) (*models.HVSReport, er
 	}
 
 	var err error
-	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[3]) && auRecord.Data.Columns[2].Value != nil {
+	if !reflect.DeepEqual(models.AuditColumnData{}, auRecord.Data.Columns[3]) && auRecord.Data.Columns[3].Value != nil {
 		createdString := fmt.Sprintf("%v", auRecord.Data.Columns[3].Value)
 		hvsReport.CreatedAt, err = time.Parse(time.RFC3339Nano, createdString)
 		if err != nil {

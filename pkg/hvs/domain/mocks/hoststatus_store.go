@@ -51,8 +51,8 @@ func (store *MockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, error
 	return nil, errors.New(commErr.RowsNotFound)
 }
 
-// Update updates an existing HostStatus
-func (store *MockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
+// Persist updates an existing HostStatus or creates a new one if it does not exist
+func (store *MockHostStatusStore) Persist(updatedHSS *hvs.HostStatus) error {
 	if updatedHSS.ID == uuid.Nil {
 		return errors.New("HostStatus Update Failed: ID is invalid")
 	}
@@ -228,8 +228,8 @@ func (store *BadMockHostStatusStore) Retrieve(id uuid.UUID) (*hvs.HostStatus, er
 	return nil, &commErr.ResourceError{Message: "Error accessing HostStatusStore"}
 }
 
-// Updates updates an existing HostStatus
-func (store *BadMockHostStatusStore) Update(updatedHSS *hvs.HostStatus) error {
+// Persist updates an existing HostStatus or creates a new one if it does not exist
+func (store *BadMockHostStatusStore) Persist(updatedHSS *hvs.HostStatus) error {
 	return &commErr.ResourceError{Message: "Error accessing HostStatusStore"}
 }
 

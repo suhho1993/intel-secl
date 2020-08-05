@@ -39,7 +39,7 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 	defaultLog.Trace("controllers/report_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/report_controller:Create() Leaving")
 
-	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -91,6 +91,7 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateReque
 	hostStatusCollection, err := controller.HostStatusStore.Search(&models.HostStatusFilterCriteria{
 		HostId:        hostId,
 		LatestPerHost: true,
+		Limit:         1,
 	})
 	if len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
 		return nil, errors.New("controllers/report_controller:createReport() Host is not in CONNECTED state")
@@ -108,7 +109,7 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 	defaultLog.Trace("controllers/report_controller:CreateSaml() Entering")
 	defer defaultLog.Trace("controllers/report_controller:CreateSaml() Leaving")
 
-	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 	if r.Header.Get("Accept") != constants.HTTPMediaTypeSaml {

@@ -34,13 +34,15 @@ func (hss *HostStatusStore) Create(hs *hvs.HostStatus) (*hvs.HostStatus, error) 
 	defaultLog.Trace("postgres/hoststatus_store:Create() Entering")
 	defer defaultLog.Trace("postgres/hoststatus_store:Create() Leaving")
 
+	// populate realtime fields
 	hs.ID = uuid.New()
+	hs.Created = time.Now()
 	dbHostStatus := hostStatus{
 		ID:         hs.ID,
 		HostID:     hs.HostID,
 		Status:     PGHostStatusInformation(hs.HostStatusInformation),
 		HostReport: PGHostManifest(hs.HostManifest),
-		CreatedAt:  time.Now(),
+		CreatedAt:  hs.Created,
 	}
 
 	if err := hss.Store.Db.Create(&dbHostStatus).Error; err != nil {
@@ -133,29 +135,43 @@ func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) ([
 	return hostStatuses, nil
 }
 
-func (hss *HostStatusStore) Update(hs *hvs.HostStatus) error {
-	defaultLog.Trace("postgres/hoststatus_store:Update() Entering")
-	defer defaultLog.Trace("postgres/hoststatus_store:Update() Leaving")
+// Persist is used by the HostDataFetcher to update an existing HostStatus record else create one if it does not exist
+func (hss *HostStatusStore) Persist(hs *hvs.HostStatus) error {
+	defaultLog.Trace("postgres/hoststatus_store:Persist() Entering")
+	defer defaultLog.Trace("postgres/hoststatus_store:Persist() Leaving")
 
-	if hs.ID == uuid.Nil {
-		return errors.New("postgres/hoststatus_store:Update() - ID is invalid")
+	if hs.HostID == uuid.Nil {
+		return errors.New("postgres/hoststatus_store:Persist() - HostID is missing")
 	}
-	// find record before update
-	oldHs := hostStatus{}
-	hss.Store.Db.Where(&hostStatus{ID: hs.ID}).First(&oldHs)
 
+	// find record before update
+	oldHs := &hostStatus{}
+	err := hss.Store.Db.Where(&hostStatus{HostID: hs.HostID}).First(&oldHs).Error
+
+	if err != nil {
+		// record does not exist, then create
+		_, err = hss.Create(hs)
+		if err != nil {
+			return errors.Wrap(err, "postgres/hoststatus_store:Persist() - Failed to Create HostStatus record ")
+		} else {
+			return nil
+		}
+	}
+
+	// record already exists, update the record
 	dbHostStatus := hostStatus{
-		ID:         hs.ID,
-		HostID:     hs.HostID,
+		ID:         oldHs.ID,
+		HostID:     oldHs.HostID,
 		Status:     PGHostStatusInformation(hs.HostStatusInformation),
 		HostReport: PGHostManifest(hs.HostManifest),
+		CreatedAt:  time.Now(),
 	}
 
 	if db := hss.Store.Db.Model(&dbHostStatus).Updates(&dbHostStatus); db.Error != nil || db.RowsAffected != 1 {
 		if db.Error != nil {
-			return errors.Wrap(db.Error, "postgres/hoststatus_store:Update() failed to update HostStatus  "+hs.ID.String())
+			return errors.Wrap(db.Error, "postgres/hoststatus_store:Persist() failed to update HostStatus  "+hs.ID.String())
 		} else {
-			return errors.New("postgres/hoststatus_store:Update() - no rows affected - Record not found = id :  " + hs.ID.String())
+			return errors.New("postgres/hoststatus_store:Persist() - no rows affected - Record not found = id :  " + hs.ID.String())
 		}
 
 	}
@@ -230,9 +246,9 @@ func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCr
 
 	additionalOptionsQueryString = fmt.Sprintf("WHERE %s.entity_type = 'host_status' ", auditLogAbbrv)
 
-	//Build table join string with host table if host identifier is set
+	// Build table join string with host table if host identifier is set
 	if hsFilter.HostName != "" {
-		tableJoinString = fmt.Sprintf("INNER JOIN host h on CAST(h.id AS VARCHAR) = %s.data -> 'columns' -> 1 ->> 'value'", auditLogAbbrv)
+		tableJoinString = fmt.Sprintf("INNER JOIN host h on CAST(h.id AS VARCHAR) = %s.data -> 'Columns' -> 1 ->> 'Value'", auditLogAbbrv)
 	}
 
 	//Build additional options query string is table join string set
@@ -254,26 +270,26 @@ func buildHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFilterCr
 	} else {
 		//Build host ID partial query string and add it to the additional options query string
 		if hsFilter.HostId != uuid.Nil {
-			hostIdQueryString := fmt.Sprintf("%s.data -> 'columns' -> 1 ->> 'value' = '%s'", auditLogAbbrv, hsFilter.HostId.String())
+			hostIdQueryString := fmt.Sprintf("%s.data -> 'Columns' -> 1 ->> 'Value' = '%s'", auditLogAbbrv, hsFilter.HostId.String())
 			additionalOptionsQueryString = fmt.Sprintf("%s AND %s", additionalOptionsQueryString, hostIdQueryString)
 		}
 
 		//Build host name partial query string and add it to the additional options query string
 		if hsFilter.HostName != "" {
-			hostNameQueryString := fmt.Sprintf("%s.data -> 'columns' -> 4 -> 'value' -> 'host_info' ->> 'host_name' = '%s'", auditLogAbbrv, hsFilter.HostName)
+			hostNameQueryString := fmt.Sprintf("%s.data -> 'Columns' -> 4 -> 'Value' -> 'host_info' ->> 'host_name' = '%s'", auditLogAbbrv, hsFilter.HostName)
 			additionalOptionsQueryString = fmt.Sprintf("%s AND %s", additionalOptionsQueryString, hostNameQueryString)
 		}
 
 		//Build hardware uuid partial query string and add it to the additional options query string
 		if hsFilter.HostHardwareId != uuid.Nil {
-			hostHWUUIDQueryString := fmt.Sprintf("LOWER(%s.data -> 'columns' -> 4 -> 'value' -> 'host_info' ->> 'hardware_uuid') = '%s' ", auditLogAbbrv, strings.ToLower(hsFilter.HostHardwareId.String()))
+			hostHWUUIDQueryString := fmt.Sprintf("LOWER(%s.data -> 'Columns' -> 4 -> 'Value' -> 'host_info' ->> 'hardware_uuid') = '%s' ", auditLogAbbrv, strings.ToLower(hsFilter.HostHardwareId.String()))
 			additionalOptionsQueryString = fmt.Sprintf("%s AND %s", additionalOptionsQueryString, hostHWUUIDQueryString)
 		}
 	}
 
 	//Build host state partial query string and add it to the additional options query string
 	if hsFilter.HostStatus != "" {
-		hostStateQueryString := fmt.Sprintf("%s.data -> 'columns' -> 2 -> 'value' ->> 'host_state' = '%s'", auditLogAbbrv, strings.ToUpper(hsFilter.HostStatus))
+		hostStateQueryString := fmt.Sprintf("%s.data -> 'Columns' -> 2 -> 'Value' ->> 'host_state' = '%s'", auditLogAbbrv, strings.ToUpper(hsFilter.HostStatus))
 		additionalOptionsQueryString = fmt.Sprintf("%s AND %s", additionalOptionsQueryString, hostStateQueryString)
 	}
 
@@ -342,35 +358,41 @@ func buildLatestHostStatusSearchQuery(tx *gorm.DB, hsFilter *models.HostStatusFi
 		return tx
 	}
 
+	// For validating HostName or HWUUID we join with the Host table
+	if hsFilter.HostName != "" || hsFilter.HostHardwareId != uuid.Nil {
+		tx = tx.Joins("INNER JOIN host h on h.id = host_id")
+	}
+
 	// Host Status ID
 	if hsFilter.Id != uuid.Nil {
-		tx = tx.Where("id = ?", hsFilter.Id)
+		tx = tx.Where("id = ?", hsFilter.Id.String())
 	}
 
 	// Host UUID
 	if hsFilter.HostId != uuid.Nil {
-		tx = tx.Where("host_id = ?", hsFilter.HostId)
+		tx = tx.Where("host_id = ?", hsFilter.HostId.String())
 	}
 
 	// HWUUID
 	if hsFilter.HostHardwareId != uuid.Nil {
-		tx = tx.Where(`host_report @> '{"host_info": {"hardware_uuid": "` + hsFilter.HostHardwareId.String() + `"}}'`)
+		tx = tx.Where("h.hardware_uuid = ?", hsFilter.HostHardwareId.String())
 	}
 
 	// HostName
 	if hsFilter.HostName != "" {
-		tx = tx.Where(`host_report @> '{"host_info": {"host_name": "` + hsFilter.HostName + `"}}'`)
+		tx = tx.Where("h.name = ?", hsFilter.HostName)
 	}
 
 	// Host Connection Status
 	if hsFilter.HostStatus != "" {
 		tx = tx.Where(`status @> '{"host_state": "` + strings.ToUpper(hsFilter.HostStatus) + `"}'`)
 	}
-	if hsFilter.Limit == 0 && hsFilter.LatestPerHost {
-		hsFilter.Limit = 1
-	} else {
-		hsFilter.Limit = 2000
+
+	// Apply default row limit when called internally
+	if hsFilter.Limit == 0 {
+		hsFilter.Limit = constants.DefaultSearchResultRowLimit
 	}
+
 	// apply result limits
 	tx = tx.Limit(hsFilter.Limit)
 
