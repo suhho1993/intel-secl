@@ -12,12 +12,14 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/google/uuid"
-	constants "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
+	faultsConst "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	"io"
+	"strings"
 )
 
 func NewXmlMeasurementLogIntegrity(flavorID uuid.UUID, flavorLabel string, expectedCumulativeHash string) (Rule, error) {
@@ -50,7 +52,7 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 
 	result := hvs.RuleResult{}
 	result.Trusted = true
-	result.Rule.Name = constants.RuleXmlMeasurementLogIntegrity
+	result.Rule.Name = faultsConst.RuleXmlMeasurementLogIntegrity
 	result.Rule.FlavorName = &rule.flavorLabel
 	result.Rule.ExpectedValue = &rule.expectedCumulativeHash
 	result.Rule.Markers = append(result.Rule.Markers, common.FlavorPartSoftware)
@@ -105,12 +107,18 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 							pcrEventLogMeasurement = eventLog.Value
 							break
 						}
+						if (strings.Contains(rule.flavorLabel, constants.DefaultSoftwareFlavorPrefix) ||
+							strings.Contains(rule.flavorLabel, constants.DefaultWorkloadFlavorPrefix)) &&
+							strings.HasPrefix(eventLog.Label, rule.flavorLabel) {
+							pcrEventLogMeasurement = eventLog.Value
+							break
+						}
 					}
 
 					if pcrEventLogMeasurement == "" {
 						// the pcr event did not have a measurement with the flavor label
 						fault := hvs.Fault{
-							Name:          constants.FaultXmlMeasurementValueMismatch,
+							Name:          faultsConst.FaultXmlMeasurementValueMismatch,
 							Description:   fmt.Sprintf("The pcr event log did not contain a measurement with label '%s'", rule.flavorLabel),
 							ExpectedValue: &pcrEventLogMeasurement,
 							ActualValue:   &calculatedHash,
@@ -132,7 +140,7 @@ func (rule *xmlMeasurementLogIntegrity) Apply(hostManifest *types.HostManifest) 
 						if calculatedSha256String != pcrEventLogMeasurement {
 							// the calculated hash did not match the measurement captured in the pcr event log
 							fault := hvs.Fault{
-								Name:          constants.FaultXmlMeasurementValueMismatch,
+								Name:          faultsConst.FaultXmlMeasurementValueMismatch,
 								Description:   fmt.Sprintf("Host XML measurement log final hash with value '%s' does not match the pcr event log measurement '%s'", calculatedSha256String, pcrEventLogMeasurement),
 								ExpectedValue: &pcrEventLogMeasurement,
 								ActualValue:   &calculatedSha256String,

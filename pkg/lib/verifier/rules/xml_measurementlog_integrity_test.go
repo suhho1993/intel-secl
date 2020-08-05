@@ -97,11 +97,11 @@ func TestXmlMeasurementLogIntegrityXmlMeasurementLogInvalidFault(t *testing.T) {
     t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
-func TestXmlMeasurementLogIntegrityXmlMissingFromBadLabel(t *testing.T) {
+func TestXmlMeasurementLogIntegrityXmlMissingFromBadId(t *testing.T) {
 
     // create the rule
     var testExpectedMeasurement ta.Measurement
-    err := xml.Unmarshal([]byte(testIntegrityMeasurementsXml), &testExpectedMeasurement)
+    err := xml.Unmarshal([]byte(testCustomMeasurementXml), &testExpectedMeasurement)
     assert.NoError(t, err)
 
     rule, err := NewXmlMeasurementLogIntegrity(uuid.MustParse(testExpectedMeasurement.Uuid), testExpectedMeasurement.Label, testExpectedMeasurement.CumulativeHash)
@@ -109,10 +109,10 @@ func TestXmlMeasurementLogIntegrityXmlMissingFromBadLabel(t *testing.T) {
 
     // create a manifest with a different "label" than the flavor and exepct FaultXmlMeasurementLogMissing
     var invalidMeasurements ta.Measurement
-    err = xml.Unmarshal([]byte(testIntegrityMeasurementsXml), &invalidMeasurements)
+    err = xml.Unmarshal([]byte(testCustomMeasurementXml), &invalidMeasurements)
     assert.NoError(t, err)
 
-    invalidMeasurements.Label = "invalidlabel"
+    invalidMeasurements.Uuid = uuid.New().String()
 	invalidMeasurementsXml, err := xml.Marshal(invalidMeasurements)
     assert.NoError(t, err)
     
