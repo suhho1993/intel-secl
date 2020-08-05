@@ -7,6 +7,7 @@ package rules
 import (
 	"encoding/json"
 	"encoding/xml"
+	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -61,7 +62,7 @@ func TestXmlMeasurementLogEqualsMeasurementLogMissingFault(t *testing.T) {
 	t.Logf("Fault description: %s", result.Faults[0].Description)
 }
 
-func TestXmlMeasurementLogEqualsMeasurementLogMissingFaultWrongLabel(t *testing.T) {
+func TestXmlMeasurementLogEqualsMeasurementLogMissingFaultWrongId(t *testing.T) {
 
 	// create the rule
 	var softwareFlavor hvs.Flavor
@@ -73,10 +74,10 @@ func TestXmlMeasurementLogEqualsMeasurementLogMissingFaultWrongLabel(t *testing.
 
 	// Change the label in the manifest to invoke FaultXmlMeasurementLogMissing
 	// (the expected label will not be found in the rule)
-	var wrongLabel ta.Measurement
-	err = xml.Unmarshal([]byte(testMeasurementXml), &wrongLabel)
-	wrongLabel.Label = "wrong label"
-	wrongLabelXml, err := xml.Marshal(wrongLabel)
+	var wrongId ta.Measurement
+	err = xml.Unmarshal([]byte(testCustomMeasurementXml), &wrongId)
+	wrongId.Uuid = uuid.New().String()
+	wrongLabelXml, err := xml.Marshal(wrongId)
 	assert.NoError(t, err)
 	hostManifest := types.HostManifest {
 		MeasurementXmls: []string{string(wrongLabelXml)},

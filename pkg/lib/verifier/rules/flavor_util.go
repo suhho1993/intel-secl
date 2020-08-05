@@ -14,6 +14,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	flavor_model "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	"strings"
 )
 
 // Utility function that finds the hvs.PcrEx at 'bank' and 'index' and returns
@@ -62,7 +63,12 @@ func getMeasurementAssociatedWithFlavor(hostManifest *types.HostManifest, flavor
 			return nil, nil, errors.Wrapf(err, "An error occurred parsing measurement xml index %d", i)
 		}
 
-		if flavorId.String() == measurement.Uuid && flavorLabel == measurement.Label {
+		if flavorId.String() == measurement.Uuid {
+			return &measurement, xmlBytes, nil
+		}
+
+		if (strings.Contains(flavorLabel, constants.DefaultSoftwareFlavorPrefix) ||
+			strings.Contains(flavorLabel, constants.DefaultWorkloadFlavorPrefix)) && flavorLabel == measurement.Label {
 			return &measurement, xmlBytes, nil
 		}
 	}

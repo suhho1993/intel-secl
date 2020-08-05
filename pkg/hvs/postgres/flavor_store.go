@@ -194,6 +194,10 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 				if _, ok := hostUniqueFlavorMetaInfo["tboot_installed"]; ok {
 					hostUniqueQuery = hostUniqueQuery.Where("f.content -> 'meta' -> 'description' ->> 'tboot_installed' = ?", strconv.FormatBool(hostUniqueFlavorMetaInfo["tboot_installed"].(bool)))
 				}
+				if _, ok := hostUniqueFlavorMetaInfo["hardware_uuid"]; ok {
+					hostUniqueQuery = hostUniqueQuery.Where("f.content -> 'meta' -> 'description' ->> 'hardware_uuid' = ?", strings.ToLower(hostUniqueFlavorMetaInfo["hardware_uuid"].(string)))
+				}
+
 				if flavorPartsWithLatest[fc.FlavorPartHostUnique] {
 					hostUniqueQuery = hostUniqueQuery.Order("f.created_at desc").Limit(1)
 				}
