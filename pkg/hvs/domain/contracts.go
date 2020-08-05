@@ -77,7 +77,7 @@ type (
 		Retrieve(uuid.UUID) (*hvs.HostStatus, error)
 		Search(*models.HostStatusFilterCriteria) ([]hvs.HostStatus, error)
 		Delete(uuid.UUID) error
-		Update(*hvs.HostStatus) error
+		Persist(*hvs.HostStatus) error
 		FindHostIdsByKeyValue(key, value string) ([]uuid.UUID, error)
 	}
 
