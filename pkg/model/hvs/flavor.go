@@ -27,3 +27,13 @@ type SignedFlavor = model.SignedFlavor
 type SignedFlavorCollection struct {
 	SignedFlavors []SignedFlavor `json:"signed_flavors"`
 }
+
+func (s SignedFlavorCollection) GetFlavors(flavorPart string) []SignedFlavor {
+	signedFlavors := []SignedFlavor{}
+	for _, flavor := range s.SignedFlavors {
+		if flavor.Flavor.Meta.Description.FlavorPart == flavorPart {
+			signedFlavors = append(signedFlavors, flavor)
+		}
+	}
+	return signedFlavors
+}

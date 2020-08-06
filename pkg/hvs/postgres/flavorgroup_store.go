@@ -55,6 +55,14 @@ func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) ([
 	defaultLog.Trace("postgres/flavorgroup_store:Search() Entering")
 	defer defaultLog.Trace("postgres/flavorgroup_store:Search() Leaving")
 
+	var err error
+	if fgFilter !=nil && fgFilter.FlavorId != nil {
+		fgFilter.Ids, err = f.searchFlavorGroups(fgFilter.FlavorId)
+		if err != nil {
+			return nil, errors.New("postgres/flavorgroup_store:Search() Unexpected Error. " +
+				"Error getting associated flavorgroups")
+		}
+	}
 	tx := buildFlavorGroupSearchQuery(f.Store.Db, fgFilter)
 
 	if tx == nil {
@@ -114,7 +122,6 @@ func buildFlavorGroupSearchQuery(tx *gorm.DB, fgFilter *models.FlavorGroupFilter
 	} else if fgFilter.NameContains != "" {
 		tx = tx.Where("name like ? ", "%"+fgFilter.NameContains+"%")
 	}
-	//TODO: Add search for hostId
 	return tx
 }
 
@@ -232,4 +239,33 @@ func (f *FlavorGroupStore) SearchHostsByFlavorGroup(fgID uuid.UUID) ([]uuid.UUID
 	}
 
 	return hIDs, nil
+}
+// searchFlavorGroups returns a list of flavorgroups linked to flavor
+func (f *FlavorGroupStore) searchFlavorGroups(flavorId *uuid.UUID) ([]uuid.UUID, error) {
+	defaultLog.Trace("postgres/flavorgroup_store:searchFlavorGroups() Entering")
+	defer defaultLog.Trace("postgres/flavorgroup_store:searchFlavorGroups() Leaving")
+
+	// filter by flavorgroup id
+	tx := f.Store.Db.Model(&flavorgroupFlavor{})
+	tx = tx.Select("flavorgroup_id").Where("flavor_id = ?", flavorId)
+	if tx == nil {
+		return nil, errors.New("postgres/flavorgroup_store:searchFlavorGroups() Unexpected Error. Could not build" +
+			" a gorm query object in FlavorGroupsFlavors Search function.")
+	}
+
+	rows, err := tx.Rows()
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/flavorgroup_store:searchFlavorGroups() failed to retrieve records from db")
+	}
+	defer rows.Close()
+
+	flavorGroupIds := []uuid.UUID{}
+	for rows.Next() {
+		flavorGroupId := uuid.UUID{}
+		if err := rows.Scan(&flavorGroupId); err != nil {
+			return nil, errors.Wrap(err, "postgres/flavorgroup_store:searchFlavorGroups() failed to scan record")
+		}
+		flavorGroupIds = append(flavorGroupIds, flavorGroupId)
+	}
+	return flavorGroupIds, nil
 }

@@ -107,6 +107,8 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid flavor create criteria"}
 	}
 
+	//Unique flavor parts
+	flavorCreateReq.FlavorParts = fc.FilterUniqueFlavorParts(flavorCreateReq.FlavorParts)
 	signedFlavors, err := fcon.createFlavors(flavorCreateReq)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/flavor_controller:Create() Error creating flavors")
@@ -117,8 +119,22 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 		SignedFlavors: signedFlavors,
 	}
 
+	// Reorder flavors as per request
+	if flavorCreateReq.FlavorParts != nil && len(flavorCreateReq.FlavorParts) > 0 {
+		signedFlavorCollection = orderFlavorsPerFlavorParts(flavorCreateReq.FlavorParts, signedFlavorCollection)
+	}
 	secLog.Info("Flavors created successfully")
 	return signedFlavorCollection, http.StatusCreated, nil
+}
+
+func orderFlavorsPerFlavorParts(parts []fc.FlavorPart, signedFlavorCollection hvs.SignedFlavorCollection) hvs.SignedFlavorCollection {
+	signedFlavors := []hvs.SignedFlavor{}
+	for _, flavorPart := range parts {
+		signedFlavors = append(signedFlavors, signedFlavorCollection.GetFlavors(flavorPart.String())...)
+	}
+	return hvs.SignedFlavorCollection{
+		SignedFlavors: signedFlavors,
+	}
 }
 
 func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([]hvs.SignedFlavor, error) {
@@ -507,27 +523,66 @@ func (fcon *FlavorController) Delete(w http.ResponseWriter, r *http.Request) (in
 	defaultLog.Trace("controllers/flavor_controller:Delete() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:Delete() Leaving")
 
-	id := uuid.MustParse(mux.Vars(r)["id"])
-	_, err := fcon.FStore.Retrieve(id)
+	flavorId := uuid.MustParse(mux.Vars(r)["id"])
+	_, err := fcon.FStore.Retrieve(flavorId)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
-			secLog.WithError(err).WithField("id", id).Info(
+			secLog.WithError(err).WithField("id", flavorId).Info(
 				"controllers/flavor_controller:Delete()  Flavor with given ID does not exist")
 			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Flavor with given ID does not exist"}
 		} else {
-			secLog.WithError(err).WithField("id", id).Info(
+			secLog.WithError(err).WithField("id", flavorId).Info(
 				"controllers/flavor_controller:Delete() Failed to delete Flavor")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Flavor"}
 		}
 	}
-	//TODO: Check if the flavor-flavorgroup is link exists
-	//TODO: Check if the flavor-host link exists
-	if err := fcon.FStore.Delete(id); err != nil {
-		defaultLog.WithError(err).WithField("id", id).Info(
+
+	hostIdsForQueue, err := getHostsAssociatedWithFlavor(fcon.FGStore, flavorId)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/flavor_controller:Delete() Failed to retrieve hosts " +
+			"associated with flavor")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve hosts " +
+			"associated with flavor for trust re-verification"}
+	}
+
+	if err := fcon.FStore.Delete(flavorId); err != nil {
+		defaultLog.WithError(err).WithField("id", flavorId).Info(
 			"controllers/flavor_controller:Delete() failed to delete Flavor")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Flavor"}
 	}
+
+	defaultLog.Debugf("Found %v hosts to be added to flavor-verify queue", len(hostIdsForQueue))
+	// adding all the host linked to flavor to flavor-verify queue
+	if len(hostIdsForQueue) >= 1 {
+		err := fcon.HTManager.VerifyHostsAsync(hostIdsForQueue, false, false)
+		if err != nil {
+			defaultLog.Error("controllers/flavor_controller:Delete() Host to Flavor Verify Queue addition failed")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to re-verify hosts " +
+				"associated with deleted Flavor"}
+		}
+	}
 	return nil, http.StatusNoContent, nil
+}
+
+func getHostsAssociatedWithFlavor(fgStore domain.FlavorGroupStore, id uuid.UUID) ([]uuid.UUID, error) {
+	defaultLog.Trace("controllers/flavor_controller:getHostsAssociatedWithFlavor() Entering")
+	defer defaultLog.Trace("controllers/flavor_controller:getHostsAssociatedWithFlavor() Leaving")
+
+	var hostIdsForQueue []uuid.UUID
+	flavorGroups, err := fgStore.Search(&dm.FlavorGroupFilterCriteria{FlavorId: &id,})
+	if err != nil {
+		return nil, errors.Wrapf(err, "controllers/flavor_controller:getHostsAssociatedWithFlavor() Failed to retrieve flavorgroups "+
+			"associated with flavor %v for trust re-verification", id)
+	}
+	for _, flavorGroup := range flavorGroups {
+		hostIds, err := fgStore.SearchHostsByFlavorGroup(flavorGroup.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "controllers/flavor_controller:getHostsAssociatedWithFlavor() Failed to retrieve hosts "+
+				"associated with flavorgroup %v for trust re-verification", flavorGroup.ID)
+		}
+		hostIdsForQueue = append(hostIdsForQueue, hostIds...)
+	}
+	return hostIdsForQueue, nil
 }
 
 func (fcon *FlavorController) Retrieve(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {

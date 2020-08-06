@@ -7,6 +7,9 @@ package hostfetcher
 
 import (
 	"context"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
+	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
+	"reflect"
 	"sync"
 	"time"
 
@@ -63,7 +66,8 @@ type Service struct {
 	retryIntervalMins int
 	hcCfg             domain.HostConnectionConfig
 	hcf               hc.HostConnectorFactory
-	hs                domain.HostStatusStore
+	hss               domain.HostStatusStore
+	hs                domain.HostStore
 }
 
 func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain.HostDataFetcher, error) {
@@ -76,11 +80,15 @@ func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain
 		quit:              make(chan struct{}),
 		hcf:               cfg.HostConnectorFactory,
 		retryIntervalMins: cfg.RetryTimeMinutes,
-		hs:                cfg.HostStatusStore,
+		hss:               cfg.HostStatusStore,
 		hcCfg:             cfg.HostConnectionConfig,
+		hs:                cfg.HostStore,
+	}
+	if svc.hss == nil {
+		return nil, nil, errors.New("host status store cannot be empty")
 	}
 	if svc.hs == nil {
-		return nil, nil, errors.New("host status store cannot be empty")
+		return nil, nil, errors.New("host store cannot be empty")
 	}
 	if svc.retryIntervalMins == 0 {
 		svc.retryIntervalMins = defaultRetryIntervalMins
@@ -239,17 +247,20 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 		},
 	}
 	if err != nil {
-		hostStatus.HostStatusInformation.HostState = hvs.HostStateUnknown
-		if err := svc.hs.Persist(hostStatus); err != nil {
-			defaultLog.Error("could not update host status to store")
+		hostState := utils.DetermineHostState(err)
+		defaultLog.Warnf("hostfetcher/Service:Retrieve() Could not connect to host : %s", hostState.String())
+		hostStatus.HostStatusInformation.HostState = hostState
+		if err := svc.hss.Persist(hostStatus); err != nil {
+			defaultLog.Error("hostfetcher/Service:Retrieve() could not update host status to store")
 		}
 		return nil, err
 	}
+
 	hostStatus.HostStatusInformation.HostState = hvs.HostStateConnected
 	hostStatus.HostManifest = *hostData
-
-	if err := svc.hs.Persist(hostStatus); err != nil {
-		defaultLog.Error("could not update host status and manifest to store")
+	svc.updateMissingHostDetails(host.Id, hostData)
+	if err := svc.hss.Persist(hostStatus); err != nil {
+		defaultLog.Error("hostfetcher/Service:Retrieve() could not update host status and manifest to store")
 	}
 
 	return hostData, nil
@@ -282,10 +293,13 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 			retryTime: time.Now().Add(time.Duration(svc.retryIntervalMins) * time.Minute),
 			hostId:    hId,
 		}
-		_ = svc.hs.Persist(&hvs.HostStatus{
+		hostState := utils.DetermineHostState(err)
+		defaultLog.Warnf("hostfetcher/Service:FetchDataAndRespond() Could not connect to host : %s", hostState.String())
+
+		_ = svc.hss.Persist(&hvs.HostStatus{
 			HostID: hId,
 			HostStatusInformation: hvs.HostStatusInformation{
-				HostState:         hvs.HostStateUnknown,
+				HostState:         hostState,
 				LastTimeConnected: time.Now(),
 			},
 		})
@@ -299,7 +313,8 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 	frs := svc.workMap[hId]
 	delete(svc.workMap, hId)
 	svc.wmLock.Unlock()
-	_ = svc.hs.Persist(&hvs.HostStatus{
+	svc.updateMissingHostDetails(hId, hostData)
+	_ = svc.hss.Persist(&hvs.HostStatus{
 		HostID: hId,
 		HostStatusInformation: hvs.HostStatusInformation{
 			HostState:         hvs.HostStateConnected,
@@ -341,4 +356,34 @@ func (svc *Service) GetHostData(connUrl string) (*types.HostManifest, error) {
 	}
 	data, err := connector.GetHostManifest()
 	return &data, err
+}
+
+func (svc *Service) updateMissingHostDetails(hostId uuid.UUID, manifest *types.HostManifest) {
+	defaultLog.Trace("hostfetcher/Service:updateMissingHostDetails() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:updateMissingHostDetails() Leaving")
+
+	if manifest != nil && !reflect.DeepEqual(manifest.HostInfo, taModel.HostInfo{}) {
+		host, err := svc.hs.Retrieve(hostId)
+		if err != nil {
+			defaultLog.Info("hostfetcher/Service:updateMissingHostDetails() Failed to get host information while Verifying host details")
+			return
+		}
+		hostInfo := manifest.HostInfo
+		// Link to default software and workload groups if host is linux
+		if utils.IsLinuxHost(&hostInfo) {
+			defaultLog.Debug("hostfetcher/Service:updateMissingHostDetails() Host is linux, associating with default software flavorgroups")
+			swFgs := utils.GetDefaultSoftwareFlavorGroups(hostInfo.InstalledComponents)
+			host.FlavorgroupNames = append(host.FlavorgroupNames, swFgs...)
+		}
+		if manifest.HostInfo.HardwareUUID != "" {
+			hwUuid, err := uuid.Parse(manifest.HostInfo.HardwareUUID)
+			if err == nil {
+				host.HardwareUuid = &hwUuid
+			}
+		}
+		err = svc.hs.Update(host)
+		if err != nil {
+			defaultLog.Info("hostfetcher/Service:updateMissingHostDetails() Failed to updated host information while Verifying host details")
+		}
+	}
 }

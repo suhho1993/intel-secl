@@ -78,3 +78,20 @@ func (flavorPart *FlavorPart) Parse(flavorPartString string) error {
 	*flavorPart = result
 	return err
 }
+
+// Filter Unique flavor parts from input slice of flavor parts
+func FilterUniqueFlavorParts(flavorParts []FlavorPart) []FlavorPart {
+	if flavorParts != nil && len(flavorParts) > 0 {
+		flavorPartMap := make(map[string]bool)
+		filteredParts := []FlavorPart{}
+		for _, entry := range flavorParts {
+			flavorPart := entry.String()
+			if _, value := flavorPartMap[flavorPart]; !value {
+				flavorPartMap[flavorPart] = true
+				filteredParts = append(filteredParts, entry)
+			}
+		}
+		return filteredParts
+	}
+	return nil
+}
