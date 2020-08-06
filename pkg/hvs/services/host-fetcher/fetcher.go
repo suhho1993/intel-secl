@@ -377,10 +377,9 @@ func (svc *Service) updateMissingHostDetails(hostId uuid.UUID, manifest *types.H
 		}
 		if manifest.HostInfo.HardwareUUID != "" {
 			hwUuid, err := uuid.Parse(manifest.HostInfo.HardwareUUID)
-			if err != nil {
-				defaultLog.Info("hostfetcher/Service:updateMissingHostDetails() Invalid Hardware UUID received")
+			if err == nil {
+				host.HardwareUuid = &hwUuid
 			}
-			host.HardwareUuid = &hwUuid
 		}
 		err = svc.hs.Update(host)
 		if err != nil {
