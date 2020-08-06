@@ -87,6 +87,9 @@ func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain
 	if svc.hss == nil {
 		return nil, nil, errors.New("host status store cannot be empty")
 	}
+	if svc.hs == nil {
+		return nil, nil, errors.New("host store cannot be empty")
+	}
 	if svc.retryIntervalMins == 0 {
 		svc.retryIntervalMins = defaultRetryIntervalMins
 	}
@@ -373,7 +376,10 @@ func (svc *Service) updateMissingHostDetails(hostId uuid.UUID, manifest *types.H
 			host.FlavorgroupNames = append(host.FlavorgroupNames, swFgs...)
 		}
 		if manifest.HostInfo.HardwareUUID != "" {
-			hwUuid := uuid.MustParse(manifest.HostInfo.HardwareUUID)
+			hwUuid, err := uuid.Parse(manifest.HostInfo.HardwareUUID)
+			if err != nil {
+				defaultLog.Info("hostfetcher/Service:updateMissingHostDetails() Invalid Hardware UUID received")
+			}
 			host.HardwareUuid = &hwUuid
 		}
 		err = svc.hs.Update(host)
