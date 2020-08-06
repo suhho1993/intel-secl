@@ -88,6 +88,10 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateReque
 	}
 	//Always only one record is returned for the particular criteria
 	hostId := hosts[0].Id
+	hvsReport, err := controller.HTManager.VerifyHost(hostId, true, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Failed to create a trust report, flavor verification failed")
+	}
 	hostStatusCollection, err := controller.HostStatusStore.Search(&models.HostStatusFilterCriteria{
 		HostId:        hostId,
 		LatestPerHost: true,
@@ -95,11 +99,6 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateReque
 	})
 	if len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
 		return nil, errors.New("controllers/report_controller:createReport() Host is not in CONNECTED state")
-	}
-
-	hvsReport, err := controller.HTManager.VerifyHost(hostId, true, false)
-	if err != nil {
-		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Failed to create a trust report, flavor verification failed")
 	}
 
 	return hvsReport, nil

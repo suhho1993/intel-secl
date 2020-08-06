@@ -67,7 +67,7 @@ type Service struct {
 	hcCfg             domain.HostConnectionConfig
 	hcf               hc.HostConnectorFactory
 	hss               domain.HostStatusStore
-	hs             domain.HostStore
+	hs                domain.HostStore
 }
 
 func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain.HostDataFetcher, error) {
