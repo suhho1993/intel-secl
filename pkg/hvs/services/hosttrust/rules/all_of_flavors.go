@@ -6,7 +6,6 @@
 package rules
 
 import (
-	"github.com/google/uuid"
 	constants "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
@@ -43,7 +42,7 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 	}
 	faultsExist := false
 	hostManifest := &report.HostManifest
-	flavorIdFlavorPart := make(map[*uuid.UUID]string)
+	aofMissingFlavorParts := make(map[string]bool)
 	for _, flavor := range aof.AllOfFlavors {
 		ruleFactory := flavorVerifier.NewRuleFactory(aof.verifierCerts, hostManifest, &flavor, aof.SkipFlavorSignatureVerification)
 		policyRules, _, err := ruleFactory.GetVerificationRules()
@@ -60,7 +59,8 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 				result.Trusted = result.IsTrusted()
 				if !result.Trusted {
 					faultsExist = true
-					flavorIdFlavorPart[result.FlavorId] = flavor.Flavor.Meta.Description.FlavorPart
+					aofMissingFlavorParts[flavor.Flavor.Meta.Description.FlavorPart] = true
+					defaultLog.Infof("All of Flavor types missing for flavor id: %s and flavor part: %s", result.FlavorId, flavor.Flavor.Meta.Description.FlavorPart)
 				}
 
 				report.AddResult(*result)
@@ -69,7 +69,7 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 		}
 	}
 	if faultsExist {
-		for id, flavorPart := range flavorIdFlavorPart {
+		for flvrPart, _ := range aofMissingFlavorParts {
 			ruleResult := hvs.RuleResult{
 				//FlavorVerify.java 585
 				Rule:     hvs.RuleInfo{Markers: aof.Markers},
@@ -77,11 +77,10 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 				Faults: []hvs.Fault{
 					{
 						Name:        constants.FaultAllofFlavorsMissing,
-						Description: "All of Flavor Types Missing : " + flavorPart,
+						Description: "All of Flavor Types Missing : " + flvrPart,
 					},
 				},
 			}
-			defaultLog.Infof("All of Flavor types missing for flavor id: %s and flavor part: %s", id.String(), flavorPart)
 			report.AddResult(ruleResult)
 		}
 	}
