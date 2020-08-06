@@ -8,6 +8,7 @@ import "github.com/google/uuid"
 
 type FlavorGroupFilterCriteria struct {
 	Ids          []uuid.UUID
+	FlavorId     *uuid.UUID
 	NameEqualTo  string
 	NameContains string
 }
