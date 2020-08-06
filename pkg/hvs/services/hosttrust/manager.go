@@ -131,12 +131,15 @@ func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch 
 			ConnectionString: host.ConnectionString})
 
 	} else {
-		hostStatus, err := svc.hostStatusStore.Retrieve(hostId)
-		if err != nil || hostStatus.HostStatusInformation.HostState != hvs.HostStateConnected {
+		hostStatusCollection, err := svc.hostStatusStore.Search(&models.HostStatusFilterCriteria{
+			HostId:        hostId,
+			LatestPerHost: true,
+		})
+		if err != nil || len(hostStatusCollection) ==0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
 			return nil, errors.New("could not retrieve host manifest for host id " + hostId.String())
 		}
 
-		hostData = &hostStatus.HostManifest
+		hostData = &hostStatusCollection[0].HostManifest
 	}
 	return svc.verifier.Verify(hostId, hostData, fetchHostData)
 }
@@ -300,17 +303,22 @@ func (svc *Service) doWork() {
 			return
 
 		case id := <-svc.workChan:
-			if hId, ok := id.(uuid.UUID); ok {
+			if hId, ok := id.(uuid.UUID); !ok {
 				defaultLog.Error("hosttrust/manager:doWork() expecting uuid from channel - but got different type")
 				return
-			} else if status, err := svc.hostStatusStore.Retrieve(hId); err != nil {
-				defaultLog.Error("hosttrust/manager:doWork() - could not retrieve host data from store - error :", err)
-				return
 			} else {
+				hostStatusCollection, err := svc.hostStatusStore.Search(&models.HostStatusFilterCriteria{
+					HostId:        hId,
+					LatestPerHost: true,
+				})
+				if err != nil || len(hostStatusCollection) ==0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
+					defaultLog.Error("hosttrust/manager:doWork() - could not retrieve host data from store - error :", err)
+					return
+				}
 				hostId = hId
 				// TODO: check if hostmanifest is present. If it is not - prob due to conn failure, just remove this work from
 				// the queue here.
-				hostData = &status.HostManifest
+				hostData = &hostStatusCollection[0].HostManifest
 			}
 
 		case data := <-svc.hfWorkChan:
@@ -322,7 +330,6 @@ func (svc *Service) doWork() {
 				hostData = hData.data
 				newData = true
 			}
-
 		}
 		svc.verifyHostData(hostId, hostData, newData)
 	}

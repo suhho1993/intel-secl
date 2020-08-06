@@ -60,8 +60,9 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 				result.Trusted = result.IsTrusted()
 				if !result.Trusted {
 					faultsExist = true
+					flavorIdFlavorPart[result.FlavorId] = flavor.Flavor.Meta.Description.FlavorPart
 				}
-				flavorIdFlavorPart[result.FlavorId] = flavor.Flavor.Meta.Description.FlavorPart
+
 				report.AddResult(*result)
 			}
 
