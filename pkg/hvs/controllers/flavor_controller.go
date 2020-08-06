@@ -107,6 +107,8 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid flavor create criteria"}
 	}
 
+	//Unique flavor parts
+	flavorCreateReq.FlavorParts = fc.FilterUniqueFlavorParts(flavorCreateReq.FlavorParts)
 	signedFlavors, err := fcon.createFlavors(flavorCreateReq)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/flavor_controller:Create() Error creating flavors")
@@ -117,8 +119,22 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 		SignedFlavors: signedFlavors,
 	}
 
+	// Reorder flavors as per request
+	if flavorCreateReq.FlavorParts != nil && len(flavorCreateReq.FlavorParts) > 0 {
+		signedFlavorCollection = orderFlavorsPerFlavorParts(flavorCreateReq.FlavorParts, signedFlavorCollection)
+	}
 	secLog.Info("Flavors created successfully")
 	return signedFlavorCollection, http.StatusCreated, nil
+}
+
+func orderFlavorsPerFlavorParts(parts []fc.FlavorPart, signedFlavorCollection hvs.SignedFlavorCollection) hvs.SignedFlavorCollection {
+	signedFlavors := []hvs.SignedFlavor{}
+	for _, flavorPart := range parts {
+		signedFlavors = append(signedFlavors, signedFlavorCollection.GetFlavors(flavorPart.String())...)
+	}
+	return hvs.SignedFlavorCollection{
+		SignedFlavors: signedFlavors,
+	}
 }
 
 func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([]hvs.SignedFlavor, error) {
