@@ -19,19 +19,25 @@ func openLogFiles() (logFile *os.File, httpLogFile *os.File, secLogFile *os.File
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	os.Chmod(LogFile, 0664)
+	if err = os.Chmod(LogFile, 0664); err != nil {
+		return nil, nil, nil, err
+	}
 
 	httpLogFile, err = os.OpenFile(HttpLogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	os.Chmod(HttpLogFile, 0664)
+	if err = os.Chmod(HttpLogFile, 0664); err != nil {
+		return nil, nil, nil, err
+	}
 
 	secLogFile, err = os.OpenFile(SecurityLogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	os.Chmod(SecurityLogFile, 0664)
+	if err = os.Chmod(SecurityLogFile, 0664); err != nil {
+		return nil, nil, nil, err
+	}
 
 	hvsUser, err := user.Lookup(ServiceUserName)
 	if err != nil {

@@ -481,7 +481,12 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 
 	linkedSf, err := controller.FlavorController.addFlavorToFlavorgroup(flavorPartMap, nil)
 	if err != nil || linkedSf == nil {
-		defaultLog.WithError(err).WithField("Certid", dtcReq.CertID).WithField("flavorID", sf.Flavor.Meta.ID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to link SignedFlavor to Host Unique FlavorGroup", commLogMsg.AppRuntimeErr)
+		defaultLog.WithError(err).WithField("Certid", dtcReq.CertID).WithField("flavorID", sf.Flavor.Meta.ID).
+			Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to link SignedFlavor to Host " +
+				"Unique FlavorGroup", commLogMsg.AppRuntimeErr)
+		if strings.Contains(err.Error(), "duplicate key") {
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same label already exists"}
+		}
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error during Tag Certificate Deploy"}
 	}
 

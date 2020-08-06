@@ -112,6 +112,9 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 	signedFlavors, err := fcon.createFlavors(flavorCreateReq)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/flavor_controller:Create() Error creating flavors")
+		if strings.Contains(err.Error(), "duplicate key") {
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same label already exists"}
+		}
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating flavors"}
 	}
 
@@ -311,8 +314,13 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 			flavorgroup := &hvs.FlavorGroup{}
 			signedFlavorCreated, err := fcon.FStore.Create(&signedFlavor)
 			if err != nil {
-				defaultLog.Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : Unable to create flavors of %s flavorPart", flavorPart.String())
-				fcon.createCleanUp(flavorgroupFlavorMap)
+				defaultLog.WithError(err).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+					"Unable to create flavors of %s flavorPart", flavorPart.String())
+				if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+					defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+						"Error cleaning up already existing flavors on flavor creation failure")
+				}
+
 				return nil, err
 			}
 			// if the flavor is created, associate it with an appropriate flavorgroup
@@ -323,7 +331,10 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 					flavorgroup, err = fcon.createFGIfNotExists(dm.FlavorGroupsHostUnique.String())
 					if err != nil || flavorgroup.ID == uuid.Nil {
 						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Error getting host_unique flavorgroup")
-						fcon.createCleanUp(flavorgroupFlavorMap)
+						if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+							defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+								"Error cleaning up already existing flavors on flavor creation failure")
+						}
 						return nil, err
 					}
 					flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
@@ -335,7 +346,10 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 						hostHardwareUUID = *signedFlavorCreated.Flavor.Meta.Description.HardwareUUID
 					} else {
 						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() hardware UUID must be specified in the flavor document")
-						fcon.createCleanUp(flavorgroupFlavorMap)
+						if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+							defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+								"Error cleaning up already existing flavors on flavor creation failure")
+						}
 						return nil, errors.New("hardware UUID must be specified in the HOST_UNIQUE flavor")
 					}
 
@@ -362,7 +376,10 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 					flavorgroup, err = fcon.createFGIfNotExists(softwareFgName)
 					if err != nil || flavorgroup.ID == uuid.Nil {
 						defaultLog.Errorf("controllers/flavor_controller:addFlavorToFlavorgroup() Error getting %v flavorgroup", softwareFgName)
-						fcon.createCleanUp(flavorgroupFlavorMap)
+						if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+							defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+								"Error cleaning up already existing flavors on flavor creation failure")
+						}
 						return nil, err
 					}
 					flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
@@ -373,7 +390,10 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 				}
 			} else {
 				defaultLog.Error("controllers/flavor_controller: addFlavorToFlavorgroup(): Unable to create flavors")
-				fcon.createCleanUp(flavorgroupFlavorMap)
+				if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+					defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+						"Error cleaning up already existing flavors on flavor creation failure")
+				}
 				return nil, errors.New("Unable to create flavors")
 			}
 			if _, ok := flavorgroupFlavorMap[flavorgroup.ID]; ok {
@@ -389,15 +409,20 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 		_, err := fcon.FGStore.AddFlavors(fgId, fIds)
 		if err != nil {
 			defaultLog.Errorf("controllers/flavor_controller: addFlavorToFlavorgroup(): Error while adding flavors to flavorgroup %s", fgId.String())
-			fcon.createCleanUp(flavorgroupFlavorMap)
-			return nil, err
+			if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+				defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+					"Error cleaning up already existing flavors on flavor creation failure")
+			}
 		}
 	}
 	// get all the hosts that belong to the same flavor group and add them to flavor-verify queue
 	err := fcon.addFlavorgroupHostsToFlavorVerifyQueue(flavorgroupsForQueue, fgHostIds, fetchHostData)
 	if err != nil {
 		defaultLog.Errorf("controllers/flavor_controller: addFlavorToFlavorgroup(): Error while adding hosts to flavor-verify queue")
-		fcon.createCleanUp(flavorgroupFlavorMap)
+		if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+			defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+				"Error cleaning up already existing flavors on flavor creation failure")
+		}
 		return nil, err
 	}
 	return returnSignedFlavors, nil
