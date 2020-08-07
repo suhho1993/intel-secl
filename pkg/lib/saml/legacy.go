@@ -1,6 +1,7 @@
 package saml
 
 import (
+	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
 	"time"
@@ -59,19 +60,15 @@ func (ss legacySamlSigner) GenerateSamlAssertion(f assertionFormatter) (SamlAsse
 		return r, errors.Wrap(err, "Failed to generate XML tree for signing")
 	}
 	// sign the xml tree
-	signedTree, err := signXMLTree(ss, xml)
+	signedTree, err := signXMLTreeLegacy(ss, xml)
 	if err != nil {
 		return r, err
 	}
-	// remove ds namespace prefix
-	dsRoot := signedTree.SelectElement("ds:Signature")
-	dsRoot.RemoveAttr("xmlns:ds")
-	dsRoot.CreateAttr("xmlns", "http://www.w3.org/2000/09/xmldsig#")
-	removeNS(dsRoot, "ds")
 
+	newSignedTree := reorderTree(signedTree)
 	// create xml document from the tree
 	docAfterSign := etree.NewDocument()
-	docAfterSign.SetRoot(signedTree)
+	docAfterSign.SetRoot(newSignedTree)
 	signedDocStr, err := docAfterSign.WriteToString()
 	if err != nil {
 		return r, errors.Wrap(err, "Failed to create signed document")
@@ -81,6 +78,24 @@ func (ss legacySamlSigner) GenerateSamlAssertion(f assertionFormatter) (SamlAsse
 	r.CreatedTime = time.Now().UTC()
 	r.ExpiryTime = time.Now().UTC().Add(ss.validityDuration)
 	return r, nil
+}
+
+func reorderTree(signedTree *etree.Element) *etree.Element {
+	var signElementPos int
+	var issuerElement int
+	for i, node := range signedTree.Child {
+		if node == signedTree.SelectElement("Signature") {
+			signElementPos = i
+		}
+		if node == signedTree.SelectElement("saml2:Issuer") {
+			issuerElement = i
+		}
+	}
+	//Move Signature next to issuer
+	signElement := signedTree.SelectElement("Signature")
+	signedTree.RemoveChildAt(signElementPos)
+	signedTree.InsertChildAt(issuerElement + 1, signElement)
+	return signedTree
 }
 
 // NewLegacyMapFormatter returns an unexported interface assertionFormatter
@@ -101,8 +116,6 @@ func (mf *legacyMapFormatter) generateXMLTree(ic IssuerConfiguration) (*etree.El
 	root.CreateAttr("IssueInstant", issueTime)
 	root.CreateAttr("Version", "2.0")
 	root.CreateAttr("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion")
-	root.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-	root.CreateAttr("xmlns:xsd", "http://www.w3.org/2001/XMLSchema")
 
 	// issuer
 	issuer := etree.NewElement("saml2:Issuer")
@@ -135,9 +148,10 @@ func (mf *legacyMapFormatter) generateXMLTree(ic IssuerConfiguration) (*etree.El
 	for k, v := range mf.userData {
 		attribute := etree.NewElement("saml2:Attribute")
 		attribute.CreateAttr("Name", k)
-		attribute.CreateAttr("NameFormat", "urn:oasis:names:tc:SAML:2.0:attrname-format:basic")
 		attributeValue := etree.NewElement("saml2:AttributeValue")
-		attributeValue.CreateAttr("xsi:type", "xs:string")
+		attributeValue.CreateAttr("xmlns:xsd", "http://www.w3.org/2001/XMLSchema")
+		attributeValue.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+		attributeValue.CreateAttr("xsi:type", "xsd:string")
 		attributeValue.CreateText(v)
 		attribute.AddChild(attributeValue)
 		attributeStatement.AddChild(attribute)
@@ -161,11 +175,6 @@ func ValidateLegacySamlAssertion(sa SamlAssertion, root *x509.Certificate) (*etr
 	if err := doc.ReadFromString(docStr); err != nil {
 		return nil, errors.Wrap(err, "Failed to parse XML document")
 	}
-	// add ds namespace back
-	dsRoot := doc.Root().SelectElement("Signature")
-	setNS(dsRoot, "ds")
-	dsRoot.RemoveAttr("xmlns")
-	dsRoot.CreateAttr("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#")
 
 	ctx := dsig.NewDefaultValidationContext(&dsig.MemoryX509CertificateStore{
 		Roots: []*x509.Certificate{root},
@@ -188,15 +197,16 @@ func setNS(root *etree.Element, ns string) {
 	return
 }
 
-func removeNS(root *etree.Element, ns string) {
-	if root == nil {
-		return
+func signXMLTreeLegacy(ks dsig.X509KeyStore, e *etree.Element) (*etree.Element, error) {
+	ctx := &dsig.SigningContext{
+		Hash:          crypto.SHA256,
+		KeyStore:      ks,
+		IdAttribute:   dsig.DefaultIdAttr,
+		Canonicalizer: dsig.MakeC14N10CommentCanonicalizer(),
 	}
-	if root.Space == ns {
-		root.Space = ""
+	signedElement, err := ctx.SignEnveloped(e)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to sign XML tree")
 	}
-	for _, c := range root.ChildElements() {
-		removeNS(c, ns)
-	}
-	return
+	return signedElement, nil
 }

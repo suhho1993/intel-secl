@@ -202,7 +202,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 		FlavorCACertificates:     rootCApool,
 	}
 	libVerifier, _ := verifier.NewVerifier(verifierCerts)
-	samlKey := privacyCAs.Key.(*rsa.PrivateKey)
+	samlKey := samlCert.Key.(*rsa.PrivateKey)
 	samlIssuerConfig := saml.IssuerConfiguration{
 		IssuerName:        cfg.SAML.Issuer,
 		IssuerServiceName: constants.ServiceName,
