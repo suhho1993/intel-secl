@@ -35,16 +35,16 @@ func (v *verifierImpl) Verify(hostManifest *types.HostManifest, signedFlavor *hv
 
 	v.signedFlavor = signedFlavor
 
-	// default overall trust to true, change to falsed during rule evaluation
+	// default overall trust to true, change to false during rule evaluation
 	v.overallTrust = true
 
 	ruleFactory := NewRuleFactory(v.verifierCertificates, hostManifest, v.signedFlavor, skipSignedFlavorVerification)
-	rules, policyName, err := ruleFactory.GetVerificationRules()
+	verificationRules, policyName, err := ruleFactory.GetVerificationRules()
 	if err != nil {
 		return nil, err
 	}
 
-	results, err := v.applyRules(rules, hostManifest)
+	results, err := v.applyRules(verificationRules, hostManifest)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,8 @@ func (v *verifierImpl) applyRules(rulesToApply []rules.Rule, hostManifest *types
 		}
 
 		// assign the flavor id to all rules
-		result.FlavorId = &v.signedFlavor.Flavor.Meta.ID
+		fId := v.signedFlavor.Flavor.Meta.ID
+		result.FlavorId = &fId
 
 		results = append(results, *result)
 	}
