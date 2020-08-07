@@ -18,7 +18,7 @@ type Manifest struct {
 
 // ---
 //
-// swagger:operation POST /manifests Manifests Get-Software-Manifest
+// swagger:operation GET /manifests Manifests Get-Software-Manifest
 // ---
 //
 // description: |
