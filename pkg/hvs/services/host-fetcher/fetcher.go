@@ -7,11 +7,13 @@ package hostfetcher
 
 import (
 	"context"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
-	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
+	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
@@ -288,6 +290,25 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 	hostData, err := svc.GetHostData(connUrl)
 	if err != nil {
 		defaultLog.WithError(err).Errorf("hostfetcher/Service:FetchDataAndRespond() Failed to get data	")
+		// we have an error. Make sure that the host still exists.
+		if hosts, err := svc.hs.Search(&models.HostFilterCriteria{Id: hId}); err == nil && len(hosts) == 0 {
+			svc.wmLock.Lock()
+			frs := svc.workMap[hId]
+			delete(svc.workMap, hId)
+			svc.wmLock.Unlock()
+			for _, fr := range frs {
+				select {
+				case <-fr.ctx.Done():
+					continue
+				default:
+				}
+				for _, rcv := range fr.rcvrs {
+					_ = rcv.ProcessHostData(fr.ctx, fr.host, nil, errors.New("Host does not exist"))
+				}
+
+			}
+			return
+		}
 		//TODO - presume that error is due to connection failure and we need to retry operation
 		svc.retryRqstChan <- retryRequest{
 			retryTime: time.Now().Add(time.Duration(svc.retryIntervalMins) * time.Minute),

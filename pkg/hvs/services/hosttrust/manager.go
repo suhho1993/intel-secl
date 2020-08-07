@@ -7,6 +7,8 @@ package hosttrust
 
 import (
 	"context"
+	"sync"
+
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
@@ -17,7 +19,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"sync"
 )
 
 var defaultLog = commLog.GetDefaultLogger()
@@ -135,7 +136,7 @@ func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch 
 			HostId:        hostId,
 			LatestPerHost: true,
 		})
-		if err != nil || len(hostStatusCollection) ==0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
+		if err != nil || len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
 			return nil, errors.New("could not retrieve host manifest for host id " + hostId.String())
 		}
 
@@ -311,7 +312,7 @@ func (svc *Service) doWork() {
 					HostId:        hId,
 					LatestPerHost: true,
 				})
-				if err != nil || len(hostStatusCollection) ==0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
+				if err != nil || len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
 					defaultLog.Error("hosttrust/manager:doWork() - could not retrieve host data from store - error :", err)
 					return
 				}
