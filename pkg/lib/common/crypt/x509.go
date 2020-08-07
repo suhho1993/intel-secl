@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"math/big"
@@ -431,4 +432,24 @@ func GetCertPool(certs []x509.Certificate) *x509.CertPool{
 		certPool.AddCert(&cert)
 	}
 	return certPool
+}
+
+func GetCertsFromDir(path string) ([]x509.Certificate, error){
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error while reading certs from dir" + path)
+	}
+	var certificates []x509.Certificate
+	for _, certFile := range files {
+		certFilePath := path + certFile.Name()
+		certs, err := GetSubjectCertsMapFromPemFile(certFilePath)
+		if err != nil {
+			log.WithError(err).Warn("Error while reading certs from dir - " + certFilePath)
+		}
+
+		for _, v := range certs {
+			certificates = append(certificates, v)
+		}
+	}
+	return certificates, nil
 }

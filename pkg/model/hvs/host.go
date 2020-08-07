@@ -11,19 +11,19 @@ type HostCollection struct {
 }
 
 type Host struct {
-	Id               uuid.UUID `json:"id,omitempty"`
-	HostName         string    `json:"host_name"`
-	Description      string    `json:"description,omitempty"`
-	ConnectionString string    `json:"connection_string"`
-	HardwareUuid     *uuid.UUID    `json:"hardware_uuid,omitempty"`
-	FlavorgroupNames []string  `json:"flavorgroup_names,omitempty"`
+	Id               uuid.UUID  `json:"id,omitempty"`
+	HostName         string     `json:"host_name"`
+	Description      string     `json:"description,omitempty"`
+	ConnectionString string     `json:"connection_string"`
+	HardwareUuid     *uuid.UUID `json:"hardware_uuid,omitempty"`
+	FlavorgroupNames []string   `json:"flavorgroup_names,omitempty"`
 }
 
 type HostCreateRequest struct {
-	HostName         string    `json:"host_name"`
-	Description      string    `json:"description,omitempty"`
-	ConnectionString string    `json:"connection_string"`
-	FlavorgroupNames []string  `json:"flavorgroup_names,omitempty"`
+	HostName         string   `json:"host_name"`
+	Description      string   `json:"description,omitempty"`
+	ConnectionString string   `json:"connection_string"`
+	FlavorgroupNames []string `json:"flavorgroup_names,omitempty"`
 }
 
 type HostFlavorgroupCollection struct {
@@ -31,10 +31,10 @@ type HostFlavorgroupCollection struct {
 }
 
 type HostFlavorgroup struct {
-	HostId         uuid.UUID `json:"host_id,omitempty"`
-	FlavorgroupId  uuid.UUID `json:"flavorgroup_id,omitempty"`
+	HostId        uuid.UUID `json:"host_id,omitempty"`
+	FlavorgroupId uuid.UUID `json:"flavorgroup_id,omitempty"`
 }
 
 type HostFlavorgroupCreateRequest struct {
-	FlavorgroupId  uuid.UUID `json:"flavorgroup_id,omitempty"`
+	FlavorgroupId uuid.UUID `json:"flavorgroup_id,omitempty"`
 }
