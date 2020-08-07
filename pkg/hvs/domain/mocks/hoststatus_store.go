@@ -190,9 +190,16 @@ func (store *MockHostStatusStore) Search(criteria *models.HostStatusFilterCriter
 
 // FindHostIdsByKeyValue returns host ids for records having key value pair in HostInfo
 func (store *MockHostStatusStore) FindHostIdsByKeyValue(key, value string) ([]uuid.UUID, error) {
-
+	hostStatuses := []string{HostStatus1, HostStatus2, HostStatus3, HostStatus4}
 	var ids []uuid.UUID
-	// TODO: Need to convert HostInfo to map and search for key and value
+	for _, hostStatus := range hostStatuses{
+		if strings.Contains(hostStatus, key) && strings.Contains(hostStatus, value){
+			hs := hvs.HostStatus{}
+			json.Unmarshal([]byte(HostStatus1), &hs)
+			ids = append(ids, hs.ID)
+		}
+	}
+	
 	return ids, nil
 }
 

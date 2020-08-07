@@ -192,6 +192,10 @@ func (hc *HostController) Search(w http.ResponseWriter, r *http.Request) (interf
 			defaultLog.WithError(err).Error("controllers/host_controller:Search() HostStatus FindHostIdsByKeyValue failed")
 			return nil, http.StatusInternalServerError, errors.Errorf("Failed to search Hosts")
 		}
+		if hostIds == nil{
+			defaultLog.Infof("controllers/host_controller:Search() There is no such host for given key: %s and value: %s", criteria.Key, criteria.Value)
+			return nil, http.StatusBadRequest, errors.Errorf("Host with given filter criteria doesnt exist")
+		}
 		criteria.IdList = hostIds
 	}
 
