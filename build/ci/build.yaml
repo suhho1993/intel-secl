@@ -1,21 +1,25 @@
 .build-common:
+  image: golang:1.14
   stage: build
   tags:
     - k8s
   rules:
-    - when: always
+    - when: on_success
   before_script:
     - git config --global http."https://${GITLAB_SERVER}".proxy ""
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
     - cd $CI_PROJECT_DIR
+  artifacts:
+    paths:
+    - cmd
+    expire_in: 3 hour
+
+build:hvs:
+  extends: .build-common
   script:
-    - echo "This is the CI job that builds monorepo using go 1.13"
-    - go build ./...
-
-build-go-1.13:
-  extends: .build-common
-  image: golang:1.13
-
-build-go-1.14:
-  extends: .build-common
-  image: golang:1.14
+    - echo "This is the CI job that builds hvs using go 1.14"
+    - make hvs
+  artifacts:
+    paths:
+    - cmd
+    expire_in: 3 hour

@@ -20,6 +20,9 @@ hvs-installer: hvs
 
 installer: hvs-installer
 
+hvs-docker: hvs
+	docker build . -f build/image/Dockerfile-hvs -t hvs:$(VERSION)
+
 hvs-swagger:
 	mkdir -p docs/swagger
 	swagger generate spec -c docs\/shared\/hvs -o ./docs/swagger/hvs-openapi.yml --scan-models

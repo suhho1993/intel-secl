@@ -1,0 +1,27 @@
+FROM centos:7
+
+RUN useradd -u 1001 hvs
+
+RUN mkdir -p /var/log/hvs && \ 
+    mkdir -p /etc/hvs/certs/trustedjwt && \ 
+    mkdir -p /etc/hvs/certs/trustedca/root && \ 
+    mkdir -p /etc/hvs/certs/trustedca/privacy-ca && \ 
+    mkdir -p /etc/hvs/certs/endorsement && \ 
+    mkdir -p /etc/hvs/trusted-keys && \
+    chmod -R 755 /var/log && \
+    chmod -R g+s /var/log && \
+    chmod -R 755 /etc/hvs && \
+    chmod -R g+s /etc/hvs && \
+    chown -R 1001:1001 /var/log && \
+    chown -R 1001:1001 /etc/hvs
+
+COPY cmd/hvs/hvs /usr/bin
+
+COPY build/linux/EndorsementCA-external.pem /etc/hvs/certs/endorsement
+
+RUN chown 1001:1001 /usr/bin/hvs && \
+    chown 1001:1001 /etc/hvs/certs/endorsement/EndorsementCA-external.pem
+
+USER 1001:1001
+
+ENTRYPOINT ["hvs setup --all && hvs run"]

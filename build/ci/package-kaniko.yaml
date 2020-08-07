@@ -1,0 +1,24 @@
+.package-kaniko-common:
+  stage: package
+  tags:
+    - k8s
+  image: 
+    name: gcr.io/kaniko-project/executor:debug-v0.22.0
+    entrypoint: [""]
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --dockerfile=$CI_PROJECT_DIR/build/image/Dockerfile-${COMPONENT_IN_JOB} -c $CI_PROJECT_DIR -d $OUR_REGISTRY/${COMPONENT_IN_JOB}-${GITLAB_USER_LOGIN}:${CI_COMMIT_SHA:0:8} --insecure-registry $OUR_REGISTRY
+    - echo "Your image has been built with tag $OUR_REGISTRY/${COMPONENT_IN_JOB}-${GITLAB_USER_LOGIN}:${CI_COMMIT_SHA:0:8}"
+  rules:
+  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /integration/'
+    when: on_success
+  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "v3.0/feature/go-hvs"'
+    when: on_success
+
+package:hvs:kaniko:
+  extends: .package-kaniko-common
+  before_script:
+    - export COMPONENT_IN_JOB=hvs
+  dependencies:
+    - build:hvs
+  allow_failure: true
