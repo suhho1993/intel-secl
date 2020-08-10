@@ -549,7 +549,7 @@ func (fcon *FlavorController) Delete(w http.ResponseWriter, r *http.Request) (in
 	defer defaultLog.Trace("controllers/flavor_controller:Delete() Leaving")
 
 	flavorId := uuid.MustParse(mux.Vars(r)["id"])
-	_, err := fcon.FStore.Retrieve(flavorId)
+	flavor, err := fcon.FStore.Retrieve(flavorId)
 	if err != nil {
 		if strings.Contains(err.Error(), commErr.RowsNotFound) {
 			secLog.WithError(err).WithField("id", flavorId).Info(
@@ -562,7 +562,7 @@ func (fcon *FlavorController) Delete(w http.ResponseWriter, r *http.Request) (in
 		}
 	}
 
-	hostIdsForQueue, err := getHostsAssociatedWithFlavor(fcon.FGStore, flavorId)
+	hostIdsForQueue, err := getHostsAssociatedWithFlavor(fcon.HStore, fcon.FGStore, flavor)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/flavor_controller:Delete() Failed to retrieve hosts " +
 			"associated with flavor")
@@ -589,17 +589,33 @@ func (fcon *FlavorController) Delete(w http.ResponseWriter, r *http.Request) (in
 	return nil, http.StatusNoContent, nil
 }
 
-func getHostsAssociatedWithFlavor(fgStore domain.FlavorGroupStore, id uuid.UUID) ([]uuid.UUID, error) {
+func getHostsAssociatedWithFlavor(hStore domain.HostStore, fgStore domain.FlavorGroupStore, flavor *hvs.SignedFlavor) ([]uuid.UUID, error) {
 	defaultLog.Trace("controllers/flavor_controller:getHostsAssociatedWithFlavor() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:getHostsAssociatedWithFlavor() Leaving")
 
-	var hostIdsForQueue []uuid.UUID
+	id := flavor.Flavor.Meta.ID
 	flavorGroups, err := fgStore.Search(&dm.FlavorGroupFilterCriteria{FlavorId: &id,})
 	if err != nil {
 		return nil, errors.Wrapf(err, "controllers/flavor_controller:getHostsAssociatedWithFlavor() Failed to retrieve flavorgroups "+
 			"associated with flavor %v for trust re-verification", id)
 	}
+
+	var hostIdsForQueue []uuid.UUID
 	for _, flavorGroup := range flavorGroups {
+		//Host unique flavors are associated with only host_unique flavorgroup and associated with only one host uniquely
+		if flavorGroup.Name == dm.FlavorGroupsHostUnique.String() {
+			hosts, err := hStore.Search(&dm.HostFilterCriteria{
+				HostHardwareId: *flavor.Flavor.Meta.Description.HardwareUUID,
+			})
+			if err != nil {
+				return nil, errors.Wrapf(err, "controllers/flavor_controller:getHostsAssociatedWithFlavor() Failed to retrieve hosts "+
+					"associated with flavor %v for trust re-verification",  id)
+			}
+			if len(hosts) > 0 {
+				hostIdsForQueue = append(hostIdsForQueue, hosts[0].Id)
+				break
+			}
+		}
 		hostIds, err := fgStore.SearchHostsByFlavorGroup(flavorGroup.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "controllers/flavor_controller:getHostsAssociatedWithFlavor() Failed to retrieve hosts "+
