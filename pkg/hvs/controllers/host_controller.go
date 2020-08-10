@@ -699,7 +699,7 @@ func (hc *HostController) AddFlavorgroup(w http.ResponseWriter, r *http.Request)
 	defaultLog.Debugf("Adding host %v to flavor-verify queue", hId)
 	err = hc.HTManager.VerifyHostsAsync([]uuid.UUID{hId}, false, false)
 	if err != nil {
-		defaultLog.WithError(err).Error("controllers/host_controller:CreateHost() Host to Flavor Verify Queue addition failed")
+		defaultLog.WithError(err).Error("controllers/host_controller:AddFlavorgroup() Host to Flavor Verify Queue addition failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
 	}
 
@@ -736,6 +736,13 @@ func (hc *HostController) RemoveFlavorgroup(w http.ResponseWriter, r *http.Reque
 	if err := hc.HStore.RemoveFlavorgroups(hId, []uuid.UUID{fgId}); err != nil {
 		defaultLog.WithError(err).Error("controllers/host_controller:RemoveFlavorgroup() Host Flavorgroup link delete failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete Host Flavorgroup link"}
+	}
+
+	defaultLog.Debugf("Adding host %v to flavor-verify queue", hId)
+	err = hc.HTManager.VerifyHostsAsync([]uuid.UUID{hId}, false, false)
+	if err != nil {
+		defaultLog.WithError(err).Error("controllers/host_controller:RemoveFlavorgroup() Host to Flavor Verify Queue addition failed")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to add Host to Flavor Verify Queue"}
 	}
 
 	secLog.WithField("host-flavorgroup-link", hostFlavorgroup).Infof("Host Flavorgroup link deleted by: %s", r.RemoteAddr)
