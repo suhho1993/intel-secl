@@ -49,7 +49,7 @@ SAML | SAML_CERT_FILE | - |`string` | |
 \- | SAML_KEY_FILE | - |`string` | |
 \- | SAML_COMMON_NAME | - |`string` | |
 \- | SAML_ISSUER_NAME | - |`string` | |
-\- | SAML_VALIDITY_DAYS | - |`int` | |
+\- | SAML_VALIDITY_SECONDS | - |`int` | 86400 |
 Flavor Signing | FLAVOR_SIGNING_CERT_FILE | - |`string` || 
 \- | FLAVOR_SIGNING_KEY_FILE | - |`string` | |
 \- | FLAVOR_SIGNING_COMMON_NAME | - |`string` | |

@@ -91,7 +91,7 @@ const (
 // saml
 const (
 	DefaultSamlCertIssuer   = "AttestationService"
-	DefaultSamlCertValidity = 1
+	DefaultSamlCertValidity = 86400
 )
 
 // general constants for certificates

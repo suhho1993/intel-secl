@@ -206,7 +206,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	samlIssuerConfig := saml.IssuerConfiguration{
 		IssuerName:        cfg.SAML.Issuer,
 		IssuerServiceName: constants.ServiceName,
-		ValiditySeconds:   cfg.SAML.ValidityDays * 86400,
+		ValiditySeconds:   cfg.SAML.ValiditySeconds,
 		PrivateKey:        samlKey,
 		Certificate:       &samlCert.Certificates[0],
 	}

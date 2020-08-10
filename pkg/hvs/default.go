@@ -34,7 +34,7 @@ func init() {
 	viper.SetDefault("saml-key-file", constants.SAMLKeyFile)
 	viper.SetDefault("saml-common-name", constants.DefaultSAMLCN)
 	viper.SetDefault("saml-issuer-name", constants.DefaultSAMLCertIssuer)
-	viper.SetDefault("saml-validity-days", constants.DefaultSAMLCertValidity)
+	viper.SetDefault("saml-validity-seconds", constants.DefaultSAMLCertValidity)
 
 	viper.SetDefault("flavor-signing-cert-file", constants.FlavorSigningCertFile)
 	viper.SetDefault("flavor-signing-key-file", constants.FlavorSigningKeyFile)
@@ -98,10 +98,6 @@ func init() {
 	viper.SetDefault(fvsNumberOfDataFetchers, constants.DefaultFvsNumberOfDataFetchers)
 	viper.SetDefault(fvsSkipFlavorSignatureVerification, constants.DefaultSkipFlavorSignatureVerification)
 
-	// set default for saml
-	viper.SetDefault("saml-issuer-name", constants.DefaultSamlCertIssuer)
-	viper.SetDefault("saml-validity-days", constants.DefaultSamlCertValidity)
-
 	viper.SetDefault(hrrsRefreshPeriod, hrrs.DefaultRefreshPeriod)
 }
 
@@ -135,8 +131,8 @@ func defaultConfig() *config.Configuration {
 				KeyFile:    viper.GetString("saml-key-file"),
 				CommonName: viper.GetString("saml-common-name"),
 			},
-			Issuer:       viper.GetString("saml-issuer-name"),
-			ValidityDays: viper.GetInt("saml-validity-days"),
+			Issuer:          viper.GetString("saml-issuer-name"),
+			ValiditySeconds: viper.GetInt("saml-validity-seconds"),
 		},
 		FlavorSigning: commConfig.SigningCertConfig{
 			CertFile:   viper.GetString("flavor-signing-cert-file"),

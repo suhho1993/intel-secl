@@ -52,9 +52,9 @@ type FVSConfig struct {
 }
 
 type SAMLConfig struct {
-	CommonConfig commConfig.SigningCertConfig `yaml:"common" mapstructure:"common"`
-	Issuer       string                       `yaml:"issuer" mapstructure:"issuer"`
-	ValidityDays int                          `yaml:"validity-days" mapstructure:"validity-days"`
+	CommonConfig    commConfig.SigningCertConfig `yaml:"common" mapstructure:"common"`
+	Issuer          string                       `yaml:"issuer" mapstructure:"issuer"`
+	ValiditySeconds int                          `yaml:"validity-seconds" mapstructure:"validity-seconds"`
 }
 
 type AuditLogConfig struct {
