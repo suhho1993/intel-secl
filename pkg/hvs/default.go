@@ -19,7 +19,6 @@ const (
 	fvsNumberOfDataFetchers            = "fvs-number-of-data-fetchers"
 	fvsSkipFlavorSignatureVerification = "fvs-skip-flavor-signature-verification"
 	hrrsRefreshPeriod                  = "hrrs-refresh-period"
-	hrrsRefreshLookAhead               = "hrrs-refresh-look-ahead"
 )
 
 // this func sets the default values for viper keys
@@ -104,7 +103,6 @@ func init() {
 	viper.SetDefault("saml-validity-days", constants.DefaultSamlCertValidity)
 
 	viper.SetDefault(hrrsRefreshPeriod, hrrs.DefaultRefreshPeriod)
-	viper.SetDefault(hrrsRefreshLookAhead, hrrs.DefaultRefreshLookAhead)
 }
 
 func defaultConfig() *config.Configuration {
@@ -172,8 +170,7 @@ func defaultConfig() *config.Configuration {
 			Level:        viper.GetString("log-level"),
 		},
 		HRRS: hrrs.HRRSConfig{
-			RefreshPeriod:    viper.GetDuration(hrrsRefreshPeriod),
-			RefreshLookAhead: viper.GetDuration(hrrsRefreshLookAhead),
+			RefreshPeriod: viper.GetDuration(hrrsRefreshPeriod),
 		},
 		FVS: config.FVSConfig{
 			NumberOfVerifiers:               viper.GetInt(fvsNumberOfVerifiers),

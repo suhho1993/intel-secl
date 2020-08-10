@@ -238,7 +238,7 @@ func (r *ReportStore) Search(criteria *models.ReportFilterCriteria) ([]models.HV
 func (r *ReportStore) FindHostIdsFromExpiredReports(fromTime time.Time, toTime time.Time) ([]uuid.UUID, error) {
 
 	// TODO: https://jira.devtools.intel.com/browse/ISECL-10985
-	query := "select h.id from host as h where exists (select t.host_id from (select row_number() over (partition by host_id order by expiration desc) rn, host_id from report where expiration > CAST(? AS TIMESTAMP) and expiration < CAST(? AS TIMESTAMP)) as t where h.id=t.host_id and t.rn=1);"
+	query := "select h.id from host as h where exists (select t.host_id from (select row_number() over (partition by host_id order by expiration desc) rn, host_id from report where expiration > CAST(? AS TIMESTAMP) and expiration <= CAST(? AS TIMESTAMP)) as t where h.id=t.host_id and t.rn=1);"
 
 	hostIDs := []uuid.UUID{}
 	err := r.Store.Db.Raw(query, fromTime, toTime).Scan(&hostIDs).Error

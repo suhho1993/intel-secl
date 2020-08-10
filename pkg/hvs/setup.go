@@ -232,7 +232,7 @@ func (a *App) selfSignTask(name string) setup.Task {
 	}
 }
 
-// The HRRS does not require setup, just two configuration parameters.  This function
+// The HRRS does not require setup, just one configuration parameter.  This function
 // populates the HRRS config during 'hvs setup'.
 //
 // The function needs to handle...
@@ -251,10 +251,5 @@ func (a *App) setupHRRSConfig() {
 	refreshPeriod := viper.GetDuration(hrrsRefreshPeriod)
 	if refreshPeriod != hrrs.DefaultRefreshPeriod {
 		a.Config.HRRS.RefreshPeriod = refreshPeriod
-	}
-
-	refreshLookAhead := viper.GetDuration(hrrsRefreshLookAhead)
-	if refreshLookAhead != hrrs.DefaultRefreshLookAhead {
-		a.Config.HRRS.RefreshLookAhead = refreshLookAhead
 	}
 }

@@ -23,20 +23,23 @@ type HostReportRefresher interface {
 	Stop() error
 }
 
+var (
+	firstFromTime, _ = time.Parse(time.RFC3339, "1970-01-01T00:00:00Z") // i.e. epoch
+)
+
 func NewHostReportRefresher(cfg HRRSConfig, reportStore domain.ReportStore, hostTrustManager domain.HostTrustManager) (HostReportRefresher, error) {
 
 	return &hostReportRefresherImpl{
 		reportStore:      reportStore,
 		hostTrustManager: hostTrustManager,
 		cfg:              cfg,
-		fromTime:         time.Unix(0,0),	
+		fromTime:         firstFromTime,
 	}, nil
 }
 
 var (
-	defaultLog     = commLog.GetDefaultLogger()
-	secLog         = commLog.GetSecurityLogger()
-	overlapTime, _ = time.ParseDuration("1ms")
+	defaultLog = commLog.GetDefaultLogger()
+	secLog     = commLog.GetSecurityLogger()
 )
 
 type hostReportRefresherImpl struct {
@@ -49,7 +52,7 @@ type hostReportRefresherImpl struct {
 
 func (refresher *hostReportRefresherImpl) Run() error {
 
-	defaultLog.Infof("HRRS is starting with refresh period '%s', look ahead '%s'", refresher.cfg.RefreshPeriod, refresher.cfg.RefreshLookAhead)
+	defaultLog.Infof("HRRS is starting with refresh period '%s'", refresher.cfg.RefreshPeriod)
 
 	if refresher.cfg.RefreshPeriod == 0 {
 		defaultLog.Info("The HRRS refresh period is zero.  HRRS will now exit")
@@ -90,20 +93,19 @@ func (refresher *hostReportRefresherImpl) Stop() error {
 
 // Uses an 'expiration time window' to find expired reports.
 //
-// - On the first pass, the window is from the epoch to five minutes from now.
+// - On the first pass, the window is from the epoch to the next 'refresh period' from now.
 //   This will attempt to queue all hosts that have an expired report.
-// - On subsequent calls, the window wll be the last time this function was called, 
-//   less some overlap and five minutes from now.
+// - On subsequent calls, the window wll be from the last time this function was called,
+//   to the next 'refresh period'.
 //
 // The intent of this logic is to avoid adding duplicate hosts to the
 // HostTrustManage queue.
 func (refresher *hostReportRefresherImpl) refreshReports() error {
 
-	toTime := time.Now().Add(refresher.cfg.RefreshLookAhead)
+	toTime := time.Now().Add(refresher.cfg.RefreshPeriod)
 	defaultLog.Debugf("HRRS is refreshing hosts that have expired reports between %s and %s", refresher.fromTime, toTime)
-	
+
 	hostIDs, err := refresher.reportStore.FindHostIdsFromExpiredReports(refresher.fromTime, toTime)
-	refresher.fromTime = time.Now().Add(-overlapTime)
 
 	if err != nil {
 		return errors.Wrap(err, "An error occurred while HRRS searched for host ids")
@@ -119,6 +121,7 @@ func (refresher *hostReportRefresherImpl) refreshReports() error {
 	}
 
 	defaultLog.Infof("HRRS queued %d hosts from reports that were expiring between %s and %s", len(hostIDs), refresher.fromTime, toTime)
+	refresher.fromTime = toTime
 
 	return nil
 }

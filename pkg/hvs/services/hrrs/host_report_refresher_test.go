@@ -20,31 +20,44 @@ import (
 
 var (
 	tenSeconds, _      = time.ParseDuration("10s")
-	oneMinute, _       = time.ParseDuration("1m")
+	twoSeconds, _      = time.ParseDuration("2s")
+	tenYears, _        = time.ParseDuration("10y")
 	twentyFourHours, _ = time.ParseDuration("24h")
-	testUUID           = uuid.New()
 )
 
 func TestHostReportRefresher(t *testing.T) {
 
 	cfg := HRRSConfig{
-		RefreshPeriod:    oneMinute,
-		RefreshLookAhead: DefaultRefreshLookAhead,
-	}
-
-	// create a report that expires in the past
-	expiredReport := models.HVSReport{
-		ID:         uuid.New(),
-		HostID:     testUUID,
-		CreatedAt:  time.Now(),
-		Expiration: time.Now().Add(-tenSeconds),
-		TrustReport: hvs.TrustReport{
-			Trusted: true,
-		},
+		RefreshPeriod: twoSeconds,
 	}
 
 	reportStore := mocks.NewEmptyMockReportStore()
-	_, _ = reportStore.Create(&expiredReport)
+
+	// Create a report that expired ten years ago to test the 'open window' logic.
+	// Expect that this host is updated on the first pass of the report refresher.
+	host1UUID := uuid.New()
+	_, _ = reportStore.Create(&models.HVSReport{
+		ID:         uuid.New(),
+		HostID:     host1UUID,
+		CreatedAt:  time.Now(),
+		Expiration: time.Now().Add(-tenYears),
+		TrustReport: hvs.TrustReport{
+			Trusted: true,
+		},
+	})
+
+	// Create another report that expires in the future to test the 'narrow windows' logic...
+	// Expect that this host is updated in a secondary refresh of the report refresher.
+	host2UUID := uuid.New()
+	_, _ = reportStore.Create(&models.HVSReport{
+		ID:         uuid.New(),
+		HostID:     host2UUID,
+		CreatedAt:  time.Now(),
+		Expiration: time.Now().Add(twoSeconds * 3),
+		TrustReport: hvs.TrustReport{
+			Trusted: true,
+		},
+	})
 
 	hostTrustManager := MockHostTrustManager{
 		reportStore: reportStore,
@@ -62,17 +75,20 @@ func TestHostReportRefresher(t *testing.T) {
 	t.Log("stopping")
 	refresher.Stop()
 
-	// now make sure there is a single report that has an expiration in the future
-	criteria := models.ReportFilterCriteria{
-		HostID: testUUID,
+	// make sure both hosts have updated reports with future expiration dates
+	hostsToCheck := []uuid.UUID{host1UUID, host2UUID}
+	for _, hostId := range hostsToCheck {
+		criteria := models.ReportFilterCriteria{
+			HostID: hostId,
+		}
+
+		reports, err := reportStore.Search(&criteria)
+		assert.NoError(t, err)
+
+		assert.NotNil(t, reports)
+		assert.Equal(t, len(reports), 1)
+		assert.True(t, reports[0].Expiration.After(time.Now()))
 	}
-
-	reports, err := reportStore.Search(&criteria)
-	assert.NoError(t, err)
-
-	assert.NotNil(t, reports)
-	assert.Equal(t, len(reports), 1)
-	assert.True(t, reports[0].Expiration.After(time.Now()))
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -107,7 +123,7 @@ func (htm MockHostTrustManager) VerifyHostsAsync(hostIDs []uuid.UUID, fetchHostD
 
 		trustReport := models.HVSReport{
 			ID:         uuid.New(),
-			HostID:     testUUID,
+			HostID:     hostID,
 			CreatedAt:  time.Now(),
 			Expiration: time.Now().Add(twentyFourHours),
 			TrustReport: hvs.TrustReport{
