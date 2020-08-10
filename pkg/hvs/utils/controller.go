@@ -12,10 +12,13 @@ import (
 	"time"
 )
 
+const MaxQueryParamsLength = 50
 func ValidateQueryParams(params url.Values, validQueries map[string]bool) error {
 	defaultLog.Trace("utils/controller:ValidateQueryParams() Entering")
 	defer defaultLog.Trace("utils/controller:ValidateQueryParams() Leaving")
-
+	if len(params) > MaxQueryParamsLength {
+		return errors.New("Invalid query parameters provided. Number of query parameters exceeded maximum value")
+	}
 	for param, _ := range params {
 		if _, hasQuery := validQueries[param]; !hasQuery {
 			return errors.New("Invalid query parameter provided. Refer to product guide for details.")
