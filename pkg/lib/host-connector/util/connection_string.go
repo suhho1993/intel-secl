@@ -5,9 +5,11 @@
 package util
 
 import (
-	"errors"
+	"fmt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/pkg/errors"
+	"net"
 	"net/url"
 	"strings"
 )
@@ -102,4 +104,37 @@ func parseCredentials(credentials string) (string, string, string) {
 		}
 	}
 	return username, password, hostname
+}
+
+// getHostIP verifies that the hostname provided in the connection string can be resolved to an IPV4 address
+// since this will be required for the nonce verification
+func GetHostIP(hostRef string) (string, error) {
+	log.Trace("util/connection_string:GetHostIP() Entering")
+	defer log.Trace("util/connection_string:GetHostIP() Leaving")
+
+	// strip off the port number
+	if strings.Contains(hostRef, ":") {
+		hostRef = strings.Split(hostRef, ":")[0]
+	}
+
+	// at this point the provided IP Address could also be a hostname, so check if it is an IP
+	hostIP := net.ParseIP(hostRef)
+	if hostIP == nil {
+		// DNS lookup as a last resort
+		addrs, err := net.LookupHost(hostRef)
+		if err != nil {
+			return "", errors.Wrap(err, "util/connection_string:GetHostIP() Hostname provided in "+
+				"connection string could not be mapped to an IP address")
+		}
+		log.Debugf("util/aik_quote_verifier:GetHostIP() possible addresses for %s - %s", hostRef, addrs)
+
+		// convert the first address in the list to an IPV4 address and return
+		hostIP = net.ParseIP(addrs[0])
+		if hostIP.To4() == nil {
+			log.Debugf("util/aik_quote_verifier:GetHostIP() %s is not a valid IPv4 address", hostIP.String())
+			return "", fmt.Errorf("util/aik_quote_verifier:GetHostIP() Could not obtain a valid IPv4 address for %s", hostRef)
+		}
+	}
+
+	return hostIP.String(), nil
 }
