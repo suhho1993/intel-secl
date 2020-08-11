@@ -86,6 +86,8 @@ type CaCertificateCollection struct {
 //   Retrieve returns an existing CA certificate from the Certificate store.
 //   Returns - The retrieved CA Certificate from the Certificate store.
 //
+//   Note: certificate must be provided as valid PEM string.
+//
 // consumes:
 //   - application/json
 // produces:

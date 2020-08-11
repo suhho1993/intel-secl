@@ -218,6 +218,8 @@ type ReportCreateRequest struct {
 //    | host_id                        | ID of host |
 //    | host_name                      | hostname of host |
 //    | hardware_uuid                  | Hardware UUID of host |
+//
+//   Note: host_id and hardware_uuid must be provided as valid UUIDv4 strings.
 // x-permissions: reports:create
 // security:
 //  - bearerAuth: []

@@ -124,6 +124,8 @@ type TpmEndorsementCollection struct {
 //    | issuer                         | The OEM of the TPM. Refer to sample issuer input for attributes. |
 //    | revoked                        | Validity status of the EK certificate. Default is false (Optional) |
 //    | comment                        | Comments for the certificate.  (Optional)|
+//
+//   Note: hardware_uuid must be provided as valid UUIDv4 string.
 // x-permissions: tpm_endorsements:create
 // security:
 //   - bearerAuth: []
@@ -201,6 +203,8 @@ type TpmEndorsementCollection struct {
 //    | issuer                         | The OEM of the TPM. Refer to sample issuer input for attributes. |
 //    | revoked                        | Validity status of the EK certificate. |
 //    | comment                        | Comments for the certificate. |
+//
+//   Note: id and hardware_uuid must be provided as valid UUIDv4 strings. It is recommended to not update id field.
 // x-permissions: tpm_endorsements:store
 // security:
 //   - bearerAuth: []

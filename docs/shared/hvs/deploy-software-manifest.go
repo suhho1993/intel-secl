@@ -25,6 +25,8 @@ type DeployManifestRequest struct {
 //              A manifest is a list of files/directories/symlinks that are to be measured. The manifest can be deployed or pushed directly to the host using the REST API described here. The Verification Service exposes this REST API to create manifest from flavor retrieved from database based cn the flavor id provided by the user and deploy it to the host whose information has been provided in the input as host id (if host is already registered to Verification Service).
 //              Creates the manifest from a software flavor which is retrieved using the flavor uuid and deploys it to the host based on the hostId provided as parameter.
 //
+//              Note: host_id and flavor_id must be provided as valid UUIDv4 strings.
+//
 // x-permissions: software_flavors:deploy
 // security:
 //  - bearerAuth: []

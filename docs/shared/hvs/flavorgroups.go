@@ -437,6 +437,8 @@ type FlavorgroupFlavorLinkCollection struct {
 //    |--------------------------------|-----------------------------------------------------------|
 //    | flavor_id                      | ID of the Flavor record to be linked with the FlavorGroup |
 //
+//   Note: flavor_id must be provided as valid UUIDv4 string.
+//
 // x-permissions: flavorgroups:create
 // security:
 //  - bearerAuth: []
