@@ -14,6 +14,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	asset_tag "github.com/intel-secl/intel-secl/v3/pkg/lib/asset-tag"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
@@ -299,7 +300,7 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 
 	// validOn
 	if param := strings.TrimSpace(params.Get("validOn")); param != "" {
-		pTime, err := time.Parse(constants.ParamDateTimeFormat, param)
+		pTime, err := utils.ParseDateQueryParam(param)
 		if err != nil {
 			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for validOn must be specified")
 		}
@@ -308,18 +309,18 @@ func getTCFilterCriteria(params url.Values) (*models.TagCertificateFilterCriteri
 
 	// validBefore
 	if param := strings.TrimSpace(params.Get("validBefore")); param != "" {
-		pTime, err := time.Parse(constants.ParamDateTimeFormat, param)
+		pTime, err := utils.ParseDateQueryParam(param)
 		if err != nil {
-			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ValidBefore must be specified")
+			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for validBefore must be specified")
 		}
 		tagCertFc.ValidBefore = pTime
 	}
 
 	// validAfter
 	if param := strings.TrimSpace(params.Get("validAfter")); param != "" {
-		pTime, err := time.Parse(constants.ParamDateTimeFormat, param)
+		pTime, err := utils.ParseDateQueryParam(param)
 		if err != nil {
-			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for ValidAfter must be specified")
+			return nil, errors.Wrap(err, "Valid date (YYYY-MM-DD hh:mm:ss) for validAfter must be specified")
 		}
 		tagCertFc.ValidAfter = pTime
 	}
@@ -482,7 +483,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	linkedSf, err := controller.FlavorController.addFlavorToFlavorgroup(flavorPartMap, nil)
 	if err != nil || linkedSf == nil {
 		defaultLog.WithError(err).WithField("Certid", dtcReq.CertID).WithField("flavorID", sf.Flavor.Meta.ID).
-			Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to link SignedFlavor to Host " +
+			Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to link SignedFlavor to Host "+
 				"Unique FlavorGroup", commLogMsg.AppRuntimeErr)
 		if strings.Contains(err.Error(), "duplicate key") {
 			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same label already exists"}

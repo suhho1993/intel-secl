@@ -300,7 +300,7 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	// fromDate
 	fromDate := strings.TrimSpace(params.Get("fromDate"))
 	if fromDate != "" {
-		pTime, err := utils.ValidateDateQueryParam(fromDate)
+		pTime, err := utils.ParseDateQueryParam(fromDate)
 		if err != nil {
 			return nil, errors.Wrap(err, "Invalid fromDate specified")
 		}
@@ -310,7 +310,7 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	// toDate
 	toDate := strings.TrimSpace(params.Get("toDate"))
 	if toDate != "" {
-		pTime, err := utils.ValidateDateQueryParam(toDate)
+		pTime, err := utils.ParseDateQueryParam(toDate)
 		if err != nil {
 			return nil, errors.Wrap(err, "Invalid toDate specified")
 		}
