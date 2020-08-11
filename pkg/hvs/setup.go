@@ -72,7 +72,7 @@ func (a *App) setup(args []string) error {
 			}
 			return errors.New("Failed to run all tasks")
 		}
-		fmt.Fprintln(a.consoleWriter(), "All setup tasks succeeded with no error")
+		fmt.Fprintln(a.consoleWriter(), "All setup tasks succeeded")
 	} else {
 		if err = runner.Run(cmd, force); err != nil {
 			fmt.Fprintln(a.errorWriter(), cmd+": "+err.Error())
