@@ -88,17 +88,11 @@ const (
 	DefaultPrivacyCaIdentityIssuer = "hvs-pca-aik"
 )
 
-// saml
-const (
-	DefaultSamlCertIssuer   = "AttestationService"
-	DefaultSamlCertValidity = 86400
-)
-
 // general constants for certificates
 const (
 	DefaultSAMLCN           = "HVS SAML Certificate"
 	DefaultSAMLCertIssuer   = "AttestationService"
-	DefaultSAMLCertValidity = 1
+	DefaultSAMLCertValidity = 86400
 
 	DefaultFlavorSigningCN = "HVS Flavor Signing Certificate"
 	DefaultPrivacyCACN     = "HVS Privacy Certificate"
