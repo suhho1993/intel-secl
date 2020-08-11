@@ -49,9 +49,13 @@ END;
 $func$
 LANGUAGE plpgsql VOLATILE;
 
+DROP TRIGGER IF EXISTS insert_audit_log_trigger ON audit_log_entry;
+
 CREATE TRIGGER insert_audit_log_trigger
 BEFORE INSERT ON audit_log_entry
 FOR EACH ROW EXECUTE PROCEDURE insert_audit_log_partition();
+
+DROP TRIGGER IF EXISTS cleanup_audit_log_trigger ON audit_log_entry;
 
 CREATE TRIGGER cleanup_audit_log_trigger
 AFTER INSERT ON audit_log_entry
