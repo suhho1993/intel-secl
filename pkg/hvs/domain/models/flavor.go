@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/pkg/errors"
 )
 
 type flavors []hvs.Flavor
@@ -53,6 +54,18 @@ func (fcr FlavorCreateRequest) MarshalJSON() ([]byte, error) {
 }
 
 func (fcr *FlavorCreateRequest) UnmarshalJSON(b []byte) error {
+	//Validate the FlavorCreateRequest keys as here it is overridden with custom UnmarshalJSON decoder.DisallowUnknownFields doesnt work
+	validKeys := map[string]bool{"connection_string": true, "flavor_collection": true, "signed_flavor_collection": true, "flavorgroup_name": true, "partial_flavor_types": true}
+	fcrKeysMap := map[string]interface{}{}
+	if err := json.Unmarshal(b, &fcrKeysMap); err != nil {
+		return err
+	}
+	for k, _ := range fcrKeysMap {
+		if _, ok := validKeys[k]; !ok {
+			return errors.Errorf("Unknown key %s", k)
+		}
+	}
+
 	decoded := new(struct {
 		ConnectionString       string                     `json:"connection_string,omitempty"`
 		FlavorCollection       hvs.FlavorCollection       `json:"flavor_collection,omitempty"`
@@ -60,7 +73,7 @@ func (fcr *FlavorCreateRequest) UnmarshalJSON(b []byte) error {
 		FlavorgroupName        string                     `json:"flavorgroup_name,omitempty"`
 		FlavorParts            []cf.FlavorPart            `json:"partial_flavor_types,omitempty"`
 	})
-	err := json.Unmarshal(b, decoded)
+	err := json.Unmarshal(b, &decoded)
 	if err == nil {
 		fcr.ConnectionString = decoded.ConnectionString
 		fcr.FlavorgroupName = decoded.FlavorgroupName
