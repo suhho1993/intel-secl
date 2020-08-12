@@ -92,7 +92,10 @@ func (vc *vmwareClient) GetHostInfo() (taModel.HostInfo, error) {
 	hostInfo.NumberOfSockets = int(vc.hostReference.Hardware.CpuInfo.NumCpuPackages)
 	hostInfo.ProcessorInfo = vc.hostReference.Summary.MaxEVCModeKey
 	hostInfo.HardwareUUID = strings.ToUpper(vc.hostReference.Hardware.SystemInfo.Uuid)
-	hostInfo.HardwareFeatures.TPM.Enabled = *vc.hostReference.Capability.TpmSupported
+	hostInfo.HardwareFeatures.TPM.Enabled = false
+	if vc.hostReference.Capability.TpmSupported != nil && *vc.hostReference.Capability.TpmSupported == true {
+		hostInfo.HardwareFeatures.TPM.Enabled = true
+	}
 	if strings.Contains(vcenterVersion, "6.5") && hostInfo.HardwareFeatures.TPM.Enabled {
 		hostInfo.HardwareFeatures.TPM.Meta.TPMVersion = "1.2"
 		attestationReport, err := vc.GetTPMAttestationReport()
@@ -107,7 +110,11 @@ func (vc *vmwareClient) GetHostInfo() (taModel.HostInfo, error) {
 		}
 	} else {
 		hostInfo.HardwareFeatures.TPM.Meta.TPMVersion = vc.hostReference.Capability.TpmVersion
-		hostInfo.HardwareFeatures.TXT = &taModel.HardwareFeature{Enabled: *vc.hostReference.Capability.TxtEnabled}
+		txtEnabled := false
+		if vc.hostReference.Capability.TxtEnabled != nil && *vc.hostReference.Capability.TxtEnabled == true {
+			txtEnabled = true
+		}
+		hostInfo.HardwareFeatures.TXT = &taModel.HardwareFeature{Enabled: txtEnabled}
 	}
 	return hostInfo, nil
 }
