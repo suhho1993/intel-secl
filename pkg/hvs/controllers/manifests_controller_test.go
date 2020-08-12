@@ -70,7 +70,7 @@ var _ = Describe("ManifestsController", func() {
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(http.StatusBadRequest))
+				Expect(w.Code).To(Equal(http.StatusNotFound))
 			})
 		})
 	})
