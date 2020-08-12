@@ -31,7 +31,7 @@ func TestPcrEventLogIncludesNoFault(t *testing.T) {
 
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, testExpectedEventLogEntry)
 
-	rule, err := NewPcrEventLogIncludes(&testExpectedEventLogEntry, common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogIncludes(&testExpectedEventLogEntry, nil, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -84,7 +84,7 @@ func TestPcrEventLogIncludesMissingMeasurement(t *testing.T) {
 
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, hostEvents)
 
-	rule, err := NewPcrEventLogIncludes(&flavorEvents, common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogIncludes(&flavorEvents, nil, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -139,7 +139,7 @@ func TestPcrEventLogIncludesDifferentMeasurement(t *testing.T) {
 
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, hostEvents)
 
-	rule, err := NewPcrEventLogIncludes(&flavorEvents, common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogIncludes(&flavorEvents, nil, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -193,7 +193,7 @@ func TestPcrEventLogIncludesPcrEventLogMissingFault(t *testing.T) {
 
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, hostEvents)
 
-	rule, err := NewPcrEventLogIncludes(&flavorEvents, common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogIncludes(&flavorEvents, nil, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -231,7 +231,7 @@ func TestPcrEventLogIncludesNoEventLogInHostManifest(t *testing.T) {
 		},
 	}
 
-	rule, err := NewPcrEventLogIncludes(&flavorEvents, common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogIncludes(&flavorEvents, nil, common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)

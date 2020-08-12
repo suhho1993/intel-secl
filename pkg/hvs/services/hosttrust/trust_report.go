@@ -171,7 +171,9 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []hvs.SignedFlavor, h
 					if reflect.DeepEqual(collectiveTrustReport, hvs.TrustReport{}){
 						collectiveTrustReport = *individualTrustReport
 					} else{
-						collectiveTrustReport.Results = append(collectiveTrustReport.Results, individualTrustReport.Results...)
+						for _, result := range individualTrustReport.Results {
+							collectiveTrustReport.AddResult(result)
+						}
 					}
 					newTrustCaches = append(newTrustCaches, signedFlavor.Flavor.Meta.ID)
 				} else {
@@ -179,11 +181,10 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []hvs.SignedFlavor, h
 					faults := 0
 					for _, result := range individualTrustReport.Results {
 						faults += len(result.Faults)
-						//TODO: do we need to log the faults here? Leave commented for now
-						//for _, fault := range result.Faults{
-						//	log.Debugf("Flavor [%s] did not match host [%s] due to fault: %s",
-						//		signedFlavor.Flavor.Meta.ID, hostID, fault.Name )
-						//}
+						for _, fault := range result.Faults{
+							log.Debugf("Flavor [%s] did not match host [%s] due to fault: %s",
+								signedFlavor.Flavor.Meta.ID, hostID, fault.Name )
+						}
 					}
 					untrusted.flavorPartMap[flvMatchPolicy.FlavorPart] =
 						append(untrusted.flavorPartMap[flvMatchPolicy.FlavorPart], flavorReport{

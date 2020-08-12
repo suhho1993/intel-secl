@@ -59,7 +59,7 @@ func TestPcrEventLogEqualsExcludingNoFault(t *testing.T) {
 	
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, testHostManifestEventLogEntry)
 
-	rule, err := NewPcrEventLogEqualsExcluding(&testExpectedEventLogEntry, uuid.New(), common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogEqualsExcluding(&testExpectedEventLogEntry, nil, uuid.New(), common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -108,7 +108,7 @@ func TestPcrEventLogEqualsExcludingPcrEventLogMissingFault(t *testing.T) {
 
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, hostEvents)
 
-	rule, err := NewPcrEventLogEqualsExcluding(&flavorEvents, uuid.New(), common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogEqualsExcluding(&flavorEvents, nil, uuid.New(), common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -146,7 +146,7 @@ func TestPcrEventLogEqualsExcludingPcrEventLogContainsUnexpectedEntriesFault(t *
 
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, unexpectedEventLogs)
 
-	rule, err := NewPcrEventLogEqualsExcluding(&testExpectedEventLogEntry, uuid.New(), common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogEqualsExcluding(&testExpectedEventLogEntry, nil, uuid.New(), common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)
@@ -181,7 +181,7 @@ func TestPcrEventLogEqualsExcludingPcrEventLogMissingExpectedEntriesFault(t *tes
 	
 	hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs = append(hostManifest.PcrManifest.PcrEventLogMap.Sha256EventLogs, unexpectedEventLogs)
 
-	rule, err := NewPcrEventLogEqualsExcluding(&testExpectedEventLogEntry, uuid.New(), common.FlavorPartPlatform)
+	rule, err := NewPcrEventLogEqualsExcluding(&testExpectedEventLogEntry, nil, uuid.New(), common.FlavorPartPlatform)
 
 	result, err := rule.Apply(&hostManifest)
 	assert.NoError(t, err)

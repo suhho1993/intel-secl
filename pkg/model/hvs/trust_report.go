@@ -111,12 +111,14 @@ func (t *TrustReport) CheckResultExists(targetRuleResult RuleResult) bool {
 		if targetRuleResult.equals(ruleResult) {
 			switch ruleResult.Rule.Name {
 			case constants.RulePcrEventLogEqualsExcluding,
+				constants.RulePcrEventLogIncludes,
 				constants.RulePcrEventLogIntegrity,
+				constants.RulePcrEventLogEquals,
 				constants.RulePcrMatchesConstant:
-					// Compare pcrs for only these rules, all other rules will have pcr expected entry = nil
+				// Compare pcrs for only these rules, all other rules will have pcr expected entry = nil
 				if targetRuleResult.Rule.ExpectedPcr == nil {
 					return false
-				} else if reflect.DeepEqual(targetRuleResult.Rule.ExpectedPcr, ruleResult.Rule.ExpectedPcr){
+				} else if reflect.DeepEqual(targetRuleResult.Rule.ExpectedPcr, ruleResult.Rule.ExpectedPcr) {
 					return true
 				} else {
 					continue
@@ -148,7 +150,7 @@ func find(slice []common.FlavorPart, val string) bool {
 }
 
 func (r *RuleResult) equals(target RuleResult) bool {
-	if target.Rule.Name == r.Rule.Name && r.FlavorId == target.FlavorId {
+	if target.Rule.Name == r.Rule.Name {
 		return true
 	}
 	return false

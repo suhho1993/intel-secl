@@ -12,20 +12,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewPcrEventLogIncludes(expectedEventLogEntry *types.EventLogEntry, marker common.FlavorPart) (Rule, error) {
+func NewPcrEventLogIncludes(expectedEventLogEntry *types.EventLogEntry, expectedPcr *types.Pcr, marker common.FlavorPart) (Rule, error) {
 	if expectedEventLogEntry == nil {
 		return nil, errors.New("The expected event log cannot be nil")
 	}
 
 	rule := pcrEventLogIncludes{
 		expectedEventLogEntry: expectedEventLogEntry,
-		marker: marker,
+		expectedPcr:           expectedPcr,
+		marker:                marker,
 	}
 	return &rule, nil
 }
 
 type pcrEventLogIncludes struct {
 	expectedEventLogEntry *types.EventLogEntry
+	expectedPcr           *types.Pcr
 	marker                common.FlavorPart
 }
 
@@ -40,6 +42,7 @@ func (rule *pcrEventLogIncludes) Apply(hostManifest *types.HostManifest) (*hvs.R
 	result.Rule.Name = constants.RulePcrEventLogIncludes
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
 	result.Rule.ExpectedEventLogs = rule.expectedEventLogEntry.EventLogs
+	result.Rule.ExpectedPcr = rule.expectedPcr
 
 	if hostManifest.PcrManifest.IsEmpty() {
 		result.Faults = append(result.Faults, newPcrManifestMissingFault())

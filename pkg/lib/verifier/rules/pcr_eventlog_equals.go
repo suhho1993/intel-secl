@@ -48,12 +48,13 @@ func NewPcrEventLogEquals(expectedEventLogEntry *types.EventLogEntry, flavorID u
 }
 
 
-func NewPcrEventLogEqualsExcluding(expectedEventLogEntry *types.EventLogEntry, flavorID uuid.UUID, marker common.FlavorPart) (Rule, error) {
+func NewPcrEventLogEqualsExcluding(expectedEventLogEntry *types.EventLogEntry, expectedPcr *types.Pcr, flavorID uuid.UUID, marker common.FlavorPart) (Rule, error) {
 
 	// create the rule providing the defaultExcludeComponents and labels so
 	// they are not included for evaluation during 'Apply'.
 	rule := pcrEventLogEquals{
 		expectedEventLogEntry: expectedEventLogEntry,
+		expectedPcr:           expectedPcr,
 		flavorID:              &flavorID,
 		marker:                marker,
 		excludeComponents:     defaultExcludeComponents,
@@ -66,6 +67,7 @@ func NewPcrEventLogEqualsExcluding(expectedEventLogEntry *types.EventLogEntry, f
 
 type pcrEventLogEquals struct {
 	expectedEventLogEntry *types.EventLogEntry
+	expectedPcr           *types.Pcr
 	flavorID              *uuid.UUID
 	marker                common.FlavorPart
 	ruleName              string
@@ -85,6 +87,7 @@ func (rule *pcrEventLogEquals) Apply(hostManifest *types.HostManifest) (*hvs.Rul
 	result := hvs.RuleResult{}
 	result.Trusted = true
 	result.Rule.Name = rule.ruleName
+	result.Rule.ExpectedPcr = rule.expectedPcr
 	result.Rule.ExpectedEventLogEntry = rule.expectedEventLogEntry
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)	
 
