@@ -42,6 +42,11 @@ type App struct {
 }
 
 func (a *App) Run(args []string) error {
+	defer func() {
+		if err := recover(); err != nil {
+			defaultLog.Errorf("Panic occurred: %+v", err)
+		}
+	}()
 	if len(args) < 2 {
 		err := errors.New("Invalid usage of " + constants.ServiceName)
 		a.printUsageWithError(err)

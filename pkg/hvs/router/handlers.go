@@ -151,6 +151,12 @@ func ErrorHandler(eh endpointHandler) http.HandlerFunc {
 	defaultLog.Trace("router/handlers:ErrorHandler() Entering")
 	defer defaultLog.Trace("router/handlers:ErrorHandler() Leaving")
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				defaultLog.Errorf("Panic occurred: %+v", err)
+				http.Error(w, "Unknown Error", http.StatusInternalServerError)
+			}
+		}()
 		if err := eh(w, r); err != nil {
 			if gorm.IsRecordNotFoundError(err) {
 				http.Error(w, err.Error(), http.StatusNotFound)
