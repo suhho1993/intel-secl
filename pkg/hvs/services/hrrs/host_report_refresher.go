@@ -102,7 +102,7 @@ func (refresher *hostReportRefresherImpl) Stop() error {
 // HostTrustManage queue.
 func (refresher *hostReportRefresherImpl) refreshReports() error {
 
-	toTime := time.Now().Add(refresher.cfg.RefreshPeriod)
+	toTime := time.Now().UTC().Add(refresher.cfg.RefreshPeriod)
 	defaultLog.Debugf("HRRS is refreshing hosts that have expired reports between %s and %s", refresher.fromTime, toTime)
 
 	hostIDs, err := refresher.reportStore.FindHostIdsFromExpiredReports(refresher.fromTime, toTime)
