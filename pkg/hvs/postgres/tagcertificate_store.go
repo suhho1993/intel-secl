@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
@@ -119,7 +120,7 @@ func buildTagCertificateSearchQuery(tx *gorm.DB, tcFilter *models.TagCertificate
 
 	// Tag Certificate ID
 	if tcFilter.ID != uuid.Nil {
-		tx = tx.Where("id = ?", tcFilter.ID)
+		tx = tx.Where("id = ?", tcFilter.ID.String())
 	}
 
 	// SubjectEqualTo
@@ -144,25 +145,22 @@ func buildTagCertificateSearchQuery(tx *gorm.DB, tcFilter *models.TagCertificate
 
 	// hardware_uuid
 	if tcFilter.HardwareUUID != uuid.Nil {
-		tx = tx.Where("hardware_uuid = ?", tcFilter.HardwareUUID)
+		tx = tx.Where("hardware_uuid = ?", tcFilter.HardwareUUID.String())
 	}
 
 	// ValidOn
 	if !tcFilter.ValidOn.IsZero() {
-		tx = tx.Where("notbefore <= ? and ? <= notafter", tcFilter.ValidOn, tcFilter.ValidOn)
+		validOnTs := tcFilter.ValidOn.Format(constants.ParamDateTimeFormatUTC)
+		tx = tx.Where("CAST(notbefore AS TIMESTAMP) <= CAST(? AS TIMESTAMP) AND CAST(? AS TIMESTAMP) <= CAST(notafter AS TIMESTAMP)", validOnTs, validOnTs)
 	}
 
-	// TODO: The opposing nomenclature of the columns and filters makes this logic hard to follow.
-	// Would suggest renaming either the columns or the filters need to diverge from the existing implementation
-	// NotBefore = ValidAfter
-	// NotAfter = ValidBefore
 	// Date Filters must be checked in different combinations
 	// determine what dates params are set - try all combinations till one matches up
 	if !tcFilter.ValidBefore.IsZero() {
-		tx = tx.Where("notafter >= ?", tcFilter.ValidBefore)
+		tx = tx.Where("CAST(notafter AS TIMESTAMP) < CAST(? AS TIMESTAMP)", tcFilter.ValidBefore.Format(constants.ParamDateTimeFormatUTC))
 	}
 	if !tcFilter.ValidAfter.IsZero() {
-		tx = tx.Where("notbefore <= ? ", tcFilter.ValidAfter)
+		tx = tx.Where("CAST(notbefore AS TIMESTAMP) > CAST(? AS TIMESTAMP)", tcFilter.ValidAfter.Format(constants.ParamDateTimeFormatUTC))
 	}
 
 	// ORDER BY
