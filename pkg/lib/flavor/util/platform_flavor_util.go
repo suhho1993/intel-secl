@@ -373,7 +373,7 @@ func (pfutil PlatformFlavorUtil) copyInstanceOfPcrDetails(pcrDetails map[crypt.D
 }
 
 // IncludeModulesToEventLog includes the event logs from HostManifest in the respective PCR event log
-func (pfutil PlatformFlavorUtil) IncludeModulesToEventLog(pcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx, modulesToInclude []string) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
+func (pfutil PlatformFlavorUtil) IncludeModulesToEventLog(pcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx, modulesToInclude map[string]int) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
 	log.Trace("flavor/util/platform_flavor_util:IncludeModulesToEventLog() Entering")
 	defer log.Trace("flavor/util/platform_flavor_util:IncludeModulesToEventLog() Leaving")
 
@@ -386,24 +386,28 @@ func (pfutil PlatformFlavorUtil) IncludeModulesToEventLog(pcrDetails map[crypt.D
 			// from a slice
 			var eventsToInclude []hcTypes.EventLog
 
-			// loop at the event log level
+			// Loop through each event and see if it contains a ComponentName key/value.
+			// If it does, see if the ComponentName exists in the 'modulesToInclude' map,
+			// and if not, do not add it to the result.
 			for _, eIX := range pE.Event {
-				eventName := eIX.Info["EventName"]
-				componentName := eIX.Info["ComponentName"]
-				packageName := eIX.Info["PackageName"]
-
-				// inside event
-				//  remove dynamic modules for VMWare by checking the PackageName field
-				for _, mToInclude := range modulesToInclude {
-					if componentName == mToInclude && !(strings.ToLower(eventName) ==
-						strings.ToLower(constants.VMWareComponentName) &&
-						strings.TrimSpace(packageName) != "") {
-
-						eventsToInclude = append(eventsToInclude, eIX)
-						break
+				if componentName, ok := eIX.Info["ComponentName"]; ok {
+					if _, ok := modulesToInclude[componentName]; !ok {
+						continue
 					}
 				}
+
+				// Remove the dynamic modules for VMware
+				if eventName, ok := eIX.Info["EventName"]; ok && strings.ToLower(eventName) ==
+					strings.ToLower(constants.VMWareComponentName) {
+					if packageName, ok := eIX.Info["PackageName"]; ok && len(packageName) == 0 {
+						continue
+					}
+				}
+
+				log.Debugf("Including module '%s' - '%s' for PCR '%s'", eIX.Label, eIX.Info["ComponentName"], pI.String())
+				eventsToInclude = append(eventsToInclude, eIX)
 			}
+
 			// add ONLY included events to the list
 			pE.Event = eventsToInclude
 			filteredPcrDetails[digestAlgo][pI] = pE
@@ -413,7 +417,7 @@ func (pfutil PlatformFlavorUtil) IncludeModulesToEventLog(pcrDetails map[crypt.D
 }
 
 // ExcludeModulesFromEventLog - excludes the event logs from HostManifest out of the respective PCR event log
-func (pfutil PlatformFlavorUtil) ExcludeModulesFromEventLog(pcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx, modulesToExclude []string) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
+func (pfutil PlatformFlavorUtil) ExcludeModulesFromEventLog(pcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx, modulesToExclude map[string]int) map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx {
 	log.Trace("flavor/util/platform_flavor_util:ExcludeModulesFromEventLog() Entering")
 	defer log.Trace("flavor/util/platform_flavor_util:ExcludeModulesFromEventLog() Leaving")
 
@@ -426,22 +430,29 @@ func (pfutil PlatformFlavorUtil) ExcludeModulesFromEventLog(pcrDetails map[crypt
 			// from a slice
 			var eventsToInclude []hcTypes.EventLog
 
-			// loop at the event log level
+			// Loop through each event and see if it contains a ComponentName key/value.
+			// If it does, see if the ComponentName exists in the 'modulesToExclude' map,
+			// and if so, do not add it to the result.
 			for _, eIX := range pE.Event {
-				eventName := eIX.Info["EventName"]
-				componentName := eIX.Info["ComponentName"]
-				packageName := eIX.Info["PackageName"]
-
-				//  remove dynamic modules for VMWare by checking the PackageName field
-				for _, mToExclude := range modulesToExclude {
-					if componentName != mToExclude && (strings.ToLower(eventName) ==
-						strings.ToLower(constants.VMWareComponentName) &&
-						strings.TrimSpace(packageName) != "") {
-						eventsToInclude = append(eventsToInclude, eIX)
-						break
+				if componentName, ok := eIX.Info["ComponentName"]; ok {
+					if _, ok := modulesToExclude[componentName]; ok {
+						log.Debugf("Excluding module '%s' - '%s' for PCR '%s'", eIX.Label, eIX.Info["ComponentName"], pI.String())
+						continue
 					}
 				}
+
+				// Remove the dynamic modules for VMware
+				if eventName, ok := eIX.Info["EventName"]; ok && strings.ToLower(eventName) ==
+					strings.ToLower(constants.VMWareComponentName) {
+					if packageName, ok := eIX.Info["PackageName"]; ok && len(packageName) == 0 {
+						log.Debugf("Excluding module '%s' - '%s' for PCR '%s'", eIX.Label, eIX.Info["ComponentName"], pI.String())
+						continue
+					}
+				}
+
+				eventsToInclude = append(eventsToInclude, eIX)
 			}
+
 			// add ONLY included events to the list
 			pE.Event = eventsToInclude
 			filteredPcrDetails[digestAlgo][pI] = pE

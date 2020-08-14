@@ -25,7 +25,13 @@ import (
 )
 
 var (
-	hostSpecificModules = []string{"commandLine.", "componentName.imgdb.tgz", "componentName.onetime.tgz"}
+	// This is a map of host specific modules.
+	// The map value (int) is not relevant, just use the map key for efficient lookups.
+	hostSpecificModules = map[string]int {
+		"commandLine.":              0,
+		"componentName.imgdb.tgz":   0,
+		"componentName.onetime.tgz": 0,
+	}
 )
 
 // ESXPlatformFlavor is used to generate various Flavors for a VMWare ESX-based host
@@ -244,15 +250,13 @@ func (esxpf ESXPlatformFlavor) getOsFlavor() ([]string, error) {
 
 	var errorMessage = "Error during creation of OS flavor"
 	var err error
-	var modulesToExclude = hostSpecificModules[:]
+
 	var osFlavors []string
 	var osPcrs = esxpf.getPcrList(esxpf.HostInfo.HardwareFeatures.TPM.Meta.TPMVersion, cf.FlavorPartOs)
 	var includeEventLog = eventLogRequiredForEsx(esxpf.HostInfo.HardwareFeatures.TPM.Meta.TPMVersion, cf.FlavorPartOs)
 
 	pcrAllEventDetails := pfutil.GetPcrDetails(esxpf.HostManifest.PcrManifest, osPcrs, includeEventLog)
-
-	var filteredPcrDetails map[crypt.DigestAlgorithm]map[hcTypes.PcrIndex]cm.PcrEx
-	filteredPcrDetails = pfutil.ExcludeModulesFromEventLog(pcrAllEventDetails, modulesToExclude)
+	filteredPcrDetails := pfutil.ExcludeModulesFromEventLog(pcrAllEventDetails, hostSpecificModules)
 
 	newMeta, err := pfutil.GetMetaSectionDetails(esxpf.HostInfo, esxpf.TagCertificate, "", cf.FlavorPartOs,
 		hcConstants.VendorVMware)
