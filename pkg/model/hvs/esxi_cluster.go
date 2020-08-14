@@ -12,8 +12,13 @@ type ESXiClusterCollection struct {
 }
 
 type ESXiCluster struct {
-	Id               uuid.UUID `json:"id,omitempty"`
+	Id               uuid.UUID `json:"id"`
 	ConnectionString string    `json:"connection_string"`
 	ClusterName      string    `json:"cluster_name"`
-	HostNames        []string  `json:"hosts,omitempty"`
+	HostNames        []string  `json:"hosts"`
+}
+
+type ESXiClusterCreateRequest struct {
+	ConnectionString string    `json:"connection_string"`
+	ClusterName      string    `json:"cluster_name"`
 }

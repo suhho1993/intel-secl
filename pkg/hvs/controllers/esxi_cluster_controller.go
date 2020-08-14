@@ -54,7 +54,7 @@ func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Re
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
 	}
 
-	var reqESXiCluster *hvs.ESXiCluster
+	var reqESXiCluster *hvs.ESXiClusterCreateRequest
 	// Decode the incoming json data to note struct
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -88,7 +88,12 @@ func (controller ESXiClusterController) Create(w http.ResponseWriter, r *http.Re
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while registering a new ESXi cluster"}
 	}
 
-	newESXiCluster, err := controller.ECStore.Create(reqESXiCluster)
+	esxiCluster := &hvs.ESXiCluster{
+		ConnectionString: reqESXiCluster.ConnectionString,
+		ClusterName:      reqESXiCluster.ClusterName,
+	}
+
+	newESXiCluster, err := controller.ECStore.Create(esxiCluster)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/esxi_cluster_controller:Create() ESXi cluster registration failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while registering a new ESXi cluster"}
@@ -254,7 +259,7 @@ func (controller ESXiClusterController) Retrieve(w http.ResponseWriter, r *http.
 	return esxiCluster, http.StatusOK, nil
 }
 
-func validateESXiClusterRequest(esxiCluster hvs.ESXiCluster) error {
+func validateESXiClusterRequest(esxiCluster hvs.ESXiClusterCreateRequest) error {
 	defaultLog.Trace("controllers/esxi_cluster_controller:ValidateESXiClusterRequest() Entering")
 	defer defaultLog.Trace("controllers/esxi_cluster_controller:ValidateESXiClusterRequest() Leaving")
 
@@ -304,7 +309,7 @@ func getECCriteria(params url.Values) (*models.ESXiClusterFilterCriteria, error)
 	return &ecfc, nil
 }
 
-func (controller *ESXiClusterController) getHostsFromCluster(reqESXiCluster *hvs.ESXiCluster) ([]mo.HostSystem, error) {
+func (controller *ESXiClusterController) getHostsFromCluster(reqESXiCluster *hvs.ESXiClusterCreateRequest) ([]mo.HostSystem, error) {
 	defaultLog.Trace("controllers/esxi_cluster_controller:getHostsFromCluster() Entering")
 	defer defaultLog.Trace("controllers/esxi_cluster_controller:getHostsFromCluster() Leaving")
 	hostConnectorFactory, err := controller.HController.HCConfig.HostConnectorProvider.NewHostConnector(reqESXiCluster.ConnectionString)

@@ -7,6 +7,13 @@ package hvs
 
 import "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 
+// ESXiCluster API request payload
+// swagger:parameters ESXiClusterCreateRequest
+type ESXiClusterCreateRequest struct {
+	// in:body
+	Body hvs.ESXiClusterCreateRequest
+}
+
 // ESXiCluster API response payload
 // swagger:parameters ESXiCluster
 type ESXiCluster struct {
@@ -109,7 +116,7 @@ type ESXiClusterCollection struct {
 //   required: true
 //   in: body
 //   schema:
-//    "$ref": "#/definitions/ESXiCluster"
+//    "$ref": "#/definitions/ESXiClusterCreateRequest"
 // - name: Content-Type
 //   required: true
 //   in: header
@@ -120,7 +127,7 @@ type ESXiClusterCollection struct {
 //   type: string
 // responses:
 //   '201':
-//     description: Successfully created the Esxi cluster record.
+//     description: Successfully created the ESXi cluster record.
 //     content:
 //       application/json
 //     schema:

@@ -198,7 +198,6 @@ var _ = Describe("ESXiClusterController", func() {
 				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
 					esxiClusterController.Create))).Methods("POST")
 				esxiClusterRequestJson := `{
-					"id" : "f3c6a763-51cd-436c-a828-c2ce6964c824",
 					"connection_string": "https://ip3.com:443/sdk;u=username;p=password",
 					"cluster_name": "New Cluster"
 				}`
@@ -209,24 +208,6 @@ var _ = Describe("ESXiClusterController", func() {
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusCreated))
-			})
-		})
-		Context("Provide invalid cluster ID in ESXi cluster data", func() {
-			It("Should have HTTP bad request status", func() {
-				router.Handle("/esxi-cluster", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(
-					esxiClusterController.Create))).Methods("POST")
-				esxiClusterRequestJson := `{
-					"id" : "f3c6a763-51cd-000000436c-a828-c2ce6964c824",
-					"connection_string": "https://ip3.com:443/sdk;u=username;p=password",
-					"cluster_name": "New Cluster"
-				}`
-				req, err := http.NewRequest("POST", "/esxi-cluster", strings.NewReader(esxiClusterRequestJson))
-				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
-				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
-				Expect(err).NotTo(HaveOccurred())
-				w = httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
 		Context("Provide an invalid request body to create a new ESXi cluster record", func() {
