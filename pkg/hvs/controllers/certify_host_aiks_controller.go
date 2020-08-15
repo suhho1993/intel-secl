@@ -323,7 +323,7 @@ func (certifyHostAiksController *CertifyHostAiksController) CertifyAik(aikPubKey
 		},
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName: "",
+			CommonName: privacycaCert.Issuer.CommonName,
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().AddDate(validity, 0, 0),

@@ -65,6 +65,9 @@ func getSamlReportMap(t *hvs.TrustReport) map[string]string {
 		samlReportMap["AIK_Certificate"] = t.HostManifest.AIKCertificate
 	}
 
+	if t.HostManifest.HostInfo.HardwareFeatures.TPM.Meta.TPMVersion != "" {
+		samlReportMap["TPMVersion"] = t.HostManifest.HostInfo.HardwareFeatures.TPM.Meta.TPMVersion
+	}
 	for field, value := range getTags(t) {
 		samlReportMap[field] = value
 	}

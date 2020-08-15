@@ -46,11 +46,12 @@ func (client reportsClientImpl) CreateSAMLReport(reportCreateRequest hvs.ReportC
 		return nil, errors.Wrap(err, "hvsclient/reports_client:CreateSAMLReport() Failed to instantiate http request to HVS")
 	}
 
+	req.Header.Set("Accept", "application/samlassertion+xml")
+	req.Header.Set("Content-Type", "application/json")
+
 	var samlReport []byte
 	if client.cfg.BearerToken != "" {
 		req.Header.Set("Authorization", "Bearer "+client.cfg.BearerToken)
-		req.Header.Set("Accept", "application/samlassertion+xml")
-		req.Header.Set("Content-Type", "application/json")
 		rsp, err := client.httpClient.Do(req)
 		if err != nil {
 			log.Error("hvsclient/reports_client:CreateSAMLReport() Error while sending request from client to server")

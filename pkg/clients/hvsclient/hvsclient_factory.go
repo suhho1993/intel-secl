@@ -5,9 +5,9 @@
 package hvsclient
 
 import (
-	"errors"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -40,13 +40,20 @@ type hvsClientConfig struct {
 
 func NewVSClientFactory(baseURL, bearerToken, caCertsDir string) (HVSClientFactory, error) {
 
+	if bearerToken == "" || baseURL == "" || caCertsDir == ""{
+		return nil, errors.New("One or more parameters among bearer token, baseURL and caCertsDir path is empty")
+	}
 	cfg := hvsClientConfig{BaseURL: baseURL, BearerToken: bearerToken, CaCertsDir: caCertsDir}
 
 	defaultFactory := defaultVSClientFactory{&cfg}
 	return &defaultFactory, nil
 }
 
-func NewVSClientFactoryWithUserCredentials(baseURL, username, password, aasApiUrl, caCertsDir string) (HVSClientFactory, error) {
+func NewVSClientFactoryWithUserCredentials(baseURL, aasApiUrl, username, password, caCertsDir string) (HVSClientFactory, error) {
+	if aasApiUrl == "" || baseURL == "" || caCertsDir == "" || username == "" || password == ""{
+		return nil, errors.New("One or more parameters among aasApiUrl, baseURL, username, password and caCertsDir path is empty")
+	}
+
 	if strings.HasSuffix(baseURL, "/"){
 		baseURL = baseURL
 	} else {
@@ -136,10 +143,6 @@ func (vsClientFactory *defaultVSClientFactory) createHttpClient() (*http.Client,
 	_, err := url.ParseRequestURI(vsClientFactory.cfg.BaseURL)
 	if err != nil {
 		return nil, err
-	}
-
-	if vsClientFactory.cfg.BearerToken == "" {
-		return nil, errors.New("The bearer token is empty")
 	}
 
 	caCerts, err := crypt.GetCertsFromDir(vsClientFactory.cfg.CaCertsDir)

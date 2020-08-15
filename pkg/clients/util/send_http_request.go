@@ -108,7 +108,7 @@ func SendRequest(req *http.Request, aasURL, serviceUsername, servicePassword str
 			return nil, errors.Wrap(err, "clients/send_http_request.go:SendRequest() Error from response")
 		}
 	}
-	if response.StatusCode != http.StatusOK {
+	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated && response.StatusCode != http.StatusNoContent{
 		return nil, errors.Wrap(errors.New("HTTP Status :"+strconv.Itoa(response.StatusCode)),
 			"clients/send_http_request.go:SendRequest() Error from response")
 	}
