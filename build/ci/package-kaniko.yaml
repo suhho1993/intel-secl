@@ -10,9 +10,7 @@
     - /kaniko/executor --dockerfile=$CI_PROJECT_DIR/build/image/Dockerfile-${COMPONENT_IN_JOB} -c $CI_PROJECT_DIR -d $OUR_REGISTRY/${COMPONENT_IN_JOB}-${GITLAB_USER_LOGIN}:${CI_COMMIT_SHA:0:8} --insecure-registry $OUR_REGISTRY
     - echo "Your image has been built with tag $OUR_REGISTRY/${COMPONENT_IN_JOB}-${GITLAB_USER_LOGIN}:${CI_COMMIT_SHA:0:8}"
   rules:
-  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /integration/'
-    when: on_success
-  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "v3.0/feature/go-hvs"'
+  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /develop$/'
     when: on_success
 
 package:hvs:kaniko:

@@ -7,6 +7,8 @@ package hvs
 import (
 	"crypto/x509/pkix"
 	"fmt"
+	"os/user"
+	"strconv"
 	"strings"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
@@ -14,6 +16,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/tasks"
 	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
+	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -80,12 +83,13 @@ func (a *App) setup(args []string) error {
 			return errors.New("Failed to run setup task " + cmd)
 		}
 	}
-	return nil
+	return a.configDirChown()
 }
 
 // a helper function for setting up the task runner
 func (a *App) setupTaskRunner() (*setup.Runner, error) {
 
+	loadAlias()
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 
@@ -253,4 +257,24 @@ func (a *App) setupHRRSConfig() {
 	if refreshPeriod != hrrs.DefaultRefreshPeriod {
 		a.Config.HRRS.RefreshPeriod = refreshPeriod
 	}
+}
+
+func (a *App) configDirChown() error {
+	svcUser, err := user.Lookup(constants.ServiceUserName)
+	if err != nil {
+		return errors.Wrapf(err, "configDirChown: could not find user '%s'", constants.ServiceUserName)
+	}
+	uid, err := strconv.Atoi(svcUser.Uid)
+	if err != nil {
+		return errors.Wrapf(err, "configDirChown: could not parse aas user uid '%s'", svcUser.Uid)
+	}
+	gid, err := strconv.Atoi(svcUser.Gid)
+	if err != nil {
+		return errors.Wrapf(err, "configDirChown: could not parse aas user gid '%s'", svcUser.Gid)
+	}
+	err = cos.ChownR(a.configDir(), uid, gid)
+	if err != nil {
+		return errors.Wrap(err, "Error while changing ownership of files inside config directory")
+	}
+	return nil
 }

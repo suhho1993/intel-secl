@@ -17,9 +17,7 @@
       - deployments/installer
     expire_in: 1 week
   rules:
-  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /integration/'
-    when: on_success
-  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "v3.0/feature/go-hvs"'
+  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /develop$/'
     when: on_success
 
 package:hvs:installer:
