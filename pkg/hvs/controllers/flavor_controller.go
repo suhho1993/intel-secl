@@ -161,7 +161,7 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 			defaultLog.Error("controllers/flavor_controller:CreateFlavors() Could not generate formatted connection string")
 			return nil, errors.Wrap(err, "Error while generating a formatted connection string")
 		}
-		defaultLog.Debugf("Getting host manifest from host %s", connectionString)
+		defaultLog.Debug("Getting manifest from host...")
 		hostManifest, err := fcon.getHostManifest(connectionString)
 		if err != nil {
 			defaultLog.Error("controllers/flavor_controller:CreateFlavors() Error getting host manifest")
