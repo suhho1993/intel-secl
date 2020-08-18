@@ -19,7 +19,6 @@ import (
 
 var ErrInvalidHostManiFest = errors.New("invalid host data")
 var ErrManifestMissingHwUUID = errors.New("host data missing hardware uuid")
-var ErrMissingHostId = errors.New("host id ")
 
 type Verifier struct {
 	FlavorStore                     domain.FlavorStore
@@ -90,14 +89,14 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 		fgTrustReport := fgTrustCache.trustReport
 		if !fgTrustReqs.MeetsFlavorGroupReqs(fgTrustCache, v.FlavorVerifier.GetVerifierCerts()) {
-			log.Debug("hosttrust/verifier:Verify() Trust cache  doesn't meet flavorgroup requirements")
+			log.Debug("hosttrust/verifier:Verify() Trust cache doesn't meet flavorgroup requirements")
 			finalReportValid = false
 			fgTrustReport, err = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
 			if err != nil {
 				return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while crating flavorgroup report")
 			}
 		}
-		log.Debug("hosttrust/verifier:Verify() Trust status for host id", hostId, "for flavorgroup ", fg.ID, "is", fgTrustReport.IsTrusted())
+		log.Debug("hosttrust/verifier:Verify() Trust status for host id ", hostId, " for flavorgroup ", fg.ID, " is ", fgTrustReport.IsTrusted())
 		// append the results
 		finalTrustReport.Results = append(finalTrustReport.Results, fgTrustReport.Results...)
 	}

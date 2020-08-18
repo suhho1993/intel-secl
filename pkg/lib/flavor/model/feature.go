@@ -16,12 +16,12 @@ type AES_NI struct {
 
 // TXT
 type TXT struct {
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }
 
 // TPM
 type TPM struct {
-	Enabled  bool     `json:"enabled,omitempty"`
+	Enabled  bool     `json:"enabled"`
 	Version  string   `json:"version,omitempty"`
 	PcrBanks []string `json:"pcr_banks,omitempty"`
 }
