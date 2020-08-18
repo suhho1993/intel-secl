@@ -9,7 +9,6 @@ import (
 	"crypto/sha512"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/binary"
 	"encoding/hex"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca/constants"
@@ -152,12 +151,13 @@ func (certifyKey20 *CertifyKey20) GetPublicKeyFromModulus() (*rsa.PublicKey, err
 	pubExp[1] = (byte) (0x00)
 	pubExp[2] = (byte) (0x01 & 0xff)
 
+	exponent := new(big.Int)
+	exponent.SetBytes(pubExp)
 
-	exponent := binary.BigEndian.Uint16(pubExp)
 	publicKeyModulusRSA := make([]byte, len(rsaPubKeyModulus))
 	publicKeyModulusRSA = rsaPubKeyModulus[len(rsaPubKeyModulus)-256:]
 	bigInt.SetBytes(publicKeyModulusRSA)
-	pubKey := rsa.PublicKey{N: bigInt, E: int(exponent)}
+	pubKey := rsa.PublicKey{N: bigInt, E: int(exponent.Int64())}
 	return &pubKey, nil
 }
 
