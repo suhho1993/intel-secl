@@ -36,6 +36,13 @@ type DeployManifestRequest struct {
 //   in: body
 //   schema:
 //    "$ref": "#/definitions/DeployManifestRequest"
+// - name: Content-Type
+//   description: Content-Type header
+//   in: header
+//   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully deployed application manifest to host.

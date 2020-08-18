@@ -105,9 +105,12 @@ type TagCertificateCollection struct {
 //   format: uuid
 //   required: false
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 //
 // responses:
 //   '200':
@@ -187,13 +190,19 @@ type TagCertificateCollection struct {
 //   schema:
 //    $ref: "#/definitions/TagCertificateCreateCriteria"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '201':
 //     description: Successfully created the Tag Certificate.
@@ -291,13 +300,19 @@ type TagCertificateCollection struct {
 //   schema:
 //     $ref: "#/definitions/TagCertificateDeployCriteria"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully deployed the TagCertificate to the host.

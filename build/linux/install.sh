@@ -86,7 +86,7 @@ logRotate_install() {
   LOGROTATE_YUM_PACKAGES="logrotate"
   if [ "$(whoami)" == "root" ]; then
     auto_install "Log Rotate" "LOGROTATE"
-    if [ $? -ne 0 ]; then echo_failure "Failed to install logrotate"; exit -1; fi
+    if [ $? -ne 0 ]; then echo_failure "Failed to install logrotate"; exit 1; fi
   fi
   logRotate_clear; logRotate_detect;
     if [ -z "$logrotate" ]; then

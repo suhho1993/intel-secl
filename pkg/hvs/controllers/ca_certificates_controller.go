@@ -23,14 +23,14 @@ type CaCertificatesController struct {
 	CertStore *models.CertificatesStore
 }
 
-var caCertificatesSearchParams = map[string]bool{"domain" : true}
+var caCertificatesSearchParams = map[string]bool{"domain": true}
 
-// Create stores new Ca certificate in the root certificates directory location
+// Create stores new CA certificate in the root certificates directory location
 func (ca CaCertificatesController) Create(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/ca_certificates_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:Create() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -65,7 +65,7 @@ func (ca CaCertificatesController) Create(w http.ResponseWriter, r *http.Request
 	return &caCertificate, http.StatusCreated, nil
 }
 
-// Retrieve returns an existing Ca certificate from the stored location
+// Retrieve returns an existing CA certificate from the stored location
 func (ca CaCertificatesController) Retrieve(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/ca_certificates_controller:Retrieve() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:Retrieve() Leaving")
@@ -131,7 +131,7 @@ func (ca CaCertificatesController) SearchPem(w http.ResponseWriter, r *http.Requ
 	return certificates, status, nil
 }
 
-func (ca CaCertificatesController) searchCertificates(domain string) (*hvs.CaCertificateCollection, int, error)  {
+func (ca CaCertificatesController) searchCertificates(domain string) (*hvs.CaCertificateCollection, int, error) {
 
 	domain = models.GetUniqueCertType(domain)
 	if !models.IsValidDomainType(domain) {
@@ -146,7 +146,7 @@ func (ca CaCertificatesController) searchCertificates(domain string) (*hvs.CaCer
 }
 
 // validateCaCertificates checks if input ca certificate is valid
-func validateCaCertificates(caCertificate hvs.CaCertificate)  (*x509.Certificate, error)  {
+func validateCaCertificates(caCertificate hvs.CaCertificate) (*x509.Certificate, error) {
 	defaultLog.Trace("controllers/ca_certificates_controller:validateCaCertificates() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:validateCaCertificates() Leaving")
 
@@ -169,7 +169,7 @@ func validateCaCertificates(caCertificate hvs.CaCertificate)  (*x509.Certificate
 }
 
 // Read CaCertificates/certificate from the given certificate path
-func ReadCertificates(certType string, certStore *models.CertificatesStore)  (*hvs.CaCertificateCollection, error) {
+func ReadCertificates(certType string, certStore *models.CertificatesStore) (*hvs.CaCertificateCollection, error) {
 	defaultLog.Trace("controllers/ca_certificates_controller:ReadCertificates() Entering")
 	defer defaultLog.Trace("controllers/ca_certificates_controller:ReadCertificates() Leaving")
 
@@ -182,7 +182,7 @@ func ReadCertificates(certType string, certStore *models.CertificatesStore)  (*h
 		return nil, errors.Errorf("%s Certificates have not been loaded", certType)
 	}
 	for _, cert := range cs.Certificates {
-		certificate := hvs.CaCertificate {
+		certificate := hvs.CaCertificate{
 			Name:        cert.Issuer.CommonName,
 			Certificate: cert.Raw,
 		}
@@ -198,8 +198,8 @@ func ReadCertificate(certType string, certStore *models.CertificatesStore) (*hvs
 
 	certCollection, err := ReadCertificates(certType, certStore)
 	if err != nil {
-		return nil, errors.Wrap(err, "controllers/ca_certificates_controller:ReadCertificate() Error while reading " +
-			"'%s' certificates" + certType )
+		return nil, errors.Wrap(err, "controllers/ca_certificates_controller:ReadCertificate() Error while reading "+
+			"'%s' certificates"+certType)
 	}
 
 	if len(certCollection.CaCerts) > 0 {

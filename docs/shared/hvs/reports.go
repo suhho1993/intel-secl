@@ -124,9 +124,12 @@ type ReportCreateRequest struct {
 //   required: false
 //   default: 2000
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the reports.
@@ -229,13 +232,19 @@ type ReportCreateRequest struct {
 //   schema:
 //    "$ref": "#/definitions/ReportCreateRequest"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '201':
 //     description: Successfully created the report.
@@ -333,14 +342,13 @@ type ReportCreateRequest struct {
 //   required: true
 //   type: string
 //   format: uuid
-// - name: Content-Type
-//   required: true
-//   in: header
-//   type: string
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the Report.

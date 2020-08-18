@@ -73,9 +73,12 @@ type TpmEndorsementCollection struct {
 //     type: string
 //     required: false
 //   - name: Accept
-//     required: true
+//     description: Accept header
 //     in: header
 //     type: string
+//     required: true
+//     enum:
+//       - application/json
 // responses:
 //   "200":
 //     description: Successfully retrieved the tpm-endorsements.
@@ -135,13 +138,19 @@ type TpmEndorsementCollection struct {
 //     schema:
 //       "$ref": "#/definitions/TpmEndorsement"
 //   - name: Content-Type
-//     required: true
+//     description: Content-Type header
 //     in: header
 //     type: string
+//     required: true
+//     enum:
+//       - application/json
 //   - name: Accept
-//     required: true
+//     description: Accept header
 //     in: header
 //     type: string
+//     required: true
+//     enum:
+//       - application/json
 // responses:
 //   '201':
 //     description: Successfully created the tpm-endorsement.
@@ -212,13 +221,19 @@ type TpmEndorsementCollection struct {
 //     schema:
 //       "$ref": "#/definitions/TpmEndorsement"
 //   - name: Content-Type
-//     required: true
+//     description: Content-Type header
 //     in: header
 //     type: string
+//     required: true
+//     enum:
+//       - application/json
 //   - name: Accept
-//     required: true
+//     description: Accept header
 //     in: header
 //     type: string
+//     required: true
+//     enum:
+//       - application/json
 // responses:
 //   '200':
 //     description: Successfully updated the tpm-endorsement.
@@ -272,9 +287,12 @@ type TpmEndorsementCollection struct {
 //     type: string
 //     format: uuid
 //   - name: Accept
-//     required: true
+//     description: Accept header
 //     in: header
 //     type: string
+//     required: true
+//     enum:
+//       - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the TpmEndorsement.

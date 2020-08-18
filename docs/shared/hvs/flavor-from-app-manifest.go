@@ -59,13 +59,19 @@ type Flavor struct {
 //   schema:
 //    "$ref": "#/definitions/ManifestRequest"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/xml
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '201':
 //     description: Successfully created the software flavor.

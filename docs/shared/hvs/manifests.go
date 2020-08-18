@@ -38,9 +38,12 @@ type Manifest struct {
 //   format: uuid
 //   required: true
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/xml
 // responses:
 //   '200':
 //     description: Successfully generated manifest for the software flavor.

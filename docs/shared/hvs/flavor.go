@@ -80,9 +80,12 @@ type SignedFlavorCollection struct {
 //   type: string
 //   required: false
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully searched and returned a signed flavor collection.
@@ -176,13 +179,19 @@ type SignedFlavorCollection struct {
 //   schema:
 //    "$ref": "#/definitions/FlavorCreateRequest"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '201':
 //     description: Successfully created the flavors.
@@ -393,9 +402,12 @@ type SignedFlavorCollection struct {
 //   type: string
 //   format: uuid
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the flavor.

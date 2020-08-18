@@ -92,13 +92,19 @@ type HostFlavorgroupCreateRequest struct {
 //   schema:
 //    "$ref": "#/definitions/HostCreateRequest"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '201':
 //     description: Successfully created the host.
@@ -154,9 +160,12 @@ type HostFlavorgroupCreateRequest struct {
 //   type: string
 //   format: uuid
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the host.
@@ -222,13 +231,19 @@ type HostFlavorgroupCreateRequest struct {
 //   schema:
 //    "$ref": "#/definitions/Host"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully updated the host.
@@ -349,14 +364,13 @@ type HostFlavorgroupCreateRequest struct {
 //   in: query
 //   type: string
 //   required: false
-// - name: Content-Type
-//   required: true
-//   in: header
-//   type: string
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the hosts.
@@ -423,13 +437,19 @@ type HostFlavorgroupCreateRequest struct {
 //   schema:
 //    "$ref": "#/definitions/HostFlavorgroupCreateRequest"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '201':
 //     description: Successfully created the host flavorgroup link.
@@ -482,14 +502,13 @@ type HostFlavorgroupCreateRequest struct {
 //   required: true
 //   type: string
 //   format: uuid
-// - name: Content-Type
-//   required: true
-//   in: header
-//   type: string
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the host flavorgroup link.
@@ -565,9 +584,12 @@ type HostFlavorgroupCreateRequest struct {
 //   format: uuid
 //   required: true
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the host flavorgroup links.

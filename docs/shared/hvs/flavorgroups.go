@@ -336,9 +336,12 @@ type FlavorgroupFlavorLinkCollection struct {
 //   type: string
 //   format: uuid
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the flavorgroup.
@@ -453,13 +456,19 @@ type FlavorgroupFlavorLinkCollection struct {
 //   schema:
 //    "$ref": "#/definitions/FlavorgroupFlavorLinkCriteria"
 // - name: Content-Type
-//   required: true
+//   description: Content-Type header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '201':
 //     description: Successfully linked the FlavorGroup and Flavor.
@@ -514,9 +523,12 @@ type FlavorgroupFlavorLinkCollection struct {
 //   type: string
 //   format: uuid
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the FlavorGroupFlavorLink.
@@ -590,9 +602,12 @@ type FlavorgroupFlavorLinkCollection struct {
 //   type: string
 //   format: uuid
 // - name: Accept
-//   required: true
+//   description: Accept header
 //   in: header
 //   type: string
+//   required: true
+//   enum:
+//     - application/json
 // responses:
 //   '200':
 //     description: Successfully retrieved the FlavorgroupFlavorLinkCollection.

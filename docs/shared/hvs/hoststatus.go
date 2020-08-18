@@ -120,6 +120,13 @@ type HostStatusCollection struct {
 //      minimum: 1
 //      default: 10000
 //      required: false
+//    - name: Accept
+//      description: Accept header
+//      in: header
+//      type: string
+//      required: true
+//      enum:
+//        - application/json
 //  responses:
 //    '200':
 //      description: Successfully retrieved the HostStatus records. Also returned when no results are found.
@@ -709,9 +716,12 @@ type HostStatusCollection struct {
 //      type: string
 //      format: uuid
 //    - name: Accept
-//      required: true
+//      description: Accept header
 //      in: header
 //      type: string
+//      required: true
+//      enum:
+//        - application/json
 //  responses:
 //    '200':
 //      description: Successfully retrieved the HostStatus record.
