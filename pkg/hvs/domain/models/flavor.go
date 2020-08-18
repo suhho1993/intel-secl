@@ -19,7 +19,7 @@ type FlavorCreateRequest struct {
 	ConnectionString       string                     `json:"connection_string,omitempty"`
 	FlavorCollection       hvs.FlavorCollection       `json:"flavor_collection,omitempty"`
 	SignedFlavorCollection hvs.SignedFlavorCollection `json:"signed_flavor_collection,omitempty"`
-	FlavorgroupName        string                     `json:"flavorgroup_name,omitempty"`
+	FlavorgroupNames       []string                  `json:"flavorgroup_names,omitempty"`
 	FlavorParts            []cf.FlavorPart            `json:"partial_flavor_types,omitempty"`
 }
 
@@ -42,20 +42,20 @@ func (fcr FlavorCreateRequest) MarshalJSON() ([]byte, error) {
 		ConnectionString       string                     `json:"connection_string,omitempty"`
 		FlavorCollection       hvs.FlavorCollection       `json:"flavor_collection,omitempty"`
 		SignedFlavorCollection hvs.SignedFlavorCollection `json:"signed_flavor_collection,omitempty"`
-		FlavorgroupName        string                     `json:"flavorgroup_name,omitempty"`
+		FlavorgroupNames       []string                   `json:"flavorgroup_names,omitempty"`
 		FlavorParts            []cf.FlavorPart            `json:"partial_flavor_types,omitempty"`
 	}{
 		ConnectionString:       fcr.ConnectionString,
 		FlavorCollection:       fcr.FlavorCollection,
 		SignedFlavorCollection: fcr.SignedFlavorCollection,
-		FlavorgroupName:        fcr.FlavorgroupName,
+		FlavorgroupNames:       fcr.FlavorgroupNames,
 		FlavorParts:            fcr.FlavorParts,
 	})
 }
 
 func (fcr *FlavorCreateRequest) UnmarshalJSON(b []byte) error {
 	//Validate the FlavorCreateRequest keys as here it is overridden with custom UnmarshalJSON decoder.DisallowUnknownFields doesnt work
-	validKeys := map[string]bool{"connection_string": true, "flavor_collection": true, "signed_flavor_collection": true, "flavorgroup_name": true, "partial_flavor_types": true}
+	validKeys := map[string]bool{"connection_string": true, "flavor_collection": true, "signed_flavor_collection": true, "flavorgroup_names": true, "partial_flavor_types": true}
 	fcrKeysMap := map[string]interface{}{}
 	if err := json.Unmarshal(b, &fcrKeysMap); err != nil {
 		return err
@@ -70,13 +70,13 @@ func (fcr *FlavorCreateRequest) UnmarshalJSON(b []byte) error {
 		ConnectionString       string                     `json:"connection_string,omitempty"`
 		FlavorCollection       hvs.FlavorCollection       `json:"flavor_collection,omitempty"`
 		SignedFlavorCollection hvs.SignedFlavorCollection `json:"signed_flavor_collection,omitempty"`
-		FlavorgroupName        string                     `json:"flavorgroup_name,omitempty"`
+		FlavorgroupNames       []string                   `json:"flavorgroup_names,omitempty"`
 		FlavorParts            []cf.FlavorPart            `json:"partial_flavor_types,omitempty"`
 	})
 	err := json.Unmarshal(b, &decoded)
 	if err == nil {
 		fcr.ConnectionString = decoded.ConnectionString
-		fcr.FlavorgroupName = decoded.FlavorgroupName
+		fcr.FlavorgroupNames = decoded.FlavorgroupNames
 		fcr.FlavorCollection = decoded.FlavorCollection
 		fcr.SignedFlavorCollection = decoded.SignedFlavorCollection
 		fcr.FlavorParts = decoded.FlavorParts

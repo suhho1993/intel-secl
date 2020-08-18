@@ -12,7 +12,7 @@ import (
 )
 
 type FlavorgroupCollection struct {
-	Flavorgroups []*FlavorGroup `json:"flavorgroups" xml:"flavorgroup"`
+	Flavorgroups []FlavorGroup `json:"flavorgroups" xml:"flavorgroup"`
 }
 
 type FlavorMatchPolicies []FlavorMatchPolicy

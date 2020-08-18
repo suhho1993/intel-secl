@@ -120,7 +120,8 @@ func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.Re
 			"CreateSoftwareFlavor() %s : Error unmarshalling software flavor string", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error unmarshalling software flavor string"}
 	}
-	_, err = controller.FlavorController.createFlavors(models.FlavorCreateRequest{FlavorCollection: hvs.FlavorCollection{Flavors: []hvs.Flavors{{Flavor: flavor}}}, FlavorgroupName: appManifestRequest.FlavorGroupName})
+	_, err = controller.FlavorController.createFlavors(models.FlavorCreateRequest{FlavorCollection:
+	hvs.FlavorCollection{Flavors: []hvs.Flavors{{Flavor: flavor}}}, FlavorgroupNames: appManifestRequest.FlavorGroupNames})
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/flavor_from_app_manifest_controller:"+
 			"CreateSoftwareFlavor() %s : Error creating new SOFTWARE flavor", commLogMsg.AppRuntimeErr)

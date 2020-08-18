@@ -157,12 +157,12 @@ type SignedFlavorCollection struct {
 //
 //    | Attribute                      | Description                                     |
 //    |--------------------------------|-------------------------------------------------|
-//    | connection_string              | (Optional) The host connection string. flavorgroup_name, partial_flavor_types, tls_policy_id can be provided as optional parameters along with the host connection string. |
+//    | connection_string              | (Optional) The host connection string. flavorgroup_names, partial_flavor_types can be provided as optional parameters along with the host connection string. |
 //    |                                | For INTEL hosts, this would have the vendor name, the IP addresses, or DNS host name and credentials i.e.: "intel:https://trustagent.server.com:1443 |
 //    |                                | For VMware, this includes the vCenter and host IP address or DNS host name i.e.: "vmware:https://vCenterServer.com:443/sdk;h=host;u=vCenterUsername;p=vCenterPassword" |
 //    | flavors                        | (Optional) A collection of flavors in the defined flavor format. No other parameters are needed in this case.
 //    | signed_flavors                 | (Optional) This is collection of signed flavors consisting of flavor and signature provided by user. |
-//    | flavorgroup_name               | (Optional) Flavor group name that the created flavor(s) will be associated with. If not provided, created flavor will be associated with automatic flavor group. |
+//    | flavorgroup_names              | (Optional) Flavor group names that the created flavor(s) will be associated with. If not provided, created flavor will be associated with automatic flavor group. |
 //    | partial_flavor_types           | (Optional) List array input of flavor types to be imported from a host. Partial flavor type can be any of the following: PLATFORM, OS, ASSET_TAG, HOST_UNIQUE, SOFTWARE. Can be provided with the host connection string. See the product guide for more details on how flavor types are broken down for each host type. |
 //
 // x-permissions: flavors:create

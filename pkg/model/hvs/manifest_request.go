@@ -13,6 +13,6 @@ import (
 type ManifestRequest struct {
 	HostId           uuid.UUID      `xml:"hostId,omitempty"`
 	ConnectionString string         `xml:"connectionString"`
-	FlavorGroupName  string         `xml:"flavorgroupName,omitempty"`
+	FlavorGroupNames []string       `xml:"flavorgroupNames,omitempty"`
 	Manifest         model.Manifest `xml:"Manifest"`
 }

@@ -41,7 +41,7 @@ type Flavor struct {
 //        |--------------------------------|-------------------------------------------------|
 //        | hostId                         | (Optional) The host id is used to fetch the connection string from database. If not provided, 'connectionString' needs to be provided.|
 //        | connectionString               | (Optional) The connection string is of the form <b>https://tagent-ip:1443"</b>. If not provided, 'hostId' needs to be provided.|
-//        | flavorgroupName                | (Optional) Name of the flavor group the created flavor needs to be associated to. If not provided, flavor is associated to default flavor group.|
+//        | flavorgroupNames               | (Optional) Name of the flavor groups the created flavor needs to be associated to. If not provided, flavor is associated to default flavor group.|
 //        | Manifest                       | Application manifest for which flavor needs to be created. |
 //
 //

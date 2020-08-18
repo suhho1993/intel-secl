@@ -249,33 +249,32 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 	}
 	var err error
 	// add all flavorparts to default flavorgroups if flavorgroup name is not given
-	if flavorReq.FlavorgroupName == "" && len(flavorReq.FlavorParts) == 0 {
+	if flavorReq.FlavorgroupNames == nil && len(flavorReq.FlavorParts) == 0 {
 		for _, flavorPart := range fc.GetFlavorTypes() {
 			flavorParts = append(flavorParts, flavorPart)
 		}
 	}
-	// get the flavorgroup name
-	fgName := flavorReq.FlavorgroupName
-	if fgName == "" {
-		fgName = dm.FlavorGroupsAutomatic.String()
+	// get the flavorgroup names
+	if flavorReq.FlavorgroupNames == nil {
+		flavorReq.FlavorgroupNames = []string{dm.FlavorGroupsAutomatic.String()}
 	}
 	// check if the flavorgroup is already created, else create flavorgroup
-	flavorgroup, err := fcon.createFGIfNotExists(fgName)
-	if err != nil || flavorgroup.ID == uuid.Nil {
-		defaultLog.Error("controllers/flavor_controller:createFlavors() Error getting flavorgroup")
+	flavorgroups, err := CreateMissingFlavorgroups(fcon.FGStore, flavorReq.FlavorgroupNames)
+	if err != nil {
+		defaultLog.Error("controllers/flavor_controller:createFlavors() Error getting flavorgroups")
 		return nil, err
 	}
 
-	// if platform flavor was retrieved from host, break it into the flavor part flavor map using the flavorgroup id
+	// if platform flavor was retrieved from host, break it into the flavor part flavor map using the flavorgroups
 	if platformFlavor != nil {
-		flavorFlavorPartMap = fcon.retrieveFlavorCollection(platformFlavor, flavorgroup.ID, flavorParts)
+		flavorFlavorPartMap = fcon.retrieveFlavorCollection(platformFlavor, flavorgroups, flavorParts)
 	}
 
 	if flavorFlavorPartMap == nil || len(flavorFlavorPartMap) == 0 {
 		defaultLog.Error("controllers/flavor_controller:createFlavors() Cannot create flavors")
 		return nil, errors.New("Unable to create Flavors")
 	}
-	return fcon.addFlavorToFlavorgroup(flavorFlavorPartMap, flavorgroup)
+	return fcon.addFlavorToFlavorgroup(flavorFlavorPartMap, flavorgroups)
 }
 
 func (fcon *FlavorController) getHostManifest(cs string) (*hcType.HostManifest, error) {
@@ -289,7 +288,7 @@ func (fcon *FlavorController) getHostManifest(cs string) (*hcType.HostManifest, 
 	return &hostManifest, err
 }
 
-func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.FlavorPart][]hvs.SignedFlavor, fg *hvs.FlavorGroup) ([]hvs.SignedFlavor, error) {
+func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.FlavorPart][]hvs.SignedFlavor, fgs []hvs.FlavorGroup) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("controllers/flavor_controller:addFlavorToFlavorgroup() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:addFlavorToFlavorgroup() Leaving")
 
@@ -304,7 +303,7 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 	for flavorPart, signedFlavors := range flavorFlavorPartMap {
 		defaultLog.Debugf("Creating flavors for fp %s", flavorPart.String())
 		for _, signedFlavor := range signedFlavors {
-			flavorgroup := &hvs.FlavorGroup{}
+			flavorgroups := []hvs.FlavorGroup{}
 			signedFlavorCreated, err := fcon.FStore.Create(&signedFlavor)
 			if err != nil {
 				defaultLog.WithError(err).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : "+
@@ -321,7 +320,7 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 				// add the created flavor to the list of flavors to be returned
 				returnSignedFlavors = append(returnSignedFlavors, *signedFlavorCreated)
 				if flavorPart == fc.FlavorPartAssetTag || flavorPart == fc.FlavorPartHostUnique {
-					flavorgroup, err = fcon.createFGIfNotExists(dm.FlavorGroupsHostUnique.String())
+					flavorgroup, err := fcon.createFGIfNotExists(dm.FlavorGroupsHostUnique.String())
 					if err != nil || flavorgroup.ID == uuid.Nil {
 						defaultLog.Error("controllers/flavor_controller:addFlavorToFlavorgroup() Error getting host_unique flavorgroup")
 						if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
@@ -359,27 +358,38 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 					if flavorPart == fc.FlavorPartAssetTag {
 						fetchHostData = true
 					}
+					flavorgroups = []hvs.FlavorGroup{*flavorgroup}
 				} else if flavorPart == fc.FlavorPartSoftware {
 					var softwareFgName string
+					addToNonSoftwareGroup := false
 					if strings.Contains(signedFlavorCreated.Flavor.Meta.Description.Label, fConst.DefaultSoftwareFlavorPrefix) {
 						softwareFgName = dm.FlavorGroupsPlatformSoftware.String()
-					} else {
+					} else if strings.Contains(signedFlavorCreated.Flavor.Meta.Description.Label, fConst.DefaultWorkloadFlavorPrefix) {
 						softwareFgName = dm.FlavorGroupsWorkloadSoftware.String()
+					} else {
+						addToNonSoftwareGroup = true
 					}
-					flavorgroup, err = fcon.createFGIfNotExists(softwareFgName)
-					if err != nil || flavorgroup.ID == uuid.Nil {
-						defaultLog.Errorf("controllers/flavor_controller:addFlavorToFlavorgroup() Error getting %v flavorgroup", softwareFgName)
-						if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
-							defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
-								"Error cleaning up already existing flavors on flavor creation failure")
+					if !addToNonSoftwareGroup {
+						flavorgroup, err := fcon.createFGIfNotExists(softwareFgName)
+						if err != nil || flavorgroup.ID == uuid.Nil {
+							defaultLog.Errorf("controllers/flavor_controller:addFlavorToFlavorgroup() Error getting %v flavorgroup", softwareFgName)
+							if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
+								defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+									"Error cleaning up already existing flavors on flavor creation failure")
+							}
+							return nil, err
 						}
-						return nil, err
+						flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
+						flavorgroups = []hvs.FlavorGroup{*flavorgroup}
+					} else {
+						flavorgroupsForQueue = append(flavorgroupsForQueue, fgs...)
+						flavorgroups = fgs
 					}
-					flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
 					fetchHostData = true
+					
 				} else if flavorPart == fc.FlavorPartPlatform || flavorPart == fc.FlavorPartOs {
-					flavorgroup = fg
-					flavorgroupsForQueue = append(flavorgroupsForQueue, *flavorgroup)
+					flavorgroups = fgs
+					flavorgroupsForQueue = append(flavorgroupsForQueue, flavorgroups...)
 				}
 			} else {
 				defaultLog.Error("controllers/flavor_controller: addFlavorToFlavorgroup(): Unable to create flavors")
@@ -389,10 +399,12 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 				}
 				return nil, errors.New("Unable to create flavors")
 			}
-			if _, ok := flavorgroupFlavorMap[flavorgroup.ID]; ok {
-				flavorgroupFlavorMap[flavorgroup.ID] = append(flavorgroupFlavorMap[flavorgroup.ID], signedFlavorCreated.Flavor.Meta.ID)
-			} else {
-				flavorgroupFlavorMap[flavorgroup.ID] = []uuid.UUID{signedFlavorCreated.Flavor.Meta.ID}
+			for _, flavorgroup := range flavorgroups {
+				if _, ok := flavorgroupFlavorMap[flavorgroup.ID]; ok {
+					flavorgroupFlavorMap[flavorgroup.ID] = append(flavorgroupFlavorMap[flavorgroup.ID], signedFlavorCreated.Flavor.Meta.ID)
+				} else {
+					flavorgroupFlavorMap[flavorgroup.ID] = []uuid.UUID{signedFlavorCreated.Flavor.Meta.ID}
+				}
 			}
 		}
 	}
@@ -468,14 +480,14 @@ func (fcon FlavorController) addFlavorgroupHostsToFlavorVerifyQueue(fgs []hvs.Fl
 	return nil
 }
 
-func (fcon FlavorController) retrieveFlavorCollection(platformFlavor *fType.PlatformFlavor, fgId uuid.UUID, flavorParts []fc.FlavorPart) map[fc.FlavorPart][]hvs.SignedFlavor {
+func (fcon FlavorController) retrieveFlavorCollection(platformFlavor *fType.PlatformFlavor, fgs []hvs.FlavorGroup, flavorParts []fc.FlavorPart) map[fc.FlavorPart][]hvs.SignedFlavor {
 	defaultLog.Trace("controllers/flavor_controller:retrieveFlavorCollection() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:retrieveFlavorCollection() Leaving")
 
 	flavorFlavorPartMap := make(map[fc.FlavorPart][]hvs.SignedFlavor)
 	flavorSignKey := (*fcon.CertStore)[dm.CertTypesFlavorSigning.String()].Key
 
-	if fgId.String() == "" || platformFlavor == nil {
+	if fgs == nil || platformFlavor == nil {
 		defaultLog.Error("controllers/flavor_controller:retrieveFlavorCollection() Platform flavor and flavorgroup must be specified")
 		return flavorFlavorPartMap
 	}
@@ -694,8 +706,8 @@ func validateFlavorCreateRequest(criteria dm.FlavorCreateRequest) error {
 			return errors.New("Invalid host connection string")
 		}
 	}
-	if criteria.FlavorgroupName != "" {
-		err := validation.ValidateStrings([]string{criteria.FlavorgroupName})
+	if criteria.FlavorgroupNames != nil {
+		err := validation.ValidateStrings(criteria.FlavorgroupNames)
 		if err != nil {
 			return errors.New("Invalid flavorgroup name given as a flavor create criteria")
 		}
@@ -749,7 +761,7 @@ func (fcon *FlavorController) createFGIfNotExists(fgName string) (*hvs.FlavorGro
 	}
 
 	if len(flavorgroups) > 0 && flavorgroups[0].ID != uuid.Nil {
-		return flavorgroups[0], nil
+		return &flavorgroups[0], nil
 	}
 	// if flavorgroup of the given name doesn't exist, create a new one
 	var fg hvs.FlavorGroup

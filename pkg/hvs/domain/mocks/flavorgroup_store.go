@@ -40,33 +40,33 @@ func (store *MockFlavorgroupStore) Retrieve(id uuid.UUID) (*hvs.FlavorGroup, err
 }
 
 // Search returns all FlavorGroups
-func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCriteria) ([]*hvs.FlavorGroup, error) {
+func (store *MockFlavorgroupStore) Search(criteria *models.FlavorGroupFilterCriteria) ([]hvs.FlavorGroup, error) {
 
-	var flvrGroups []*hvs.FlavorGroup
+	var flvrGroups []hvs.FlavorGroup
 	for _, fg := range store.FlavorgroupStore {
-		flvrGroups = append(flvrGroups, fg)
+		flvrGroups = append(flvrGroups, *fg)
 	}
 
 	if criteria == nil {
 		return flvrGroups, nil
 	} else if len(criteria.Ids) > 0 {
-		flavorgroups := []*hvs.FlavorGroup{}
+		flavorgroups := []hvs.FlavorGroup{}
 		for _, id := range criteria.Ids {
 			fg, _ := store.Retrieve(id)
-			flavorgroups = append(flavorgroups, fg)
+			flavorgroups = append(flavorgroups, *fg)
 		}
 		return flavorgroups, nil
 	} else if criteria.NameEqualTo != "" {
 		for _, fg := range store.FlavorgroupStore {
 			if fg.Name == criteria.NameEqualTo {
-				return []*hvs.FlavorGroup{fg}, nil
+				return []hvs.FlavorGroup{*fg}, nil
 			}
 		}
 	} else if criteria.NameContains != "" {
-		var flavorgroups []*hvs.FlavorGroup
+		var flavorgroups []hvs.FlavorGroup
 		for _, fg := range store.FlavorgroupStore {
 			if strings.Contains(fg.Name, criteria.NameContains) {
-				flavorgroups = append(flavorgroups, fg)
+				flavorgroups = append(flavorgroups, *fg)
 			}
 		}
 		return flavorgroups, nil

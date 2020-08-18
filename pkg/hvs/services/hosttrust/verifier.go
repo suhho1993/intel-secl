@@ -71,11 +71,11 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 	for _, fg := range flvGroups {
 		//TODO - handle errors in case of DB transaction
-		fgTrustReqs, err := NewFlvGrpHostTrustReqs(hostId, hwUuid, *fg, v.FlavorStore, hostData, v.SkipFlavorSignatureVerification)
+		fgTrustReqs, err := NewFlvGrpHostTrustReqs(hostId, hwUuid, fg, v.FlavorStore, hostData, v.SkipFlavorSignatureVerification)
 		if err != nil {
 			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving NewFlvGrpHostTrustReqs")
 		}
-		fgCachedFlavors, err := v.getCachedFlavors(hostId, (*fg).ID)
+		fgCachedFlavors, err := v.getCachedFlavors(hostId, (fg).ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving getCachedFlavors")
 		}

@@ -450,7 +450,7 @@ func (controller FlavorgroupController) RetrieveFlavor(w http.ResponseWriter, r 
 	return fgl, http.StatusOK, nil
 }
 
-func (controller FlavorgroupController) getAssociatedFlavor(flavorgroupList []*hvs.FlavorGroup, includeFlavorContent bool) (*hvs.
+func (controller FlavorgroupController) getAssociatedFlavor(flavorgroupList []hvs.FlavorGroup, includeFlavorContent bool) (*hvs.
 	FlavorgroupCollection, error) {
 	defaultLog.Trace("controllers/flavorgroup_controller:getAssociatedFlavor() Entering")
 	defer defaultLog.Trace("controllers/flavorgroup_controller:getAssociatedFlavor() Leaving")

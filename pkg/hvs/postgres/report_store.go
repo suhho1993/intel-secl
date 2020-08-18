@@ -239,7 +239,7 @@ func (r *ReportStore) FindHostIdsFromExpiredReports(fromTime time.Time, toTime t
 
 	// TODO: https://jira.devtools.intel.com/browse/ISECL-10985
 	query := "select h.id from host as h where exists (select t.host_id from (select row_number() over (partition by host_id order by expiration desc) rn, host_id from report where expiration > CAST(? AS TIMESTAMP) and expiration <= CAST(? AS TIMESTAMP)) as t where h.id=t.host_id and t.rn=1);"
-
+	r.Store.Db.LogMode(true)
 	rows, err := r.Store.Db.Raw(query, fromTime, toTime).Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/report_store:FindHostIdsFromExpiredReports() failed to retrieve records from db")

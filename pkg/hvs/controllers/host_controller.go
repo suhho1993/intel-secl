@@ -497,27 +497,19 @@ func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, host
 	defaultLog.Trace("controllers/host_controller:linkFlavorgroupsToHost() Entering")
 	defer defaultLog.Trace("controllers/host_controller:linkFlavorgroupsToHost() Leaving")
 
-	var flavorgroupIds []uuid.UUID
-	for _, flavorgroupName := range flavorgroupNames {
-		existingFlavorGroups, _ := hc.FGStore.Search(&models.FlavorGroupFilterCriteria{
-			NameEqualTo: flavorgroupName,
-		})
-
-		if existingFlavorGroups != nil && len(existingFlavorGroups) > 0 {
-			linkExists, err := hc.flavorGroupHostLinkExists(hostId, existingFlavorGroups[0].ID)
+	flavorgroupIds := []uuid.UUID{}
+	flavorgroups, err := CreateMissingFlavorgroups(hc.FGStore, flavorgroupNames)
+	if err != nil {
+		return errors.Wrapf(err, "Could not fetch flavorgroup Ids")
+	}
+	for _, flavorgroup := range flavorgroups {
+			linkExists, err := hc.flavorGroupHostLinkExists(hostId, flavorgroup.ID)
 			if err != nil {
 				return errors.Wrap(err, "Could not check host-flavorgroup link existence")
 			}
 			if !linkExists {
-				flavorgroupIds = append(flavorgroupIds, existingFlavorGroups[0].ID)
+				flavorgroupIds = append(flavorgroupIds, flavorgroup.ID)
 			}
-		} else {
-			flavorgroup, err := hc.createNewFlavorGroup(flavorgroupName)
-			if err != nil {
-				return errors.Wrapf(err, "Could not create flavorgroup with name : %s", flavorgroupName)
-			}
-			flavorgroupIds = append(flavorgroupIds, flavorgroup.ID)
-		}
 	}
 
 	defaultLog.Debugf("Linking host %v with flavorgroups %+q", hostId, flavorgroupIds)
@@ -528,12 +520,31 @@ func (hc *HostController) linkFlavorgroupsToHost(flavorgroupNames []string, host
 	return nil
 }
 
-func (hc *HostController) createNewFlavorGroup(flavorgroupName string) (*hvs.FlavorGroup, error) {
+func CreateMissingFlavorgroups(fGStore domain.FlavorGroupStore, flavorgroupNames []string,) ([]hvs.FlavorGroup, error) {
+	flavorgroups := []hvs.FlavorGroup{}
+	for _, flavorgroupName := range flavorgroupNames {
+		existingFlavorGroups, _ := fGStore.Search(&models.FlavorGroupFilterCriteria{
+			NameEqualTo: flavorgroupName,
+		})
+		if existingFlavorGroups == nil || len(existingFlavorGroups) == 0 {
+			flavorgroup, err := createNewFlavorGroup(fGStore, flavorgroupName)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Could not create flavorgroup with name : %s", flavorgroupName)
+			}
+			flavorgroups = append(flavorgroups, *flavorgroup)
+		} else {
+			flavorgroups = append(flavorgroups, existingFlavorGroups...)
+		}
+	}
+	return flavorgroups, nil
+}
+
+func createNewFlavorGroup(fGStore domain.FlavorGroupStore, flavorgroupName string) (*hvs.FlavorGroup, error) {
 	defaultLog.Trace("controllers/host_controller:createNewFlavorGroup() Entering")
 	defer defaultLog.Trace("controllers/host_controller:createNewFlavorGroup() Leaving")
 
 	fg := utils.CreateFlavorGroupByName(flavorgroupName)
-	flavorGroup, err := hc.FGStore.Create(&fg)
+	flavorGroup, err := fGStore.Create(&fg)
 	if err != nil {
 		return nil, err
 	}
