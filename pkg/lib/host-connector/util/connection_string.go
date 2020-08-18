@@ -24,7 +24,7 @@ func GetConnectorDetails(connectionString string) (types.VendorConnector, error)
 
 	vendor := GetVendorPrefix(connectionString)
 	if vendor == constants.VendorUnknown {
-		if connectionString != "" && strings.ToLower(connectionString[:strings.Index(connectionString, ":")]) != "https" {
+		if connectionString != "" && (!strings.Contains(connectionString, ":") || strings.ToLower(connectionString[:strings.Index(connectionString, ":")]) != "https") {
 			return types.VendorConnector{}, errors.New("Vendor provided at URL prefix is not supported")
 		}
 		vendor = GuessVendorFromURL(connectionString)

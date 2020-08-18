@@ -712,6 +712,18 @@ func validateFlavorCreateRequest(criteria dm.FlavorCreateRequest) error {
 			return errors.New("Invalid flavorgroup name given as a flavor create criteria")
 		}
 	}
+	if len(criteria.FlavorParts) > 0 {
+		var flavorParts []string
+		var err error
+		for _, fp := range criteria.FlavorParts {
+			flavorParts = append(flavorParts, fp.String())
+		}
+		criteria.FlavorParts, err = parseFlavorParts(flavorParts)
+		if err != nil {
+			return errors.New("Valid flavor parts must be given as a flavor create criteria")
+		}
+	}
+
 	return nil
 }
 
