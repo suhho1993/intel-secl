@@ -9,8 +9,8 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
-	"encoding/json"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 /**
@@ -24,17 +24,6 @@ type SignedFlavor struct {
 	Signature string `json:"signature"`
 }
 
-// NewSignedFlavorFromJSON returns an instance of SignedFlavor from an JSON string
-func NewSignedFlavorFromJSON(sfstring string) (*SignedFlavor, error) {
-	var sf SignedFlavor
-	err := json.Unmarshal([]byte(sfstring), &sf)
-	if err != nil {
-		err = errors.Wrapf(err, "Error unmarshaling SignedFlavor JSON: %s", err.Error())
-		return nil, err
-	}
-	return &sf, nil
-}
-
 // NewSignedFlavor Provided an existing flavor and a privatekey, create a SignedFlavor
 func NewSignedFlavor(flavor *Flavor, privateKey *rsa.PrivateKey) (*SignedFlavor, error) {
 
@@ -42,8 +31,8 @@ func NewSignedFlavor(flavor *Flavor, privateKey *rsa.PrivateKey) (*SignedFlavor,
 		return nil, errors.New("The Flavor must be provided and cannot be nil")
 	}
 
-	if privateKey == nil {
-		return nil, errors.New("The private key must be provided and cannot be nil")
+	if privateKey == nil || privateKey.Validate() != nil {
+		return nil, errors.New("Valid private key must be provided and cannot be nil")
 	}
 
 	flavorDigest, err := flavor.getFlavorDigest()
@@ -53,16 +42,18 @@ func NewSignedFlavor(flavor *Flavor, privateKey *rsa.PrivateKey) (*SignedFlavor,
 
 	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA384, flavorDigest)
 	if err != nil {
-		return nil, errors.Wrap(err, "An error occurrred while signing the flavor")
+		return nil, errors.Wrap(err, "An error occurred while signing the flavor")
 	}
 
+	log.Debug("Flavor Digest: ", base64.StdEncoding.EncodeToString(flavorDigest))
+	log.Debug("Flavor Signature: ", base64.StdEncoding.EncodeToString(signature))
 	return &SignedFlavor{
 		Flavor:    *flavor,
 		Signature: base64.StdEncoding.EncodeToString(signature),
 	}, nil
 }
 
-// Verify Provided the public key from the Flavor Signing Certifiate,
+// Verify Provided the public key from the Flavor Signing Certificate,
 // verify that the signed flavor's signature is valid.
 func (signedFlavor *SignedFlavor) Verify(publicKey *rsa.PublicKey) error {
 

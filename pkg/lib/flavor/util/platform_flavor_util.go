@@ -5,11 +5,7 @@
 package util
 
 import (
-	"crypto"
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha512"
-	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -521,13 +517,16 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavorList(flavors []string, flavorSig
 		// loop through and sign each flavor
 		for _, f := range flavors {
 			var sf *hvs.SignedFlavor
-			signedFlavor, err := pfutil.GetSignedFlavor(f, flavorSigningPrivateKey)
+			var usf hvs.Flavor
+
+			err := json.Unmarshal([]byte(f), &usf)
 			if err != nil {
 				return nil, errors.Errorf("Error signing flavor collection: %s", err.Error())
 			}
-			sf, _ = cm.NewSignedFlavorFromJSON(signedFlavor)
-			if sf == nil {
-				return nil, errors.Wrapf(err, "Error signing flavor collection")
+
+			sf, err = pfutil.GetSignedFlavor(&usf, flavorSigningPrivateKey)
+			if err != nil {
+				return nil, errors.Errorf("Error signing flavor collection: %s", err.Error())
 			}
 			signedFlavors = append(signedFlavors, *sf)
 		}
@@ -537,46 +536,19 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavorList(flavors []string, flavorSig
 	return &signedFlavors, nil
 }
 
-//GetSignedFlavor is used to sign the flavor
-func (pfutil PlatformFlavorUtil) GetSignedFlavor(flavorString string, privateKey *rsa.PrivateKey) (string, error) {
+// GetSignedFlavor is used to sign the flavor
+func (pfutil PlatformFlavorUtil) GetSignedFlavor(unsignedFlavor *hvs.Flavor, privateKey *rsa.PrivateKey) (*hvs.SignedFlavor, error) {
 	log.Trace("flavor/util/platform_flavor_util:GetSignedFlavor() Entering")
 	defer log.Trace("flavor/util/platform_flavor_util:GetSignedFlavor() Leaving")
 
-	var flavorInterface hvs.Flavor
-	var err error
-
-	// validate private key
-	if privateKey != nil {
-		err := privateKey.Validate()
-		if err != nil {
-			return "", errors.Wrap(err, "signing key validation failed")
-		}
-	} else {
-		return "", errors.Errorf("GetSignedFlavor failed: signing key is missing")
+	if unsignedFlavor == nil {
+		return nil, errors.New("GetSignedFlavor: Flavor content missing")
 	}
 
-	// prepare the signer
-	hashEntity := sha512.New384()
-	hashEntity.Write([]byte(flavorString))
-	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA384, hashEntity.Sum(nil))
-	signatureString := base64.StdEncoding.EncodeToString(signature)
-
-	// unmarshal the signed flavor
-	err = json.Unmarshal([]byte(flavorString), &flavorInterface)
+	signedFlavor, err := cm.NewSignedFlavor(unsignedFlavor, privateKey)
 	if err != nil {
-		return "", errors.Wrapf(err, "Flavor unmarshal failures: %s", err.Error())
+		return nil, errors.Wrap(err, "GetSignedFlavor: Error while marshalling signed flavor")
 	}
 
-	// pack into struct and return
-	signedFlavor := &hvs.SignedFlavor{
-		Flavor:    flavorInterface,
-		Signature: signatureString,
-	}
-
-	signedFlavorJSON, err := json.Marshal(signedFlavor)
-	if err != nil {
-		return "", errors.Wrap(err, "Error while marshalling signed flavor")
-	}
-
-	return string(signedFlavorJSON), nil
+	return signedFlavor, nil
 }

@@ -15,10 +15,8 @@ const (
 	DoNotUse Stage = iota
 	FlavorVerifyQueued
 	FlavorVerifyStarted
-	FlavorVerifyDone
 	GetHostDataQueued
 	GetHostDataStarted
-	GetHostDataDone
 	ReportCreationStarted
 	ReportCreationDone
 )

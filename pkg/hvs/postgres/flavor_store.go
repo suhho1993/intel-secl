@@ -40,7 +40,7 @@ func (f *FlavorStore) Create(signedFlavor *hvs.SignedFlavor) (*hvs.SignedFlavor,
 	dbf := flavor{
 		ID:         signedFlavor.Flavor.Meta.ID,
 		Content:    PGFlavorContent(signedFlavor.Flavor),
-		CreatedAt:  time.Time{},
+		CreatedAt:  time.Now(),
 		Label:      signedFlavor.Flavor.Meta.Description.Label,
 		FlavorPart: signedFlavor.Flavor.Meta.Description.FlavorPart,
 		Signature:  signedFlavor.Signature,
@@ -116,7 +116,7 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 	var hostUniqueQuery *gorm.DB
 
 	if flavorPartsWithLatest != nil && len(flavorPartsWithLatest) >= 1 {
-		for flavorPart, _ := range flavorPartsWithLatest {
+		for flavorPart := range flavorPartsWithLatest {
 			switch flavorPart {
 			case fc.FlavorPartPlatform:
 				biosQuery = f.Store.Db
@@ -126,7 +126,7 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 				if len(flavorMetaMap) >= 1 && len(flavorMetaMap[fc.FlavorPartPlatform]) >= 1 {
 					platformFlavorMetaInfo := flavorMetaMap[fc.FlavorPartPlatform]
 					// check if tboot_installed exists in the map
-					if _, ok := platformFlavorMetaInfo["tbooot_installed"]; ok {
+					if _, ok := platformFlavorMetaInfo["tboot_installed"]; ok {
 						biosQuery = biosQuery.Where("f.content -> 'meta' -> 'description' ->> 'tboot_installed' = ?", strconv.FormatBool(platformFlavorMetaInfo["tboot_installed"].(bool)))
 					}
 					if _, ok := platformFlavorMetaInfo["bios_name"]; ok {
@@ -262,7 +262,7 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 	// add asset tag query to sub query
 	if aTagQuery != nil {
 		aTagSubQuery := aTagQuery.SubQuery()
-		if biosQuery != nil || osQuery != nil  || softwareQuery != nil {
+		if biosQuery != nil || osQuery != nil || softwareQuery != nil {
 			subQuery = subQuery.Or("f.id IN ?", aTagSubQuery)
 		} else {
 			subQuery = subQuery.Where("f.id IN ?", aTagSubQuery)
@@ -271,7 +271,7 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 	// add host-unique query to sub query
 	if hostUniqueQuery != nil {
 		hostUniqueSubQuery := hostUniqueQuery.SubQuery()
-		if biosQuery != nil || osQuery != nil  || softwareQuery != nil || aTagQuery != nil {
+		if biosQuery != nil || osQuery != nil || softwareQuery != nil || aTagQuery != nil {
 			subQuery = subQuery.Or("f.id IN ?", hostUniqueSubQuery)
 		} else {
 			subQuery = subQuery.Where("f.id IN ?", hostUniqueSubQuery)

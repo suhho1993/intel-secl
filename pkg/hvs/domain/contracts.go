@@ -142,7 +142,7 @@ type (
 		// the method returns. The result is returned individually as they are processed.
 		// We need the single host method a there is a need to cancel individual host fetch
 		// using the context
-		RetriveAsync(context.Context, hvs.Host, ...HostDataReceiver) error
+		RetrieveAsync(context.Context, hvs.Host, ...HostDataReceiver) error
 
 		// TODO: ? Do we need a method that can use used to pass in a list rather than one at a time
 		// RetriveMultipleAsync(context.Context, []*hvs.Host, rcvrs ...HostDataReceiver) error

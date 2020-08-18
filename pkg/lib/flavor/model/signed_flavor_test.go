@@ -6,10 +6,23 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
+
+// NewSignedFlavorFromJSON returns an instance of SignedFlavor from an JSON string
+func newSignedFlavorFromJSON(sfstring string) (*SignedFlavor, error) {
+	var sf SignedFlavor
+	err := json.Unmarshal([]byte(sfstring), &sf)
+	if err != nil {
+		err = errors.Wrapf(err, "Error unmarshaling SignedFlavor JSON: %s", err.Error())
+		return nil, err
+	}
+
+	return &sf, nil
+}
 
 const (
 	goodSignedPlatformFlavor string = `{
@@ -649,7 +662,7 @@ func TestNewSignedFlavorFromJSONPlatform(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Unmarshal the flavor JSON
-			got1, _ := NewSignedFlavorFromJSON(tt.args.ipflavorjson)
+			got1, _ := newSignedFlavorFromJSON(tt.args.ipflavorjson)
 			if got1 == nil {
 				t.Errorf("SignedFlavor creation failed: %v", got1)
 			}
@@ -661,7 +674,7 @@ func TestNewSignedFlavorFromJSONPlatform(t *testing.T) {
 			}
 
 			// Perform unmarshal on the newly fetched string
-			got2, _ := NewSignedFlavorFromJSON(tt.args.ipflavorjson)
+			got2, _ := newSignedFlavorFromJSON(tt.args.ipflavorjson)
 			if got1 == nil {
 				t.Errorf("SignedFlavor creation failed: %v", got1)
 			}

@@ -7,6 +7,7 @@ package hostfetcher
 
 import (
 	"context"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models/taskstage"
 	"reflect"
 	"sync"
 	"time"
@@ -223,6 +224,7 @@ func (svc *Service) doWork() {
 					continue
 				default:
 					getData = true
+					taskstage.StoreInContext(req.ctx, taskstage.GetHostDataStarted)
 				}
 			}
 			svc.workMap[hId] = frs
@@ -268,9 +270,9 @@ func (svc *Service) Retrieve(ctx context.Context, host hvs.Host) (*types.HostMan
 	return hostData, nil
 }
 
-func (svc *Service) RetriveAsync(ctx context.Context, host hvs.Host, rcvrs ...domain.HostDataReceiver) error {
-	defaultLog.Trace("hostfetcher/Service:RetriveAsync() Entering")
-	defer defaultLog.Trace("hostfetcher/Service:RetriveAsync() Leaving")
+func (svc *Service) RetrieveAsync(ctx context.Context, host hvs.Host, rcvrs ...domain.HostDataReceiver) error {
+	defaultLog.Trace("hostfetcher/Service:RetrieveAsync() Entering")
+	defer defaultLog.Trace("hostfetcher/Service:RetrieveAsync() Leaving")
 
 	if svc.serviceDone {
 		return errors.New("Host Fetcher has been shut down - cannot accept any more requests")
@@ -284,8 +286,6 @@ func (svc *Service) RetriveAsync(ctx context.Context, host hvs.Host, rcvrs ...do
 func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 	defaultLog.Trace("hostfetcher/Service:FetchDataAndRespond() Entering")
 	defer defaultLog.Trace("hostfetcher/Service:FetchDataAndRespond() Leaving")
-
-	//TODO: update the state in the context to reflect that we are about to start processing
 
 	hostData, err := svc.GetHostData(connUrl)
 	if err != nil {
@@ -326,8 +326,7 @@ func (svc *Service) FetchDataAndRespond(hId uuid.UUID, connUrl string) {
 		})
 		return
 	}
-	//TODO: we need to check if the error is due to a connection failure.. In this case, we need to
-	// add it to another channel to be resubmitted.
+
 	log.Debug(" data for ", hId, "using connection string", connUrl)
 	// work is done. get the list of callbacks and delete the entry.
 	svc.wmLock.Lock()

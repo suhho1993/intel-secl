@@ -36,7 +36,7 @@ func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.Re
 	defaultLog.Trace("controllers/flavor_from_app_manifest_controller:CreateSoftwareFlavor() Entering")
 	defer defaultLog.Trace("controllers/flavor_from_app_manifest_controller:CreateSoftwareFlavor() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeXml{
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeXml {
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -120,13 +120,12 @@ func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.Re
 			"CreateSoftwareFlavor() %s : Error unmarshalling software flavor string", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error unmarshalling software flavor string"}
 	}
-	_, err = controller.FlavorController.createFlavors(models.FlavorCreateRequest{FlavorCollection:
-	hvs.FlavorCollection{Flavors: []hvs.Flavors{{Flavor: flavor}}}, FlavorgroupName: appManifestRequest.FlavorGroupName})
+	_, err = controller.FlavorController.createFlavors(models.FlavorCreateRequest{FlavorCollection: hvs.FlavorCollection{Flavors: []hvs.Flavors{{Flavor: flavor}}}, FlavorgroupName: appManifestRequest.FlavorGroupName})
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/flavor_from_app_manifest_controller:"+
 			"CreateSoftwareFlavor() %s : Error creating new SOFTWARE flavor", commLogMsg.AppRuntimeErr)
 		if strings.Contains(err.Error(), "duplicate key") {
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same label already exists"}
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same id/label already exists"}
 		}
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating new SOFTWARE flavor"}
 	}

@@ -486,7 +486,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 			Errorf("controllers/tagcertificate_controller:Deploy() %s : Failed to link SignedFlavor to Host "+
 				"Unique FlavorGroup", commLogMsg.AppRuntimeErr)
 		if strings.Contains(err.Error(), "duplicate key") {
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same label already exists"}
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same id/label already exists"}
 		}
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error during Tag Certificate Deploy"}
 	}

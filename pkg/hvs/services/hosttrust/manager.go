@@ -173,7 +173,6 @@ func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferH
 		return errors.Wrap(err, "hosttrust/manager:VerifyHostsAsync() persistRequest - error in Persisting to Store")
 	}
 	// at this point, it is safe to return the async call as the records have been persisted.
-	// TODO : add to channel for host data fetch and flavor verification
 	if fetchHostData {
 		svc.wg.Add(1)
 		go svc.submitHostDataFetch(adds)
@@ -190,7 +189,7 @@ func (svc *Service) submitHostDataFetch(hostLists ...[]uuid.UUID) {
 	defer svc.wg.Done()
 	for _, hosts := range hostLists {
 		// since current store method only support searching one record at a time, use that.
-		// TODO: update to builk retrieve host records when store method supports it. In this case, iterate by
+		// TODO: update to bulk retrieve host records when store method supports it. In this case, iterate by
 		// result from the host store.
 		for _, hId := range hosts {
 			if host, err := svc.hostStore.Retrieve(hId); err != nil {
@@ -205,9 +204,11 @@ func (svc *Service) submitHostDataFetch(hostLists ...[]uuid.UUID) {
 					continue
 				}
 				vtj.host = host
+
+				taskstage.StoreInContext(vtj.ctx, taskstage.GetHostDataQueued)
 				svc.mapmtx.Unlock()
 
-				if err := svc.hdFetcher.RetriveAsync(vtj.ctx, *vtj.host, svc); err != nil {
+				if err := svc.hdFetcher.RetrieveAsync(vtj.ctx, *vtj.host, svc); err != nil {
 					defaultLog.Error("hosttrust/manager:submitHostDataFetch() - error calling RetrieveAsync", hId)
 				}
 			}
@@ -227,7 +228,7 @@ func (svc *Service) queueFlavorVerify(hostsLists ...[]uuid.UUID) {
 			// go routine. So, all we have to do is submit requests
 			svc.rqstChan <- hId
 			// the go routine that manages the work queue will process the request. It only blocks till the
-			// request is copied to the interal queue
+			// request is copied to the internal queue
 		}
 	}
 }
@@ -254,6 +255,7 @@ func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData
 			} else {
 				svc.mapmtx.RLock()
 				strRec.Id = svc.hosts[hid].storPersistId
+				strRec.Params["host_id"] = hid
 				svc.mapmtx.RUnlock()
 				if err = svc.prstStor.Update(strRec); err != nil {
 					return errors.Wrap(err, "hosttrust/manager:persistToStore() - Could not update record")
@@ -317,8 +319,6 @@ func (svc *Service) doWork() {
 					return
 				}
 				hostId = hId
-				// TODO: check if hostmanifest is present. If it is not - prob due to conn failure, just remove this work from
-				// the queue here.
 				hostData = &hostStatusCollection[0].HostManifest
 			}
 
@@ -390,7 +390,12 @@ func (svc *Service) ProcessHostData(ctx context.Context, host hvs.Host, data *ty
 }
 
 func shouldCancelPrevJob(newJobNeedFreshHostData, prevJobNeededFreshData bool, prevJobStage taskstage.Stage) bool {
-	//TODO: implement
+	// if the old job needs data and the new job doesn't then DON'T cancel old job
+	if prevJobNeededFreshData && !newJobNeedFreshHostData {
+		return false
+	}
+
+	// in all other cases
 	return true
 }
 

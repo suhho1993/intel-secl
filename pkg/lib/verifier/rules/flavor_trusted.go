@@ -17,12 +17,12 @@ import (
 
 func NewFlavorTrusted(signedFlavor *hvs.SignedFlavor, flavorSigningCertificate *x509.Certificate, flavorCaCertificates *x509.CertPool, marker common.FlavorPart) (Rule, error) {
 
-	return &flavorTrusted {
-		signedFlavor: signedFlavor,
-		flavorId: signedFlavor.Flavor.Meta.ID,
+	return &flavorTrusted{
+		signedFlavor:             signedFlavor,
+		flavorId:                 signedFlavor.Flavor.Meta.ID,
 		flavorSigningCertificate: flavorSigningCertificate,
-		flavorCaCertificates: flavorCaCertificates,
-		marker: marker,
+		flavorCaCertificates:     flavorCaCertificates,
+		marker:                   marker,
 	}, nil
 }
 
@@ -35,7 +35,7 @@ type flavorTrusted struct {
 }
 
 // - If the flavor does not have a signature create a FaultFlavorSignatureMissing
-// - If the flavor's signature does not verify with the signing certificate and CAs, create a 
+// - If the flavor's signature does not verify with the signing certificate and CAs, create a
 //   FaultFlavorSignatureNotTrusted
 // - If any errors occur during verification, create FaultFlavorSignatureVerificationFailed
 func (rule *flavorTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleResult, error) {
@@ -44,9 +44,9 @@ func (rule *flavorTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRes
 	result.Trusted = true
 	result.Rule.Name = constants.RuleFlavorTrusted
 	result.Rule.Markers = append(result.Rule.Markers, rule.marker)
-	
+
 	if len(rule.signedFlavor.Signature) == 0 {
-		fault := hvs.Fault {
+		fault := hvs.Fault{
 			Name:        constants.FaultFlavorSignatureMissing,
 			Description: fmt.Sprintf("Signature is missing for flavor with id %s", rule.flavorId),
 		}
@@ -61,7 +61,7 @@ func (rule *flavorTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRes
 	} else {
 
 		// verify the cert and ca...
-		opts := x509.VerifyOptions {
+		opts := x509.VerifyOptions{
 			Roots: rule.flavorCaCertificates,
 		}
 
@@ -83,14 +83,15 @@ func (rule *flavorTrusted) Apply(hostManifest *types.HostManifest) (*hvs.RuleRes
 
 		err = rule.signedFlavor.Verify(publicKey)
 		if err != nil {
-			fault := hvs.Fault {
+			log.WithError(err).Error("FlavorSignatureVerificationFailed fault: Flavor Signature verification failed")
+			fault := hvs.Fault{
 				Name:        constants.FaultFlavorSignatureNotTrusted,
 				Description: fmt.Sprintf("Signature is not trusted for flavor with id %s", rule.flavorId),
 			}
-	
-			result.Faults = append(result.Faults, fault)		
+
+			result.Faults = append(result.Faults, fault)
 		}
 	}
 
-	return &result, nil	
+	return &result, nil
 }

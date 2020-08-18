@@ -113,7 +113,7 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/flavor_controller:Create() Error creating flavors")
 		if strings.Contains(err.Error(), "duplicate key") {
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same label already exists"}
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same id/label already exists"}
 		}
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating flavors"}
 	}
@@ -206,7 +206,8 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 
 	} else if len(flavorReq.FlavorCollection.Flavors) >= 1 || len(flavorReq.SignedFlavorCollection.SignedFlavors) >= 1 {
 		defaultLog.Debug("Creating flavors from flavor content")
-		var flavorSignKey = (*fcon.CertStore)[dm.CertTypesFlavorSigning.String()].Key
+		flavorSignKey, _, _ := (*fcon.CertStore).GetKeyAndCertificates(dm.CertTypesFlavorSigning.String())
+
 		// create flavors from flavor content
 		// TODO: currently checking only the unsigned flavors
 		for _, flavor := range flavorReq.FlavorCollection.Flavors {
@@ -224,28 +225,20 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 			}
 			// check if flavor part already exists in flavor-flavorPart map, else sign the flavor and add it to the map
 			var platformFlavorUtil fu.PlatformFlavorUtil
-			fBytes, err := json.Marshal(flavor.Flavor)
-			if err != nil {
-				defaultLog.Error("controllers/flavor_controller:createFlavors() Error while marshalling flavor content")
-				return nil, errors.Wrap(err, "Error while marshalling flavor content")
-			}
+
 			defaultLog.Debug("Signing the flavor content")
-			signedFlavorStr, err := platformFlavorUtil.GetSignedFlavor(string(fBytes), flavorSignKey.(*rsa.PrivateKey))
+			signedFlavor, err := platformFlavorUtil.GetSignedFlavor(&flavor.Flavor, flavorSignKey.(*rsa.PrivateKey))
 			if err != nil {
 				defaultLog.Error("controllers/flavor_controller:createFlavors() Error getting signed flavor from flavor library")
 				return nil, errors.Wrap(err, "Error getting signed flavor from flavor library")
 			}
-			var signedFlavor hvs.SignedFlavor
-			if err = json.Unmarshal([]byte(signedFlavorStr), &signedFlavor); err != nil {
-				defaultLog.Error("controllers/flavor_controller:createFlavors() Error while trying to unmarshal signed flavor")
-				return nil, errors.Wrap(err, "Error while trying to unmarshal signed flavor")
-			}
+
 			if _, ok := flavorFlavorPartMap[fp]; ok {
 				// sign the flavor and add it to the same flavor list
-				flavorFlavorPartMap[fp] = append(flavorFlavorPartMap[fp], signedFlavor)
+				flavorFlavorPartMap[fp] = append(flavorFlavorPartMap[fp], *signedFlavor)
 			} else {
 				// add the flavor to the new list
-				flavorFlavorPartMap[fp] = []hvs.SignedFlavor{signedFlavor}
+				flavorFlavorPartMap[fp] = []hvs.SignedFlavor{*signedFlavor}
 			}
 			flavorParts = append(flavorParts, fp)
 		}
@@ -314,7 +307,7 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 			flavorgroup := &hvs.FlavorGroup{}
 			signedFlavorCreated, err := fcon.FStore.Create(&signedFlavor)
 			if err != nil {
-				defaultLog.WithError(err).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
+				defaultLog.WithError(err).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : "+
 					"Unable to create flavors of %s flavorPart", flavorPart.String())
 				if cleanUpErr := fcon.createCleanUp(flavorgroupFlavorMap); cleanUpErr != nil {
 					defaultLog.WithError(cleanUpErr).Errorf("controllers/flavor_controller: addFlavorToFlavorgroup() : " +
@@ -594,7 +587,7 @@ func getHostsAssociatedWithFlavor(hStore domain.HostStore, fgStore domain.Flavor
 	defer defaultLog.Trace("controllers/flavor_controller:getHostsAssociatedWithFlavor() Leaving")
 
 	id := flavor.Flavor.Meta.ID
-	flavorGroups, err := fgStore.Search(&dm.FlavorGroupFilterCriteria{FlavorId: &id,})
+	flavorGroups, err := fgStore.Search(&dm.FlavorGroupFilterCriteria{FlavorId: &id})
 	if err != nil {
 		return nil, errors.Wrapf(err, "controllers/flavor_controller:getHostsAssociatedWithFlavor() Failed to retrieve flavorgroups "+
 			"associated with flavor %v for trust re-verification", id)
@@ -609,7 +602,7 @@ func getHostsAssociatedWithFlavor(hStore domain.HostStore, fgStore domain.Flavor
 			})
 			if err != nil {
 				return nil, errors.Wrapf(err, "controllers/flavor_controller:getHostsAssociatedWithFlavor() Failed to retrieve hosts "+
-					"associated with flavor %v for trust re-verification",  id)
+					"associated with flavor %v for trust re-verification", id)
 			}
 			if len(hosts) > 0 {
 				hostIdsForQueue = append(hostIdsForQueue, hosts[0].Id)
@@ -787,7 +780,7 @@ func (fcon *FlavorController) createFGIfNotExists(fgName string) (*hvs.FlavorGro
 func (fcon *FlavorController) createCleanUp(fgFlavorMap map[uuid.UUID][]uuid.UUID) error {
 	defaultLog.Trace("controllers/flavor_controller:createCleanUp() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:createCleanUp() Leaving")
-	if len(fgFlavorMap) <=0 {
+	if len(fgFlavorMap) <= 0 {
 		return nil
 	}
 	defaultLog.Info("Error occurred while creating flavors. So, cleaning up already created flavors....")
