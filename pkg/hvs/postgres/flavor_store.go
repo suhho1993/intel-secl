@@ -60,7 +60,6 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]hvs.S
 	var err error
 
 	tx = f.Store.Db.Table("flavor f").Select("f.id, f.content, f.signature")
-	tx.LogMode(true)
 	// build partial query with all the given flavor Id's
 	if len(flavorFilter.FlavorFC.Ids) > 0 {
 		var flavorIds []string
@@ -122,7 +121,6 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 				biosQuery = f.Store.Db
 				biosQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartPlatform.String(), fgId.String(), biosQuery)
 				// build biosQuery
-				biosQuery.LogMode(true)
 				if len(flavorMetaMap) >= 1 && len(flavorMetaMap[fc.FlavorPartPlatform]) >= 1 {
 					platformFlavorMetaInfo := flavorMetaMap[fc.FlavorPartPlatform]
 					// check if tboot_installed exists in the map
@@ -156,7 +154,6 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 				osQuery = f.Store.Db
 				osQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartOs.String(), fgId.String(), osQuery)
 				// build biosQuery
-				osQuery.LogMode(true)
 				if len(flavorMetaMap) >= 1 && len(flavorMetaMap[fc.FlavorPartOs]) >= 1 {
 					osFlavorMetaInfo := flavorMetaMap[fc.FlavorPartOs]
 					// check if tboot_installed exists in the map
@@ -188,7 +185,6 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 				hostUniqueQuery = f.Store.Db
 				hostUniqueFlavorMetaInfo := flavorMetaMap[fc.FlavorPartHostUnique]
 				hostUniqueQuery = hostUniqueQuery.Table("flavor f")
-				hostUniqueQuery.LogMode(true)
 				hostUniqueQuery = hostUniqueQuery.Select("f.id")
 				hostUniqueQuery = hostUniqueQuery.Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", fc.FlavorPartHostUnique.String())
 				if _, ok := hostUniqueFlavorMetaInfo["tboot_installed"]; ok {
@@ -205,7 +201,6 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 			case fc.FlavorPartSoftware:
 				softwareQuery = f.Store.Db
 				softwareQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartSoftware.String(), fgId.String(), softwareQuery)
-				softwareQuery.LogMode(true)
 				softwareFlavorMetaInfo := flavorMetaMap[fc.FlavorPartSoftware]
 				if _, ok := softwareFlavorMetaInfo["measurementXML_labels"]; ok {
 					softwareQuery = softwareQuery.Where("f.label IN (?)", softwareFlavorMetaInfo["measurementXML_labels"])
@@ -217,7 +212,6 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 			case fc.FlavorPartAssetTag:
 				aTagQuery = f.Store.Db
 				aTagQuery = aTagQuery.Table("flavor f").Select("f.id").Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", fc.FlavorPartAssetTag)
-				aTagQuery.LogMode(true)
 				aTagFlavorMetaInfo := flavorMetaMap[fc.FlavorPartAssetTag]
 				if _, ok := aTagFlavorMetaInfo["hardware_uuid"]; ok {
 					aTagQuery = aTagQuery.Where("f.content -> 'meta' -> 'description' ->> 'hardware_uuid' = ?", aTagFlavorMetaInfo["hardware_uuid"])
@@ -233,9 +227,7 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 		}
 	}
 
-	// TODO : remove gorm log mode later
 	subQuery := tx
-	subQuery.LogMode(true)
 	// add bios query to sub query
 	if biosQuery != nil {
 		biosSubQuery := biosQuery.SubQuery()
@@ -442,7 +434,6 @@ func (f *FlavorStore) flavorgroupContainsFlavorType(fgId, flavorPart string) (bo
 		Where("fg.name != ?", models.FlavorGroupsHostUnique.String()).
 		Where("policies ->> 'flavor_part' = ?", flavorPart).
 		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorPart)
-	tx.LogMode(true)
 	if err := tx.Count(&count).Error; err != nil {
 		return false, errors.Wrap(err, "postgres/flavor_store:flavorgroupContainsFlavorType() failed to execute query")
 	}

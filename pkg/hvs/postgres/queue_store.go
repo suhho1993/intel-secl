@@ -48,8 +48,6 @@ func (qr *QueueStore) Create(q *models.Queue) (*models.Queue, error) {
 func (qr *QueueStore) Retrieve(id uuid.UUID) (*models.Queue, error) {
 	defaultLog.Trace("postgres/queue_store:Retrieve() Entering")
 	defer defaultLog.Trace("postgres/queue_store:Retrieve() Leaving")
-	//TODO: remove the LogMode
-	qr.store.Db.LogMode(true)
 	row := qr.store.Db.Model(&queue{}).Where(&queue{Id: id}).Row()
 	q := models.Queue{}
 	if err := row.Scan(&q.Id, &q.Action, (*PGJsonStrMap)(&q.Params), &q.Created, &q.Updated, &q.State, &q.Message); err != nil {
@@ -104,8 +102,6 @@ func (qr *QueueStore) Update(q *models.Queue) error {
 	if q.Params != nil {
 		dbq.Params = PGJsonStrMap(q.Params)
 	}
-	//TODO: remove the LogMode
-	qr.store.Db.LogMode(true)
 	if db := qr.store.Db.Model(&dbq).Updates(&dbq); db.Error != nil || db.RowsAffected != 1 {
 		if db.Error != nil {
 			return errors.Wrap(db.Error, "postgres/queue_store:Update() failed to update Queue  "+q.Id.String())
@@ -124,8 +120,6 @@ func (qr *QueueStore) Delete(id uuid.UUID) error {
 	if id == uuid.Nil {
 		return errors.New("postgres/queue_store:Update() - Id is invalid")
 	}
-	//TODO: remove the LogMode
-	qr.store.Db.LogMode(true)
 	if err := qr.store.Db.Delete(&queue{Id: id}).Error; err != nil {
 		return errors.Wrap(err, "postgres/queue_store:Delete() failed to delete Queue")
 	}
@@ -140,8 +134,6 @@ func buildQueueSearchQuery(tx *gorm.DB, qf *models.QueueFilterCriteria) *gorm.DB
 	if tx == nil {
 		return nil
 	}
-	//TODO: remove the LogMode
-	tx.LogMode(true)
 	tx = tx.Model(&queue{})
 	if qf == nil {
 		return tx

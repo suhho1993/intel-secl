@@ -121,7 +121,6 @@ func buildTpmEndorsementSearchQuery(tx *gorm.DB, teFilter *models.TpmEndorsement
 		return nil
 	}
 	tx = tx.Model(&tpmEndorsement{})
-	tx = tx.LogMode(true)
 	if teFilter == nil {
 		defaultLog.Info("postgres/tpm_endorsement_store:buildTpmEndorsementSearchQuery() No criteria specified in search query" +
 			". Returning all rows.")

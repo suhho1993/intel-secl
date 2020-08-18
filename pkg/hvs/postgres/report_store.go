@@ -239,7 +239,6 @@ func (r *ReportStore) FindHostIdsFromExpiredReports(fromTime time.Time, toTime t
 
 	// TODO: https://jira.devtools.intel.com/browse/ISECL-10985
 	query := "select h.id from host as h where exists (select t.host_id from (select row_number() over (partition by host_id order by expiration desc) rn, host_id from report where expiration > CAST(? AS TIMESTAMP) and expiration <= CAST(? AS TIMESTAMP)) as t where h.id=t.host_id and t.rn=1);"
-	r.Store.Db.LogMode(true)
 	rows, err := r.Store.Db.Raw(query, fromTime, toTime).Rows()
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/report_store:FindHostIdsFromExpiredReports() failed to retrieve records from db")
@@ -335,8 +334,6 @@ func buildReportSearchQuery(tx *gorm.DB, hostHardwareID, hostID uuid.UUID, hostN
 	if tx == nil {
 		return nil
 	}
-	//TODO remove after feature development
-	tx.LogMode(true)
 	if latestPerHost {
 		entity := "auj"
 		txSubQuery := tx.Table("audit_log_entry auj").Select("entity_id, max(auj.created) AS max_date ")
@@ -403,8 +400,6 @@ func buildLatestReportSearchQuery(tx *gorm.DB, reportID, hostID, hostHardwareID 
 	if tx == nil {
 		return nil
 	}
-	//TODO remove after feature development
-	tx.LogMode(true)
 	tx = tx.Model(&report{})
 
 	// Since report id is unique and only one record can be returned by the query.

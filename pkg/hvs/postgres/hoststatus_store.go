@@ -88,7 +88,6 @@ func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) ([
 			return nil, errors.New("postgres/hoststatus_store:Search() Unexpected Error. Could not build" +
 				" a gorm query object in HostStatus Search function.")
 		}
-		tx.LogMode(true)
 		rows, err := tx.Rows()
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/hoststatus_store:Search() failed to retrieve records from db")
@@ -109,7 +108,6 @@ func (hss *HostStatusStore) Search(hsFilter *models.HostStatusFilterCriteria) ([
 			return nil, errors.New("postgres/hoststatus_store:Search() Unexpected Error. Could not build" +
 				" a gorm query object in HostStatus Search function.")
 		}
-		tx.LogMode(true)
 		rows, err := tx.Rows()
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/hoststatus_store:Search() failed to retrieve records from db")
