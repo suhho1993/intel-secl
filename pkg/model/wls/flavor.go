@@ -32,3 +32,9 @@ type SignedImageFlavor struct {
 	ImageFlavor Image  `json:"flavor"`
 	Signature   string `json:"signature"`
 }
+
+// ImageFlavor is a flavor for an image with the encryption requirement information
+// and key details of an encrypted image.
+type ImageFlavor struct {
+	Image Image `json:"flavor"`
+}
