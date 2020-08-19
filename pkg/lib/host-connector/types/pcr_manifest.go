@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"hash"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -55,6 +56,10 @@ type PcrManifest struct {
 }
 
 type PcrIndex int
+
+func (p Pcr) EqualsWithoutValue(pcr Pcr) bool {
+	return p.DigestType == pcr.DigestType && reflect.DeepEqual(p.Index, pcr.Index) && reflect.DeepEqual(p.PcrBank, pcr.PcrBank)
+}
 
 // String returns the string representation of the PcrIndex
 func (p PcrIndex) String() string {

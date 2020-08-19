@@ -14,7 +14,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
-	"reflect"
 )
 
 type TrustReport struct {
@@ -116,9 +115,11 @@ func (t *TrustReport) CheckResultExists(targetRuleResult RuleResult) bool {
 				constants.RulePcrEventLogEquals,
 				constants.RulePcrMatchesConstant:
 				// Compare pcrs for only these rules, all other rules will have pcr expected entry = nil
+				// We need to take care same rule does not get repeated in report, hence exclude value for PCR match
+				// as in case of rules like RulePcrEventLogIncludes, RulePcrEventLogEqualsExcluding etc actual PCR value can be different	
 				if targetRuleResult.Rule.ExpectedPcr == nil {
 					return false
-				} else if reflect.DeepEqual(targetRuleResult.Rule.ExpectedPcr, ruleResult.Rule.ExpectedPcr) {
+				} else if targetRuleResult.Rule.ExpectedPcr.EqualsWithoutValue(*ruleResult.Rule.ExpectedPcr) {
 					return true
 				} else {
 					continue
@@ -132,6 +133,12 @@ func (t *TrustReport) CheckResultExists(targetRuleResult RuleResult) bool {
 		}
 	}
 	return false
+}
+
+func (t *TrustReport) AddResults(ruleResults []RuleResult) {
+	for _, ruleResult := range ruleResults {
+		t.AddResult(ruleResult)
+	}
 }
 
 func (t *TrustReport) AddResult(ruleResult RuleResult) {

@@ -99,9 +99,7 @@ func (v *Verifier) createTrustReport(hostId uuid.UUID, hostData *types.HostManif
 		return hvs.TrustReport{}, errors.Wrap(err, "hosttrust/trust_report:createTrustReport() Error while verifying flavors")
 	}
 	if !trustCache.isTrustCacheEmpty() {
-		for _, ruleResult := range trustCache.trustReport.Results {
-			trustReport.AddResult(ruleResult)
-		}
+		trustReport.AddResults(trustCache.trustReport.Results)
 	}
 
 	for flavorPart, _ := range reqs.DefinedAndRequiredFlavorTypes {
@@ -171,9 +169,7 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []hvs.SignedFlavor, h
 					if reflect.DeepEqual(collectiveTrustReport, hvs.TrustReport{}){
 						collectiveTrustReport = *individualTrustReport
 					} else{
-						for _, result := range individualTrustReport.Results {
-							collectiveTrustReport.AddResult(result)
-						}
+						collectiveTrustReport.AddResults(individualTrustReport.Results)
 					}
 					newTrustCaches = append(newTrustCaches, signedFlavor.Flavor.Meta.ID)
 				} else {
@@ -207,7 +203,7 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []hvs.SignedFlavor, h
 				log.Debug("hosttrust/trust_report:verifyFlavors() Flavor Part :", flavPart, " requires ALL_OF policy - each untrusted flavor needs to be added to collective report")
 				for _, flavorReport := range flavPartReports {
 					log.Debug("Adding untrusted trust report to collective report for ALL_OF flavor part", flavPart, " with flavor ID ", flavorReport.id)
-					collectiveTrustReport.Results = append(collectiveTrustReport.Results, flavorReport.report.Results...)
+					collectiveTrustReport.AddResults(flavorReport.report.Results)
 					newTrustCaches = append(newTrustCaches, flavorReport.id)
 				}
 
@@ -225,7 +221,7 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []hvs.SignedFlavor, h
 				if leastFaultReport != nil {
 					log.Debug("hosttrust/trust_report:verifyFlavors() Adding untrusted trust report to collective report for ANY_OF flavor part, ",
 						leastFaultReport.flavorPart, "with flavor ID ", leastFaultReport.id)
-					collectiveTrustReport.Results = append(collectiveTrustReport.Results, leastFaultReport.report.Results...)
+					collectiveTrustReport.AddResults(leastFaultReport.report.Results)
 					newTrustCaches = append(newTrustCaches, leastFaultReport.id)
 				}
 			}

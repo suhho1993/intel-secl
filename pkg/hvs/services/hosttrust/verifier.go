@@ -98,7 +98,7 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 		}
 		log.Debug("hosttrust/verifier:Verify() Trust status for host id ", hostId, " for flavorgroup ", fg.ID, " is ", fgTrustReport.IsTrusted())
 		// append the results
-		finalTrustReport.Results = append(finalTrustReport.Results, fgTrustReport.Results...)
+		finalTrustReport.AddResults(fgTrustReport.Results)
 	}
 	// create a new report if we actually have any results and either the Final Report is untrusted or
 	// we have new Data from the host and therefore need to update based on the new report.
