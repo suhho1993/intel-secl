@@ -236,7 +236,19 @@ var _ = Describe("HostStatusController", func() {
 			})
 		})
 
-		Context("When HostStatus filtered by an invalid value for numberOfDays", func() {
+		Context("When HostStatus filtered by very large numberOfDays value", func() {
+			It("Should get a 400 response code", func() {
+				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostStatusController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", "/host-status?numberOfDays=294967295", nil)
+				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		Context("When HostStatus filtered by an negative value for numberOfDays", func() {
 			It("Should get a 400 error", func() {
 				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostStatusController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", "/host-status?numberOfDays=-2", nil)
