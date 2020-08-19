@@ -154,13 +154,13 @@ func buildTagCertificateSearchQuery(tx *gorm.DB, tcFilter *models.TagCertificate
 		tx = tx.Where("CAST(notbefore AS TIMESTAMP) <= CAST(? AS TIMESTAMP) AND CAST(? AS TIMESTAMP) <= CAST(notafter AS TIMESTAMP)", validOnTs, validOnTs)
 	}
 
-	// Date Filters must be checked in different combinations
-	// determine what dates params are set - try all combinations till one matches up
 	if !tcFilter.ValidBefore.IsZero() {
-		tx = tx.Where("CAST(notafter AS TIMESTAMP) < CAST(? AS TIMESTAMP)", tcFilter.ValidBefore.Format(constants.ParamDateTimeFormatUTC))
+		validBeforeTs := tcFilter.ValidBefore.Format(constants.ParamDateTimeFormatUTC)
+		tx = tx.Where("CAST(? as timestamp) >= notbefore", validBeforeTs)
 	}
 	if !tcFilter.ValidAfter.IsZero() {
-		tx = tx.Where("CAST(notbefore AS TIMESTAMP) > CAST(? AS TIMESTAMP)", tcFilter.ValidAfter.Format(constants.ParamDateTimeFormatUTC))
+		validAfterTs := tcFilter.ValidAfter.Format(constants.ParamDateTimeFormatUTC)
+		tx = tx.Where("CAST(? as timestamp) <= notafter", validAfterTs)
 	}
 
 	// ORDER BY

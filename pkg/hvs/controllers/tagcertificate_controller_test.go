@@ -1,7 +1,7 @@
 /*
 * Copyright (C) 2020 Intel Corporation
 * SPDX-License-Identifier: BSD-3-Clause
-*/
+ */
 package controllers_test
 
 import (
@@ -210,6 +210,18 @@ var _ = Describe("TagCertificateController", func() {
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(tcCollection.TagCertificates)).To(Equal(7))
+			})
+		})
+
+		Context("When unknown filter arguments are passed", func() {
+			It("400 response code is received", func() {
+				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?badparam=true", nil)
+				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
 
@@ -472,7 +484,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with valid ValidBefore date", func() {
 			It("Should return a list of TagCertificates which are valid before the ValidBefore date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().AddDate(1, -6, 0).Format(constants.ParamDateTimeFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().AddDate(-1, 0, 0).Format(constants.ParamDateTimeFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -482,14 +494,14 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(tcCollection).ToNot(BeNil())
+				Expect(len(tcCollection.TagCertificates)).To(Equal(1))
 			})
 		})
 
 		Context("Search TagCertificates from data store with valid ValidAfter", func() {
 			It("Should return a list of TagCertificates which are valid after the ValidAfter date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().AddDate(0, -6, 0).Format(constants.ParamDateTimeFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().AddDate(1, 0, 0).Format(constants.ParamDateTimeFormat), nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -499,7 +511,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(tcCollection).ToNot(BeNil())
+				Expect(tcCollection.TagCertificates).To(BeEmpty())
 			})
 		})
 

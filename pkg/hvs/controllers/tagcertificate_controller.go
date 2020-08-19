@@ -154,8 +154,8 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 		Certificate:  newAssetTagBytes,
 		Subject:      tempX509AttrCert.Subject,
 		Issuer:       tagCACert.Issuer.String(),
-		NotBefore:    newX509TC.NotBefore,
-		NotAfter:     newX509TC.NotAfter,
+		NotBefore:    newX509TC.NotBefore.UTC(),
+		NotAfter:     newX509TC.NotAfter.UTC(),
 		HardwareUUID: reqTCCriteria.HardwareUUID,
 	}
 
@@ -176,6 +176,14 @@ func (controller TagCertificateController) Create(w http.ResponseWriter, r *http
 func (controller TagCertificateController) Search(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	defaultLog.Trace("controllers/tagcertificate_controller:Search() Entering")
 	defer defaultLog.Trace("controllers/tagcertificate_controller:Search() Leaving")
+
+	var tagCertSearchParams = map[string]bool{"id": true, "hardwareUuid": true, "subjectContains": true, "subjectEqualTo": true,
+		"issuerContains": true, "issuerEqualTo": true, "validOn": true, "validBefore": true, "validAfter": true}
+
+	if err := utils.ValidateQueryParams(r.URL.Query(), tagCertSearchParams); err != nil {
+		secLog.Errorf("controllers/tagcertificate_controller:Search() %s", err.Error())
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
+	}
 
 	// get the TagCertificateFilterCriteria
 	filter, err := getTCFilterCriteria(r.URL.Query())

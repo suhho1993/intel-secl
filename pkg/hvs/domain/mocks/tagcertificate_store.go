@@ -146,22 +146,22 @@ func (store *MockTagCertificateStore) Search(criteria *models.TagCertificateFilt
 		tcc = tcFiltered
 	}
 
-	// ValidBefore
+	// ValidAfter
 	if !criteria.ValidAfter.IsZero() {
 		var tcFiltered []*hvs.TagCertificate
 		for _, tc := range tcc {
-			if tc.NotBefore.After(criteria.ValidAfter) && tc.NotAfter.After(criteria.ValidAfter) {
+			if tc.NotBefore.After(criteria.ValidAfter) {
 				tcFiltered = append(tcFiltered, tc)
 			}
 		}
 		tcc = tcFiltered
 	}
 
-	// ValidAfter
+	// ValidBefore
 	if !criteria.ValidBefore.IsZero() {
 		var tcFiltered []*hvs.TagCertificate
 		for _, tc := range tcc {
-			if tc.NotBefore.Before(criteria.ValidAfter) && tc.NotAfter.Before(criteria.ValidAfter) {
+			if tc.NotAfter.Before(criteria.ValidBefore) {
 				tcFiltered = append(tcFiltered, tc)
 			}
 		}
