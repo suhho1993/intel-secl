@@ -433,7 +433,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	hc, err := controller.HostConnectorProvider.NewHostConnector(hostConnStr)
 	if err != nil {
 		defaultLog.WithError(err).WithField("Certid", dtcReq.CertID).Error("controllers/tagcertificate_controller:Deploy() Failed "+
-			"to initialize HostConnector for host with hardware UUID %s", tc.HardwareUUID)
+			"to initialize HostConnector for host with hardware UUID %s", tc.HardwareUUID.String())
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure: Target Host connection failed"}
 	}
 
@@ -449,7 +449,7 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	hmanifest, err := hc.GetHostManifest()
 	if err != nil {
 		defaultLog.WithField("id", dtcReq.CertID).Error("controllers/tagcertificate_controller:Deploy() Failed "+
-			"to get the HostManifest from Host %s", targetHost.HardwareUuid)
+			"to get the HostManifest from Host %s", targetHost.HardwareUuid.String())
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
 	}
 

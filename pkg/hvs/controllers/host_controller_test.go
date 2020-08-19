@@ -41,7 +41,7 @@ var _ = Describe("HostController", func() {
 		hostStatusStore = mocks.NewFakeHostStatusStore()
 		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
 		hostCredentialStore = mocks.NewMockHostCredentialStore()
-		
+
 		dekBase64 := "gcXqH8YwuJZ3Rx4qVzA/zhVvkTw2TL+iRAC9T3E6lII="
 		dek, _ := base64.StdEncoding.DecodeString(dekBase64)
 		hostControllerConfig = domain.HostControllerConfig{
@@ -184,6 +184,47 @@ var _ = Describe("HostController", func() {
 					"POST",
 					"/hosts",
 					strings.NewReader(hostJson),
+				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		Context("Provide a Create request that contains invalid connection strings", func() {
+			It("Should fail to create new Host", func() {
+				router.Handle("/hosts", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostController.Create))).Methods("POST")
+				hostJson1 := `{
+								"host_name": "localhost",
+								"connection_string": "<IMG \"\"\"><SCRIPT>alert(\"XSS\")</SCRIPT>\">",
+								"description": "Intel Host"
+							}`
+
+				hostJson2 := `{
+								"host_name": "localhost",
+								"connection_string": "';alert(String.fromCharCode(88,83,83))//\\';alert(String.fromCharCode(88,83,83))//\";alert(String.fromCharCode(88,83,83))//\\\";alert(String.fromCharCode(88,83,83))//–>\">'>"",
+								"description": "Intel Host"
+							}`
+
+				req, err := http.NewRequest(
+					"POST",
+					"/hosts",
+					strings.NewReader(hostJson1),
+				)
+				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
+				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)
+				Expect(err).NotTo(HaveOccurred())
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusBadRequest))
+
+				req, err = http.NewRequest(
+					"POST",
+					"/hosts",
+					strings.NewReader(hostJson2),
 				)
 				req.Header.Set("Accept", consts.HTTPMediaTypeJson)
 				req.Header.Set("Content-Type", consts.HTTPMediaTypeJson)

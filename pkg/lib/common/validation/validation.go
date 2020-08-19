@@ -18,26 +18,27 @@ const (
 )
 
 var (
-	nameReg          = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
-	issuerDN         = regexp.MustCompile("(^[a-zA-Z0-9-_,.=#+?&;)( ]*$)")
-	unameReg         = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
-	userorEmailReg   = regexp.MustCompile("^[a-zA-Z0-9.-_]+@?[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-	emailReg         = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-	hostnameReg      = regexp.MustCompile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]{0,61}[A-Za-z0-9])$")
-	ipReg            = regexp.MustCompile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
-	idfReg           = regexp.MustCompile(`^[a-zA-Z_]{1}[a-zA-Z0-9_]{1,127}$`)
-	hardwareuuidReg  = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
-	base64StringReg  = regexp.MustCompile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
-	xmlStringReg     = regexp.MustCompile("(^[a-zA-Z0-9-_\\/.'\",:=<>\n\\/#+?\\[\\]&; ]*$)")
-	stringReg        = regexp.MustCompile("(^[a-zA-Z0-9_ \\/.-]*$)")
-	hexStringReg     = regexp.MustCompile("^[a-fA-F0-9]+$")
-	pemEncodedKeyReg = regexp.MustCompile("(^[-a-zA-Z0-9//=+ ]*$)")
-	dateReg          = regexp.MustCompile("[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]")
-	uuidReg          = regexp.MustCompile("^" + UUIDReg + "$")
-	IdReg            = fmt.Sprintf("{id:%s}", UUIDReg)
-	portReg          = regexp.MustCompile("(?:([0-9]{1,5}))")
-	defaultReg       = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")
-	passwordReg      = regexp.MustCompile("(?:([a-zA-Z0-9_\\\\.\\\\, @!#$%^+=>?:{}()\\[\\]\\\"|;~`'*-/]+))")
+	nameReg             = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
+	issuerDN            = regexp.MustCompile("(^[a-zA-Z0-9-_,.=#+?&;)( ]*$)")
+	unameReg            = regexp.MustCompile(`^[A-Za-z]{1}[A-Za-z0-9_]{1,31}$`)
+	userorEmailReg      = regexp.MustCompile("^[a-zA-Z0-9.-_]+@?[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	emailReg            = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	hostnameReg         = regexp.MustCompile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]{0,61}[A-Za-z0-9])$")
+	ipReg               = regexp.MustCompile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
+	idfReg              = regexp.MustCompile(`^[a-zA-Z_]{1}[a-zA-Z0-9_]{1,127}$`)
+	hardwareuuidReg     = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
+	base64StringReg     = regexp.MustCompile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
+	xmlStringReg        = regexp.MustCompile("(^[a-zA-Z0-9-_\\/.'\",:=<>\n\\/#+?\\[\\]&; ]*$)")
+	stringReg           = regexp.MustCompile("(^[a-zA-Z0-9_ \\/.-]*$)")
+	hexStringReg        = regexp.MustCompile("^[a-fA-F0-9]+$")
+	pemEncodedKeyReg    = regexp.MustCompile("(^[-a-zA-Z0-9//=+ ]*$)")
+	dateReg             = regexp.MustCompile("[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]")
+	uuidReg             = regexp.MustCompile("^" + UUIDReg + "$")
+	IdReg               = fmt.Sprintf("{id:%s}", UUIDReg)
+	portReg             = regexp.MustCompile("(?:([0-9]{1,5}))")
+	defaultReg          = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")
+	passwordReg         = regexp.MustCompile("(?:([a-zA-Z0-9_\\\\.\\\\, @!#$%^+=>?:{}()\\[\\]\\\"|;~`'*-/]+))")
+	connectionStringReg = regexp.MustCompile("^(((vmware)|(microsoft)|(intel))\\:)?https\\:\\/\\/.+[\\:\\d+]?(\\/sdk)?((;h=.+;u=.+;p=.+)|(;u=.+;p=.+))?$")
 )
 
 // ValidateEnvList can check if all environment variables in input slice exist
@@ -226,4 +227,12 @@ func ValidateDate(date string) error {
 		return nil
 	}
 	return errors.New("Invalid date format")
+}
+
+// ValidateConnectionString validates the connection string for Create-Host and Create-Flavor APIs
+func ValidateConnectionString(cs string) error {
+	if connectionStringReg.MatchString(cs) {
+		return nil
+	}
+	return errors.New("Invalid connection string")
 }

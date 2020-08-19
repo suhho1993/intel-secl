@@ -612,7 +612,7 @@ var _ = Describe("TagCertificateController", func() {
 				aasBaseURL := "/aas"
 				config.Global().AASApiUrl = aasBaseURL
 
-				hostUrl := "intel:/fakehost;u=fakeuser;p=fakepass"
+				hostUrl := "intel:https://fakehost;u=fakeuser;p=fakepass"
 
 				hardwareUUID := uuid.MustParse("7a569dad-2d82-49e4-9156-069b0065b262")
 

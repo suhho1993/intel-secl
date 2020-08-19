@@ -6,6 +6,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/pkg/errors"
@@ -21,6 +22,11 @@ func GetConnectorDetails(connectionString string) (types.VendorConnector, error)
 	var vendorConnector types.VendorConnector
 	var vendorURL string
 	var vendorName string
+
+	// use a regex to eliminate all invalid connection strings
+	if err := validation.ValidateConnectionString(connectionString); err != nil {
+		return types.VendorConnector{}, err
+	}
 
 	vendor := GetVendorPrefix(connectionString)
 	if vendor == constants.VendorUnknown {
