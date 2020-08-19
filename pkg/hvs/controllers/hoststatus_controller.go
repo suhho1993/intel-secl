@@ -186,11 +186,6 @@ func getHSFilterCriteria(params url.Values) (*models.HostStatusFilterCriteria, e
 		hfc.ToDate = time.Now().UTC()
 		hfc.FromDate = hfc.ToDate.AddDate(0, 0, -numDays).UTC()
 
-		// check if the date has gone below Time.Zero()
-		if hfc.FromDate.Unix() < 0 {
-			return nil, errors.New("numberOfDays must be an integer between 1 and " + string(constants.MaxNumDaysSearchLimit))
-		}
-
 		hfc.NumberOfDays = numDays
 	}
 

@@ -333,7 +333,7 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	numberOfDays := strings.TrimSpace(params.Get("numberOfDays"))
 	if numberOfDays != "" {
 		numDays, err := strconv.Atoi(numberOfDays)
-		if err != nil || numDays < 0 || numDays > 365 {
+		if err != nil || numDays < 0 || numDays > constants.MaxNumDaysSearchLimit {
 			return nil, errors.New("NumberOfDays must be an integer >= 0 and <= 365")
 		}
 		rfc.NumberOfDays = numDays
