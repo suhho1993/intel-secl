@@ -578,7 +578,10 @@ func validateHostCreateCriteria(host hvs.HostCreateRequest) error {
 		}
 	}
 	if host.ConnectionString != "" {
-		return utils.ValidateConnectionString(host.ConnectionString)
+		err := utils.ValidateConnectionString(host.ConnectionString)
+		if err != nil {
+			return errors.Wrap(err, "Invalid host connection string")
+		}
 	}
 	if host.Description != "" {
 		if err := validation.ValidateStrings([]string{host.Description}); err != nil {
