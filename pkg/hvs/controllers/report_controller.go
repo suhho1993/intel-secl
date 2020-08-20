@@ -66,9 +66,14 @@ func (controller ReportController) Create(w http.ResponseWriter, r *http.Request
 
 	hvsReport, err := controller.createReport(reqReportCreateRequest)
 	if err != nil {
-		defaultLog.WithError(err).Error("controllers/report_controller:Create() Error while creating report from Flavor verify queue")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
+		defaultLog.WithError(err).Error("controllers/report_controller:Create() Error while creating report")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
+	if hvsReport == nil {
+		defaultLog.WithError(err).Error("controllers/report_controller:Create() The report was not created")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while creating report"}
+	}
+
 	report := ConvertToReport(hvsReport)
 	secLog.WithField("Name", report.HostInfo.HostName).Infof("%s: report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	return report, http.StatusCreated, nil
@@ -80,17 +85,17 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateReque
 	hsCriteria := getHostFilterCriteria(rsCriteria)
 	hosts, err := controller.HostStore.Search(&hsCriteria)
 	if err != nil {
-		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Error while searching host")
+		return nil, errors.Wrap(err, "Error while searching host")
 	}
 
 	if hosts == nil || len(hosts) == 0 {
-		return nil, errors.New("controllers/report_controller:createReport() Host for given criteria does not exist")
+		return nil, errors.New("Host for given criteria does not exist")
 	}
 	//Always only one record is returned for the particular criteria
 	hostId := hosts[0].Id
 	hvsReport, err := controller.HTManager.VerifyHost(hostId, true, false)
 	if err != nil {
-		return nil, errors.Wrap(err, "controllers/report_controller:createReport() Failed to create a trust report, flavor verification failed")
+		defaultLog.WithError(err).Errorf("controllers/report_controller:createReport() Failed to create a trust report, flavor verification failed")
 	}
 	hostStatusCollection, err := controller.HostStatusStore.Search(&models.HostStatusFilterCriteria{
 		HostId:        hostId,
@@ -98,7 +103,7 @@ func (controller ReportController) createReport(rsCriteria hvs.ReportCreateReque
 		Limit:         1,
 	})
 	if len(hostStatusCollection) == 0 || hostStatusCollection[0].HostStatusInformation.HostState != hvs.HostStateConnected {
-		return nil, errors.New("controllers/report_controller:createReport() Host is not in CONNECTED state")
+		return nil, errors.New("Host is not in CONNECTED state")
 	}
 
 	return hvsReport, nil
@@ -139,8 +144,12 @@ func (controller ReportController) CreateSaml(w http.ResponseWriter, r *http.Req
 
 	hvsReport, err := controller.createReport(reqReportCreateRequest)
 	if err != nil {
-		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml()  Error while creating report from Flavor verify queue")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Error while creating report from Flavor verify queue"}
+		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml() Error while creating SAML report")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:  err.Error()}
+	}
+	if hvsReport == nil {
+		defaultLog.WithError(err).Error("controllers/report_controller:CreateSaml() The report was not created")
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error while creating report"}
 	}
 	secLog.WithField("Host Name", hvsReport.TrustReport.HostManifest.HostInfo.HostName).Infof("%s: saml report created by: %s", commLogMsg.PrivilegeModified, r.RemoteAddr)
 	w.Header().Set("Content-Type", constants.HTTPMediaTypeSaml)
