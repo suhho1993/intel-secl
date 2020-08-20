@@ -30,10 +30,10 @@ type SymlinkMeasurementType struct {
 
 type Measurement struct {
 	XMLName        xml.Name                   `xml:"Measurement"`
-	File           []FileMeasurementType      `xml:"lib:wml:measurements:1.0 File"`
-	Dir            []DirectoryMeasurementType `xml:"lib:wml:measurements:1.0 Dir"`
-	Symlink        []SymlinkMeasurementType   `xml:"lib:wml:measurements:1.0 Symlink"`
-	CumulativeHash string                     `xml:"lib:wml:measurements:1.0 CumulativeHash"`
+	File           []FileMeasurementType      `xml:"File"`
+	Dir            []DirectoryMeasurementType `xml:"Dir"`
+	Symlink        []SymlinkMeasurementType   `xml:"Symlink"`
+	CumulativeHash string                     `xml:"CumulativeHash"`
 	DigestAlg      string                     `xml:"DigestAlg,attr,omitempty"`
 	Label          string                     `xml:"Label,attr,omitempty"`
 	Uuid           string                     `xml:"Uuid,attr,omitempty"`
