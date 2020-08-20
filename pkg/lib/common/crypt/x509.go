@@ -315,7 +315,10 @@ func SavePrivateKeyAsPKCS8(keyDer []byte, filePath string) error {
 		return fmt.Errorf("could not open private key file for writing: %v", err)
 	}
 	// private key should not be world readable
-	os.Chmod(filePath, 0640)
+	err = os.Chmod(filePath, 0640)
+	if err != nil {
+		return errors.Wrapf(err, "crypt/x509:SavePrivateKeyAsPKCS8() Error while changing file permission for file : %s", filePath)
+	}
 	defer keyOut.Close()
 
 	if err := pem.Encode(keyOut, &pem.Block{Type: "PKCS8 PRIVATE KEY", Bytes: keyDer}); err != nil {
@@ -439,6 +442,9 @@ func GetCertsFromDir(path string) ([]x509.Certificate, error){
 	if err != nil {
 		return nil, errors.Wrap(err, "Error while reading certs from dir" + path)
 	}
+	if !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
 	var certificates []x509.Certificate
 	for _, certFile := range files {
 		certFilePath := path + certFile.Name()
@@ -452,4 +458,21 @@ func GetCertsFromDir(path string) ([]x509.Certificate, error){
 		}
 	}
 	return certificates, nil
+}
+
+//GetCertificate gets the Certificate from PEM
+func GetCertificate(signingCertPems interface{}) ([][]byte, error) {
+
+	var certPemSlice [][]byte
+
+	switch signingCertPems.(type) {
+	case [][]byte:
+		certPemSlice = signingCertPems.([][]byte)
+	case []byte:
+		certPemSlice = [][]byte{signingCertPems.([]byte)}
+	default:
+		return nil, errors.New("signingCertPems has to be of type []byte or [][]byte")
+
+	}
+	return certPemSlice, nil
 }

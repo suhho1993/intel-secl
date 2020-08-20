@@ -182,8 +182,8 @@ func ReadCertificates(certType string, certStore *models.CertificatesStore) (*hv
 		return nil, errors.Errorf("%s Certificates have not been loaded", certType)
 	}
 	for _, cert := range cs.Certificates {
-		certificate := hvs.CaCertificate{
-			Name:        cert.Issuer.CommonName,
+		certificate := hvs.CaCertificate {
+			Name:        cert.Subject.CommonName,
 			Certificate: cert.Raw,
 		}
 		certsCollection.CaCerts = append(certsCollection.CaCerts, &certificate)

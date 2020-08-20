@@ -39,6 +39,7 @@ var (
 	defaultReg          = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")
 	passwordReg         = regexp.MustCompile("(?:([a-zA-Z0-9_\\\\.\\\\, @!#$%^+=>?:{}()\\[\\]\\\"|;~`'*-/]+))")
 	connectionStringReg = regexp.MustCompile("^(((vmware)|(microsoft)|(intel))\\:)?https\\:\\/\\/.+[\\:\\d+]?(\\/sdk)?((;h=.+;u=.+;p=.+)|(;u=.+;p=.+))?$")
+	jwtReg              = regexp.MustCompile("^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.?[A-Za-z0-9-_.+/=]*")
 )
 
 // ValidateEnvList can check if all environment variables in input slice exist
@@ -235,4 +236,12 @@ func ValidateConnectionString(cs string) error {
 		return nil
 	}
 	return errors.New("Invalid connection string")
+}
+
+// ValidateJWT method is used to check if the jwt token format is valid
+func ValidateJWT(token string) error {
+	if jwtReg.MatchString(token) {
+		return nil
+	}
+	return errors.New("Invalid jwt token format")
 }

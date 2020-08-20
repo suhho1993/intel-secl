@@ -118,6 +118,6 @@ func SendRequest(req *http.Request, aasURL, serviceUsername, servicePassword str
 	if err != nil {
 		return nil, errors.Wrap(err, "clients/send_http_request.go:SendRequest() Error from response")
 	}
-	log.Info("clients/send_http_request.go:SendRequest() Received the response successfully")
+	log.Debug("clients/send_http_request.go:SendRequest() Received the response successfully")
 	return body, nil
 }

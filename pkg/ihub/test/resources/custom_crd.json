@@ -1,0 +1,50 @@
+{
+    "apiVersion": "crd.isecl.intel.com/v1beta1",
+    "kind": "HostAttributesCrd",
+    "metadata": {
+        "creationTimestamp": "2020-07-03T08:18:04Z",
+        "generation": 46,
+        "managedFields": [
+            {
+                "apiVersion": "crd.isecl.intel.com/v1beta1",
+                "fieldsType": "FieldsV1",
+                "fieldsV1": {
+                    "f:spec": {
+                        ".": {},
+                        "f:hostList": {}
+                    }
+                },
+                "manager": "Go-http-client",
+                "operation": "Update",
+                "time": "2020-07-03T09:48:04Z"
+            }
+        ],
+        "name": "custom-isecl",
+        "namespace": "default",
+        "resourceVersion": "10544737",
+        "selfLink": "/apis/crd.isecl.intel.com/v1beta1/namespaces/default/hostattributes/custom-isecl",
+        "uid": "36226d24-ea9c-41fd-bce3-2ed7ae26992f"
+    },
+    "spec": {
+        "hostList": [
+            {
+                "hardware_features": {
+                    "FEATURE_TPM": "true",
+                    "FEATURE_TXT": "true"
+                },
+                "hostName": "worker-node1",
+                "signedTrustReport": "eyJhbGciOiJSUzM4NCIsImtpZCI6InFZQTNPbmZLNXloZTg0dmlRUUkrMENSM0Vhcz0iLCJ0eXAiOiJKV1QifQ.eyJoYXJkd2FyZV9mZWF0dXJlcyI6eyJGRUFUVVJFX1RQTSI6InRydWUiLCJGRUFUVVJFX1RYVCI6InRydWUifSwidHJ1c3QiOnsiVFJVU1RfQVNTRVRfVEFHIjoiTkEiLCJUUlVTVF9IT1NUX1VOSVFVRSI6InRydWUiLCJUUlVTVF9PUyI6InRydWUiLCJUUlVTVF9PVkVSQUxMIjoidHJ1ZSIsIlRSVVNUX1BMQVRGT1JNIjoidHJ1ZSIsIlRSVVNUX1NPRlRXQVJFIjoidHJ1ZSJ9LCJob3N0TmFtZSI6Indvcmtlci1ub2RlMSIsInRydXN0ZWQiOmZhbHNlLCJ2YWxpZFRvIjoiMjAyMC0wNy0wNFQwMjo0MDo1NC4yNDI4ODY2MDUtMDc6MDAifQ.md-2wBOFwAhU20yeSLxtkHxND6sCr5H2mUEpM8gG867mOvRpPcqkHIiKmNtGoYAsv7sc6Z0tuAqIAH-I0IJgON6wXsIH7879CT73L-mJ43yr6f_4gg28DvN1Hd0QVFeUw6su6lFeczwUgLcA9MKqUt7ez4Nq_C7B8BCHKFBk9rOIR0gxJhNgTh304krd5yIWFQFxPDTc_HxyP-uQaMq-tRsrvFBYxWW8hJGU1xvsbBr2PHfvHitGHaGxD96n25FUBMEpEeK6uIx4fRfjy05xusnfdHFqj1q0G1Fcg40fXMSbxiVHNP4hx9CN73Mh4gODnOw54nE-PAlyaOgKMwBJw_XbOFQ-fh-kDr965aqWT_-nIU7Zv5fuwcyto3sCZOkZ8jUkJux0KIZOUygSBFtDz65rd6WIRIREnLgs9_moHDinTEi466vL3POZfymOSkjuKGjnW_wDM1RpZdujXo8Rj4g5GShaZX9D-LH7S0AAjJ3IZlcG8WgVQDAKJdRUNvBZ",
+                "trust": {
+                    "TRUST_ASSET_TAG": "NA",
+                    "TRUST_HOST_UNIQUE": "true",
+                    "TRUST_OS": "true",
+                    "TRUST_OVERALL": "true",
+                    "TRUST_PLATFORM": "true",
+                    "TRUST_SOFTWARE": "true"
+                },
+                "trusted": false,
+                "validTo": "2020-07-04T02:40:54.242886605-07:00"
+            }
+        ]
+    }
+}

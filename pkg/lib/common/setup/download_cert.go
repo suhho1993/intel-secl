@@ -25,14 +25,14 @@ import (
 )
 
 type DownloadCert struct {
-	KeyFile            string
-	CertFile           string
-	KeyAlgorithm       string
-	KeyAlgorithmLength int
-	Subject            pkix.Name
-	SanList            string
-	CertType           string
-	CaCertDirPath      string
+	KeyFile       string
+	CertFile      string
+	KeyAlgorithm  string
+	KeyLength     int
+	Subject       pkix.Name
+	SanList       string
+	CertType      string
+	CaCertDirPath string
 
 	CmsBaseURL  string
 	BearerToken string
@@ -46,12 +46,12 @@ type DownloadCert struct {
 const downloadCAEnvHelpPrompt = "Following environment variables are optionally used in "
 
 var downloadCAEnvHelp = map[string]string{
-	"CERT_FILE":     "The file to which certificate is created",
-	"KEY_FILE":      "The file to which private key is created",
-	"COMMON_NAME":   "The common name of signed certificate",
-	"SAN_LIST":      "Comma separated list of hostnames to add to Certificate, including IP addresses and dns names",
-	"ISSUER":        "The issuer of signed certificate",
-	"VALIDITY_DAYS": "The validity time in days of signed certificate",
+	"CERT_FILE":         "The file to which certificate is saved",
+	"KEY_FILE":          "The file to which private key is saved",
+	"COMMON_NAME":       "The common name of signed certificate",
+	"SAN_LIST":          "Comma separated list of hostnames to add to Certificate, including IP addresses and DNS names",
+	"ISSUER":            "The issuer of signed certificate",
+	"VALIDITY_DAYS":     "The validity time in days of signed certificate",
 }
 
 const downloadCAEnvHelpPrompt2 = "Following environment variables are required in "
@@ -81,7 +81,7 @@ func (dc *DownloadCert) Run() error {
 		}
 	}
 	printToWriter(dc.ConsoleWriter, dc.commandName, "Start downloading certificate")
-	key, cert, err := getCertificateFromCMS(dc.CertType, dc.KeyAlgorithm, dc.KeyAlgorithmLength, dc.CmsBaseURL, dc.Subject, dc.SanList, dc.CaCertDirPath, dc.BearerToken)
+	key, cert, err := getCertificateFromCMS(dc.CertType, dc.KeyAlgorithm, dc.KeyLength, dc.CmsBaseURL, dc.Subject, dc.SanList, dc.CaCertDirPath, dc.BearerToken)
 	if err != nil {
 		printToWriter(dc.ConsoleWriter, dc.commandName, "Failed to download certificate")
 		return err

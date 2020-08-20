@@ -38,7 +38,7 @@ var _ = Describe("CaCertificatesController", func() {
 		Context("Create root CA certificates", func() {
 			It("Should create CA certificates with CN", func() {
 				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Create))).Methods("POST")
-				cert, _, _ := crypt.CreateKeyPairAndCertificate("root-test", "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+				cert, _, _ := crypt.CreateKeyPairAndCertificate("root-test", "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 				certificate := hvs.CaCertificate{
 					Name: 	     "root-test",
 					Type:        models.CaCertTypesRootCa.String(),

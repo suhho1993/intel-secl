@@ -50,7 +50,7 @@ var _ = Describe("SamlReport", func() {
 })
 
 func getIssuer() *saml.IssuerConfiguration {
-	certBytes, privKeyDer, _ := crypt.CreateKeyPairAndCertificate("root-test", "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	certBytes, privKeyDer, _ := crypt.CreateKeyPairAndCertificate("root-test", "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 	cert, _ := x509.ParseCertificate(certBytes)
 	key, _ := x509.ParsePKCS8PrivateKey(privKeyDer)
 

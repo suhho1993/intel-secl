@@ -126,7 +126,7 @@ func TestProcessMakeCredential(t *testing.T) {
 func TestGetEkCert(t *testing.T) {
 	privacyCA, err := privacyca.NewPrivacyCA(identityReq)
 	assert.NoError(t, err)
-	cert, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	cert, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 
 	identityChallengeRequest := taModel.IdentityChallengePayload{}
 	identityChallengeRequest.IdentityRequest = identityReq
@@ -160,7 +160,7 @@ func TestIsCertifiedKeySignatureValid(t *testing.T) {
 
 	aikPubKey := rsa.PublicKey{N: n, E: 65537}
 
-	certder, keyder, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	certder, keyder, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 	privKey, _ := x509.ParsePKCS8PrivateKey(keyder)
 	cert, _ := x509.ParseCertificate(certder)
 
@@ -200,7 +200,7 @@ func TestIsCertifiedKeySignatureValidWithBadSignature(t *testing.T) {
 
 	aikPubKey := rsa.PublicKey{N: n, E: 65537}
 
-	certder, keyder, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	certder, keyder, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 	privKey, _ := x509.ParsePKCS8PrivateKey(keyder)
 	cert, _ := x509.ParseCertificate(certder)
 
@@ -255,7 +255,7 @@ func TestCertifyKey(t *testing.T) {
 	aikPubKey := rsa.PublicKey{N: n, E: 65537}
 	certifyKey20, err := privacyca.NewCertifyKey(regKeyInfoPayload)
 	assert.NoError(t, err)
-	certder, keyder, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	certder, keyder, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 	privKey, _ := x509.ParsePKCS8PrivateKey(keyder)
 	cert, _ := x509.ParseCertificate(certder)
 

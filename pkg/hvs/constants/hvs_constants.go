@@ -73,10 +73,10 @@ const (
 
 // tls constants
 const (
-	DefaultHvsTlsCn           = "HVS TLS Certificate"
-	DefaultHvsTlsSan          = "127.0.0.1,localhost"
-	DefaultKeyAlgorithm       = "rsa"
-	DefaultKeyAlgorithmLength = 3072
+	DefaultHvsTlsCn     = "HVS TLS Certificate"
+	DefaultHvsTlsSan    = "127.0.0.1,localhost"
+	DefaultKeyAlgorithm = "rsa"
+	DefaultKeyLength    = 3072
 )
 
 // aik and privacy ca constants
@@ -136,7 +136,7 @@ const (
 
 // log constants
 const (
-	DefaultLogEntryMaxlength = 300
+	DefaultLogEntryMaxlength = 1500
 )
 
 // jwt constants

@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<saml2:Assertion ID="MapAssertion" IssueInstant="2020-07-02T18:49:54.873Z" Version="2.0" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion">
+    <saml2:Issuer>https://10.105.168.221:8443</saml2:Issuer>
+    <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <SignedInfo>
+            <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"/>
+            <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <Reference URI="#MapAssertion">
+                <Transforms>
+                    <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                </Transforms>
+                <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                <DigestValue>sVW3D5gHaL08Mj9iNnLivZMy/Dqk+AOv0VtkI5jYkLY=</DigestValue>
+            </Reference>
+        </SignedInfo>
+        <SignatureValue>VDZCwmN+Saaaaaaand6jBA2ny5VTWHWaPVTDNxy0fREsGeKND7oQ6i54/ZpI9PTgCCFeKWhrXtipDlA8lFG
+GB7bbH228ZUIyDZ/CkWm7zhkMPX2TemdPeCL6yzubLLeXgikNBBJfxiCuw+VlWsO7PAZd98J+gWS
+neLB/SQy09FBNrfdJxeCjGWECoA0zezT540arzaUlEHpM0KSYFnc4+h8fKWIgxS59D5kPVX92ek/
+iS3/UYAmuJGQnVyTbmqKELce0mqqm+BfdcIiz6pBv7THEtlWONJhp1z08RRDkliCShI06vWlKepS
+ixFt7i3Rk8TRLwSeFN9eOZBUmGrZfnyHkDTDOrd1rKYi+hLy3mBohI4o/28Q/ZsOIGXBzUhcL+7s
+wJ8n83q+XH1qdT9CaPu5MIQXF2csDJy5bwo47dPhre6Bu7UtH4b73lG4ngpL+uKactdLQQ7+J7un
+4RsaGhAjxhpb9lhFw50oesZ5uAkKGhmYrXfptqext8mOZ8YJDdW+uIQi</SignatureValue>
+        <KeyInfo>
+            <X509Data>
+                <X509Certificate>MIID9TCCAl2gAwIBAgIBCTANBgkqhkiG9w0BAQwFADBQMQswCQYDVQQGEwJVUzELMAkGA1UECBMC
+U0YxCzAJBgNVBAcTAlNDMQ4wDAYDVQQKEwVJTlRFTDEXMBUGA1UEAxMOQ01TIFNpZ25pbmcgQ0Ew
+HhcNMjAwNTI3MDY0MDMxWhcNMjEwNTI3MDY0MDMxWjAYMRYwFAYDVQQDEw1tdHdpbHNvbi1zYW1s
+MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEArhItjx28VsMXklbbURi9MxG6YpxT80ZK
+8iNZWPLt4MAdFTma1w+JYfw+EZP19ZZf6/U8CJk7s4Idh1AC2CtCCrKPdj4kU/B+YOq2UVjSfUFd
+x/OsBxMvbvC3oqoMMY6vMf6xKRPXi5pXJCJxW+ARuc6nNnw3BoTFADtvU4McrgbhCmGmWzdhePYs
+qvDUGJTT+SHQNQbjPjESX2v5wberyPAB4K2LNsWRlJjmS95cYLlXFmjumtXLqHNDt3g+wFwm1fEr
+JRRr7SHySAYUSQ9HS87z0RhT+XjXP8A56ovRJ5UdjTiCLXdMbpNgFubfTqSTsaYCAiy1TkVN9Tby
+IVQgdNb2HoybgbXgKNw+WiW9A//TAKVdKsEP48tjjWJ8HB/PHerrjy5RaPxTRkThgmaLaV/FbSfa
+UDqE2ViIMJ2av2tI+jkoDLVTRZ5p+KPdmRQfJlRE4sATuvM1Cjubuk5g8zpFps4L9NEKK8v1F1N8
+U6F18athglbziupMXMeuxCKVAgMBAAGjEjAQMA4GA1UdDwEB/wQEAwIGwDANBgkqhkiG9w0BAQwF
+AAOCAYEAZdOmoG9OpWKeRIg92rtjjmNro2LV1wX/BhXsno08ddu6xKF4H9/LztBxsaP0mBArDUZB
+mnf5GBaMKP1rOt5idAzMsBFHUOkTToXtCkob4OTwtP3fIVV2xYWmt7vS8MZY8PAI/dmF+INaamdK
+6Sz4GRHstaQcCe1FRDfX0GlVIxCGmzzYIp8KzyFdYDKJdkLCUsSPbFtnfnMI14YXmP+lDm3fo3U3
+yNo3q9bitYBLUdJ2c4TA0Two07EFHMZWQiSc3ZeBOyuCoHhcbPCza5ItaMEyrjBHXVUSCaTuIAHn
+RTEisKK7LILuXArcLEhfBq5tdS0QngyRTbB5DO66Nqjqn04TzscF8gB4kqOpe3F1ztytv0sgFfDv
+hd1hpsZvKq70usQSsTSkydle9o9bJ37Xy7D+BCIWeXkEyLjsHFvDVg6pitEV7+IBpdW172B8Dtuf
+w5LiUHZqHwYC1ia0rAAwAlGrXYnaFhgK2ND/jXr8AJXl65TaokAC1QeRWmOTnEx80712834709/</X509Certificate>
+            </X509Data>
+        </KeyInfo>
+    </Signature>
+    <saml2:Subject>
+        <saml2:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">purley15.fm.intel.com</saml2:NameID>
+        <saml2:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:sender-vouches">
+            <saml2:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">Intel Security Libraries</saml2:NameID>
+            <saml2:SubjectConfirmationData NotBefore="2020-07-02T18:49:54.873Z" NotOnOrAfter="2020-07-03T18:49:54.873Z"/>
+        </saml2:SubjectConfirmation>
+    </saml2:Subject>
+    <saml2:AttributeStatement>
+        <saml2:Attribute Name="biosVersion">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">SE5C620.86B.0X.01.0155.073020181001</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="hostName">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">purley15.fm.intel.com</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="tpmVersion">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">2.0</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="processorInfo">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">54 06 05 00 FF FB EB BF</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="vmmName">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">Docker</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="hardwareUuid">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">00B93A3E-B334-E711-906E-0017A4403562</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="vmmVersion">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">19.03.8</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="osName">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">RedHatEnterpriseServer</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="noOfSockets">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">2</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="tpmEnabled">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="biosName">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">Intel Corporation</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="osVersion">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">7.6</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="processorFlags">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf eagerfpu pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch epb cat_l3 cdp_l3 intel_ppin intel_pt ssbd mba ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm cqm mpx rdt_a avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local dtherm ida arat pln pts hwp hwp_act_window hwp_epp hwp_pkg_req pku ospke spec_ctrl intel_stibp flush_l1d</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="installedComponents">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">[wlagent, tagent]</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="tbootInstalled">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="txtEnabled">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="pcrBanks">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">[SHA1, SHA256]</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="isDockerEnv">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">false</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="FEATURE_TPM">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="FEATURE_TXT">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TRUST_PLATFORM">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TRUST_OS">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TRUST_HOST_UNIQUE">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TRUST_ASSET_TAG">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TRUST_SOFTWARE">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TRUST_OVERALL">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">true</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="Binding_Key_Certificate">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">-----BEGIN CERTIFICATE-----&#xd;
+MIIFITCCA4mgAwIBAgIJAJr+wrajIK27MA0GCSqGSIb3DQEBDAUAMBsxGTAXBgNVBAMTEG10d2ls&#xd;
+c29uLXBjYS1haWswHhcNMjAwNTI3MDcyNTE5WhcNMzAwNTI1MDcyNTE5WjAlMSMwIQYDVQQDDBpD&#xd;
+Tj1CaW5kaW5nX0tleV9DZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB&#xd;
+AJE5SACgGIVD26QZU2L3eSDBfNnSoyYOKwAuM1sIQPHlR8I8ar3bVH8O5rwn+qqY93HzHALpmXRW&#xd;
+jrJhyq/e0IM2J+y6gozPD9r5rrHPK5JpbLFUAkZlq0QrEPWd250iAQwIuDDMv4/vfncWIQsMapKJ&#xd;
+Bou3lVXt8FFIgQeBtov57gnQoX6GAd8D0N913N5D/+/09XJ0YXK8hwvav3GW/iTO3ETNgemTN6Uv&#xd;
+cCqb7xblvXV5KktSpIHis5gaKkLjYAPxqoLTnPl4GZtILpoR14/9BURqpfVZ+zDHgJ+6dJLp8DuT&#xd;
+EZgH0rkNJMTTSZp3pMFtdPmHW0WAY8zSCD+/hjUCAwEAAaOCAdwwggHYMA4GA1UdDwEB/wQEAwIF&#xd;
+IDCBnQYHVQSBBQMCKQSBkf9UQ0eAFwAiAAvsSHa2HP7BzzaD6t+cIF7GDwEVXPgCH0oUihPUfLRH&#xd;
+2QAEAP9VqgAAAAC2YRTSAAAALgAAAAEBAAcAKAAIMgAAIgALIv2s++TVzF43KMzwQWmAAghDDoOG&#xd;
+ziYTiTyGHKe84BUAIgALcCXpHXGNVuzJBJldNE7Tj24yyNDxDANEG6FCjlCNxLMwggEUBghVBIEF&#xd;
+AwIpAQSCAQYAFAALAQCV4UDlQV4YSU/mEjoxj0d87Ml6i6aIpcEtxfCBQNkoaOfZ15iA77FmKvOm&#xd;
+TUD5QlUVnZuiRYBR0N3NDBAeuu+Hi8yRMi2K7CnLYQjUjDk5VV8Q0/TaGf6kr4ma5GlRmad0wl81&#xd;
+SKegFF14Zzy9DQq+6dnHpvKeTXdlU2F0aeD2G/VY1sgzxY3SJInbiNDBfvB8a2MNrydsfuTAH26z&#xd;
+Rfndtj5xCcvTRSHliOvjyCVO0U44XgGqyHHNpnobDm//MbLH9J9quP2uSYvTdVhdnBi1hX9gJrAE&#xd;
+PkZOwQkG1dtwjI8H7K2+6NhofuPMTL0/RT9VrERmqbcw5ONMgG/vKpy/MA4GCFUEgQUDAikCBAIA&#xd;
+ADANBgkqhkiG9w0BAQwFAAOCAYEAVVU9jWyMPYYlEGfQgxLvnir73IB4yx90ExoIp60nL0j27HJc&#xd;
+nlxdSm8otGBBdbpozNCcMmr/o/COXXfqOqeMjS0HanjX4VgIbZPP2SP5yU2RRc0F0Fe8oCFzOhA3&#xd;
+u+mOo1WPlAJxM9+DIu/qaIWqPbGAgReBwgaUxX+vaRKGxFNjdxE428aDEPFs0c6qmuGyxxH436jj&#xd;
+vPTkD/7KAfPc+6uw8s4siEbOZMeINXZ+GnhF2AQrU0D46oXJgYDs8dvbozjihZveG4yn+t+t2rgS&#xd;
+DGI0Kva0pe/oC3CADU61V+qLfuFqqzJqJ547LW+x+pe3cNMFSgHiwJD80CIBKa9sL2NemonYnqFQ&#xd;
+5FUmu0WnIJcvr6n9935W4XZDUlrG+tbueWQvAul4JGf8llOQ+jQ0ckTj5d7I4iILYG4bT5oqFKez&#xd;
+F4EAi9Z/YxBDXsZHBf8AH7UNTywruIgKKT5PfmHfwC283XxEzPyliuKxnv5eqdU/GNje3j5wRR42&#xd;
+te58mtCn&#xd;
+-----END CERTIFICATE-----</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="AIK_Certificate">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">-----BEGIN CERTIFICATE-----&#xd;
+MIIDTjCCAbagAwIBAgIGAXJVBSxuMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNVBAMTEG10d2lsc29u&#xd;
+LXBjYS1haWswHhcNMjAwNTI3MDcyNTAxWhcNMzAwNTI3MDcyNTAxWjAAMIIBIjANBgkqhkiG9w0B&#xd;
+AQEFAAOCAQ8AMIIBCgKCAQEAlq9r3HwFQ3lnGD3G8Hs00t+K64V9g8bOD3VlkqpfZGzEvALzFYlF&#xd;
+W2zNNeR+3jfBgKtUzfy7YC8vGZamAF6x/IuR/7JGSQ81gfealN3WZYn7/7oly586gOMp0gj4hboy&#xd;
+p7jJJZxncU1XfZwNMBBQI+nRvNIoMlo6LPPwQZoDMs5/X/Qg0BFxY5KyHIL81jFBOaZEx4D3oyXW&#xd;
+Gw7fnd4lyLQ41HU/7aHIiP1wFzYCDOxcfoQgB5Rjcw5y5vjkck8OiLa4oRfa9XZ5ilfymJ1q74nB&#xd;
+fGGe2o4JwTqbU/kyoB9xyNlIWFIgi7o2S99mjlYCvMyf2P3dapSDqmY57oH2ywIDAQABozMwMTAv&#xd;
+BgNVHREBAf8EJTAjgSEAC/39/U8AVf1BF01Gagk9Y2Si/RUOAxv9Av39/X58/f0wDQYJKoZIhvcN&#xd;
+AQELBQADggGBAHcO38NioTKVnXzfqOu9eKjEiO59nucZ1dTZpI4URrZoGvNtxX/xcxGS50vY6nlS&#xd;
+VOHa30GkofZ677Wq6+l3NBsqpBbNyvMgCAsT6TM5IVvwA3sCFDday11gMI9UzhZMONVKFP7kiiTY&#xd;
+GA83blNd+DGEvsPIyi5aNYgZ6butITGum+4tp+jAqr8byz05wPd7uTjqepZC5x6ZZI+pNfo5OkQU&#xd;
+6RKRymkGzZ3aBtrZ+yzyAnMSD02o6RN7zvONZUIUG6KiIXjmhHWfqTLr5sEaRIam50+rsYht/VML&#xd;
+YOL5HVOFi4xWGgE8fVaokr5DwfwWX3qxO3h7r9D0O8VFq5mceSSCCgUu+xpF9io0xAzI2b7FkUSO&#xd;
++3jFSQ4IUh4WD8WzBdSTnGt5lV/HUmIPCWUZi7N0CoPr0aatikGGihllI9e/JmICYDKRtWx4GkRB&#xd;
+tgsKqVKvrC3JNbX15oWvFxsWR2opBUST8Wm8339/kd5swQqoVfda/eT8DNMByNTGYsMa/A==&#xd;
+-----END CERTIFICATE-----</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TAG_TPM">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">2.0</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TAG_OS">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">Linux</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TAG_Hostname">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">Purley15.fm.intel.com</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="TAG_Country">
+            <saml2:AttributeValue xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xsd:string">China</saml2:AttributeValue>
+        </saml2:Attribute>
+    </saml2:AttributeStatement>
+</saml2:Assertion>

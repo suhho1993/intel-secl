@@ -1,0 +1,23 @@
+{
+    "resource_providers": [
+        {
+            "generation": 193,
+            "uuid": "2f309eb2-71fa-4d67-83a4-de5ca3fc2e05",
+            "links": [
+                {
+                    "href": "/resource_providers/2f309eb2-71fa-4d67-83a4-de5ca3fc2e05",
+                    "rel": "self"
+                },
+                {
+                    "href": "/resource_providers/2f309eb2-71fa-4d67-83a4-de5ca3fc2e05/inventories",
+                    "rel": "inventories"
+                },
+                {
+                    "href": "/resource_providers/2f309eb2-71fa-4d67-83a4-de5ca3fc2e05/usages",
+                    "rel": "usages"
+                }
+            ],
+            "name": "purley15.fm.intel.com"
+        }
+    ]
+}

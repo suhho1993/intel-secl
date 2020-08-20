@@ -41,7 +41,7 @@ func setupCertsStore() *models.CertificatesStore {
 	var tagKey, fsKey crypto.PrivateKey
 
 	//Generate TagCA Keypair
-	caCertBytes, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultCertIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	caCertBytes, key, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultCertIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 	err := crypt.SavePrivateKeyAsPKCS8(key, tagCASigningKeyPath)
 	if err != nil {
 		return nil
@@ -62,7 +62,7 @@ func setupCertsStore() *models.CertificatesStore {
 	var caCertsStore = *mocks2.NewFakeCertificatesStore()
 
 	// Generate flavor signing Keypair
-	caCertBytes, key, _ = crypt.CreateKeyPairAndCertificate(constants.DefaultCN, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	caCertBytes, key, _ = crypt.CreateKeyPairAndCertificate(constants.DefaultCN, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 	_ = crypt.SavePrivateKeyAsPKCS8(key, flavorSigningKeyPath)
 	_ = crypt.SavePemCert(caCertBytes, flavorSigningCertPath)
 	fsKey, _ = crypt.GetPrivateKeyFromPKCS8File(flavorSigningKeyPath)

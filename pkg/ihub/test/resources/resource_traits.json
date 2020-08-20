@@ -1,0 +1,8 @@
+{
+    "traits": [
+        "HW_CPU_AARCH64_ASIMDHP",
+        "HW_GPU_RESOLUTION_W1280H800",
+        "CUSTOM_ISECL_TRUSTED"
+    ],
+    "resource_provider_generation": 196
+}

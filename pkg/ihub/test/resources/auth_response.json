@@ -1,0 +1,186 @@
+{
+    "token": {
+        "is_domain": false,
+        "methods": [
+            "password"
+        ],
+        "roles": [
+            {
+                "id": "dab23c64424d41aeab4eea5a6ae63c48",
+                "name": "member"
+            },
+            {
+                "id": "ff1d8a61ae9f4ec5b2172053f09c3bb5",
+                "name": "admin"
+            },
+            {
+                "id": "58ed6bdc74de43dcae5176d80df1627f",
+                "name": "reader"
+            }
+        ],
+        "expires_at": "2020-07-04T19:47:36.000000Z",
+        "project": {
+            "domain": {
+                "id": "default",
+                "name": "Default"
+            },
+            "id": "281424892a114a6fb4c7f793d067f355",
+            "name": "admin"
+        },
+        "catalog": [
+            {
+                "endpoints": [
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:9292",
+                        "region": "RegionOne",
+                        "interface": "public",
+                        "id": "978866bc764845e6b3d08e7f84e21a29"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:9292",
+                        "region": "RegionOne",
+                        "interface": "admin",
+                        "id": "e646e3c7c6d9409ea6778e87b9894012"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:9292",
+                        "region": "RegionOne",
+                        "interface": "internal",
+                        "id": "fbd720330c944b55b36df8c69c3fea59"
+                    }
+                ],
+                "type": "image",
+                "id": "1ee73ecf6e794f8f8b5ed992b89d5c5f",
+                "name": "glance"
+            },
+            {
+                "endpoints": [
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:8774/v2.1",
+                        "region": "RegionOne",
+                        "interface": "public",
+                        "id": "560ffa25e4614354bb1559dce322fe94"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:8774/v2.1",
+                        "region": "RegionOne",
+                        "interface": "internal",
+                        "id": "926ad49ed7cd48209eda0ab3efdf8806"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:8774/v2.1",
+                        "region": "RegionOne",
+                        "interface": "admin",
+                        "id": "cbb2d85107ad455681548d35f08d3dd9"
+                    }
+                ],
+                "type": "compute",
+                "id": "837a52ccf20c47faa484615b6fedd4a0",
+                "name": "nova"
+            },
+            {
+                "endpoints": [
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:5000/v3/",
+                        "region": "RegionOne",
+                        "interface": "admin",
+                        "id": "6c0fa87618864512869eac19003f4604"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:5000/v3/",
+                        "region": "RegionOne",
+                        "interface": "public",
+                        "id": "b5bd38d6f4ea448290eabffa3df686fb"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:5000/v3/",
+                        "region": "RegionOne",
+                        "interface": "internal",
+                        "id": "c07078ac80b14f11b35d09e3ff60ec09"
+                    }
+                ],
+                "type": "identity",
+                "id": "9fc86eee0c8c4872821d1b4d3a299afd",
+                "name": "keystone"
+            },
+            {
+                "endpoints": [
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:9696",
+                        "region": "RegionOne",
+                        "interface": "public",
+                        "id": "69c06949de8a43ed9e2b0160e387e618"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:9696",
+                        "region": "RegionOne",
+                        "interface": "admin",
+                        "id": "dbb21aba6d3a4d14a426c7f90510f1db"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:9696",
+                        "region": "RegionOne",
+                        "interface": "internal",
+                        "id": "f85e7472e3304c7e946db123a4a4ce7b"
+                    }
+                ],
+                "type": "network",
+                "id": "ae25aa96082344bbb04e22321db5761e",
+                "name": "neutron"
+            },
+            {
+                "endpoints": [
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:8778",
+                        "region": "RegionOne",
+                        "interface": "internal",
+                        "id": "37f5ea04a3834f4c8555baf9ed9d6b6a"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:8778",
+                        "region": "RegionOne",
+                        "interface": "admin",
+                        "id": "853ef1a514e34ff08404635de4b80678"
+                    },
+                    {
+                        "region_id": "RegionOne",
+                        "url": "http://controller:8778",
+                        "region": "RegionOne",
+                        "interface": "public",
+                        "id": "ac859d2c53f44b6c832654d77622e3b7"
+                    }
+                ],
+                "type": "placement",
+                "id": "b7ec42760e714322bdd1e3828709a39a",
+                "name": "placement"
+            }
+        ],
+        "user": {
+            "password_expires_at": null,
+            "domain": {
+                "id": "default",
+                "name": "Default"
+            },
+            "id": "9098668994fb4af387d12ee838066b7e",
+            "name": "admin"
+        },
+        "audit_ids": [
+            "HrIwnpZYRxW7EhqxnMgI8Q"
+        ],
+        "issued_at": "2020-07-04T18:47:36.000000Z"
+    }
+}

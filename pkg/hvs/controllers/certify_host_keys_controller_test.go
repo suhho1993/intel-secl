@@ -32,7 +32,7 @@ var certStore *models.CertificatesStore
 var _ = BeforeSuite(func() {
 	//Generate Privacyca cert
 	certStore = utils.LoadCertificates(mocks.NewFakeCertificatesPathStore())
-	caCertDer, caKeyDer, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyAlgorithmLength)
+	caCertDer, caKeyDer, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
 	caCert, _ := x509.ParseCertificate(caCertDer)
 	var caCerts []x509.Certificate
 	caCerts = append(caCerts, *caCert)

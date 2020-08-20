@@ -24,10 +24,10 @@ const defaultValidityDays = 365
 const selfSignEnvHelpPrompt = "Following environment variables are optionally used in "
 
 var selfSignEnvHelp = map[string]string{
-	"CERT_FILE":     "The file to which certificate is created",
-	"KEY_FILE":      "The file to which private key is created",
+	"CERT_FILE":     "The file to which certificate is saved",
+	"KEY_FILE":      "The file to which private key is saved",
 	"COMMON_NAME":   "The common name of signed certificate",
-	"SAN_LIST":      "Comma separated list of hostnames to add to Certificate, including IP addresses and dns names",
+	"SAN_LIST":      "Comma separated list of hostnames to add to Certificate, including IP addresses and DNS names",
 	"ISSUER":        "The issuer of signed certificate",
 	"VALIDITY_DAYS": "The validity time in days of signed certificate",
 }

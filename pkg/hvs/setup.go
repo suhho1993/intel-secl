@@ -155,10 +155,10 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 		TlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
 	})
 	runner.AddTask("download-cert-tls", "tls", &setup.DownloadCert{
-		KeyFile:            viper.GetString("tls-key-file"),
-		CertFile:           viper.GetString("tls-cert-file"),
-		KeyAlgorithm:       constants.DefaultKeyAlgorithm,
-		KeyAlgorithmLength: constants.DefaultKeyAlgorithmLength,
+		KeyFile:      viper.GetString("tls-key-file"),
+		CertFile:     viper.GetString("tls-cert-file"),
+		KeyAlgorithm: constants.DefaultKeyAlgorithm,
+		KeyLength:    constants.DefaultKeyLength,
 		Subject: pkix.Name{
 			CommonName: viper.GetString("tls-common-name"),
 		},
@@ -193,10 +193,10 @@ func (a *App) downloadCertTask(certType string) setup.Task {
 	updateConfig.CertFile = viper.GetString(certType + "-cert-file")
 	updateConfig.CommonName = viper.GetString(certType + "-common-name")
 	return &setup.DownloadCert{
-		KeyFile:            viper.GetString(certType + "-key-file"),
-		CertFile:           viper.GetString(certType + "-cert-file"),
-		KeyAlgorithm:       constants.DefaultKeyAlgorithm,
-		KeyAlgorithmLength: constants.DefaultKeyAlgorithmLength,
+		KeyFile:      viper.GetString(certType + "-key-file"),
+		CertFile:     viper.GetString(certType + "-cert-file"),
+		KeyAlgorithm: constants.DefaultKeyAlgorithm,
+		KeyLength:    constants.DefaultKeyLength,
 		Subject: pkix.Name{
 			CommonName: viper.GetString(certType + "-common-name"),
 		},

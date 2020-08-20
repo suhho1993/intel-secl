@@ -1,0 +1,9 @@
+{
+    "traits": [
+        "HW_CPU_AARCH64_ASIMDHP",
+        "HW_GPU_RESOLUTION_W1280H800",
+        "HW_CPU_X86_TBM",
+        "HW_CPU_X86_TSX",
+        "HW_NIC_ACCEL_DIFFIEH"
+    ]
+}
