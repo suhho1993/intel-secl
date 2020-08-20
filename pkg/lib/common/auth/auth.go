@@ -16,18 +16,13 @@ func ValidatePermissionAndGetPermissionsContext(privileges []types.PermissionInf
 	for _, permission := range privileges {
 		if reqPermissions.Service == permission.Service {
 			for _, rule := range permission.Rules {
-				for reqRuleIndex, reqRule := range reqPermissions.Rules {
+				for _, reqRule := range reqPermissions.Rules {
 					if isAuthorized(rule, reqRule) {
-						if len(reqPermissions.Rules) > 1 {
-							reqPermissions.Rules[reqRuleIndex] = reqPermissions.Rules[len(reqPermissions.Rules) - 1]
-							reqPermissions.Rules = reqPermissions.Rules[:len(reqPermissions.Rules) - 1]
-						} else {
-							if strings.TrimSpace(permission.Context) == "" && retNilCtxForEmptyCtx == true {
-								return nil, true
-							} else if strings.TrimSpace(permission.Context) != "" {
-								ctx[strings.TrimSpace(permission.Context)] = permission
-								return &ctx, true
-							}
+						if strings.TrimSpace(permission.Context) == "" && retNilCtxForEmptyCtx == true {
+							return nil, true
+						} else if strings.TrimSpace(permission.Context) != "" {
+							ctx[strings.TrimSpace(permission.Context)] = permission
+							return &ctx, true
 						}
 					}
 				}

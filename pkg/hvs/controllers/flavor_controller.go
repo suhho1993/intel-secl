@@ -16,8 +16,11 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	dm "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/auth"
+	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
+	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor"
 	fc "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
@@ -79,37 +82,50 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 	defaultLog.Trace("controllers/flavor_controller:Create() Entering")
 	defer defaultLog.Trace("controllers/flavor_controller:Create() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson {
-		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
-	}
-
-	secLog.Infof("Request to create flavors received")
-	if r.ContentLength == 0 {
-		secLog.Error("controllers/flavor_controller:Create() The request body is not provided")
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "The request body is not provided"}
-	}
-
-	var flavorCreateReq dm.FlavorCreateRequest
-	// Decode the incoming json data to note struct
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-
-	err := dec.Decode(&flavorCreateReq)
+	flavorCreateReq, err := getFlavorCreateReq(r)
 	if err != nil {
-		secLog.WithError(err).Errorf("controllers/flavor_controller:Create() %s :  Failed to decode request body as Flavor", commLogMsg.InvalidInputBadEncoding)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
+		if strings.Contains(err.Error(), "Invalid Content-Type") {
+			return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
+		}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: err.Error()}
 	}
 
-	defaultLog.Debug("Validating create flavor request")
-	err = validateFlavorCreateRequest(flavorCreateReq)
+	// validate permissions for each flavorPart
+	privileges, err := comctx.GetUserPermissions(r)
 	if err != nil {
-		secLog.WithError(err).Errorf("controllers/flavor_controller:Create() %s Invalid flavor create criteria", commLogMsg.InvalidInputBadParam)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid flavor create criteria"}
+		secLog.Errorf("flavor_controller:Create() %s", commLogMsg.AuthenticationFailed)
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Could not get user permissions from http context"}
 	}
 
-	//Unique flavor parts
-	flavorCreateReq.FlavorParts = fc.FilterUniqueFlavorParts(flavorCreateReq.FlavorParts)
-	signedFlavors, err := fcon.createFlavors(flavorCreateReq)
+	var signedFlavors []hvs.SignedFlavor
+
+	if (len(flavorCreateReq.FlavorParts) == 0){
+		if (!checkValidFlavorPermission(privileges, []string{consts.FlavorCreate})) {
+			return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
+		}
+	} else {
+		for _, fp := range flavorCreateReq.FlavorParts {
+			if(fp == fc.FlavorPartHostUnique) {
+				if (!checkValidFlavorPermission(privileges, []string{consts.HostUniqueFlavorCreate, consts.FlavorCreate})) {
+					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
+				}
+			} else if(fp == fc.FlavorPartSoftware) {
+				if (!checkValidFlavorPermission(privileges, []string{consts.SoftwareFlavorCreate, consts.FlavorCreate})) {
+					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
+				}
+			} else if(fp == fc.FlavorPartAssetTag) {
+				if (!checkValidFlavorPermission(privileges, []string{consts.TagFlavorCreate, consts.FlavorCreate})) {
+					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
+				}
+			} else {
+				if (!checkValidFlavorPermission(privileges, []string{consts.FlavorCreate})) {
+					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
+				}
+			}
+		}
+	}
+
+	signedFlavors, err = fcon.createFlavors(flavorCreateReq)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/flavor_controller:Create() Error creating flavors")
 		if strings.Contains(err.Error(), "duplicate key") {
@@ -121,23 +137,12 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 	signedFlavorCollection := hvs.SignedFlavorCollection{
 		SignedFlavors: signedFlavors,
 	}
-
 	// Reorder flavors as per request
 	if flavorCreateReq.FlavorParts != nil && len(flavorCreateReq.FlavorParts) > 0 {
 		signedFlavorCollection = orderFlavorsPerFlavorParts(flavorCreateReq.FlavorParts, signedFlavorCollection)
 	}
 	secLog.Info("Flavors created successfully")
 	return signedFlavorCollection, http.StatusCreated, nil
-}
-
-func orderFlavorsPerFlavorParts(parts []fc.FlavorPart, signedFlavorCollection hvs.SignedFlavorCollection) hvs.SignedFlavorCollection {
-	signedFlavors := []hvs.SignedFlavor{}
-	for _, flavorPart := range parts {
-		signedFlavors = append(signedFlavors, signedFlavorCollection.GetFlavors(flavorPart.String())...)
-	}
-	return hvs.SignedFlavorCollection{
-		SignedFlavors: signedFlavors,
-	}
 }
 
 func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([]hvs.SignedFlavor, error) {
@@ -275,6 +280,54 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 		return nil, errors.New("Unable to create Flavors")
 	}
 	return fcon.addFlavorToFlavorgroup(flavorFlavorPartMap, flavorgroups)
+}
+
+func getFlavorCreateReq(r *http.Request) (dm.FlavorCreateRequest, error) {
+	defaultLog.Trace("controllers/flavor_controller:getFlavorCreateReq() Entering")
+	defer defaultLog.Trace("controllers/flavor_controller:getFlavorCreateReq() Leaving")
+
+	var flavorCreateReq dm.FlavorCreateRequest
+	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson {
+		secLog.Error("controllers/flavor_controller:getFlavorCreateReq() Invalid Content-Type")
+		return flavorCreateReq, errors.New("Invalid Content-Type")
+	}
+
+	secLog.Infof("Request to create host_unique flavors received")
+	if r.ContentLength == 0 {
+		secLog.Error("controllers/flavor_controller:getFlavorCreateReq() The request body is not provided")
+		return flavorCreateReq, errors.New("The request body is not provided")
+	}
+
+	// Decode the incoming json data to note struct
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(&flavorCreateReq)
+	if err != nil {
+		secLog.WithError(err).Errorf("controllers/flavor_controller:getFlavorCreateReq() %s :  Failed to decode request body as Flavor", commLogMsg.InvalidInputBadEncoding)
+		return flavorCreateReq, errors.New("Unable to decode JSON request body")
+	}
+
+	defaultLog.Debug("Validating create flavor request")
+	err = validateFlavorCreateRequest(flavorCreateReq)
+	if err != nil {
+		secLog.WithError(err).Errorf("controllers/flavor_controller:CreateFlavors() %s Invalid flavor create criteria", commLogMsg.InvalidInputBadParam)
+		return flavorCreateReq, errors.New("Invalid flavor create criteria")
+	}
+	//Unique flavor parts
+	flavorCreateReq.FlavorParts = fc.FilterUniqueFlavorParts(flavorCreateReq.FlavorParts)
+
+	return flavorCreateReq, nil
+}
+
+func orderFlavorsPerFlavorParts(parts []fc.FlavorPart, signedFlavorCollection hvs.SignedFlavorCollection) hvs.SignedFlavorCollection {
+	signedFlavors := []hvs.SignedFlavor{}
+	for _, flavorPart := range parts {
+		signedFlavors = append(signedFlavors, signedFlavorCollection.GetFlavors(flavorPart.String())...)
+	}
+	return hvs.SignedFlavorCollection{
+		SignedFlavors: signedFlavors,
+	}
 }
 
 func (fcon *FlavorController) getHostManifest(cs string) (*hcType.HostManifest, error) {
@@ -818,4 +871,15 @@ func (fcon *FlavorController) createCleanUp(fgFlavorMap map[uuid.UUID][]uuid.UUI
 		}
 	}
 	return nil
+}
+
+func checkValidFlavorPermission(privileges []ct.PermissionInfo, requiredPermission []string) bool {
+	reqPermissions := ct.PermissionInfo{Service: consts.ServiceName, Rules: requiredPermission}
+	_, foundMatchingPermission := auth.ValidatePermissionAndGetPermissionsContext(privileges, reqPermissions,
+		true)
+	if !foundMatchingPermission {
+		secLog.Errorf("router/handlers:permissionsHandler() %s Insufficient privileges to access /v2/hvs/flavors", commLogMsg.UnauthorizedAccess)
+		return false
+	}
+	return true
 }

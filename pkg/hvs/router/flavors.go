@@ -30,7 +30,8 @@ func SetFlavorRoutes(router *mux.Router, store *postgres.DataStore, certStore *m
 
 	router.Handle("/flavors",
 		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorController.Create),
-			[]string{constants.FlavorCreate}))).Methods("POST")
+			[]string{constants.FlavorCreate, constants.SoftwareFlavorCreate, constants.HostUniqueFlavorCreate, constants.TagFlavorCreate}))).
+		Methods("POST")
 
 	router.Handle("/flavors",
 		ErrorHandler(permissionsHandler(JsonResponseHandler(flavorController.Search),
