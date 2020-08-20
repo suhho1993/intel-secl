@@ -62,6 +62,10 @@ func (f *FlavorGroupStore) Search(fgFilter *models.FlavorGroupFilterCriteria) ([
 			return nil, errors.New("postgres/flavorgroup_store:Search() Unexpected Error. " +
 				"Error getting associated flavorgroups")
 		}
+		//If filter is only on the basis of flavor Id and no records are there then return
+		if fgFilter.NameEqualTo == "" && fgFilter.NameContains == "" && len(fgFilter.Ids) == 0 {
+			return []hvs.FlavorGroup{}, nil
+		}
 	}
 	tx := buildFlavorGroupSearchQuery(f.Store.Db, fgFilter)
 
