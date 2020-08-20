@@ -586,6 +586,11 @@ func validateHostCreateCriteria(host hvs.HostCreateRequest) error {
 		}
 	}
 	if len(host.FlavorgroupNames) != 0 {
+		for _, flavorgroup := range host.FlavorgroupNames {
+			if flavorgroup == "" {
+				return errors.New("Valid Flavorgroup Names must be specified, empty name is not allowed")
+			}
+		}
 		if err := validation.ValidateStrings(host.FlavorgroupNames); err != nil {
 			return errors.Wrap(err, "Valid Flavorgroup Names must be specified")
 		}

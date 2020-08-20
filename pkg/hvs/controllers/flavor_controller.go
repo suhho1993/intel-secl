@@ -260,7 +260,7 @@ func (fcon *FlavorController) createFlavors(flavorReq dm.FlavorCreateRequest) ([
 		}
 	}
 	// get the flavorgroup names
-	if flavorReq.FlavorgroupNames == nil {
+	if len(flavorReq.FlavorgroupNames) == 0 {
 		flavorReq.FlavorgroupNames = []string{dm.FlavorGroupsAutomatic.String()}
 	}
 	// check if the flavorgroup is already created, else create flavorgroup
@@ -759,7 +759,12 @@ func validateFlavorCreateRequest(criteria dm.FlavorCreateRequest) error {
 			return errors.New("Invalid host connection string")
 		}
 	}
-	if criteria.FlavorgroupNames != nil {
+	if len(criteria.FlavorgroupNames) !=  0 {
+		for _, flavorgroup := range criteria.FlavorgroupNames {
+			if flavorgroup == "" {
+				return errors.New("Valid Flavorgroup Names must be specified, empty name is not allowed")
+			}
+		}
 		err := validation.ValidateStrings(criteria.FlavorgroupNames)
 		if err != nil {
 			return errors.New("Invalid flavorgroup name given as a flavor create criteria")
