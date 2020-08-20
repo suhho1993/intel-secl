@@ -57,6 +57,11 @@ func (controller TpmEndorsementController) Create(w http.ResponseWriter, r *http
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Unable to decode JSON request body"}
 	}
 
+	if reqTpmEndorsement.HardwareUUID == uuid.Nil || reqTpmEndorsement.Certificate == "" || reqTpmEndorsement.Issuer == "" {
+		defaultLog.Error("controllers/tpm_endorsement_controller:Create()  hardware_uuid, certificate and issuer must be specified")
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "hardware_uuid, certificate and issuer must be specified"}
+	}
+
 	if err := validateTpmEndorsement(reqTpmEndorsement); err != nil {
 		secLog.WithError(err).Errorf("controllers/tpm_endorsement_controller:Create() %s", commLogMsg.InvalidInputBadParam)
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid input provided in request"}
@@ -361,12 +366,7 @@ func validateTpmEndorsement(reqTpmEndorsement hvs.TpmEndorsement) error {
 	defaultLog.Trace("controllers/tpm_endorsement_controller:validateTpmEndorsement() Entering")
 	defaultLog.Trace("controllers/tpm_endorsement_controller:validateTpmEndorsement() Leaving")
 
-	if reqTpmEndorsement.HardwareUUID == uuid.Nil || reqTpmEndorsement.Certificate == "" || reqTpmEndorsement.Issuer == "" {
-		defaultLog.Error("controllers/tpm_endorsement_controller:validateTpmEndorsement()  hardware_uuid, certificate and issuer must be specified")
-		return errors.New("hardware_uuid, certificate and issuer must be specified")
-	}
-
-	if err := validation.ValidateBase64String(reqTpmEndorsement.Certificate); err != nil {
+	if _, err := base64.StdEncoding.DecodeString(reqTpmEndorsement.Certificate); err != nil {
 		return errors.Wrap(err, "Valid contents for Certificate must be specified")
 	}
 

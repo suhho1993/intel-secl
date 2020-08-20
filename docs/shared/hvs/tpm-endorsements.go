@@ -122,8 +122,8 @@ type TpmEndorsementCollection struct {
 //    | certificate                    | The Base64 encoded Endorsement Certificate |
 //    | hardwareUuid                   | Hardware UUID of the host associated with the certificate. Can be retrieved by calling into the GET method on the host with a specific filter criteria. |
 //    | issuer                         | The OEM of the TPM. Refer to sample issuer input for attributes. |
-//    | revoked                        | Validity status of the EK certificate. |
-//    | comment                        | Comments for the certificate. |
+//    | revoked                        | Validity status of the EK certificate. Default is false (Optional) |
+//    | comment                        | Comments for the certificate.  (Optional)|
 // x-permissions: tpm_endorsements:create
 // security:
 //   - bearerAuth: []
