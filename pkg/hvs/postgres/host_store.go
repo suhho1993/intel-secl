@@ -236,7 +236,7 @@ func (hs *HostStore) AddTrustCacheFlavors(hId uuid.UUID, fIds []uuid.UUID) ([]uu
 		trustCacheValueArgs = append(trustCacheValueArgs, hId)
 	}
 
-	insertQuery := fmt.Sprintf("INSERT INTO trust_cache VALUES %s", strings.Join(trustCacheValues, ","))
+	insertQuery := fmt.Sprintf("INSERT INTO trust_cache VALUES %s on conflict (flavor_id, host_id) do nothing", strings.Join(trustCacheValues, ","))
 	err := hs.Store.Db.Model(trustCache{}).Exec(insertQuery, trustCacheValueArgs...).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "postgres/host_store:AddTrustCacheFlavors() failed to create trust cache")
