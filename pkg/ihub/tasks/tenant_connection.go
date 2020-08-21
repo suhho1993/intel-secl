@@ -8,15 +8,17 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"os"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/k8s"
 	openstackClient "github.com/intel-secl/intel-secl/v3/pkg/clients/openstack"
 	"github.com/intel-secl/intel-secl/v3/pkg/ihub/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/ihub/constants"
+	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
-	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
 //TenantConnection is a setup task for setting up the connection to the Tenant
@@ -31,8 +33,7 @@ func (tenantConnection TenantConnection) Run() error {
 
 	endPointType := viper.GetString("tenant")
 	if endPointType == "" {
-		endPointType = constants.DefaultEndPointType
-		fmt.Fprintln(tenantConnection.ConsoleWriter, "TENANT is not defined in environment, setting default value")
+		return errors.New("tasks/tenant_connection:Run() TENANT is not defined in environment")
 	}
 
 	tenantConf := tenantConnection.TenantConfig
@@ -67,24 +68,21 @@ func (tenantConnection TenantConnection) Run() error {
 			return errors.New("tasks/tenant_connection:Run() OPENSTACK_PASSWORD is not defined in environment")
 		}
 
-		if openstackIP != "" && openstackAuthPort != "" && openstackAPIPort != "" {
-			tenantConf.URL = constants.HTTP + "://" + openstackIP + ":" + openstackAPIPort + "/"
-			tenantConf.AuthURL = constants.HTTP + "://" + openstackIP + ":" + openstackAuthPort + "/" + constants.OpenStackAuthenticationAPI
-			tenantConf.UserName = openstackUserName
-			tenantConf.Password = openstackPassword
-		} else if tenantConf.URL == "" || tenantConf.AuthURL == "" {
-			return errors.New("tasks/tenant_connection:Run() OpenStack IP, Ports and URL are not defined in environment")
-		}
+		tenantConf.URL = constants.HTTP + "://" + openstackIP + ":" + openstackAPIPort + "/"
+		tenantConf.AuthURL = constants.HTTP + "://" + openstackIP + ":" + openstackAuthPort + "/" + constants.OpenStackAuthenticationAPI
+		tenantConf.UserName = openstackUserName
+		tenantConf.Password = openstackPassword
 
 	} else if endPointType == constants.K8sTenant {
 
 		k8sURL := viper.GetString("kubernetes-url")
 		k8sCRDName := viper.GetString("kubernetes-crd")
 		k8sToken := viper.GetString("kubernetes-token")
-		k8sCertFile := viper.GetString("kubernetes-cert-file")
+		k8sCertFileSrc := viper.GetString("kubernetes-cert-file")
+		k8sCertFile := constants.DefaultK8SCertFile
 
 		if k8sURL == "" {
-			return errors.New("tasks/tenant_connection:Run() KUBERNETES_URL Endpoint is not defined in environment")
+			return errors.New("tasks/tenant_connection:Run() KUBERNETES_URL is not defined in environment")
 		}
 
 		if k8sToken == "" {
@@ -96,15 +94,31 @@ func (tenantConnection TenantConnection) Run() error {
 			fmt.Fprintln(tenantConnection.ConsoleWriter, "KUBERNETES_CRD is not defined in environment, default CRD name set")
 		}
 
-		if k8sCertFile == "" {
-			k8sCertFile = constants.DefaultK8SCertFile
-			fmt.Fprintln(tenantConnection.ConsoleWriter, "KUBERNETES_CERT_FILE is not defined in environment, setting default location")
+		if k8sCertFileSrc == "" {
+			return errors.New("tasks/tenant_connection:Run() KUBERNETES_CERT_FILE is not defined in environment")
+		}
+		if _, err := os.Stat(k8sCertFileSrc); os.IsNotExist(err) {
+			return errors.Wrapf(err, "tasks/tenant_connection:Run() certificate file %s does not exist", k8sCertFileSrc)
+		}
+		// at this point if k8sCertFileSrc is not same as default, lets copy to default
+		if k8sCertFileSrc != k8sCertFile {
+			// lets try to copy the file now. If copy does not succeed return the file copy error
+			if err := cos.Copy(k8sCertFileSrc, k8sCertFile); err != nil {
+				return errors.Wrap(err, "tasks/tenant_connection:Run() failed to copy file")
+			}
+			// set permissions so that non root users can read the copied file
+			if err := os.Chmod(k8sCertFile, 0644); err != nil {
+				return errors.Wrapf(err, "tasks/tenant_connection:Run() could not apply permissions to %s", k8sCertFile)
+			}
 		}
 
 		tenantConf.URL = k8sURL
 		tenantConf.CRDName = k8sCRDName
 		tenantConf.Token = k8sToken
 		tenantConf.CertFile = k8sCertFile
+
+	} else {
+		return errors.Errorf("tasks/tenant_connection:Run() Endpoint type '%s' is not supported", endPointType)
 	}
 
 	return nil
@@ -147,7 +161,7 @@ func (tenantConnection TenantConnection) validateService() error {
 		}
 		fmt.Fprintln(tenantConnection.ConsoleWriter, "OpenStack Connection is successful")
 
-	} else if conf.Type == constants.K8sTenant {
+	} else {
 
 		parsedUrl, err := url.Parse(conf.URL)
 		if err != nil {

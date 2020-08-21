@@ -71,7 +71,8 @@ func (app *App) startDaemon() error {
 			return errors.Wrap(err, "startService:startDaemon() Error in initializing the OpenStack client")
 		}
 		o.OpenstackClient = openstackClient
-	} else {
+
+	} else if configuration.Endpoint.Type == constants.K8sTenant {
 
 		privateKey, err := crypt.GetPrivateKeyFromPKCS8File(constants.PrivatekeyLocation)
 		if err != nil {
@@ -105,6 +106,9 @@ func (app *App) startDaemon() error {
 			return errors.Wrap(err, "startService:startDaemon() Error in initializing the Kubernetes client")
 		}
 		k.K8sClient = k8sClient
+
+	} else {
+		return errors.Errorf("startService:startDaemon() Endpoint type '%s' is not supported", configuration.Endpoint.Type)
 	}
 
 	// Setup signal handlers to gracefully handle termination

@@ -15,14 +15,7 @@ import (
 
 // This func sets the default values for viper keys
 func init() {
-	// set default values for log
-	viper.SetDefault("log-max-length", constants.DefaultLogEntryMaxlength)
-	viper.SetDefault("log-enable-stdout", true)
-	viper.SetDefault("log-level", "info")
-
 	viper.SetDefault("attestation-type", constants.DefaultAttestationType)
-	viper.SetDefault("tenant", constants.K8sTenant)
-
 	viper.SetDefault("poll-interval-minutes", constants.PollingIntervalMinutes)
 
 	//Set default values for TLS

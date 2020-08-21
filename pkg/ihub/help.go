@@ -31,12 +31,12 @@ Usage of ihub setup:
 
 Available Tasks for setup:
 	all                                 Runs all setup tasks
-	download-ca-cert                	Download CMS root CA certificate
-	download-cert-tls               	Download CA certificate from CMS for tls
-	attestation-service-connection  	Establish Attestation service connection
-	tenant-service-connection       	Establish Tenant service connection
-	create-signing-key              	Create signing key for IHUB
-	download-saml-cert              	Download SAML certificate from Attestation service
+	download-ca-cert                    Download CMS root CA certificate
+	download-cert-tls                   Download CA certificate from CMS for tls
+	attestation-service-connection      Establish Attestation service connection
+	tenant-service-connection           Establish Tenant service connection
+	create-signing-key                  Create signing key for IHUB
+	download-saml-cert                  Download SAML certificate from Attestation service
 `
 
 func (app *App) printUsage() {

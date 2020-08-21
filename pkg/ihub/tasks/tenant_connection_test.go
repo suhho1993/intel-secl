@@ -27,6 +27,7 @@ func TestTenantConnectionRun(t *testing.T) {
 
 	openstackConfig := testutility.SetupMockOpenStackConfiguration(t, portString)
 	k8sConfig := testutility.SetupMockK8sConfiguration(t, portString)
+	k8sConfig.Endpoint.CertFile = constants.DefaultK8SCertFile
 
 	type args struct {
 		EnvValues map[string]string
@@ -38,57 +39,6 @@ func TestTenantConnectionRun(t *testing.T) {
 		wantErr          bool
 	}{
 
-		{
-			name: "tenant-connection-kubernetes valid test 1",
-			tenantConnection: TenantConnection{
-				TenantConfig: &config.Endpoint{},
-				ConsoleWriter:     os.Stdout,
-			},
-			args: args{
-				EnvValues: map[string]string{
-					"TENANT":               k8sConfig.Endpoint.Type,
-					"KUBERNETES_URL":       "https://localhost:" + port + "/",
-					"KUBERNETES_CRD":       "custom-isecl",
-					"KUBERNETES_TOKEN":     k8sConfig.Endpoint.Token,
-					"KUBERNETES_CERT_FILE": k8sConfig.Endpoint.CertFile,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "tenant-connection-kubernetes valid test 2",
-			tenantConnection: TenantConnection{
-				TenantConfig: &config.Endpoint{},
-				ConsoleWriter:     os.Stdout,
-			},
-			args: args{
-				EnvValues: map[string]string{
-					"TENANT":               k8sConfig.Endpoint.Type,
-					"KUBERNETES_URL":       "https://localhost:" + port + "/",
-					"KUBERNETES_CRD":       "custom-isecl",
-					"KUBERNETES_TOKEN":     k8sConfig.Endpoint.Token,
-					"KUBERNETES_CERT_FILE": "",
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "tenant-connection-kubernetes valid test 3",
-			tenantConnection: TenantConnection{
-				TenantConfig: &config.Endpoint{},
-				ConsoleWriter:     os.Stdout,
-			},
-			args: args{
-				EnvValues: map[string]string{
-					"TENANT":               k8sConfig.Endpoint.Type,
-					"KUBERNETES_URL":       "https://localhost:" + port + "/",
-					"KUBERNETES_CRD":       "",
-					"KUBERNETES_TOKEN":     k8sConfig.Endpoint.Token,
-					"KUBERNETES_CERT_FILE": k8sConfig.Endpoint.CertFile,
-				},
-			},
-			wantErr: false,
-		},
 		{
 			name: "tenant-connection-kubernetes negative test 1",
 			tenantConnection: TenantConnection{
@@ -118,6 +68,56 @@ func TestTenantConnectionRun(t *testing.T) {
 					"KUBERNETES_URL":       "https://localhost:" + port + "/",
 					"KUBERNETES_CRD":       "custom-isecl",
 					"KUBERNETES_TOKEN":     "",
+					"KUBERNETES_CERT_FILE": k8sConfig.Endpoint.CertFile,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "tenant-connection-kubernetes negative test 3",
+			tenantConnection: TenantConnection{
+				TenantConfig: &config.Endpoint{},
+				ConsoleWriter:     os.Stdout,
+			},
+			args: args{
+				EnvValues: map[string]string{
+					"TENANT":               k8sConfig.Endpoint.Type,
+					"KUBERNETES_URL":       "https://localhost:" + port + "/",
+					"KUBERNETES_CRD":       "",
+					"KUBERNETES_TOKEN":     k8sConfig.Endpoint.Token,
+					"KUBERNETES_CERT_FILE": "",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "tenant-connection-kubernetes negative test 4",
+			tenantConnection: TenantConnection{
+				TenantConfig: &config.Endpoint{},
+				ConsoleWriter:     os.Stdout,
+			},
+			args: args{
+				EnvValues: map[string]string{
+					"TENANT":               k8sConfig.Endpoint.Type,
+					"KUBERNETES_URL":       "https://localhost:" + port + "/",
+					"KUBERNETES_CRD":       "custom-isecl",
+					"KUBERNETES_TOKEN":     k8sConfig.Endpoint.Token,
+					"KUBERNETES_CERT_FILE": k8sConfig.Endpoint.CertFile,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "tenant-connection-kubernetes negative test 5",
+			tenantConnection: TenantConnection{
+				TenantConfig: &config.Endpoint{},
+				ConsoleWriter:     os.Stdout,
+			},
+			args: args{
+				EnvValues: map[string]string{
+					"KUBERNETES_URL":       "https://localhost:" + port + "/",
+					"KUBERNETES_CRD":       "custom-isecl",
+					"KUBERNETES_TOKEN":     k8sConfig.Endpoint.Token,
 					"KUBERNETES_CERT_FILE": k8sConfig.Endpoint.CertFile,
 				},
 			},
@@ -314,7 +314,7 @@ func TestTenantConnectionValidate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "tenant-connection-validate openstack valid test",
+			name: "tenant-connection-validate openstack negative test",
 			tenantConnection: TenantConnection{
 				TenantConfig: &config.Endpoint{
 					Type:     constants.OpenStackTenant,
