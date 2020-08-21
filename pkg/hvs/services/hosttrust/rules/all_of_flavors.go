@@ -53,16 +53,16 @@ func (aof *AllOfFlavors) AddFaults(report *hvs.TrustReport) (*hvs.TrustReport, e
 			if err != nil {
 				return report, errors.Wrap(err, "Failed to apply rule \""+report.PolicyName+"\" to host manifest of "+report.HostManifest.HostInfo.HostName)
 			}
-			if result != nil && !report.CheckResultExists(*result) {
+
+			if result != nil {
 				result.FlavorId = &flavor.Flavor.Meta.ID
 				result.Trusted = result.IsTrusted()
+				report.AddResult(*result)
 				if !result.Trusted {
 					faultsExist = true
 					aofMissingFlavorParts[flavor.Flavor.Meta.Description.FlavorPart] = true
 					defaultLog.Infof("All of Flavor types missing for flavor id: %s and flavor part: %s", result.FlavorId, flavor.Flavor.Meta.Description.FlavorPart)
 				}
-
-				report.AddResult(*result)
 			}
 
 		}
@@ -110,7 +110,7 @@ func (aof *AllOfFlavors) CheckAllOfFlavorsExist(report *hvs.TrustReport) bool {
 				defaultLog.WithError(err).Debug("hosttrust/all_of_flavors:checkAllOfFlavorsExist() Error applying vendor trust policy rule")
 				return false
 			}
-			if result != nil && !report.CheckResultExists(*result) {
+			if result != nil && !result.IsTrusted() {
 				return false
 			}
 		}

@@ -52,7 +52,7 @@ func NewRuleFactory(verifierCertificates VerifierCertificates,
 func (factory *ruleFactory) GetVerificationRules() ([]rules.Rule, string, error) {
 
 	var flavorPart common.FlavorPart
-	var results []rules.Rule
+	var requiredRules []rules.Rule
 
 	ruleBuilder, err := factory.getRuleBuilder()
 	if err != nil {
@@ -70,21 +70,21 @@ func (factory *ruleFactory) GetVerificationRules() ([]rules.Rule, string, error)
 
 	switch flavorPart {
 	case common.FlavorPartPlatform:
-		results, err = ruleBuilder.GetPlatformRules()
+		requiredRules, err = ruleBuilder.GetPlatformRules()
 	case common.FlavorPartAssetTag:
-		results, err = ruleBuilder.GetAssetTagRules()
+		requiredRules, err = ruleBuilder.GetAssetTagRules()
 	case common.FlavorPartOs:
-		results, err = ruleBuilder.GetOsRules()
+		requiredRules, err = ruleBuilder.GetOsRules()
 	case common.FlavorPartHostUnique:
-		results, err = ruleBuilder.GetHostUniqueRules()
+		requiredRules, err = ruleBuilder.GetHostUniqueRules()
 	case common.FlavorPartSoftware:
-		results, err = ruleBuilder.GetSoftwareRules()
+		requiredRules, err = ruleBuilder.GetSoftwareRules()
 	default:
-		return nil, "", errors.Errorf("Cannot build rules for unknown flavor part %s", flavorPart)
+		return nil, "", errors.Errorf("Cannot build requiredRules for unknown flavor part %s", flavorPart)
 	}
 
 	if err != nil {
-		return nil, "", errors.Wrapf(err, "Error creating trust rules for flavor '%s'", factory.signedFlavor.Flavor.Meta.ID)
+		return nil, "", errors.Wrapf(err, "Error creating trust requiredRules for flavor '%s'", factory.signedFlavor.Flavor.Meta.ID)
 	}
 
 	// if skip flavor signing verification is enabled, add the FlavorTrusted.
@@ -105,10 +105,10 @@ func (factory *ruleFactory) GetVerificationRules() ([]rules.Rule, string, error)
 			return nil, "", errors.Wrap(err, "Error creating the flavor trusted rule")
 		}
 
-		results = append(results, flavorTrusted)
+		requiredRules = append(requiredRules, flavorTrusted)
 	}
 
-	return results, ruleBuilder.GetName(), nil
+	return requiredRules, ruleBuilder.GetName(), nil
 }
 
 func (factory *ruleFactory) getRuleBuilder() (ruleBuilder, error) {
