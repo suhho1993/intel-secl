@@ -1,7 +1,7 @@
 // Host Verification Service
 //
 // The Host Verification Service (HVS) is a component responsible for generating and maintaining accurate trust
-// evaluations for data center servers. The HVS provides an interface for defining acceptable whitelisted policies (flavors)
+// evaluations for data center servers. The HVS provides an interface for defining acceptable passlisted policies (flavors)
 // for data center servers. These flavor policies incorporate server firmware measurements, hardware capabilities,
 // security technology information and additional configuration. The measured data and configuration injected into the
 // HVS flavor policies incorporate chain of trust technology requirements for platform attestation.
