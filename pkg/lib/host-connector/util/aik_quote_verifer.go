@@ -21,7 +21,6 @@ import (
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
-	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -240,20 +239,12 @@ func VerifyQuoteAndGetPCRManifest(decodedEventLog string, verificationNonce []by
 	return pcrManifest, nil
 }
 
-func GetVerificationNonce(nonce []byte, ipAddress string, quoteResponse taModel.TpmQuoteResponse) (string, error) {
+func GetVerificationNonce(nonce []byte, quoteResponse taModel.TpmQuoteResponse) (string, error) {
 	log.Trace("util/aik_quote_verifier:GetVerificationNonce() Entering")
 	defer log.Trace("util/aik_quote_verifier:GetVerificationNonce() Leaving")
 	hash := sha1.New()
 	hash.Write(nonce)
 	taNonce := hash.Sum(nil)
-	if strings.Contains(ipAddress, ":") {
-		ipAddress = strings.Split(ipAddress, ":")[0]
-	}
-
-	hash = sha1.New()
-	hash.Write(taNonce)
-	hash.Write(net.ParseIP(ipAddress).To4())
-	taNonce = hash.Sum(nil)
 
 	if quoteResponse.IsTagProvisioned {
 		if quoteResponse.AssetTag == "" {
@@ -264,10 +255,6 @@ func GetVerificationNonce(nonce []byte, ipAddress string, quoteResponse taModel.
 		if err != nil {
 			return "", err
 		}
-
-		hash := sha1.New()
-		hash.Write(taNonce)
-		taNonce = hash.Sum(nil)
 
 		hash = sha1.New()
 		hash.Write(taNonce)

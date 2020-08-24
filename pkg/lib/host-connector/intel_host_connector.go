@@ -92,14 +92,7 @@ func (ic *IntelConnector) GetHostManifestAcceptNonce(nonce string) (types.HostMa
 			"nonce failed")
 	}
 
-	csHostIP, err := util.GetHostIP(ic.client.GetBaseURL().Host)
-	if err != nil {
-		return types.HostManifest{}, errors.Wrap(err, "intel_host_connector:GetHostManifestAcceptNonce() Conversion "+
-			"of hostname in connection string to IP address failed")
-	}
-	log.Debug("intel_host_connector:GetHostManifestAcceptNonce() IP address obtained from connection string hostname is : ", csHostIP)
-
-	verificationNonce, err = util.GetVerificationNonce(nonceInBytes, csHostIP, tpmQuoteResponse)
+	verificationNonce, err = util.GetVerificationNonce(nonceInBytes, tpmQuoteResponse)
 	if err != nil {
 		return types.HostManifest{}, err
 	}

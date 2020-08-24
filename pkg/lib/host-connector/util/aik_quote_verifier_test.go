@@ -34,8 +34,7 @@ func TestVerifyQuoteAndGetPCRManifest(t *testing.T) {
 
 	nonceInBytes, err := base64.StdEncoding.DecodeString("tHgfRQED1+pYgEZpq3dZC9ONmBCZKdx10LErTZs1k/k=")
 	assert.NoError(t, err)
-	verificationNonce, err := GetVerificationNonce(nonceInBytes, "127.0.0.1:1443",
-		tpmQuoteResponse)
+	verificationNonce, err := GetVerificationNonce(nonceInBytes, tpmQuoteResponse)
 	assert.NoError(t, err)
 	verificationNonceInBytes, err := base64.StdEncoding.DecodeString(verificationNonce)
 
@@ -63,8 +62,7 @@ func TestVerifyQuoteAndGetPCRManifestInvalidNonce(t *testing.T) {
 
 	nonceInBytes, err := base64.StdEncoding.DecodeString("xxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 	assert.NoError(t, err)
-	verificationNonce, err := GetVerificationNonce(nonceInBytes, "127.0.0.1:1443",
-		tpmQuoteResponse)
+	verificationNonce, err := GetVerificationNonce(nonceInBytes, tpmQuoteResponse)
 	assert.NoError(t, err)
 	verificationNonceInBytes, err := base64.StdEncoding.DecodeString(verificationNonce)
 
@@ -86,13 +84,11 @@ func TestGetVerificationNonceAssetTagProvisioned(t *testing.T) {
 
 	//Check error for tag provisioned but not provided
 	tpmQuoteResponse.IsTagProvisioned = true
-	_, err = GetVerificationNonce(nonceInBytes, "127.0.0.1:1443",
-		tpmQuoteResponse)
+	_, err = GetVerificationNonce(nonceInBytes, tpmQuoteResponse)
 	assert.Error(t, err)
 
 	tpmQuoteResponse.AssetTag = "0966d97d182ee8fac40bee16018e762ae46a026f0bb437600e029a755f8745a9a6bb8b3da152ea37ef52f0d855b6622f"
-	_, err = GetVerificationNonce(nonceInBytes, "127.0.0.1:1443",
-		tpmQuoteResponse)
+	_, err = GetVerificationNonce(nonceInBytes, tpmQuoteResponse)
 	assert.NoError(t, err)
 }
 

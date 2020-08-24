@@ -8,7 +8,6 @@ import "encoding/xml"
 
 // <tpm_quote_response>
 //     <timestamp>1569264156635</timestamp>
-//     <clientIp>fe80:0:0:0:a236:9fff:fef8:7229%enp134s0f1</clientIp>
 //     <errorCode>0</errorCode>
 //     <errorMessage>OK</errorMessage>
 //     <aik>MIIDSjCCAbKgAwIBAgIGAWz...</aik>
@@ -27,7 +26,6 @@ import "encoding/xml"
 type TpmQuoteResponse struct {
 	XMLName         xml.Name `xml:"tpm_quote_response"`
 	TimeStamp       int64    `xml:"timestamp"`
-	ClientIp        string   `xml:"clientIp"`
 	ErrorCode       int      `xml:"errorCode"`
 	ErrorMessage    string   `xml:"errorMessage"`
 	Aik             string   `xml:"aik"`
