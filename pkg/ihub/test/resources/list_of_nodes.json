@@ -25,7 +25,7 @@
                     "flannel.alpha.coreos.com/backend-data": "{\"VtepMAC\":\"42:95:45:72:c1:ba\"}",
                     "flannel.alpha.coreos.com/backend-type": "vxlan",
                     "flannel.alpha.coreos.com/kube-subnet-manager": "true",
-                    "flannel.alpha.coreos.com/public-ip": "10.105.168.26",
+                    "flannel.alpha.coreos.com/public-ip": "127.0.0.1",
                     "kubeadm.alpha.kubernetes.io/cri-socket": "/var/run/dockershim.sock",
                     "node.alpha.kubernetes.io/ttl": "0",
                     "volumes.kubernetes.io/controller-managed-attach-detach": "true"
@@ -94,7 +94,7 @@
                                 "f:podCIDR": {},
                                 "f:podCIDRs": {
                                     ".": {},
-                                    "v:\"10.244.0.0/24\"": {}
+                                    "v:\"127.0.0.1/24\"": {}
                                 },
                                 "f:taints": {}
                             }
@@ -214,9 +214,9 @@
                 ]
             },
             "spec": {
-                "podCIDR": "10.244.0.0/24",
+                "podCIDR": "127.0.0.1/24",
                 "podCIDRs": [
-                    "10.244.0.0/24"
+                    "127.0.0.1/24"
                 ],
                 "taints": [
                     {
@@ -285,7 +285,7 @@
                 "addresses": [
                     {
                         "type": "InternalIP",
-                        "address": "10.105.168.26"
+                        "address": "127.0.0.1"
                     },
                     {
                         "type": "Hostname",
@@ -452,7 +452,7 @@
                     "flannel.alpha.coreos.com/backend-data": "{\"VtepMAC\":\"e6:01:71:f4:26:f3\"}",
                     "flannel.alpha.coreos.com/backend-type": "vxlan",
                     "flannel.alpha.coreos.com/kube-subnet-manager": "true",
-                    "flannel.alpha.coreos.com/public-ip": "10.80.243.160",
+                    "flannel.alpha.coreos.com/public-ip": "127.0.0.1",
                     "kubeadm.alpha.kubernetes.io/cri-socket": "/var/run/dockershim.sock",
                     "node.alpha.kubernetes.io/ttl": "0",
                     "volumes.kubernetes.io/controller-managed-attach-detach": "true"
@@ -615,7 +615,7 @@
                                 "f:podCIDR": {},
                                 "f:podCIDRs": {
                                     ".": {},
-                                    "v:\"10.244.2.0/24\"": {}
+                                    "v:\"127.0.0.1/24\"": {}
                                 },
                                 "f:taints": {}
                             },
@@ -670,9 +670,9 @@
                 ]
             },
             "spec": {
-                "podCIDR": "10.244.2.0/24",
+                "podCIDR": "127.0.0.1/24",
                 "podCIDRs": [
-                    "10.244.2.0/24"
+                    "127.0.0.1/24"
                 ],
                 "taints": [
                     {
@@ -744,7 +744,7 @@
                 "addresses": [
                     {
                         "type": "InternalIP",
-                        "address": "10.80.243.160"
+                        "address": "127.0.0.1"
                     },
                     {
                         "type": "Hostname",

@@ -6,7 +6,7 @@
     "vmm_name": "VMware ESXi",
     "vmm_version": "10884925",
     "processor_info": "Haswell",
-    "host_name": "10.105.167.71",
+    "host_name": "127.0.0.1",
     "bios_name": "Intel Corporation",
     "hardware_uuid": "80D98D77-7702-E411-906E-0017A4403562",
     "tpm_version": "1.2",

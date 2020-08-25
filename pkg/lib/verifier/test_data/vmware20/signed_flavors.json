@@ -5,7 +5,7 @@
                 "id": "f362dc6c-40ec-46c9-bf92-549d4449b966",
                 "description": {
                     "flavor_part": "PLATFORM",
-                    "source": "10.105.167.111",
+                    "source": "127.0.0.1",
                     "label": "VMWARE_IntelCorporation_SE5C620.86B.00.01.0014.070920180847__06-17-2020_20-56-07",
                     "bios_name": "Intel Corporation",
                     "bios_version": "SE5C620.86B.00.01.0014.070920180847",
@@ -251,7 +251,7 @@
                 "id": "d7539d17-c9e3-4b9f-9896-7a3249dbb6a8",
                 "description": {
                     "flavor_part": "HOST_UNIQUE",
-                    "source": "10.105.167.111",
+                    "source": "127.0.0.1",
                     "label": "VMWARE_0019204C-C4B7-E811-906E-00163566263E_06-17-2020_20-56-07",
                     "bios_name": "Intel Corporation",
                     "bios_version": "SE5C620.86B.00.01.0014.070920180847",
@@ -299,7 +299,7 @@
                 "id": "72149b25-f5c8-4242-a9d7-1ea44343042b",
                 "description": {
                     "flavor_part": "OS",
-                    "source": "10.105.167.111",
+                    "source": "127.0.0.1",
                     "label": "VMWARE_VMwareESXi_6.7.0_VMwareESXi_10302608_06-17-2020_20-56-07",
                     "os_name": "VMware ESXi",
                     "os_version": "6.7.0",

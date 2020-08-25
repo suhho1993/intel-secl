@@ -6,7 +6,7 @@
         "vmm_name": "VMware ESXi",
         "vmm_version": "10302608",
         "processor_info": "Skylake",
-        "host_name": "10.105.167.111",
+        "host_name": "127.0.0.1",
         "bios_name": "Intel Corporation",
         "hardware_uuid": "0019204C-C4B7-E811-906E-00163566263E",
         "tpm_version": "2.0",

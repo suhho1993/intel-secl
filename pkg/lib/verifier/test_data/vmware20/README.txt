@@ -1,5 +1,5 @@
 Test files in this directory are from java HVS and were collected
-from via postman using ""vmware:https://t23ru24wb-103.fm.intel.com:443/sdk;h=10.105.167.111;u=administrator@vsphere.local;p=P@ssw0rd"
+from via postman using vmware connection string
 The following list describes where they came from and any alterations.
 
 - host_manifest.json: extracted from 'mtwilson/v2/host-status?filter=false'
