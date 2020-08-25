@@ -1,5 +1,4 @@
 .build-common:
-  image: golang:1.14
   stage: build
   tags:
     - k8s
@@ -14,12 +13,16 @@
     - cmd
     expire_in: 3 hour
 
-build:hvs:
+build:go-1.14:
   extends: .build-common
+  image: golang:1.14
   script:
     - echo "This is the CI job that builds hvs using go 1.14"
     - make hvs
-  artifacts:
-    paths:
-    - cmd
-    expire_in: 3 hour
+
+build:go-1.13:
+  extends: .build-common
+  image: golang:1.13
+  script:
+    - echo "This is the CI job that builds hvs using go 1.13"
+    - make hvs

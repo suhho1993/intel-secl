@@ -18,5 +18,6 @@ package:hvs:kaniko:
   before_script:
     - export COMPONENT_IN_JOB=hvs
   dependencies:
-    - build:hvs
+    - build:go-1.13
+    - build:go-1.14
   allow_failure: true

@@ -20,20 +20,3 @@ test:go-1.13:
 test:go-1.14:
   extends: .test-common
   image: golang:1.14
-
-# any reason doing this?
-# go test should have everything built already
-test:build-go-1.13:
-  image: golang:1.13
-  stage: test
-  tags:
-    - k8s
-  rules:
-    - when: always
-  before_script:
-    - git config --global http."https://${GITLAB_SERVER}".proxy ""
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${GITLAB_SERVER}".insteadOf "https://${GITLAB_SERVER}"
-    - cd $CI_PROJECT_DIR
-  script:
-    - echo "This is the CI job that test if building monorepo with go 1.13 passes"
-    - go build ./...

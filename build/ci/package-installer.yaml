@@ -17,10 +17,24 @@
       - deployments/installer
     expire_in: 1 week
   rules:
-  - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /develop$/'
-    when: on_success
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /develop$/'
+      when: on_success
 
 package:hvs:installer:
   extends: .installer-common
   script:
     - make hvs-installer
+
+package:hvs:swagger:
+  extends: .installer-common
+  artifacts:
+    paths:
+      - docs/swagger/hvs-openapi.yml
+    expire_in: 1 week
+  script:
+    - dir=$(mktemp -d)
+    - git clone https://github.com/go-swagger/go-swagger "$dir"
+    - cd "$dir"
+    - go install ./cmd/swagger
+    - cd $CI_PROJECT_DIR
+    - make hvs-swagger
