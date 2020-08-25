@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 package asset_tag
 
 import hc "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
