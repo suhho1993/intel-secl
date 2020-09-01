@@ -124,7 +124,7 @@ func TestFilterHostReportsForKubernetes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := FilterHostReports(tt.args.k, tt.args.h, sampleRootCertDirPath,sampleSamlCertPath)
+			err := FilterHostReports(tt.args.k, tt.args.h, sampleRootCertDirPath, sampleSamlCertPath)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("k8splugin/k8s_plugin_test:TestFilterHostReportsForKubernetes(): error = %v, wantErr %v", err, tt.wantErr)
@@ -320,8 +320,8 @@ func TestPostCRD(t *testing.T) {
 	crdResponse.Kind = "HostAttributesCrd"
 	crdResponse.Metadata.Name = crdName
 	crdResponse.Metadata.Namespace = "default"
-	var hostList []model.HostList
-	var host model.HostList
+	var hostList []model.Host
+	var host model.Host
 	host.HostName = "testHost"
 	host.AssetTags = map[string]string{
 		"TAG_COUNTRY": "USA",
@@ -426,7 +426,7 @@ func TestPostCRD(t *testing.T) {
 }
 
 func TestGetSignedTrustReport(t *testing.T) {
-	h1 := model.HostList{
+	h1 := model.Host{
 		HostName: "host1",
 		Trusted:  true,
 		AssetTags: map[string]string{
@@ -437,7 +437,7 @@ func TestGetSignedTrustReport(t *testing.T) {
 		},
 	}
 	type args struct {
-		h model.HostList
+		h model.Host
 	}
 	tests := []struct {
 		name    string

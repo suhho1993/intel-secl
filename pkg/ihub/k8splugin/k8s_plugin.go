@@ -34,12 +34,12 @@ import (
 
 //KubernetesDetails KubernetesDetails for getting hosts and updating CRD
 type KubernetesDetails struct {
-	Config          *config.Configuration
-	AuthToken       string
-	HostDetailsMap  map[string]HostDetails
-	PrivateKey      crypto.PrivateKey
-	PublicKeyBytes  []byte
-	K8sClient       *k8s.Client
+	Config         *config.Configuration
+	AuthToken      string
+	HostDetailsMap map[string]HostDetails
+	PrivateKey     crypto.PrivateKey
+	PublicKeyBytes []byte
+	K8sClient      *k8s.Client
 }
 
 //HostDetails HostDetails for CRD data to update in kubernetes
@@ -173,7 +173,7 @@ func FilterHostReports(k8sDetails *KubernetesDetails, hostDetails *HostDetails, 
 }
 
 //GetSignedTrustReport Creates a Signed trust-report based on the host details
-func GetSignedTrustReport(hostList model.HostList, k8sDetails *KubernetesDetails) (string, error) {
+func GetSignedTrustReport(hostList model.Host, k8sDetails *KubernetesDetails) (string, error) {
 	log.Trace("k8splugin/k8s_plugin:GetSignedTrustReport() Entering")
 	defer log.Trace("k8splugin/k8s_plugin:GetSignedTrustReport() Leaving")
 
@@ -184,7 +184,7 @@ func GetSignedTrustReport(hostList model.HostList, k8sDetails *KubernetesDetails
 	}
 	sha1Hash := base64.StdEncoding.EncodeToString(hash.Sum(nil))
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS384, model.HostList{
+	token := jwt.NewWithClaims(jwt.SigningMethodRS384, model.Host{
 		HostName:         hostList.HostName,
 		AssetTags:        hostList.AssetTags,
 		HardwareFeatures: hostList.HardwareFeatures,
@@ -275,12 +275,12 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 		crdResponse.Kind = constants.KubernetesCRDKind
 		crdResponse.Metadata.Name = crdName
 		crdResponse.Metadata.Namespace = constants.KubernetesMetaDataNameSpace
-		var hostList []model.HostList
+		var hostList []model.Host
 
 		for key := range k8sDetails.HostDetailsMap {
 
 			reportHostDetails := k8sDetails.HostDetailsMap[key]
-			var host model.HostList
+			var host model.Host
 
 			host.HostName = reportHostDetails.hostName
 			host.AssetTags = reportHostDetails.AssetTags

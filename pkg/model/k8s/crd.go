@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//HostResponse Response on getting hosts from kubernetes
+// HostResponse Response on getting hosts from kubernetes
 type HostResponse struct {
 	Items []struct {
 		Spec struct {
@@ -33,7 +33,7 @@ type HostResponse struct {
 	} `json:"items"`
 }
 
-//CRD CRD Data to update in kubernetes
+// CRD Data to update in kubernetes
 type CRD struct {
 	APIVersion string   `json:"apiVersion"`
 	Kind       string   `json:"kind"`
@@ -41,7 +41,7 @@ type CRD struct {
 	Spec       Spec     `json:"spec"`
 }
 
-//Metadata Metadata details for CRD data
+// Metadata details for CRD data
 type Metadata struct {
 	CreationTimestamp time.Time `json:"creationTimestamp"`
 	Generation        int       `json:"generation"`
@@ -52,10 +52,10 @@ type Metadata struct {
 	UID               uuid.UUID `json:"uid"`
 }
 
-//HostList Host List Details for kubernetes CRD data
-type HostList struct {
+// Host holds details of registered hosts pushed to K8s endpoint
+type Host struct {
 	AssetTags         map[string]string `json:"assetTags,omitempty"`
-	HardwareFeatures  map[string]string `json:"hardware_features,omitempty"`
+	HardwareFeatures  map[string]string `json:"hardwareFeatures,omitempty"`
 	Trust             map[string]string `json:"trust,omitempty"`
 	HostName          string            `json:"hostName"`
 	SignedTrustReport string            `json:"signedTrustReport,omitempty"`
@@ -64,7 +64,7 @@ type HostList struct {
 	jwt.StandardClaims
 }
 
-//Spec Spec details for CRD Data
+// Spec details for CRD Data
 type Spec struct {
-	HostList []HostList `json:"hostList"`
+	HostList []Host `json:"hostList"`
 }
