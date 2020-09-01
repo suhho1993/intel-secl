@@ -6,6 +6,17 @@ BUILDDATE := $(shell TZ=UTC date +%Y-%m-%dT%H:%M:%S%z)
 
 .PHONY: installer test all clean
 
+kbs:
+	cd cmd/kbs && GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.GitHash=$(GITCOMMIT)" -o kbs
+
+kbs-installer: kbs
+	mkdir -p installer
+	cp pkg/kbs/dist/linux/kbs.service installer/kbs.service
+	cp pkg/kbs/dist/linux/install.sh installer/install.sh && chmod +x installer/install.sh
+	cp cmd/kbs/kbs installer/kbs
+	makeself installer deployments/installer/kbs-$(VERSION).bin "KBS $(VERSION)" ./install.sh
+	rm -rf installer
+
 ihub:
 	cd cmd/ihub && GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/ihub/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/ihub/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/ihub/version.GitHash=$(GITCOMMIT)" -o ihub
 
@@ -14,8 +25,8 @@ ihub-installer: ihub
 	cp pkg/ihub/dist/linux/ihub.service installer/ihub.service
 	cp pkg/ihub/dist/linux/install.sh installer/install.sh && chmod +x installer/install.sh
 	cp cmd/ihub/ihub installer/ihub
-	makeself installer deployments/installer/ihub-$(VERSION).bin "Integration Hub $(VERSION)" ./install.sh
-	rm -rf bin/installer
+	makeself installer deployments/installer/ihub-$(VERSION).bin "IHub $(VERSION)" ./install.sh
+	rm -rf installer
 
 hvs:
 	cd cmd/hvs && GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/hvs/version.GitHash=$(GITCOMMIT)" -o hvs
@@ -29,7 +40,7 @@ hvs-installer: hvs
 	makeself installer deployments/installer/hvs-$(VERSION).bin "HVS $(VERSION)" ./install.sh
 	rm -rf installer
 
-installer: hvs-installer ihub-installer
+installer: hvs-installer ihub-installer kbs-installer
 
 ihub-docker: ihub
 	docker build . -f build/image/Dockerfile-ihub -t isecl/ihub:$(VERSION)
