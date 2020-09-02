@@ -30,9 +30,17 @@ func (t *CreateDefaultFlavor) Run() error {
 		return err
 	}
 	for _, fg := range defaultFlavorGroups() {
-		_, err := fgStore.Create(&fg)
-		if err != nil {
-			return errors.Wrap(err, "failed to create default flavor group \""+fg.Name+"\"")
+		// check if the default flavorgroup is already created
+		existingFG, err := fgStore.Search(&models.FlavorGroupFilterCriteria{
+			NameEqualTo: fg.Name,
+		})
+
+		// create default flavorgroup ONLY if it does not exist already
+		if len(existingFG) == 0 && err == nil {
+			_, err := fgStore.Create(&fg)
+			if err != nil {
+				return errors.Wrap(err, "failed to create default flavor group \""+fg.Name+"\"")
+			}
 		}
 	}
 	return nil
