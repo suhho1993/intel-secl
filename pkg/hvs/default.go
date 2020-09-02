@@ -189,7 +189,6 @@ func loadAlias() {
 		"db-ssl-mode":                "HVS_DB_SSL_MODE",
 		"tls-san-list":               "SAN_LIST",
 		"aas-base-url":               "AAS_API_URL",
-		"server-port":                "HVS_PORT",
 		"server-read-timeout":        "HVS_SERVER_READ_TIMEOUT",
 		"server-read-header-timeout": "HVS_SERVER_READ_HEADER_TIMEOUT",
 		"server-write-timeout":       "HVS_SERVER_WRITE_TIMEOUT",

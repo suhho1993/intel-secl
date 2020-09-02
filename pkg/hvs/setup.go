@@ -103,7 +103,7 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 	runner.ConsoleWriter = a.consoleWriter()
 	runner.ErrorWriter = a.errorWriter()
 
-	runner.AddTask("server", "", &tasks.ServerSetup{
+	runner.AddTask("server", "", &setup.ServerSetup{
 		SvrConfigPtr: &a.Config.Server,
 		ServerConfig: commConfig.ServerConfig{
 			Port:              viper.GetInt("server-port"),
@@ -114,6 +114,7 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 			MaxHeaderBytes:    viper.GetInt("server-max-header-bytes"),
 		},
 		ConsoleWriter: a.consoleWriter(),
+		DefaultPort: constants.DefaultHVSListenerPort,
 	})
 	runner.AddTask("service", "", &tasks.ServiceSetup{
 		SvcConfigPtr: &a.Config.HVS,

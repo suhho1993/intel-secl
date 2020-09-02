@@ -2,15 +2,13 @@
  * Copyright (C) 2020 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package tasks
+package setup
 
 import (
 	"fmt"
 	"io"
 
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/pkg/errors"
 )
 
@@ -20,6 +18,7 @@ type ServerSetup struct {
 	SvrConfigPtr  *commConfig.ServerConfig
 	ConsoleWriter io.Writer
 
+	DefaultPort int
 	envPrefix   string
 	commandName string
 }
@@ -27,7 +26,7 @@ type ServerSetup struct {
 const svrEnvHelpPrompt = "Following environment variables are required for Server setup:"
 
 var svrEnvHelp = map[string]string{
-	"SERVER_PORT": "The port on which to listen, or use HVS_PORT alternatively",
+	"SERVER_PORT": "The port on which to listen",
 }
 
 func (t *ServerSetup) Run() error {
@@ -36,7 +35,7 @@ func (t *ServerSetup) Run() error {
 	}
 	if t.Port < 1024 ||
 		t.Port > 65535 {
-		t.Port = constants.DefaultHVSListenerPort
+		t.Port = t.DefaultPort
 	}
 	t.SvrConfigPtr.Port = t.Port
 	t.SvrConfigPtr.ReadTimeout = t.ReadTimeout
@@ -59,7 +58,7 @@ func (t *ServerSetup) Validate() error {
 }
 
 func (t *ServerSetup) PrintHelp(w io.Writer) {
-	setup.PrintEnvHelp(w, svrEnvHelpPrompt, t.envPrefix, svrEnvHelp)
+	PrintEnvHelp(w, svrEnvHelpPrompt, t.envPrefix, svrEnvHelp)
 	fmt.Fprintln(w, "")
 }
 

@@ -71,7 +71,7 @@ Endorsement CA | ENDORSEMENT_CA_CERT_FILE | - |`string` | |
 \- | ENDORSEMENT_CA_COMMON_NAME | - |`string` | |
 \- | ENDORSEMENT_CA_ISSUER | - |`string` | |
 \- | ENDORSEMENT_CA_VALIDITY_DAYS | - |`int` | |
-Server | SERVER_PORT | - |`int` | | HVS_PORT
+Server | SERVER_PORT | - |`int` | |
 \- | SERVER_READ_TIMEOUT | - |`Duration` | | HVS_SERVER_READ_TIMEOUT
 \- | SERVER_READ_HEADER_TIMEOUT | - |`Duration` | | HVS_SERVER_READ_HEADER_TIMEOUT
 \- | SERVER_WRITE_TIMEOUT | - |`Duration` | | HVS_SERVER_WRITE_TIMEOUT
