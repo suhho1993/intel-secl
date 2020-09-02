@@ -17,18 +17,18 @@ const (
 	ExecLinkPath = "/usr/bin/" + ServiceUserName
 	LogDir       = "/var/log/" + ServiceDir
 
-	// certificates' path
-	TrustedJWTSigningCertsDir = ConfigDir + "certs/trustedjwt/"
-	TrustedCaCertsDir         = ConfigDir + "certs/trustedca/"
-	SamlCertsDir              = ConfigDir + "certs/saml/"
-	TpmCertsDir               = ConfigDir + "certs/tpm/"
-
 	ConfigDir                 = "/etc/" + ServiceDir
 	DefaultConfigFilePath     = ConfigDir + "config.yml"
 	ConfigFile                = "config"
 
 	KeysDir                   = HomeDir + "keys/"
 	KeysTransferPolicyDir     = HomeDir + "keys-transfer-policy/"
+
+	// certificates' path
+	TrustedJWTSigningCertsDir = ConfigDir + "certs/trustedjwt/"
+	TrustedCaCertsDir         = ConfigDir + "certs/trustedca/"
+	SamlCertsDir              = ConfigDir + "certs/saml/"
+	TpmIdentityCertsDir       = ConfigDir + "certs/tpm-identity/"
 
 	// defaults
 	DefaultKeyManager         = "Directory"
@@ -63,27 +63,4 @@ const (
 
 	// log constants
 	DefaultLogEntryMaxlength = 1500
-)
-
-//Roles and permissions
-const (
-	Administrator = "*:*:*"
-
-	KeyCreate   = "keys:create"
-	KeyRetrieve = "keys:retrieve"
-	KeyDelete   = "keys:delete"
-	KeySearch   = "keys:search"
-	KeyRegister = "keys:register"
-	KeyTransfer = "keys:transfer"
-
-	SamlCertCreate = "saml_certificates:create"
-	SamlCertSearch = "saml_certificates:search"
-
-	TpmCertCreate = "tpm_identity_certificates:create"
-	TpmCertSearch = "tpm_identity_certificates:search"
-
-	KeyTransferPolicyCreate   = "key_transfer_policies:create"
-	KeyTransferPolicyRetrieve = "key_transfer_policies:retrieve"
-	KeyTransferPolicyDelete   = "key_transfer_policies:delete"
-	KeyTransferPolicySearch   = "key_transfer_policies:search"
 )
