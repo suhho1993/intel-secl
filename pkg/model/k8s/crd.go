@@ -54,6 +54,7 @@ type Metadata struct {
 
 // Host holds details of registered hosts pushed to K8s endpoint
 type Host struct {
+	Updated           *time.Time        `json:"updatedTime,omitempty"`
 	AssetTags         map[string]string `json:"assetTags,omitempty"`
 	HardwareFeatures  map[string]string `json:"hardwareFeatures,omitempty"`
 	Trust             map[string]string `json:"trust,omitempty"`

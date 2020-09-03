@@ -9,6 +9,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/k8s"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/openstack"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -22,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
-	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 )
 
 var log = commLog.GetDefaultLogger()
@@ -115,27 +115,19 @@ func (app *App) startDaemon() error {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
+	// invoke for the first time before scheduling regular runs
+	app.kickOffPlugins(k, o)
+
 	tick := time.NewTicker(time.Minute * time.Duration(configuration.IHUB.PollIntervalMinutes))
 	go func() {
 		secLog.Infof("startService:startDaemon() Scheduler will start at : %v", time.Now().Local().Add(
 			time.Minute*time.Duration(configuration.IHUB.PollIntervalMinutes)))
 		for t := range tick.C {
-			log.Debugf("startService:startDaemon() The Endpoint is : %s", configuration.Endpoint.Type)
 			secLog.Debugf("startService:startDaemon() Scheduler started at : %v", t)
-
-			if configuration.Endpoint.Type == constants.OpenStackTenant {
-				err := openstackplugin.SendDataToEndPoint(o)
-				if err != nil {
-					log.WithError(err).Error("startService:startDaemon() Error in pushing OpenStack traits")
-				}
-			} else {
-				err := k8splugin.SendDataToEndPoint(k)
-				if err != nil {
-					log.WithError(err).Error("startService:startDaemon() : Error in pushing Kubernetes CRDs")
-				}
-			}
+			app.kickOffPlugins(k, o)
 		}
 	}()
+
 	secLog.Info(commLogMsg.ServiceStart)
 
 	<-stop
@@ -143,4 +135,22 @@ func (app *App) startDaemon() error {
 
 	secLog.Info(commLogMsg.ServiceStop)
 	return nil
+}
+
+func (app *App) kickOffPlugins(k k8splugin.KubernetesDetails, o openstackplugin.OpenstackDetails) {
+
+	log.Debugf("startService:kickOffPlugins() The Endpoint is : %s", app.Config.Endpoint.Type)
+
+	if app.Config.Endpoint.Type == constants.OpenStackTenant {
+		err := openstackplugin.SendDataToEndPoint(o)
+		if err != nil {
+			log.WithError(err).Error("startService:kickOffPlugins() Error in pushing OpenStack traits")
+		}
+	} else {
+		err := k8splugin.SendDataToEndPoint(k)
+		if err != nil {
+			log.WithError(err).Error("startService:kickOffPlugins() : Error in pushing Kubernetes CRDs")
+		}
+
+	}
 }

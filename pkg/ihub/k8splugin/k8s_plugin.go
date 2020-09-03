@@ -32,7 +32,7 @@ import (
 	"encoding/base64"
 )
 
-//KubernetesDetails KubernetesDetails for getting hosts and updating CRD
+//KubernetesDetails for getting hosts and updating CRD
 type KubernetesDetails struct {
 	Config         *config.Configuration
 	AuthToken      string
@@ -42,7 +42,7 @@ type KubernetesDetails struct {
 	K8sClient      *k8s.Client
 }
 
-//HostDetails HostDetails for CRD data to update in kubernetes
+//HostDetails for CRD data to update in kubernetes
 type HostDetails struct {
 	hostName          string
 	hostIP            string
@@ -224,7 +224,7 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 		Body:   nil,
 	})
 	if err != nil {
-		return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in fetching the kuberenetes CRD")
+		return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in fetching the kubernetes CRD")
 	}
 	var crdResponse model.CRD
 	if res.StatusCode == http.StatusOK {
@@ -237,7 +237,7 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 
 		err = json.Unmarshal(body, &crdResponse)
 		if err != nil {
-			return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in UnMarshaling the CRD Reponse")
+			return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in Unmarshalling the CRD Reponse")
 		}
 
 		log.Debug("k8splugin/k8s_plugin:UpdateCRD() PUT Call to be made")
@@ -258,6 +258,9 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 					if err != nil {
 						return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in getting the signed trust report")
 					}
+					// ensure the labels get updated by sending the latest timestamp
+					t := time.Now().UTC()
+					k8hostList[n].Updated = &t
 				}
 			}
 		}
@@ -288,6 +291,7 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 			host.Trust = reportHostDetails.Trust
 			host.Trusted = reportHostDetails.trusted
 			host.ValidTo = reportHostDetails.ValidTo
+			host.Updated = nil
 			signedtrustReport, err := GetSignedTrustReport(host, k8sDetails)
 			if err != nil {
 				return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in Getting SignedTrustReport")
