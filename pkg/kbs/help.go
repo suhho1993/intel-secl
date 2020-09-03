@@ -30,11 +30,11 @@ Usage of kbs setup:
 		-f|--file <answer-file>     the answer file with required arguments
 
 Available Tasks for setup:
-	all                             Runs all setup tasks
-	server                          Setup http server on given port
-	download-ca-cert                Download CMS root CA certificate
-	download-cert-tls               Download CA certificate from CMS for tls
-	create-default-transfer-policy  Create default key transfer policy for KBS
+	all                                 Runs all setup tasks
+	server                              Setup http server on given port
+	download-ca-cert                    Download CMS root CA certificate
+	download-cert-tls                   Download CA certificate from CMS for tls
+	create-default-key-transfer-policy  Create default key transfer policy for KBS
 `
 
 func (app *App) printUsage() {

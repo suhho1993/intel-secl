@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/tasks"
+	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -90,6 +92,19 @@ func (app *App) setupTaskRunner() (*setup.Runner, error) {
 	runner.ConsoleWriter = app.consoleWriter()
 	runner.ErrorWriter = app.errorWriter()
 
+	runner.AddTask("server", "", &setup.ServerSetup{
+		SvrConfigPtr: &app.Config.Server,
+		ServerConfig: commConfig.ServerConfig{
+			Port:              viper.GetInt("server-port"),
+			ReadTimeout:       viper.GetDuration("server-read-timeout"),
+			ReadHeaderTimeout: viper.GetDuration("server-read-header-timeout"),
+			WriteTimeout:      viper.GetDuration("server-write-timeout"),
+			IdleTimeout:       viper.GetDuration("server-idle-timeout"),
+			MaxHeaderBytes:    viper.GetInt("server-max-header-bytes"),
+		},
+		ConsoleWriter: app.consoleWriter(),
+		DefaultPort:   constants.DefaultKBSListenerPort,
+	})
 	runner.AddTask("download-ca-cert", "", &setup.DownloadCMSCert{
 		CaCertDirPath: constants.TrustedCaCertsDir,
 		ConsoleWriter: app.consoleWriter(),
@@ -110,6 +125,10 @@ func (app *App) setupTaskRunner() (*setup.Runner, error) {
 		ConsoleWriter: app.consoleWriter(),
 		CmsBaseURL:    viper.GetString("cms-base-url"),
 		BearerToken:   viper.GetString("bearer-token"),
+	})
+	runner.AddTask("create-default-key-transfer-policy", "", &tasks.CreateDefaultTransferPolicy{
+		DefaultTransferPolicyFile: constants.DefaultTransferPolicyFile,
+		ConsoleWriter:             app.consoleWriter(),
 	})
 
 	return runner, nil
