@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"encoding/xml"
 	"fmt"
-	samlVerifier "github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	"net/url"
 	"strings"
 
@@ -18,8 +17,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commonLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
-	model "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	"github.com/pkg/errors"
 )
 
@@ -89,7 +87,7 @@ func initializeClient(con *config.Configuration, certDirectory string) (*vs.Clie
 }
 
 //GetHostReports method is used to retieve the SAML report from HVS
-func GetHostReports(h string, conf *config.Configuration, certDirectory, samlCertPath string) (*hvs.Saml, error) {
+func GetHostReports(h string, conf *config.Configuration, certDirectory, samlCertPath string) (*saml.Saml, error) {
 	log.Trace("attestationPlugin/vs_plugin:GetHostReports() Entering")
 	defer log.Trace("attestationPlugin/vs_plugin:GetHostReports() Leaving")
 
@@ -115,14 +113,14 @@ func GetHostReports(h string, conf *config.Configuration, certDirectory, samlCer
 		return nil, errors.Wrap(err, "attestationPlugin/vs_plugin:GetHostReports() Error in fetching SAML report")
 	}
 
-	var samlReportUnmarshalled *model.Saml
+	var samlReportUnmarshalled *saml.Saml
 	err = xml.Unmarshal(samlReportBytes, &samlReportUnmarshalled)
 	if err != nil {
 		log.WithError(err).Error("attestationPlugin/vs_plugin:GetHostReports() Error unmarshalling SAML report")
 		return nil, errors.New("Error unmarshalling SAML report")
 	}
 
-	verified := samlVerifier.VerifySamlSignature(string(samlReportBytes), samlCertPath, certDirectory)
+	verified := saml.VerifySamlSignature(string(samlReportBytes), samlCertPath, certDirectory)
 
 	if !verified {
 		return nil, errors.New("attestationPlugin/vs_plugin:GetHostReports() SAML verification failed and report is invalid")

@@ -19,7 +19,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/ihub/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/ihub/constants"
 	testutility "github.com/intel-secl/intel-secl/v3/pkg/ihub/test"
-	hvsModel "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	"github.com/pkg/errors"
 )
 
@@ -95,7 +95,7 @@ func TestGetHostsFromOpenStack(t *testing.T) {
 
 }
 
-func mockGetHostReports(h string, c *config.Configuration, t *testing.T) (*hvsModel.Saml, error) {
+func mockGetHostReports(h string, c *config.Configuration, t *testing.T) (*saml.Saml, error) {
 	server, port := testutility.MockServer(t)
 
 	defer server.Close()
@@ -126,7 +126,7 @@ func mockGetHostReports(h string, c *config.Configuration, t *testing.T) (*hvsMo
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 
-	samlReport := &hvsModel.Saml{}
+	samlReport := &saml.Saml{}
 	err = xml.Unmarshal([]byte(body), samlReport)
 
 	return samlReport, err

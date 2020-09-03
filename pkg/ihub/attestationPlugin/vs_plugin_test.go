@@ -14,7 +14,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/vs"
 	"github.com/intel-secl/intel-secl/v3/pkg/ihub/config"
 	testutility "github.com/intel-secl/intel-secl/v3/pkg/ihub/test"
-	hvsModel "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 )
 
 var sampleSamlCertPath = testutility.SampleSamlCertPath
@@ -32,7 +32,7 @@ func TestGetHostReports(t *testing.T) {
 		t.Log("attestationPlugin/vs_plugin_test:TestGetHostReports() : Unable to read file")
 	}
 
-	samlReport := &hvsModel.Saml{}
+	samlReport := &saml.Saml{}
 	err = xml.Unmarshal(report, samlReport)
 
 	defer server.Close()
@@ -43,7 +43,7 @@ func TestGetHostReports(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *hvsModel.Saml
+		want *saml.Saml
 	}{
 		{
 			name: "TestGetHostReports Test 1",

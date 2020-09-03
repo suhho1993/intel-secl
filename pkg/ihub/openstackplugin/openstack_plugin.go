@@ -21,7 +21,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/ihub/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/ihub/constants"
 	commonLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
-	hvsModel "github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
 	model "github.com/intel-secl/intel-secl/v3/pkg/model/openstack"
 	"github.com/pkg/errors"
 )
@@ -123,7 +123,7 @@ func FilterHostReportsForOpenstack(hostDetails *HostDetails, openstackDetails *O
 	return nil
 }
 
-func getCustomTraitsFromReport(hostDetails *HostDetails, samlReport *hvsModel.Saml) error {
+func getCustomTraitsFromReport(hostDetails *HostDetails, samlReport *saml.Saml) error {
 
 	log.Trace("openstackplugin/openstack_plugin:getCustomTraitsFromReport() Entering")
 	defer log.Trace("openstackplugin/openstack_plugin:getCustomTraitsFromReport() Leaving")
