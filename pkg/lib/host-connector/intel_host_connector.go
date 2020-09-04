@@ -152,10 +152,12 @@ func (ic *IntelConnector) GetHostManifestAcceptNonce(nonce string) (types.HostMa
 	// it will only be there if workload-agent is installed.
 	bindingKeyCertificateBase64 := ""
 	if bindingKeyBytes != nil && len(bindingKeyBytes) > 0 {
-		bindingKeyCertificate, _ := pem.Decode(bindingKeyBytes)
-		bindingKeyCertificateBase64 = base64.StdEncoding.EncodeToString(bindingKeyCertificate.Bytes)
+		if bindingKeyCertificate, err := pem.Decode(bindingKeyBytes); err != nil {
+			log.Warn("intel_host_connector:GetHostManifestAcceptNonce() - Could not decode Binding key certificate. Unexpected response from client")
+		} else {
+			bindingKeyCertificateBase64 = base64.StdEncoding.EncodeToString(bindingKeyCertificate.Bytes)
+		}
 	}
-
 	aikCertificateBase64 := base64.StdEncoding.EncodeToString(aikPem.Bytes)
 
 	hostManifest.PcrManifest = pcrManifest
