@@ -35,6 +35,7 @@ func New(reqBufSize, workBufSize int, procReq procReq, procWork procWork, quit c
 		defer wg.Done()
 		l := list.New()
 		var w interface{}
+		var getNext bool
 		for {
 			if l.Len() == 0 {
 				select {
@@ -42,12 +43,19 @@ func New(reqBufSize, workBufSize int, procReq procReq, procWork procWork, quit c
 					return
 				case r := <-req:
 					if procReq != nil {
-						w = procReq(r)
+						l.PushBack(procReq(r))
 					} else {
-						w = r
+						l.PushBack(r)
 					}
+					getNext = true
 				}
+
 			}
+			if getNext {
+				w = l.Remove(l.Front())
+				getNext = false
+			}
+
 			select {
 			case <-quit:
 				return
@@ -61,10 +69,7 @@ func New(reqBufSize, workBufSize int, procReq procReq, procWork procWork, quit c
 				if procWork != nil {
 					procWork(w)
 				}
-				if l.Len() != 0 {
-					w = l.Remove(l.Front())
-				}
-
+				getNext = true
 			}
 
 		}
