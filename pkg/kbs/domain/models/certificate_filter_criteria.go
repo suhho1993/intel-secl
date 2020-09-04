@@ -14,7 +14,6 @@ type CertificateFilterCriteria struct {
 	SubjectContains string
 	IssuerEqualTo   string
 	IssuerContains  string
-	Digest          string
 	ValidBefore     time.Time
 	ValidAfter      time.Time
 	ValidOn         time.Time
