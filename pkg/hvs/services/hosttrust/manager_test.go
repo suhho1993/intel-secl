@@ -29,7 +29,7 @@ func TestHostTrustManagerNewService(t *testing.T) {
 
 	qs := mocks.NewQueueStore()
 	hs := mocks.NewMockHostStore()
-	hss := mocks.NewFakeHostStatusStore()
+	hss := mocks.NewMockHostStatusStore()
 	hwUuid := uuid.New()
 
 	newHost, err := hs.Create(&hvs.Host{
@@ -142,7 +142,7 @@ func TestVerifier_Verify(t *testing.T) {
 
 	report, err := v.Verify(hostId, &hostManifest, false)
 	fmt.Println(report.TrustReport.Trusted)
-  //assert.Equal(t, report.TrustReport.Trusted, true)
+	//assert.Equal(t, report.TrustReport.Trusted, true)
 	fmt.Println(report.Saml)
 	assert.NoError(t, err)
 }

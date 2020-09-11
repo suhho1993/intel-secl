@@ -38,7 +38,7 @@ var _ = Describe("DeploySoftwareManifestController", func() {
 		router = mux.NewRouter()
 		flavorStore = mocks.NewFakeFlavorStoreWithAllFlavors("../../lib/verifier/test_data/intel20/signed_flavors.json")
 		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
-		hostStatusStore = mocks.NewFakeHostStatusStore()
+		hostStatusStore = mocks.NewMockHostStatusStore()
 		hostStore = mocks.NewMockHostStore()
 		hostCredentialStore = mocks.NewMockHostCredentialStore()
 

@@ -35,7 +35,7 @@ var _ = Describe("ReportController", func() {
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		hostStore = mocks.NewMockHostStore()
-		hostStatusStore = mocks.NewFakeHostStatusStore()
+		hostStatusStore = mocks.NewMockHostStatusStore()
 		reportStore = mocks.NewMockReportStore()
 		reportController = controllers.NewReportController(reportStore, hostStore, hostStatusStore, hostTrustManager)
 	})

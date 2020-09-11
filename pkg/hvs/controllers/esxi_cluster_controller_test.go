@@ -41,7 +41,7 @@ var _ = Describe("ESXiClusterController", func() {
 		router = mux.NewRouter()
 		esxiClusterStore = mocks.NewFakeESXiClusterStore()
 		hostStore = mocks.NewMockHostStore()
-		hostStatusStore = mocks.NewFakeHostStatusStore()
+		hostStatusStore = mocks.NewMockHostStatusStore()
 		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
 		hostCredentialStore = mocks.NewMockHostCredentialStore()
 		dekBase64 := "gcXqH8YwuJZ3Rx4qVzA/zhVvkTw2TL+iRAC9T3E6lII="

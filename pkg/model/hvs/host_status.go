@@ -14,7 +14,7 @@ import (
 // last successful connection
 type HostStatusInformation struct {
 	HostState         HostState `json:"host_state"`
-	LastTimeConnected time.Time `json:"last_time_connected,omitempty"`
+	LastTimeConnected time.Time `json:"last_time_connected"`
 }
 
 // HostStatus contains the response for the Host Status API for an individual host

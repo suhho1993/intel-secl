@@ -45,7 +45,7 @@ var _ = Describe("FlavorController", func() {
 		certStore := mocks.NewFakeCertificatesStore()
 		tagCertStore := mocks.NewFakeTagCertificateStore()
 		hostStore = mocks.NewMockHostStore()
-		hostStatusStore = mocks.NewFakeHostStatusStore()
+		hostStatusStore = mocks.NewMockHostStatusStore()
 		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
 		hostCredentialStore = mocks.NewMockHostCredentialStore()
 

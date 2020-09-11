@@ -38,7 +38,7 @@ var _ = Describe("HostController", func() {
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		hostStore = mocks.NewMockHostStore()
-		hostStatusStore = mocks.NewFakeHostStatusStore()
+		hostStatusStore = mocks.NewMockHostStatusStore()
 		flavorGroupStore = mocks.NewFakeFlavorgroupStore()
 		hostCredentialStore = mocks.NewMockHostCredentialStore()
 

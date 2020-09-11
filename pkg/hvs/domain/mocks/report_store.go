@@ -63,7 +63,7 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]m
 		return nil, nil
 	}
 	hostStore := NewMockHostStore()
-	hostStatusStore := NewFakeHostStatusStore()
+	hostStatusStore := NewMockHostStatusStore()
 	var reports []models.HVSReport
 	var hosts []*hvs.Host
 	var hostStatuses []hvs.HostStatus
@@ -92,11 +92,11 @@ func (store *MockReportStore) Search(criteria *models.ReportFilterCriteria) ([]m
 			}
 		}
 	} else if criteria.HostStatus != "" {
-		for _, t := range hostStatusStore.HostStatusStore {
-			if hvs.GetHostState(criteria.HostStatus) == t.HostStatusInformation.HostState {
-				hostStatuses = append(hostStatuses, t)
-			}
-		}
+		hostStatuses, _ = hostStatusStore.Search(&models.HostStatusFilterCriteria{
+			HostStatus:    criteria.HostStatus,
+			LatestPerHost: true,
+		})
+
 		for _, h := range hostStatuses {
 			for _, r := range store.reportStore {
 				if h.HostID == r.HostID {
