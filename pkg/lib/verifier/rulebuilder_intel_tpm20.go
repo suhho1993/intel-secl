@@ -9,6 +9,8 @@ package verifier
 //
 
 import (
+	"reflect"
+
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	flavormodel "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
@@ -16,7 +18,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	ta "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
-	"reflect"
 )
 
 type ruleBuilderIntelTpm20 struct {
@@ -89,7 +90,7 @@ func (builder *ruleBuilderIntelTpm20) GetPlatformRules() ([]rules.Rule, error) {
 	//
 	// Add 'PcrEventLogIntegrity' rules...
 	//
-	if builder.hostManifest.HostInfo.TbootInstalled {
+	if builder.signedFlavor.Flavor.Meta.Description.TbootInstalled == "true" {
 		pcrEventLogIntegrityRules, err := getPcrEventLogIntegrityRules(pcrs, &builder.signedFlavor.Flavor, common.FlavorPartPlatform)
 		if err != nil {
 			return nil, err
@@ -155,7 +156,7 @@ func (builder *ruleBuilderIntelTpm20) GetOsRules() ([]rules.Rule, error) {
 	//
 	// Add 'PcrEventLogIntegrity' rules...
 	//
-	if builder.hostManifest.HostInfo.TbootInstalled {
+	if builder.signedFlavor.Flavor.Meta.Description.TbootInstalled == "true" {
 		pcrEventLogIntegrityRules, err := getPcrEventLogIntegrityRules(pcr17, &builder.signedFlavor.Flavor, common.FlavorPartOs)
 		if err != nil {
 			return nil, err
@@ -200,7 +201,7 @@ func (builder *ruleBuilderIntelTpm20) GetHostUniqueRules() ([]rules.Rule, error)
 	//
 	// Add 'PcrEventLogIntegrity' rules...
 	//
-	if builder.hostManifest.HostInfo.TbootInstalled {
+	if builder.signedFlavor.Flavor.Meta.Description.TbootInstalled == "true" {
 		pcrEventLogIntegrityRules, err := getPcrEventLogIntegrityRules(pcr17and18, &builder.signedFlavor.Flavor, common.FlavorPartHostUnique)
 		if err != nil {
 			return nil, err
@@ -296,20 +297,30 @@ func (builder *ruleBuilderIntelTpm20) GetSoftwareRules() ([]rules.Rule, error) {
 //   - If SUEFI is enabled: add PCR0-PCR7
 func (builder *ruleBuilderIntelTpm20) getPlatformPcrsFromHardwareMeta() ([]types.PcrIndex, error) {
 
+	var feature *flavormodel.Feature
 	var pcrs []types.PcrIndex
 
 	pcrs = append(pcrs, types.PCR0)
 
-	if builder.hostManifest.HostInfo.HardwareFeatures.CBNT != nil {
-		if builder.hostManifest.HostInfo.HardwareFeatures.CBNT.Enabled {
-			if builder.hostManifest.HostInfo.HardwareFeatures.CBNT.Meta.Profile == "" {
+	if builder.signedFlavor.Flavor.Hardware == nil {
+		return nil, errors.New("The flavor's Hardware information is not present")
+	}
+
+	feature = builder.signedFlavor.Flavor.Hardware.Feature
+	if feature == nil {
+		return nil, errors.New("The flavor's Feature information is not present")
+	}
+
+	if feature.CBNT != nil {
+		if feature.CBNT.Enabled {
+			if feature.CBNT.Profile == "" {
 				pcrs = append(pcrs, types.PCR7)
 			}
 		}
 	}
 
-	if builder.hostManifest.HostInfo.HardwareFeatures.SUEFI != nil {
-		if builder.hostManifest.HostInfo.HardwareFeatures.SUEFI.Enabled {
+	if feature.SUEFI != nil {
+		if feature.SUEFI.Enabled {
 			suefiPcrs := []types.PcrIndex{
 				types.PCR1,
 				types.PCR2,
