@@ -31,8 +31,13 @@ hvs-installer: hvs
 
 installer: hvs-installer ihub-installer
 
+ihub-docker: ihub
+	docker build . -f build/image/Dockerfile-ihub -t isecl/ihub:$(VERSION)
+	docker save isecl/ihub:$(VERSION) > deployments/docker/docker-ihub-$(VERSION)-$(GITCOMMIT).tar
+
 hvs-docker: hvs
-	docker build . -f build/image/Dockerfile-hvs -t hvs:$(VERSION)
+	docker build . -f build/image/Dockerfile-hvs -t isecl/hvs:$(VERSION)
+	docker save isecl/hvs:$(VERSION) > deployments/docker/docker-hvs-$(VERSION)-$(GITCOMMIT).tar
 
 hvs-swagger:
 	mkdir -p docs/swagger
@@ -49,3 +54,4 @@ all: clean installer test
 clean:
 	rm -f cover.*
 	rm -rf deployments/installer/*.bin
+	rm -rf deployments/docker/*.tar
