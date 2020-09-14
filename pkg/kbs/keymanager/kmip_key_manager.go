@@ -26,7 +26,7 @@ func (km *KmipManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttributes
 	var err error
 	var kmipId string
 
-	if request.KeyInformation.Algorithm == "AES" {
+	if request.KeyInformation.Algorithm == constants.CRYPTOALG_AES {
 		kmipId, err = km.client.CreateSymmetricKey(constants.KMIP_CRYPTOALG_AES, request.KeyInformation.KeyLength)
 		if err != nil {
 			return nil, err
@@ -41,7 +41,7 @@ func (km *KmipManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttributes
 		KeyLength:        request.KeyInformation.KeyLength,
 		KmipKeyID:        kmipId,
 		TransferPolicyId: request.TransferPolicyID,
-		CreatedAt:        time.Now(),
+		CreatedAt:        time.Now().UTC(),
 		Label:            request.Label,
 		Usage:            request.Usage,
 	}
@@ -75,7 +75,7 @@ func (km *KmipManager) TransferKey(attributes *models.KeyAttributes) ([]byte, er
 		return nil, errors.New("key is not created with KMIP key manager")
 	}
 
-	if attributes.Algorithm == "AES" {
+	if attributes.Algorithm == constants.CRYPTOALG_AES {
 		return km.client.GetSymmetricKey(attributes.KmipKeyID)
 	} else {
 		return nil, errors.Errorf("%s algorithm is not supported", attributes.Algorithm)

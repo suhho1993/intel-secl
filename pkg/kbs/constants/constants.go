@@ -13,17 +13,16 @@ const (
 	ApiVersion      = "/v1"
 	ServiceUserName = "kbs"
 
-	HomeDir      = "/opt/" + ServiceDir
-	RunDirPath   = "/run/" + ServiceDir
-	ExecLinkPath = "/usr/bin/" + ServiceUserName
-	LogDir       = "/var/log/" + ServiceDir
+	HomeDir         = "/opt/" + ServiceDir
+	RunDirPath      = "/run/" + ServiceDir
+	ExecLinkPath    = "/usr/bin/" + ServiceUserName
+	LogDir          = "/var/log/" + ServiceDir
 
-	ConfigDir                 = "/etc/" + ServiceDir
-	DefaultConfigFilePath     = ConfigDir + "config.yml"
-	ConfigFile                = "config"
+	ConfigDir             = "/etc/" + ServiceDir
+	ConfigFile            = "config"
 
-	KeysDir                   = HomeDir + "keys/"
-	KeysTransferPolicyDir     = HomeDir + "keys-transfer-policy/"
+	KeysDir               = HomeDir + "keys/"
+	KeysTransferPolicyDir = HomeDir + "keys-transfer-policy/"
 
 	// certificates' path
 	TrustedJWTSigningCertsDir = ConfigDir + "certs/trustedjwt/"
@@ -35,17 +34,15 @@ const (
 	DefaultKeyManager         = "Directory"
 	DefaultEndpointUrl        = "http://localhost"
 	DefaultTransferPolicy     = "urn:intel:trustedcomputing:key-transfer-policy:require-trust-or-authorization"
+	DefaultConfigFilePath     = ConfigDir + "config.yml"
 	DefaultTransferPolicyFile = ConfigDir + "default_transfer_policy"
 
 	// default locations for tls certificate and key
-	DefaultTLSCertPath  = ConfigDir + "tls-cert.pem"
-	DefaultTLSKeyPath   = ConfigDir + "tls.key"
+	DefaultTLSCertPath = ConfigDir + "tls-cert.pem"
+	DefaultTLSKeyPath  = ConfigDir + "tls.key"
 
 	// service remove command
-	ServiceRemoveCmd = "systemctl disable kbs"
-
-	// kmip library ldconfig file
-	LdConfigFile = "/etc/ld.so.conf.d/kmip.conf"
+	ServiceRemoveCmd   = "systemctl disable kbs"
 
 	// tls constants
 	DefaultKbsTlsCn     = "KBS TLS Certificate"
@@ -54,7 +51,7 @@ const (
 	DefaultKeyLength    = 3072
 
 	// jwt constants
-	JWTCertsCacheTime = "1m"
+	JWTCertsCacheTime   = "1m"
 
 	// server constants
 	DefaultReadTimeout       = 30 * time.Second
@@ -71,9 +68,17 @@ const (
 	DirectoryKeyManager = "directory"
 	KmipKeyManager      = "kmip"
 
+	// algorithm constants
+	CRYPTOALG_AES = "AES"
+	CRYPTOALG_RSA = "RSA"
+	CRYPTOALG_EC  = "EC"
+
 	// kmip constants
-	KMIP_CRYPTOALG_AES   = 0x03
-	KMIP_CRYPTOALG_RSA   = 0x04
-	KMIP_CRYPTOALG_ECDSA = 0x06
-	KMIP_CLIENT_SUCCESS  = 0
+	KMIP_CRYPTOALG_AES  = 0x03
+	KMIP_CRYPTOALG_RSA  = 0x04
+	KMIP_CRYPTOALG_EC   = 0x06
+	KMIP_CLIENT_SUCCESS = 0x00
+
+	// kmip library ldconfig file
+	LdConfigFile  = "/etc/ld.so.conf.d/kmip.conf"
 )

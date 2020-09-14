@@ -11,8 +11,11 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/keymanager"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca"
@@ -23,9 +26,21 @@ import (
 var defaultLog = log.GetDefaultLogger()
 
 //IsTrustedByHvs verifies if the client can be trusted for transfer
-func IsTrustedByHvs(saml string, samlReport *samlLib.Saml, config domain.KeyControllerConfig) (bool, *x509.Certificate) {
+func IsTrustedByHvs(saml string, samlReport *samlLib.Saml, keyId uuid.UUID, config domain.KeyControllerConfig, keyManager *keymanager.RemoteManager) (bool, *x509.Certificate) {
 	defaultLog.Trace("keytransfer/transfer_with_saml:IsTrustedByHvs() Entering")
 	defer defaultLog.Trace("keytransfer/transfer_with_saml:IsTrustedByHvs() Leaving")
+
+	usagePolicyTags := make(map[string]string, 0)
+	key, _ := keyManager.RetrieveKey(keyId)
+	if key != nil && key.Usage != "" {
+		usagePolicies := strings.Split(key.Usage, ",")
+
+		// create a map for the usage policies
+		for _, usagePolicy := range usagePolicies {
+			tagKeyValuePair := strings.Split(usagePolicy, ":")
+			usagePolicyTags[strings.ToLower(tagKeyValuePair[0])] = tagKeyValuePair[1]
+		}
+	}
 
 	//Remove Indentation from Request body
 	pattern := regexp.MustCompile(`( *)<`)
@@ -37,6 +52,8 @@ func IsTrustedByHvs(saml string, samlReport *samlLib.Saml, config domain.KeyCont
 	}
 
 	var err error
+	var assetTagDeployed bool
+	tagsDeployedOnHost := make(map[string]string, 0)
 	var bindingKeyCertBytes, aikCertBytes []byte
 	for _, as := range samlReport.Attribute {
 
@@ -68,6 +85,18 @@ func IsTrustedByHvs(saml string, samlReport *samlLib.Saml, config domain.KeyCont
 				defaultLog.Error("keytransfer/transfer_with_saml:IsTrustedByHvs() Unable to decode AIK certificate")
 				return false, nil
 			}
+		}
+
+		// check if asset tag is deployed on the host
+		if as.Name == "TRUST_ASSET_TAG" {
+			if as.AttributeValue == "true" {
+				assetTagDeployed = true
+			}
+		}
+
+		// get the list of deployed tags on the host and add it in the map
+		if strings.HasPrefix(as.Name, "TAG_") {
+			tagsDeployedOnHost[strings.ToLower(strings.TrimPrefix(as.Name, "TAG_"))] = as.AttributeValue
 		}
 	}
 
@@ -111,7 +140,20 @@ func IsTrustedByHvs(saml string, samlReport *samlLib.Saml, config domain.KeyCont
 		return false, nil
 	}
 
-	// TODO: validate associated asset tags
+	if len(usagePolicyTags) != 0 {
+		if !assetTagDeployed {
+			defaultLog.Error("keytransfer/transfer_with_saml:IsTrustedByHvs() Asset tags are not deployed on the host, but a usage policy is defined for the requested key")
+			return false, nil
+		}
+
+		// check if all the keys in tagsDeployedOnHost exist in usagePolicyTags and their values match
+		for key, value := range usagePolicyTags {
+			if v, ok := tagsDeployedOnHost[key]; !ok || strings.ToLower(v) != strings.ToLower(value) {
+				defaultLog.Error("keytransfer/transfer_with_saml:IsTrustedByHvs() Usage policy requirements of the key does not match with tags deployed on the host")
+				return false, nil
+			}
+		}
+	}
 
 	return true, bindingKeyCert
 }

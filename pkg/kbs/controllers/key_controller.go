@@ -274,7 +274,8 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 	}
 
 	// Validate saml report in request
-	trusted, bindingCert := keytransfer.IsTrustedByHvs(string(bytes), samlReport, kc.config)
+	id := uuid.MustParse(mux.Vars(request)["id"])
+	trusted, bindingCert := keytransfer.IsTrustedByHvs(string(bytes), samlReport, id, kc.config, kc.keyManager)
 	if !trusted {
 		secLog.Error("controllers/key_controller:TransferWithSaml() Saml report is not trusted")
 		return nil, http.StatusUnauthorized, &commErr.ResourceError{Message:"Client not trusted by Hvs"}
@@ -282,7 +283,6 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 	envelopeKey := bindingCert.PublicKey.(*rsa.PublicKey)
 
 	// Wrap key with binding key
-	id := uuid.MustParse(mux.Vars(request)["id"])
 	wrappedKey, status, err := kc.wrapSecretKey(id, envelopeKey)
 	if err != nil {
 		return nil, status, err
@@ -334,7 +334,7 @@ func validateKeyCreateRequest(requestKey kbs.KeyRequest) error {
 
 	keyString := requestKey.KeyInformation.KeyString
 	if keyString == "" {
-		if strings.ToUpper(algorithm) == "EC" {
+		if strings.ToUpper(algorithm) == consts.CRYPTOALG_EC {
 			if requestKey.KeyInformation.CurveType == "" {
 					return errors.New("either curve_type or key_string must be specified")
 			} else if !allowedCurveTypes[requestKey.KeyInformation.CurveType] {

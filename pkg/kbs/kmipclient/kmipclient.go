@@ -26,6 +26,8 @@ type KmipClient struct {
 
 // InitializeClient initializes all the values required for establishing connection to kmip server
 func (kc *KmipClient) InitializeClient(serverIP string, serverPort string, clientCert string, clientKey string, rootCert string) error {
+	defaultLog.Trace("kmipclient/kmipclient:InitializeClient() Entering")
+	defer defaultLog.Trace("kmipclient/kmipclient:InitializeClient() Leaving")
 
 	address := C.CString(serverIP)
 	defer C.free(unsafe.Pointer(address))
@@ -47,12 +49,14 @@ func (kc *KmipClient) InitializeClient(serverIP string, serverPort string, clien
 		return errors.New("Failed to initialize kmip client. Check kmipclient logs for more details.")
 	}
 
-	defaultLog.Info("Kmip client initialized")
+	defaultLog.Info("kmipclient/kmipclient:InitializeClient() Kmip client initialized")
 	return nil
 }
 
 // CreateSymmetricKey creates a symmetric key on kmip server
 func (kc *KmipClient) CreateSymmetricKey(alg, length int) (string, error) {
+	defaultLog.Trace("kmipclient/kmipclient:CreateSymmetricKey() Entering")
+	defer defaultLog.Trace("kmipclient/kmipclient:CreateSymmetricKey() Leaving")
 
 	algId := C.int(alg)
 	algLength := C.int(length)
@@ -62,13 +66,15 @@ func (kc *KmipClient) CreateSymmetricKey(alg, length int) (string, error) {
 		return "", errors.New("Failed to create symmetric key on kmip server. Check kmipclient logs for more details.")
 	}
 
-	defaultLog.Info("Created symmetric key on kmip server")
+	defaultLog.Info("kmipclient/kmipclient:CreateSymmetricKey() Created symmetric key on kmip server")
 	kmipId := C.GoString(keyID)
 	return kmipId, nil
 }
 
 // DeleteSymmetric deletes a symmetric key from kmip server
 func (kc *KmipClient) DeleteSymmetricKey(id string) error {
+	defaultLog.Trace("kmipclient/kmipclient:DeleteSymmetricKey() Entering")
+	defer defaultLog.Trace("kmipclient/kmipclient:DeleteSymmetricKey() Leaving")
 
 	keyId := C.CString(id)
 	defer C.free(unsafe.Pointer(keyId))
@@ -78,12 +84,14 @@ func (kc *KmipClient) DeleteSymmetricKey(id string) error {
 		return errors.New("Failed to delete symmetric key from kmip server. Check kmipclient logs for more details.")
 	}
 
-	defaultLog.Info("Deleted symmetric key from kmip server")
+	defaultLog.Info("kmipclient/kmipclient:DeleteSymmetricKey() Deleted symmetric key from kmip server")
 	return nil
 }
 
 // GetSymmetricKey retrieves a symmetric key from kmip server
 func (kc *KmipClient) GetSymmetricKey(id string) ([]byte, error) {
+	defaultLog.Trace("kmipclient/kmipclient:GetSymmetricKey() Entering")
+	defer defaultLog.Trace("kmipclient/kmipclient:GetSymmetricKey() Leaving")
 
 	keyID := C.CString(id)
 	defer C.free(unsafe.Pointer(keyID))
@@ -96,7 +104,7 @@ func (kc *KmipClient) GetSymmetricKey(id string) ([]byte, error) {
 		return nil, errors.New("Failed to retrieve symmetric key from kmip server. Check kmipclient logs for more details.")
 	}
 
-	defaultLog.Info("Retrieved symmetric key from kmip server")
+	defaultLog.Info("kmipclient/kmipclient:GetSymmetricKey() Retrieved symmetric key from kmip server")
 	key := C.GoBytes(keyBuffer, 32)
 	return key, nil
 }

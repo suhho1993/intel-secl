@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
@@ -31,7 +32,7 @@ func (dm *DirectoryManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttri
 	var err error
 	var key, publicKey, privateKey string
 
-	if request.KeyInformation.Algorithm == "AES" {
+	if request.KeyInformation.Algorithm == constants.CRYPTOALG_AES {
 		keyBytes, err := generateAESKey(request.KeyInformation.KeyLength)
 		if err != nil {
 			return nil, err
@@ -41,7 +42,7 @@ func (dm *DirectoryManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttri
 	} else {
 
 		var publicKeyBytes, privateKeyBytes []byte
-		if request.KeyInformation.Algorithm == "RSA" {
+		if request.KeyInformation.Algorithm == constants.CRYPTOALG_RSA {
 			privateKeyBytes, publicKeyBytes, err = generateRSAKeyPair(request.KeyInformation.KeyLength)
 			if err != nil {
 				return nil, err
@@ -66,7 +67,7 @@ func (dm *DirectoryManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttri
 		PublicKey:        publicKey,
 		PrivateKey:       privateKey,
 		TransferPolicyId: request.TransferPolicyID,
-		CreatedAt:        time.Now(),
+		CreatedAt:        time.Now().UTC(),
 		Label:            request.Label,
 		Usage:            request.Usage,
 	}
@@ -87,7 +88,7 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 
 	var key, publicKey, privateKey string
 
-	if request.KeyInformation.Algorithm == "AES" {
+	if request.KeyInformation.Algorithm == constants.CRYPTOALG_AES {
 		key = request.KeyInformation.KeyString
 	} else {
 
@@ -95,7 +96,7 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 		privateKey = request.KeyInformation.KeyString
 		privateKeyBytes, _ := base64.StdEncoding.DecodeString(privateKey)
 
-		if request.KeyInformation.Algorithm == "RSA" {
+		if request.KeyInformation.Algorithm == constants.CRYPTOALG_RSA {
 			private, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not parse RSA private key")
@@ -125,7 +126,7 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 		PublicKey:        publicKey,
 		PrivateKey:       privateKey,
 		TransferPolicyId: request.TransferPolicyID,
-		CreatedAt:        time.Now(),
+		CreatedAt:        time.Now().UTC(),
 		Label:            request.Label,
 		Usage:            request.Usage,
 	}
@@ -138,7 +139,7 @@ func (dm *DirectoryManager) TransferKey(attributes *models.KeyAttributes) ([]byt
 	defer defaultLog.Trace("keymanager/directory_key_manager:TransferKey() Leaving")
 
 	var key string
-	if attributes.Algorithm == "AES" {
+	if attributes.Algorithm == constants.CRYPTOALG_AES {
 		key = attributes.KeyData
 	} else {
 		key = attributes.PrivateKey

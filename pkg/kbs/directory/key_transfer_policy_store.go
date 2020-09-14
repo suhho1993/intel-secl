@@ -32,7 +32,7 @@ func (ktps *KeyTransferPolicyStore) Create(policy *kbs.KeyTransferPolicyAttribut
 	defer defaultLog.Trace("directory/key_transfer_policy_store:Create() Leaving")
 
 	policy.ID = uuid.New()
-	policy.CreatedAt = time.Now()
+	policy.CreatedAt = time.Now().UTC()
 	bytes, err := json.Marshal(policy)
 	if err != nil {
 		return nil, errors.Wrap(err, "directory/key_transfer_policy_store:Create() Failed to marshal key transfer policy")
