@@ -5,7 +5,6 @@
 package types
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
@@ -31,7 +30,7 @@ func NewSoftwareFlavor(measurement string) SoftwareFlavor {
 }
 
 // GetSoftwareFlavor creates a SoftwareFlavor that would include all the measurements provided in input.
-func (sf *SoftwareFlavor) GetSoftwareFlavor() (string, error) {
+func (sf *SoftwareFlavor) GetSoftwareFlavor() (*cm.Flavor, error) {
 	log.Trace("flavor/types/software_flavor:GetSoftwareFlavor() Entering")
 	defer log.Trace("flavor/types/software_flavor:GetSoftwareFlavor() Leaving")
 
@@ -40,21 +39,16 @@ func (sf *SoftwareFlavor) GetSoftwareFlavor() (string, error) {
 	var err error
 	err = xml.Unmarshal([]byte(sf.Measurement), &measurements)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var software = sfutil.GetSoftware(measurements)
 	// create meta section details
 	newMeta, err := pfutil.GetMetaSectionDetails(nil, nil, sf.Measurement, cf.FlavorPartSoftware,
 		hcConstants.VendorIntel)
 	if err != nil {
-		return "", errors.Wrap(err, errorMessage+" Failure in Meta section details")
+		return nil, errors.Wrap(err, errorMessage+" Failure in Meta section details")
 	}
 	log.Debugf("flavor/types/software_flavor:GetSoftwareFlavor() New Meta Section: %v", *newMeta)
 
-	f := cm.NewFlavor(newMeta, nil, nil, nil, nil, &software)
-	strf, err := json.Marshal(f)
-	if err != nil {
-		return "", errors.Wrapf(err, "Error marshalling SoftwareFlavor: %s", err)
-	}
-	return string(strf), nil
+	return cm.NewFlavor(newMeta, nil, nil, nil, nil, &software), nil
 }

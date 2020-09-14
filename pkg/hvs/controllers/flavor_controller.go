@@ -99,26 +99,26 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 
 	var signedFlavors []hvs.SignedFlavor
 
-	if (len(flavorCreateReq.FlavorParts) == 0){
-		if (!checkValidFlavorPermission(privileges, []string{consts.FlavorCreate})) {
+	if len(flavorCreateReq.FlavorParts) == 0 {
+		if !checkValidFlavorPermission(privileges, []string{consts.FlavorCreate}) {
 			return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
 		}
 	} else {
 		for _, fp := range flavorCreateReq.FlavorParts {
-			if(fp == fc.FlavorPartHostUnique) {
-				if (!checkValidFlavorPermission(privileges, []string{consts.HostUniqueFlavorCreate, consts.FlavorCreate})) {
+			if fp == fc.FlavorPartHostUnique {
+				if !checkValidFlavorPermission(privileges, []string{consts.HostUniqueFlavorCreate, consts.FlavorCreate}) {
 					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
 				}
-			} else if(fp == fc.FlavorPartSoftware) {
-				if (!checkValidFlavorPermission(privileges, []string{consts.SoftwareFlavorCreate, consts.FlavorCreate})) {
+			} else if fp == fc.FlavorPartSoftware {
+				if !checkValidFlavorPermission(privileges, []string{consts.SoftwareFlavorCreate, consts.FlavorCreate}) {
 					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
 				}
-			} else if(fp == fc.FlavorPartAssetTag) {
-				if (!checkValidFlavorPermission(privileges, []string{consts.TagFlavorCreate, consts.FlavorCreate})) {
+			} else if fp == fc.FlavorPartAssetTag {
+				if !checkValidFlavorPermission(privileges, []string{consts.TagFlavorCreate, consts.FlavorCreate}) {
 					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
 				}
 			} else {
-				if (!checkValidFlavorPermission(privileges, []string{consts.FlavorCreate})) {
+				if !checkValidFlavorPermission(privileges, []string{consts.FlavorCreate}) {
 					return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Insufficient privileges to access /v2/hvs/flavors"}
 				}
 			}
@@ -439,7 +439,7 @@ func (fcon *FlavorController) addFlavorToFlavorgroup(flavorFlavorPartMap map[fc.
 						flavorgroups = fgs
 					}
 					fetchHostData = true
-					
+
 				} else if flavorPart == fc.FlavorPartPlatform || flavorPart == fc.FlavorPartOs {
 					flavorgroups = fgs
 					flavorgroupsForQueue = append(flavorgroupsForQueue, flavorgroups...)
@@ -550,11 +550,18 @@ func (fcon FlavorController) retrieveFlavorCollection(platformFlavor *fType.Plat
 	}
 
 	for _, flavorPart := range flavorParts {
-		signedFlavors, err := (*platformFlavor).GetFlavorPart(flavorPart, flavorSignKey.(*rsa.PrivateKey))
+		unsignedFlavors, err := (*platformFlavor).GetFlavorPartRaw(flavorPart)
 		if err != nil {
 			defaultLog.Errorf("controllers/flavor_controller:retrieveFlavorCollection() Error building a flavor for flavor part %s", flavorPart)
 			return flavorFlavorPartMap
 		}
+
+		signedFlavors, err := fu.PlatformFlavorUtil{}.GetSignedFlavorList(unsignedFlavors, flavorSignKey.(*rsa.PrivateKey))
+		if err != nil {
+			defaultLog.Errorf("controllers/flavor_controller:retrieveFlavorCollection() Error signing flavor %s", flavorPart)
+			return flavorFlavorPartMap
+		}
+
 		for _, signedFlavor := range signedFlavors {
 			if _, ok := flavorFlavorPartMap[flavorPart]; ok {
 				flavorFlavorPartMap[flavorPart] = append(flavorFlavorPartMap[flavorPart], signedFlavor)
@@ -759,7 +766,7 @@ func validateFlavorCreateRequest(criteria dm.FlavorCreateRequest) error {
 			return errors.New("Invalid host connection string")
 		}
 	}
-	if len(criteria.FlavorgroupNames) !=  0 {
+	if len(criteria.FlavorgroupNames) != 0 {
 		for _, flavorgroup := range criteria.FlavorgroupNames {
 			if flavorgroup == "" {
 				return errors.New("Valid Flavorgroup Names must be specified, empty name is not allowed")

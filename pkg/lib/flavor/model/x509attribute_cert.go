@@ -11,8 +11,8 @@ import (
 	"encoding/base64"
 	asset_tag "github.com/intel-secl/intel-secl/v3/pkg/lib/asset-tag"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/pkg/errors"
+	"time"
 )
 
 /**
@@ -20,14 +20,14 @@ import (
  * @author mullas
  */
 
-// AssetTag holds a subset of x509.Certificate that has relevant information for Flavor
+// X509AttributeCertificate holds a subset of x509.Certificate that has relevant information for Flavor
 type X509AttributeCertificate struct {
 	Encoded           []byte      `json:"encoded"`
 	Issuer            string      `json:"issuer"`
 	SerialNumber      int64       `json:"serial_number"`
 	Subject           string      `json:"subject"`
-	NotBefore         string      `json:"not_before"`
-	NotAfter          string      `json:"not_after"`
+	NotBefore         time.Time   `json:"not_before"`
+	NotAfter          time.Time   `json:"not_after"`
 	Attributes        []Attribute `json:"attribute,omitempty"`
 	FingerprintSha384 string      `json:"fingerprint_sha384"`
 }
@@ -91,8 +91,8 @@ func NewX509AttributeCertificate(tagCert *x509.Certificate) (*X509AttributeCerti
 		Issuer:            tagCert.Issuer.String(),
 		SerialNumber:      tagCert.SerialNumber.Int64(),
 		Subject:           tagCert.Subject.CommonName,
-		NotBefore:         tagCert.NotBefore.Format(constants.FlavorTimestampFormat),
-		NotAfter:          tagCert.NotAfter.Format(constants.FlavorTimestampFormat),
+		NotBefore:         tagCert.NotBefore,
+		NotAfter:          tagCert.NotAfter,
 		Attributes:        attrkvas,
 		FingerprintSha384: certHash,
 	}

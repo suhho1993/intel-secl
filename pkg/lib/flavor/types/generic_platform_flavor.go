@@ -5,12 +5,9 @@
 package types
 
 import (
-	"crypto/rsa"
-	"encoding/json"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
-	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 )
 
@@ -26,20 +23,15 @@ type GenericPlatformFlavor struct {
 }
 
 // GetFlavorPartRaw constructs the Asset Tag flavor from the Tag Certificate of the Generic Platform Flavor
-func (gpf GenericPlatformFlavor) GetFlavorPartRaw(name cf.FlavorPart) ([]string, error) {
+func (gpf GenericPlatformFlavor) GetFlavorPartRaw(name cf.FlavorPart) ([]cm.Flavor, error) {
 	log.Trace("flavor/types/generic_platform_flavor:GetFlavorPartRaw() Entering")
 	defer log.Trace("flavor/types/generic_platform_flavor:GetFlavorPartRaw() Leaving")
 
-	var returnThis []string
-	var err error
-	switch name {
-	case cf.FlavorPartAssetTag:
-		returnThis, err = gpf.getAssetTagFlavor()
-	default:
-		returnThis = nil
-		err = errors.New("Unknown flavor part specified by the user")
+	if name == cf.FlavorPartAssetTag {
+		return gpf.getAssetTagFlavor()
 	}
-	return returnThis, err
+
+	return nil, errors.New("Unknown flavor part specified by the user")
 }
 
 // GetFlavorPartNames retrieves the list of flavor parts that can be obtained using the GetFlavorPartRaw function
@@ -53,13 +45,13 @@ func (gpf GenericPlatformFlavor) GetFlavorPartNames() ([]cf.FlavorPart, error) {
 
 // getAssetTagFlavor Retrieves the asset tag part of the flavor including the certificate and all the key-value pairs
 // that are part of the certificate.
-func (gpf GenericPlatformFlavor) getAssetTagFlavor() ([]string, error) {
+func (gpf GenericPlatformFlavor) getAssetTagFlavor() ([]cm.Flavor, error) {
 	log.Trace("flavor/types/generic_platform_flavor:getAssetTagFlavor() Entering")
 	defer log.Trace("flavor/types/generic_platform_flavor:getAssetTagFlavor() Leaving")
 
 	var errorMessage = "Error during creation of ASSET_TAG flavor"
 	var err error
-	var assetTagFlavors []string
+
 	if gpf.TagCertificate == nil {
 		return nil, errors.Errorf("%s - %s", errorMessage, cf.FLAVOR_PART_CANNOT_BE_SUPPORTED().Message)
 	}
@@ -79,46 +71,9 @@ func (gpf GenericPlatformFlavor) getAssetTagFlavor() ([]string, error) {
 	log.Debugf("flavor/types/generic_platform_flavor:getAssetTagFlavor() New External Section: %v", *newExt)
 
 	// Create flavor and
-	var flavor = *cm.NewFlavor(newMeta, nil, nil, nil, newExt, nil)
+	assetTagFlavor := cm.NewFlavor(newMeta, nil, nil, nil, newExt, nil)
 
-	// serialize it
-	fj, err := json.Marshal(flavor)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%s - JSON marshal failure - %s", errorMessage, err.Error())
-	}
-	log.Debugf("flavor/types/generic_platform_flavor:getAssetTagFlavor() New AssetTag Flavor: %s", fj)
+	log.Debugf("flavor/types/generic_platform_flavor:getAssetTagFlavor() New AssetTag Flavor: %v", assetTagFlavor)
 
-	// return JSON
-	assetTagFlavors = append(assetTagFlavors, string(fj))
-	return assetTagFlavors, nil
-}
-
-// GetFlavorPart extracts the details of the flavor part requested by the caller from
-// the host report used during the creation of the PlatformFlavor instance and it's corresponding signature.
-func (gpf GenericPlatformFlavor) GetFlavorPart(part cf.FlavorPart, flavorSigningPrivateKey *rsa.PrivateKey) ([]hvs.SignedFlavor, error) {
-	log.Trace("flavor/types/generic_platform_flavor:GetFlavorPart() Entering")
-	defer log.Trace("flavor/types/generic_platform_flavor:GetFlavorPart() Leaving")
-
-	var flavors []string
-	var err error
-
-	// validate private key
-	if flavorSigningPrivateKey != nil {
-		err := flavorSigningPrivateKey.Validate()
-		if err != nil {
-			return nil, errors.Wrap(err, "signing key validation failed")
-		}
-	}
-
-	// get flavor
-	flavors, err = gpf.GetFlavorPartRaw(part)
-	if err != nil {
-		return nil, err
-	}
-
-	sfList, err := pfutil.GetSignedFlavorList(flavors, flavorSigningPrivateKey)
-	if err != nil {
-		return []hvs.SignedFlavor{}, err
-	}
-	return *sfList, nil
+	return []cm.Flavor{*assetTagFlavor}, nil
 }

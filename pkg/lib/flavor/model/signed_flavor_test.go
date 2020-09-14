@@ -10,14 +10,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+	"time"
 )
 
-// NewSignedFlavorFromJSON returns an instance of SignedFlavor from an JSON string
+// newSignedFlavorFromJSON returns an instance of SignedFlavor from an JSON string
 func newSignedFlavorFromJSON(sfstring string) (*SignedFlavor, error) {
 	var sf SignedFlavor
 	err := json.Unmarshal([]byte(sfstring), &sf)
 	if err != nil {
-		err = errors.Wrapf(err, "Error unmarshaling SignedFlavor JSON: %s", err.Error())
+		err = errors.Wrapf(err, "Error unmarshalling SignedFlavor JSON: %s", err.Error())
 		return nil, err
 	}
 
@@ -559,7 +560,9 @@ const (
             },
             "signature": "kCb0j179THrSiIhglLzmSed84C4lvjSVBE4hdEThZ/6BheuUTvAB7Je4gGNRfnESgr4m8d/PPFIGQdY62AJl251oT6k6KaESPQCjPRq0EL9xfZBhksLA+42RcmEgIyIYZvtmx/9lWCZOmKZkT/0pYEW7VTgmUgFG33ah/JWL+peFfu4G1uaE4ZiOImPT3A6bybUKIglaNAZq75mGkRhSR63Gy81v4CRugrI+Oye6GeMh+A9PUJLb2sprVXqQPQc2ru1OqpkpARbi0Cj+12E6m29ZVPTL8IDlSkQbYlXL+eNaleISaHyKQ78mP0DotrPsBQNx3pSyRAAqJdlzRiP8mCjxWWOzcK9jcyakeYtAiqGEW6wG7OdBEcZlC6LWQd7OyKPu/dN14KK5q19+/haqhvsAs3dEJr4KKWhEzv23KksOMJTBQFXf1eRyY+SPL0UK9Bonpa6JyHlqaQ4wDQoJ0N6+CqQ9wLNnIBCNEtGHrbU9dWQnOo79qLKTOGCCEFsw"
         }`
-	goodSignedAssetTagFlavor string = `{
+)
+
+var goodSignedAssetTagFlavor = `{
             "flavor": {
                 "meta": {
                     "id": "a04e4818-450c-479c-bf8a-0510f9660c1d",
@@ -577,8 +580,8 @@ const (
                             "issuer": "CN=asset-tag-service",
                             "serial_number": 1584577685980,
                             "subject": "803f6068-06da-e811-906e-00163566263e",
-                            "not_before": "2020-03-18T17:28:05-0700",
-                            "not_after": "2021-03-18T17:28:05-0700",
+                            "not_before": "` + time.Now().Format(time.RFC3339) + `",
+                            "not_after": "` + time.Now().AddDate(3, 0, 0).Format(time.RFC3339) + `",
                             "attribute": [
                                 {
                                     "attr_type": {
@@ -618,7 +621,6 @@ const (
             },
             "signature": "kmiFgoWF5CZ6EDg/iz6NM1vzApYSdlmRblEZ9r76FHjhuYjqqyJTYEkxf1igFjEFIsJ3CmHVw1aPeUrncMnu+gvMfsJwfknOdhbDhqTyKtQBVNoMvrVGXV9kqkZvQ6OScev9nOcIQ/ahOUTV9TaRWbeulWMfheP32+4UZxUywWA3zpzvnjIKi7M0feWUZy5lV/ocOvaWYK8sYntsSi5ICEsLO63oKmT5RECxOPi/Pos9kmWkuzBzllytCvmDXpyswsCt5h1fmX1ytdC4vY37rcRozD/rSxw5RDH3pUR6h2GPVdrUDQ6VI7qOw2S73tZaTRJSMpZW9EVflTIbfUJC+Ft+y4rQ7cFQJDKOAppHYEv0AnB6Iy98n3M40ZPCB9qDYpNswq7ufBdaX2EADoYBc6QzsvcIEHNPyEw5QgkAjsj6ckGuhRg31KBPV0vw8Xjvmu+CnD+I1yKq9AVGdBqZZ66dUALP1Y/MJfP9vPPrRwiEx3IZcTKLftCiJVqIviEF"
         }`
-)
 
 func TestNewSignedFlavorFromJSONPlatform(t *testing.T) {
 	type args struct {

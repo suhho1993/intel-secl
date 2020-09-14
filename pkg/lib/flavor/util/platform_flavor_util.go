@@ -6,7 +6,6 @@ package util
 
 import (
 	"crypto/rsa"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"github.com/google/uuid"
@@ -20,7 +19,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -60,7 +58,7 @@ func (pfutil PlatformFlavorUtil) GetMetaSectionDetails(hostDetails *taModel.Host
 	if hostDetails != nil {
 		biosName = strings.TrimSpace(hostDetails.BiosName)
 		biosVersion = strings.TrimSpace(hostDetails.BiosVersion)
-		description.TbootInstalled = strconv.FormatBool(hostDetails.TbootInstalled)
+		description.TbootInstalled = hostDetails.TbootInstalled
 		vmmName = strings.TrimSpace(hostDetails.VMMName)
 		vmmVersion = strings.TrimSpace(hostDetails.VMMVersion)
 		osName = strings.TrimSpace(hostDetails.OSName)
@@ -506,25 +504,18 @@ func (pfutil PlatformFlavorUtil) getCurrentTimeStamp() string {
 }
 
 // getSignedFlavorList performs a bulk signing of a list of flavor strings and returns a list of SignedFlavors
-func (pfutil PlatformFlavorUtil) GetSignedFlavorList(flavors []string, flavorSigningPrivateKey *rsa.PrivateKey) (*[]hvs.SignedFlavor, error) {
+func (pfutil PlatformFlavorUtil) GetSignedFlavorList(flavors []cm.Flavor, flavorSigningPrivateKey *rsa.PrivateKey) ([]hvs.SignedFlavor, error) {
 	log.Trace("flavor/util/platform_flavor_util:GetSignedFlavorList() Entering")
 	defer log.Trace("flavor/util/platform_flavor_util:GetSignedFlavorList() Leaving")
 
 	var signedFlavors []hvs.SignedFlavor
 
-	// length for flavors list
 	if flavors != nil {
 		// loop through and sign each flavor
-		for _, f := range flavors {
+		for _, unsignedFlavor := range flavors {
 			var sf *hvs.SignedFlavor
-			var usf hvs.Flavor
 
-			err := json.Unmarshal([]byte(f), &usf)
-			if err != nil {
-				return nil, errors.Errorf("Error signing flavor collection: %s", err.Error())
-			}
-
-			sf, err = pfutil.GetSignedFlavor(&usf, flavorSigningPrivateKey)
+			sf, err := pfutil.GetSignedFlavor(&unsignedFlavor, flavorSigningPrivateKey)
 			if err != nil {
 				return nil, errors.Errorf("Error signing flavor collection: %s", err.Error())
 			}
@@ -533,7 +524,7 @@ func (pfutil PlatformFlavorUtil) GetSignedFlavorList(flavors []string, flavorSig
 	} else {
 		return nil, errors.Errorf("empty flavors list provided")
 	}
-	return &signedFlavors, nil
+	return signedFlavors, nil
 }
 
 // GetSignedFlavor is used to sign the flavor

@@ -55,10 +55,10 @@ func getSignedFlavor(t *testing.T, pflavor *types.PlatformFlavor, part cf.Flavor
 	// Generate Signing Keypair
 	sPriKey, _, _ := crypt.CreateSelfSignedCertAndRSAPrivKeys()
 
-	// Sign the flavor
-	signedFlavor, err := (*pflavor).GetFlavorPart(part, sPriKey)
-	assert.NoError(t, err, "failed at preparing signature for ", part, " SignedFlavor")
-	t.Log(signedFlavor)
+	unsignedFlavors, err := (*pflavor).GetFlavorPartRaw(part)
+	assert.NoError(t, err, "failed to marshal SignedFlavor")
+
+	signedFlavor, err := pfutil.GetSignedFlavor(&unsignedFlavors[0], sPriKey)
 
 	// Convert SignedFlavor to json
 	jsonSf, err := json.Marshal(signedFlavor)
@@ -478,8 +478,10 @@ func TestFailures4SignFlavor(t *testing.T) {
 			} else {
 				assert.NotNil(t, pflavor, "Error initializing PlatformFlavor")
 
+				unsignedPlatformFlavor, _ := (*pflavor).GetFlavorPartRaw(cf.FlavorPartPlatform)
+
 				// Sign the flavor - if Nil Signed Flavor or Invalid Signing Key we expect this step to fail
-				_, err = (*pflavor).(types.LinuxPlatformFlavor).GetFlavorPart(cf.FlavorPartPlatform, tt.signingKey)
+				_, err = pfutil.GetSignedFlavor(&unsignedPlatformFlavor[0], tt.signingKey)
 				if tt.name == "Nil Signing Key" || tt.name == "Invalid Signing Key" {
 					assert.Error(t, err, "Invalid Singing Key Did not fail as expected")
 				}
@@ -529,4 +531,3 @@ func loadManifestAndTagCert(hmFilePath string, tcFilePath string) (*hcTypes.Host
 
 	return &hm, tagCert
 }
-

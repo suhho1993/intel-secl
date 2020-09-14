@@ -31,6 +31,19 @@
       },
       "TXT": {
         "enabled": "true"
+      },
+      "AES_NI": {
+        "enabled": "true"
+      },
+      "CBNT": {
+        "enabled": "true",
+        "meta": {
+          "force_bit": "true",
+          "profile": "BTGP5"
+        }
+      },
+      "SUEFI": {
+        "enabled": "true"
       }
     },
     "installed_components": [

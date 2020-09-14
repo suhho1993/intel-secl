@@ -22,6 +22,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor"
 	fc "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/util"
 	hostConnector "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
@@ -477,16 +478,21 @@ func (controller TagCertificateController) Deploy(w http.ResponseWriter, r *http
 	var flavorSignKey = controller.CertStore[models.CertTypesFlavorSigning.String()].Key
 
 	// get the signed flavor
-	signedFlavors, err := (*assetTagFlavor).GetFlavorPart(fc.FlavorPartAssetTag, flavorSignKey.(*rsa.PrivateKey))
+	unsignedFlavors, err := (*assetTagFlavor).GetFlavorPartRaw(fc.FlavorPartAssetTag)
 	if err != nil {
-		defaultLog.WithField("Certid", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Error while generating SignedFlavor %s", commLogMsg.AppRuntimeErr, err.Error())
+		defaultLog.WithField("Certid", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Error while getting unsigned Flavor %s", commLogMsg.AppRuntimeErr, err.Error())
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
 	}
 
-	sf := signedFlavors[0]
+	sf, err := util.PlatformFlavorUtil{}.GetSignedFlavor(&unsignedFlavors[0], flavorSignKey.(*rsa.PrivateKey))
+	if err != nil {
+		defaultLog.WithField("Certid", dtcReq.CertID).Errorf("controllers/tagcertificate_controller:Deploy() %s : Error while getting signed Flavor %s", commLogMsg.AppRuntimeErr, err.Error())
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Tag Certificate Deploy failure"}
+	}
+
 	// Link signed asset tag flavor to the Host Unique FlavorGroup
 	var flavorPartMap = make(map[fc.FlavorPart][]hvs.SignedFlavor)
-	flavorPartMap[fc.FlavorPartAssetTag] = []hvs.SignedFlavor{sf}
+	flavorPartMap[fc.FlavorPartAssetTag] = []hvs.SignedFlavor{*sf}
 
 	linkedSf, err := controller.FlavorController.addFlavorToFlavorgroup(flavorPartMap, nil)
 	if err != nil || linkedSf == nil {

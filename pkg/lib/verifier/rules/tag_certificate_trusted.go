@@ -11,7 +11,6 @@ import (
 
 	faultsConst "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
@@ -74,25 +73,15 @@ func (rule *tagCertificateTrusted) Apply(hostManifest *types.HostManifest) (*hvs
 			}
 		} else {
 			// check to see if the attribute certificate's 'not before' is before today...
-			notBefore, err := time.Parse(constants.FlavorTimestampFormat, rule.attributeCertificate.NotBefore)
-			if err != nil {
-				return nil, errors.Wrapf(err, "Could not parse NotBefore from value '%s'", rule.attributeCertificate.NotBefore)
-			}
-
-			if time.Now().Before(notBefore) {
+			if time.Now().Before(rule.attributeCertificate.NotBefore) {
 				fault = &hvs.Fault{
 					Name:        faultsConst.FaultTagCertificateNotYetValid,
 					Description: fmt.Sprintf("Tag certificate not valid before %s", rule.attributeCertificate.NotBefore),
 				}
 			}
 
-			// check to see if teh attributes certificate's 'not after' is after today...
-			notAfter, err := time.Parse(constants.FlavorTimestampFormat, rule.attributeCertificate.NotAfter)
-			if err != nil {
-				return nil, errors.Wrapf(err, "Could not parse NotAfter from value '%s'", rule.attributeCertificate.NotAfter)
-			}
-
-			if time.Now().After(notAfter) {
+			// check to see if the attributes certificate's 'not after' is after today...
+			if time.Now().After(rule.attributeCertificate.NotAfter) {
 				fault = &hvs.Fault{
 					Name:        faultsConst.FaultTagCertificateExpired,
 					Description: fmt.Sprintf("Tag certificate not valid after %s", rule.attributeCertificate.NotAfter),

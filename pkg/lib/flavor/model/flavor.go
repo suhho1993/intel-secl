@@ -22,9 +22,8 @@ import (
 // measurements will be considered “trusted.”
 type Flavor struct {
 	// Meta section is mandatory for all Flavor types
-	Meta     Meta      `json:"meta"`
-	Validity *Validity `json:"validity,omitempty"`
-	Bios     *Bios     `json:"bios,omitempty"`
+	Meta Meta  `json:"meta"`
+	Bios *Bios `json:"bios,omitempty"`
 	// Hardware section is unique to Platform Flavor type
 	Hardware *Hardware                   `json:"hardware,omitempty"`
 	Pcrs     map[string]map[string]PcrEx `json:"pcrs,omitempty"`
@@ -51,19 +50,6 @@ func NewFlavor(meta *Meta, bios *Bios, hardware *Hardware, pcrs map[crypt.Digest
 		External: external,
 		Software: software,
 	}
-}
-
-// NewFlavorToJson is a convenience method that returns a new instance of Flavor in JSON format ready for export
-func NewFlavorToJson(meta *Meta, bios *Bios, hardware *Hardware, pcrs map[crypt.DigestAlgorithm]map[types.PcrIndex]PcrEx, external *External, software *Software) (string, error) {
-	// Assemble the Flavor
-	var flavor = NewFlavor(meta, bios, hardware, pcrs, external, software)
-	// serialize it
-	fj, err := json.Marshal(flavor)
-	if err != nil {
-		return "", err
-	}
-	// return JSON
-	return string(fj), nil
 }
 
 // Utility function for retrieving the PcrEx value at 'bank', 'index'.  Returns

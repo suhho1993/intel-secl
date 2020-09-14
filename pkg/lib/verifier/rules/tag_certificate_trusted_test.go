@@ -7,14 +7,12 @@ package rules
 import (
 	"crypto/x509"
 	faultsConst "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants/verifier-rules-and-faults"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
-
 
 func TestTagCertificateTrustedNoFault(t *testing.T) {
 
@@ -33,10 +31,10 @@ func TestTagCertificateTrustedNoFault(t *testing.T) {
 	tagCertificateBytes, err := getCertificateBytes(tagCertificate, caPrivateKey)
 	assert.NoError(t, err)
 
-	attributeCertificate := model.X509AttributeCertificate {
-		Encoded: tagCertificateBytes,
-		NotBefore: time.Now().AddDate(-1, 0, 0).Format(constants.FlavorTimestampFormat),
-		NotAfter: time.Now().AddDate(1, 0, 0).Format(constants.FlavorTimestampFormat),
+	attributeCertificate := model.X509AttributeCertificate{
+		Encoded:   tagCertificateBytes,
+		NotBefore: time.Now().AddDate(-1, 0, 0),
+		NotAfter:  time.Now().AddDate(1, 0, 0),
 	}
 
 	// create the rule
@@ -58,7 +56,7 @@ func TestTagCertificateTrustedMissingFault(t *testing.T) {
 
 	trustedAuthorityCerts := x509.NewCertPool()
 	ok := trustedAuthorityCerts.AppendCertsFromPEM(caPemBytes)
-	assert.True(t, ok)	
+	assert.True(t, ok)
 
 	// create the rule, not provding the attribute certificate to invoke
 	// FaultTagCertificateMissing.
@@ -89,10 +87,10 @@ func TestTagCertificateTrustedNotTrusted(t *testing.T) {
 	tagCertificateBytes, err := getCertificateBytes(tagCertificate, caPrivateKey)
 	assert.NoError(t, err)
 
-	attributeCertificate := model.X509AttributeCertificate {
-		Encoded: tagCertificateBytes,
-		NotBefore: time.Now().AddDate(-1, 0, 0).Format(constants.FlavorTimestampFormat),
-		NotAfter: time.Now().AddDate(1, 0, 0).Format(constants.FlavorTimestampFormat),
+	attributeCertificate := model.X509AttributeCertificate{
+		Encoded:   tagCertificateBytes,
+		NotBefore: time.Now().AddDate(-1, 0, 0),
+		NotAfter:  time.Now().AddDate(1, 0, 0),
 	}
 
 	// create the rule
@@ -126,10 +124,10 @@ func TestTagCertificateTrustedExpiredFault(t *testing.T) {
 	tagCertificateBytes, err := getCertificateBytes(tagCertificate, caPrivateKey)
 	assert.NoError(t, err)
 
-	attributeCertificate := model.X509AttributeCertificate {
-		Encoded: tagCertificateBytes,
-		NotBefore: time.Now().AddDate(-1, 0, 0).Format(constants.FlavorTimestampFormat),
-		NotAfter: time.Now().AddDate(-11, 0, 0).Format(constants.FlavorTimestampFormat),
+	attributeCertificate := model.X509AttributeCertificate{
+		Encoded:   tagCertificateBytes,
+		NotBefore: time.Now().AddDate(-1, 0, 0),
+		NotAfter:  time.Now().AddDate(-11, 0, 0),
 	}
 
 	// create the rule
@@ -163,10 +161,10 @@ func TestTagCertificateTrustedNotYetValidFault(t *testing.T) {
 	tagCertificateBytes, err := getCertificateBytes(tagCertificate, caPrivateKey)
 	assert.NoError(t, err)
 
-	attributeCertificate := model.X509AttributeCertificate {
-		Encoded: tagCertificateBytes,
-		NotBefore: time.Now().AddDate(1, 0, 0).Format(constants.FlavorTimestampFormat),
-		NotAfter: time.Now().AddDate(1, 0, 0).Format(constants.FlavorTimestampFormat),
+	attributeCertificate := model.X509AttributeCertificate{
+		Encoded:   tagCertificateBytes,
+		NotBefore: time.Now().AddDate(1, 0, 0),
+		NotAfter:  time.Now().AddDate(1, 0, 0),
 	}
 
 	// create the rule

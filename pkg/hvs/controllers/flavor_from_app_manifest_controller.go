@@ -6,7 +6,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"github.com/google/uuid"
@@ -81,7 +80,7 @@ func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.Re
 	if err != nil {
 		defaultLog.Errorf("controllers/flavor_from_app_manifest_controller:"+
 			"CreateSoftwareFlavor() %s : Error generating complete connection string with credentials", commLogMsg.AppRuntimeErr)
-		return "", http.StatusInternalServerError, &commErr.ResourceError{"Error generating complete " +
+		return "", http.StatusInternalServerError, &commErr.ResourceError{Message: "Error generating complete " +
 			"connection string with credentials"}
 	}
 
@@ -106,22 +105,14 @@ func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.Re
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error marshalling measurement to string"}
 	}
 	softwareFlavorInstance := types.NewSoftwareFlavor(string(measurementBytes))
-	softwareFlavorString, err := softwareFlavorInstance.GetSoftwareFlavor()
+	softwareFlavor, err := softwareFlavorInstance.GetSoftwareFlavor()
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/flavor_from_app_manifest_controller:"+
 			"CreateSoftwareFlavor() %s : Error getting software flavor from measurement", commLogMsg.AppRuntimeErr)
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error getting software flavor from measurement"}
 	}
 
-	var flavor hvs.Flavor
-	err = json.Unmarshal([]byte(softwareFlavorString), &flavor)
-	if err != nil {
-		defaultLog.WithError(err).Errorf("controllers/flavor_from_app_manifest_controller:"+
-			"CreateSoftwareFlavor() %s : Error unmarshalling software flavor string", commLogMsg.AppRuntimeErr)
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error unmarshalling software flavor string"}
-	}
-	_, err = controller.FlavorController.createFlavors(models.FlavorCreateRequest{FlavorCollection:
-	hvs.FlavorCollection{Flavors: []hvs.Flavors{{Flavor: flavor}}}, FlavorgroupNames: appManifestRequest.FlavorGroupNames})
+	_, err = controller.FlavorController.createFlavors(models.FlavorCreateRequest{FlavorCollection: hvs.FlavorCollection{Flavors: []hvs.Flavors{{Flavor: *softwareFlavor}}}, FlavorgroupNames: appManifestRequest.FlavorGroupNames})
 	if err != nil {
 		defaultLog.WithError(err).Errorf("controllers/flavor_from_app_manifest_controller:"+
 			"CreateSoftwareFlavor() %s : Error creating new SOFTWARE flavor", commLogMsg.AppRuntimeErr)
@@ -130,7 +121,7 @@ func (controller FlavorFromAppManifestController) CreateSoftwareFlavor(w http.Re
 		}
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating new SOFTWARE flavor"}
 	}
-	return flavor, http.StatusCreated, nil
+	return softwareFlavor, http.StatusCreated, nil
 }
 
 func validateRequest(appManifestRequest *hvs.ManifestRequest) error {
