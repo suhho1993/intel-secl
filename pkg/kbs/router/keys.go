@@ -15,7 +15,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 )
 
-//setKeyRoutes registers routes to perform Key CRUD Operations
+//setKeyRoutes registers routes to perform Key CRUD operations
 func setKeyRoutes(router *mux.Router, endpointUrl string, config domain.KeyControllerConfig, keyManager keymanager.KeyManager) *mux.Router {
 	defaultLog.Trace("router/keys:setKeyRoutes() Entering")
 	defer defaultLog.Trace("router/keys:setKeyRoutes() Leaving")
@@ -48,7 +48,7 @@ func setKeyRoutes(router *mux.Router, endpointUrl string, config domain.KeyContr
 	return router
 }
 
-//setKeyTransferRoutes registers routes to perform Key Transfer Operations
+//setKeyTransferRoutes registers routes to perform Key Transfer operations
 func setKeyTransferRoutes(router *mux.Router, endpointUrl string, config domain.KeyControllerConfig, keyManager keymanager.KeyManager) *mux.Router {
 	defaultLog.Trace("router/keys:setKeyTransferRoutes() Entering")
 	defer defaultLog.Trace("router/keys:setKeyTransferRoutes() Leaving")
@@ -61,6 +61,21 @@ func setKeyTransferRoutes(router *mux.Router, endpointUrl string, config domain.
 	router.Handle(keyIdExpr+"/transfer",
 		ErrorHandler(ResponseHandler(keyController.TransferWithSaml),
 		)).Methods("POST").Headers("Accept", consts.HTTPMediaTypeOctetStream)
+
+	return router
+}
+
+//setDhsm2KeyTransferRoutes registers routes to perform Dhsm2 Transfer operations
+func setDhsm2KeyTransferRoutes(router *mux.Router) *mux.Router {
+	defaultLog.Trace("router/keys:setDhsm2KeyTransferRoutes() Entering")
+	defer defaultLog.Trace("router/keys:setDhsm2KeyTransferRoutes() Leaving")
+
+	dhsm2Controller := controllers.NewDhsm2Controller()
+	keyIdExpr := "/keys/" + validation.IdReg
+
+	router.Handle(keyIdExpr+"/dhsm2-transfer",
+		ErrorHandler(permissionsHandler(JsonResponseHandler(dhsm2Controller.TransferApplicationKey),
+			[]string{constants.KeyTransfer}))).Methods("GET")
 
 	return router
 }

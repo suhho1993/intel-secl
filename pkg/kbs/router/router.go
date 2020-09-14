@@ -70,6 +70,8 @@ func defineSubRoutes(router *mux.Router, serviceApi string, cfg *config.Configur
 	subRouter = setKeyTransferPolicyRoutes(subRouter)
 	subRouter = setSamlCertRoutes(subRouter)
 	subRouter = setTpmIdentityCertRoutes(subRouter)
+	subRouter = setDhsm2KeyTransferRoutes(subRouter)
+	subRouter = setSessionRoutes(subRouter)
 }
 
 // Fetch JWT certificate from AAS

@@ -29,4 +29,6 @@ const (
 	KeyTransferPolicyRetrieve = "key_transfer_policies:retrieve"
 	KeyTransferPolicyDelete   = "key_transfer_policies:delete"
 	KeyTransferPolicySearch   = "key_transfer_policies:search"
+
+	SessionCreate = "key-session-api:create"
 )
