@@ -17,8 +17,9 @@ func setKeyTransferPolicyRoutes(router *mux.Router) *mux.Router {
 	defaultLog.Trace("router/key_transfer_policy:setKeyTransferPolicyRoutes() Entering")
 	defer defaultLog.Trace("router/key_transfer_policy:setKeyTransferPolicyRoutes() Leaving")
 
+	keyStore := directory.NewKeyStore(constants.KeysDir)
 	policyStore := directory.NewKeyTransferPolicyStore(constants.KeysTransferPolicyDir)
-	transferPolicyController := controllers.NewKeyTransferPolicyController(policyStore)
+	transferPolicyController := controllers.NewKeyTransferPolicyController(policyStore, keyStore)
 	keyTransferPolicyIdExpr := "/key-transfer-policies/" + validation.IdReg
 
 	router.Handle("/key-transfer-policies",
