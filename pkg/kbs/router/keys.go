@@ -21,8 +21,9 @@ func setKeyRoutes(router *mux.Router, endpointUrl string, config domain.KeyContr
 	defer defaultLog.Trace("router/keys:setKeyRoutes() Leaving")
 
 	keyStore := directory.NewKeyStore(constants.KeysDir)
+	policyStore := directory.NewKeyTransferPolicyStore(constants.KeysTransferPolicyDir)
 	remoteManager := keymanager.NewRemoteManager(keyStore, keyManager, endpointUrl)
-	keyController := controllers.NewKeyController(remoteManager, config)
+	keyController := controllers.NewKeyController(remoteManager, policyStore, config)
 	keyIdExpr := "/keys/" + validation.IdReg
 
 	router.Handle("/keys",
@@ -54,8 +55,9 @@ func setKeyTransferRoutes(router *mux.Router, endpointUrl string, config domain.
 	defer defaultLog.Trace("router/keys:setKeyTransferRoutes() Leaving")
 
 	keyStore := directory.NewKeyStore(constants.KeysDir)
+	policyStore := directory.NewKeyTransferPolicyStore(constants.KeysTransferPolicyDir)
 	remoteManager := keymanager.NewRemoteManager(keyStore, keyManager, endpointUrl)
-	keyController := controllers.NewKeyController(remoteManager, config)
+	keyController := controllers.NewKeyController(remoteManager, policyStore, config)
 	keyIdExpr := "/keys/" + validation.IdReg
 
 	router.Handle(keyIdExpr+"/transfer",

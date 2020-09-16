@@ -40,14 +40,16 @@ import (
 )
 
 type KeyController struct {
-	keyManager *keymanager.RemoteManager
-	config     domain.KeyControllerConfig
+	remoteManager *keymanager.RemoteManager
+	policyStore   domain.KeyTransferPolicyStore
+	config        domain.KeyControllerConfig
 }
 
-func NewKeyController(km *keymanager.RemoteManager, kc domain.KeyControllerConfig) *KeyController {
+func NewKeyController(rm *keymanager.RemoteManager, ps domain.KeyTransferPolicyStore, kc domain.KeyControllerConfig) *KeyController {
 	return &KeyController{
-		keyManager: km,
-		config:     kc,
+		remoteManager: rm,
+		policyStore:   ps,
+		config:        kc,
 	}
 }
 
@@ -87,6 +89,17 @@ func (kc KeyController) Create(responseWriter http.ResponseWriter, request *http
 	if requestKey.TransferPolicyID == uuid.Nil {
 		defaultLog.Debug("controllers/key_controller:Create() TransferPolicy ID is not provided : Proceeding with DefaultTransferPolicy")
 		requestKey.TransferPolicyID = kc.config.DefaultTransferPolicyId
+	} else {
+		transferPolicy, err := kc.policyStore.Retrieve(requestKey.TransferPolicyID)
+		if err != nil {
+			defaultLog.WithError(err).Error("controllers/key_controller:Create() Key transfer policy retrieve failed")
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to retrieve key transfer policy"}
+		}
+
+		if transferPolicy == nil {
+			defaultLog.Errorf("controllers/key_controller:Create() Key transfer policy with specified id could not be located")
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Key transfer policy with specified id does not exist"}
+		}
 	}
 
 	privileges, err := comctx.GetUserPermissions(request)
@@ -104,7 +117,7 @@ func (kc KeyController) Create(responseWriter http.ResponseWriter, request *http
 		}
 
 		defaultLog.Debug("controllers/key_controller:Create() Create key request received")
-		createdKey, err = kc.keyManager.CreateKey(&requestKey)
+		createdKey, err = kc.remoteManager.CreateKey(&requestKey)
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/key_controller:Create() Key create failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to create key"}
@@ -119,7 +132,7 @@ func (kc KeyController) Create(responseWriter http.ResponseWriter, request *http
 		}
 
 		defaultLog.Debug("controllers/key_controller:Create() Register key request received")
-		createdKey, err = kc.keyManager.RegisterKey(&requestKey)
+		createdKey, err = kc.remoteManager.RegisterKey(&requestKey)
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/key_controller:Create() Key register failed")
 			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to register key"}
@@ -137,7 +150,7 @@ func (kc KeyController) Retrieve(responseWriter http.ResponseWriter, request *ht
 	defer defaultLog.Trace("controllers/key_controller:Retrieve() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	key, err := kc.keyManager.RetrieveKey(id)
+	key, err := kc.remoteManager.RetrieveKey(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/key_controller:Retrieve() Key with specified id could not be located")
@@ -158,7 +171,7 @@ func (kc KeyController) Delete(responseWriter http.ResponseWriter, request *http
 	defer defaultLog.Trace("controllers/key_controller:Delete() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	err := kc.keyManager.DeleteKey(id)
+	err := kc.remoteManager.DeleteKey(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/key_controller:Delete() Key with specified id could not be located")
@@ -191,7 +204,7 @@ func (kc KeyController) Search(responseWriter http.ResponseWriter, request *http
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Invalid filter criteria"}
 	}
 
-	keys, err := kc.keyManager.SearchKeys(criteria)
+	keys, err := kc.remoteManager.SearchKeys(criteria)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/key_controller:Search() Key search failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to search keys"}
@@ -277,7 +290,7 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 
 	// Validate saml report in request
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	trusted, bindingCert := keytransfer.IsTrustedByHvs(string(bytes), samlReport, id, kc.config, kc.keyManager)
+	trusted, bindingCert := keytransfer.IsTrustedByHvs(string(bytes), samlReport, id, kc.config, kc.remoteManager)
 	if !trusted {
 		secLog.Error("controllers/key_controller:TransferWithSaml() Saml report is not trusted")
 		return nil, http.StatusUnauthorized, &commErr.ResourceError{Message:"Client not trusted by Hvs"}
@@ -298,7 +311,7 @@ func (kc *KeyController) wrapSecretKey(id uuid.UUID, publicKey *rsa.PublicKey, h
 	defaultLog.Trace("controllers/key_controller:wrapSecretKey() Entering")
 	defer defaultLog.Trace("controllers/key_controller:wrapSecretKey() Leaving")
 
-	secretKey, err := kc.keyManager.TransferKey(id)
+	secretKey, err := kc.remoteManager.TransferKey(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/key_controller:wrapSecretKey() Key with specified id could not be located")
