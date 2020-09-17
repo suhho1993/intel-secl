@@ -10,9 +10,9 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	"net/http"
 	"net/http/httptest"
 

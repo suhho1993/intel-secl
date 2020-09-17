@@ -11,12 +11,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	wlaModel "github.com/intel-secl/intel-secl/v3/pkg/model/wlagent"
 	. "github.com/onsi/ginkgo"
@@ -32,7 +33,7 @@ var certStore *models.CertificatesStore
 var _ = BeforeSuite(func() {
 	//Generate Privacyca cert
 	certStore = utils.LoadCertificates(mocks.NewFakeCertificatesPathStore())
-	caCertDer, caKeyDer, _ := crypt.CreateKeyPairAndCertificate(constants.DefaultPrivacyCaIdentityIssuer, "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
+	caCertDer, caKeyDer, _ := crypt.CreateKeyPairAndCertificate(consts.DefaultPrivacyCaIdentityIssuer, "", consts.DefaultKeyAlgorithm, consts.DefaultKeyLength)
 	caCert, _ := x509.ParseCertificate(caCertDer)
 	var caCerts []x509.Certificate
 	caCerts = append(caCerts, *caCert)

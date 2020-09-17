@@ -149,14 +149,6 @@ const (
 	JWTCertsCacheTime = "1m"
 )
 
-// http media type
-const (
-	HTTPMediaTypeJson    = "application/json"
-	HTTPMediaTypeSaml    = "application/samlassertion+xml"
-	HTTPMediaTypeXml     = "application/xml"
-	HTTPMediaTypePemFile = "application/x-pem-file"
-)
-
 // FVS constants
 const (
 	DefaultFvsNumberOfVerifiers            = 20

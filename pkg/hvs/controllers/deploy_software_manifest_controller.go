@@ -8,8 +8,8 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/google/uuid"
-	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"

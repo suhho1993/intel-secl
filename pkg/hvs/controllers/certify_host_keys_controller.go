@@ -11,6 +11,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/privacyca"
@@ -42,7 +43,7 @@ func (certifyHostKeysController *CertifyHostKeysController) CertifySigningKey(w 
 	defaultLog.Trace("controllers/certify_host_keys_controller:CertifySigningKey() Entering")
 	defer defaultLog.Trace("controllers/certify_host_keys_controller:CertifySigningKey() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 
@@ -72,7 +73,7 @@ func (certifyHostKeysController *CertifyHostKeysController) CertifyBindingKey(w 
 	defaultLog.Trace("controllers/certify_host_keys_controller:CertifyBindingKey() Entering")
 	defer defaultLog.Trace("controllers/certify_host_keys_controller:CertifyBindingKey() Leaving")
 
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson{
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson{
 		return nil, http.StatusUnsupportedMediaType, &commErr.ResourceError{Message: "Invalid Content-Type"}
 	}
 

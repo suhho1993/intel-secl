@@ -17,6 +17,7 @@ import (
 	dm "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/auth"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
@@ -287,7 +288,7 @@ func getFlavorCreateReq(r *http.Request) (dm.FlavorCreateRequest, error) {
 	defer defaultLog.Trace("controllers/flavor_controller:getFlavorCreateReq() Leaving")
 
 	var flavorCreateReq dm.FlavorCreateRequest
-	if r.Header.Get("Content-Type") != consts.HTTPMediaTypeJson {
+	if r.Header.Get("Content-Type") != constants.HTTPMediaTypeJson {
 		secLog.Error("controllers/flavor_controller:getFlavorCreateReq() Invalid Content-Type")
 		return flavorCreateReq, errors.New("Invalid Content-Type")
 	}

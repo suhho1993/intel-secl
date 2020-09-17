@@ -12,6 +12,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 )
 
@@ -29,7 +30,7 @@ func SetReportRoutes(router *mux.Router, store *postgres.DataStore, hostTrustMan
 
 	router.Handle("/reports",
 		ErrorHandler(permissionsHandler(ResponseHandler(reportController.CreateSaml),
-			[]string{constants.ReportCreate}))).Methods("POST").Headers("Accept", constants.HTTPMediaTypeSaml)
+			[]string{constants.ReportCreate}))).Methods("POST").Headers("Accept", consts.HTTPMediaTypeSaml)
 
 	router.Handle("/reports",
 		ErrorHandler(permissionsHandler(JsonResponseHandler(reportController.Create),
@@ -37,7 +38,7 @@ func SetReportRoutes(router *mux.Router, store *postgres.DataStore, hostTrustMan
 
 	router.Handle("/reports",
 		ErrorHandler(permissionsHandler(ResponseHandler(reportController.SearchSaml),
-			[]string{constants.ReportSearch}))).Methods("GET").Headers("Accept", constants.HTTPMediaTypeSaml)
+			[]string{constants.ReportSearch}))).Methods("GET").Headers("Accept", consts.HTTPMediaTypeSaml)
 
 	router.Handle(reportIdExpr,
 		ErrorHandler(permissionsHandler(JsonResponseHandler(reportController.Retrieve),

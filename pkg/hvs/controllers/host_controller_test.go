@@ -7,12 +7,12 @@ package controllers_test
 import (
 	"encoding/base64"
 	"encoding/json"
-	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	smocks "github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/mocks"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"net/http"

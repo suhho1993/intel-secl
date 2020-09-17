@@ -8,12 +8,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
@@ -38,7 +39,7 @@ var _ = Describe("CaCertificatesController", func() {
 		Context("Create root CA certificates", func() {
 			It("Should create CA certificates with CN", func() {
 				router.Handle("/ca-certificates", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(caCertificatesController.Create))).Methods("POST")
-				cert, _, _ := crypt.CreateKeyPairAndCertificate("root-test", "", constants.DefaultKeyAlgorithm, constants.DefaultKeyLength)
+				cert, _, _ := crypt.CreateKeyPairAndCertificate("root-test", "", consts.DefaultKeyAlgorithm, consts.DefaultKeyLength)
 				certificate := hvs.CaCertificate{
 					Name: 	     "root-test",
 					Type:        models.CaCertTypesRootCa.String(),

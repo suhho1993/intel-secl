@@ -8,8 +8,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/auth"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
@@ -133,7 +134,7 @@ func permissionsHandler(eh endpointHandler, permissionNames []string) endpointHa
 			secLog.Errorf("router/handlers:permissionsHandler() %s Permission: %v | Context: %v", commLogMsg.AuthenticationFailed, permissionNames, r.Context())
 			return errors.Wrap(err, "router/handlers:permissionsHandler() Could not get user permissions from http context")
 		}
-		reqPermissions := ct.PermissionInfo{Service: constants.ServiceName, Rules: permissionNames}
+		reqPermissions := ct.PermissionInfo{Service: consts.ServiceName, Rules: permissionNames}
 
 		_, foundMatchingPermission := auth.ValidatePermissionAndGetPermissionsContext(privileges, reqPermissions,
 			true)

@@ -7,10 +7,11 @@ package controllers_test
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/controllers"
 	mocks2 "github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	hvsRoutes "github.com/intel-secl/intel-secl/v3/pkg/hvs/router"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -331,7 +332,7 @@ var _ = Describe("HostStatusController", func() {
 		Context("Search HostStatuses from data store with valid fromDate and toDate", func() {
 			It("Should return a list of HostStatus", func() {
 				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostStatusController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"&toDate="+time.Now().Format(constants.ParamDateFormat), nil)
+				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(consts.ParamDateFormat)+"&toDate="+time.Now().Format(consts.ParamDateFormat), nil)
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -348,7 +349,7 @@ var _ = Describe("HostStatusController", func() {
 		Context("Search HostStatuses from data store with invalid fromDate and toDate", func() {
 			It("Should return a list of HostStatus", func() {
 				router.Handle("/host-status", hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(hostStatusController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateFormat)+"ABC"+"&toDate="+time.Now().Format(constants.ParamDateFormat), nil)
+				req, err := http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(consts.ParamDateFormat)+"ABC"+"&toDate="+time.Now().Format(consts.ParamDateFormat), nil)
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
@@ -360,7 +361,7 @@ var _ = Describe("HostStatusController", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(hsCollection).To(BeNil())
 
-				req, err = http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(constants.ParamDateTimeFormat)+"&toDate="+time.Now().Format(constants.ParamDateTimeFormat)+"ABC", nil)
+				req, err = http.NewRequest("GET", "/host-status?fromDate="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(consts.ParamDateTimeFormat)+"&toDate="+time.Now().Format(consts.ParamDateTimeFormat)+"ABC", nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()

@@ -8,10 +8,11 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
+	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
@@ -342,7 +343,7 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 	numberOfDays := strings.TrimSpace(params.Get("numberOfDays"))
 	if numberOfDays != "" {
 		numDays, err := strconv.Atoi(numberOfDays)
-		if err != nil || numDays < 0 || numDays > constants.MaxNumDaysSearchLimit {
+		if err != nil || numDays < 0 || numDays > consts.MaxNumDaysSearchLimit {
 			return nil, errors.New("NumberOfDays must be an integer >= 0 and <= 365")
 		}
 		rfc.NumberOfDays = numDays
@@ -356,7 +357,7 @@ func getReportFilterCriteria(params url.Values) (*models.ReportFilterCriteria, e
 		}
 		rfc.Limit = rLimit
 	} else {
-		rfc.Limit = constants.DefaultSearchResultRowLimit
+		rfc.Limit = consts.DefaultSearchResultRowLimit
 	}
 
 	return &rfc, nil

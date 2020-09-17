@@ -15,9 +15,9 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
@@ -183,7 +183,7 @@ func (certifyHostAiksController *CertifyHostAiksController) getIdentityProofRequ
 		}
 	}
 	if !certifyHostAiksController.isEkCertificateVerifiedByAuthority(ekCert, &endorsementCertsToVerify) && !certifyHostAiksController.isEkCertificateVerifiedByAnyAuthority(ekCert, endorsementCerts) && !certifyHostAiksController.isEkCertRegistered(ekCert) {
-		secLog.Errorf("controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted, Please verify Endorsement Authority certificate is present in %s file or ekcert is not registered with hvs", constants.EndorsementCACertFile)
+		secLog.Errorf("controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted, Please verify Endorsement Authority certificate is present in EndorsementCA file or ekcert is not registered with hvs")
 		return taModel.IdentityProofRequest{}, http.StatusBadRequest, errors.Wrap(err, "controllers/certify_host_aiks_controller:getIdentityProofRequest() EC is not trusted")
 	}
 
