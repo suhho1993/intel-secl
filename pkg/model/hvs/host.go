@@ -11,10 +11,12 @@ type HostCollection struct {
 }
 
 type Host struct {
-	Id               uuid.UUID  `json:"id,omitempty"`
-	HostName         string     `json:"host_name"`
-	Description      string     `json:"description,omitempty"`
-	ConnectionString string     `json:"connection_string"`
+	// swagger:strfmt uuid
+	Id               uuid.UUID `json:"id,omitempty"`
+	HostName         string    `json:"host_name"`
+	Description      string    `json:"description,omitempty"`
+	ConnectionString string    `json:"connection_string"`
+	// swagger:strfmt uuid
 	HardwareUuid     *uuid.UUID `json:"hardware_uuid,omitempty"`
 	FlavorgroupNames []string   `json:"flavorgroup_names,omitempty"`
 }
@@ -31,10 +33,13 @@ type HostFlavorgroupCollection struct {
 }
 
 type HostFlavorgroup struct {
-	HostId        uuid.UUID `json:"host_id,omitempty"`
+	// swagger:strfmt uuid
+	HostId uuid.UUID `json:"host_id,omitempty"`
+	// swagger:strfmt uuid
 	FlavorgroupId uuid.UUID `json:"flavorgroup_id,omitempty"`
 }
 
 type HostFlavorgroupCreateRequest struct {
+	// swagger:strfmt uuid
 	FlavorgroupId uuid.UUID `json:"flavorgroup_id,omitempty"`
 }

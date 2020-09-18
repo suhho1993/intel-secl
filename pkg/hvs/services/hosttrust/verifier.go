@@ -58,7 +58,7 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 
 	// TODO : remove this when we remove the intermediate collection
 	flvGroupIds, err := v.HostStore.SearchFlavorgroups(hostId)
-	flvGroups, err := v.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{Ids:flvGroupIds})
+	flvGroups, err := v.FlavorGroupStore.Search(&models.FlavorGroupFilterCriteria{Ids: flvGroupIds})
 	if err != nil {
 		return nil, errors.New("hosttrust/verifier:Verify() Store access error")
 	}
@@ -93,7 +93,7 @@ func (v *Verifier) Verify(hostId uuid.UUID, hostData *types.HostManifest, newDat
 			finalReportValid = false
 			fgTrustReport, err = v.CreateFlavorGroupReport(hostId, *fgTrustReqs, hostData, fgTrustCache)
 			if err != nil {
-				return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while crating flavorgroup report")
+				return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while creating flavorgroup report")
 			}
 		}
 		log.Debug("hosttrust/verifier:Verify() Trust status for host id ", hostId, " for flavorgroup ", fg.ID, " is ", fgTrustReport.IsTrusted())
@@ -120,10 +120,7 @@ func (v *Verifier) getCachedFlavors(hostId uuid.UUID, flavGrpId uuid.UUID) ([]hv
 	defer defaultLog.Trace("hosttrust/verifier:getCachedFlavors() Leaving")
 	// retrieve the IDs of the trusted flavors from the host store
 	if flIds, err := v.HostStore.RetrieveTrustCacheFlavors(hostId, flavGrpId); err != nil && len(flIds) == 0 {
-		if err != nil {
-			return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving TrustCacheFlavors")
-		}
-		return nil, nil
+		return nil, errors.Wrap(err, "hosttrust/verifier:Verify() Error while retrieving TrustCacheFlavors")
 	} else {
 		result := make([]hvs.SignedFlavor, 0, len(flIds))
 		for _, flvId := range flIds {

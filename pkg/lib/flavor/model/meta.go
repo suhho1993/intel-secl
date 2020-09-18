@@ -16,7 +16,8 @@ import (
 
 // Meta holds metadata information related to the Flavor
 type Meta struct {
-	Schema      *Schema            `json:"schema,omitempty"`
+	Schema *Schema `json:"schema,omitempty"`
+	// swagger:strfmt uuid
 	ID          uuid.UUID          `json:"id"`
 	Realm       string             `json:"realm,omitempty"`
 	Description Description        `json:"description,omitempty"`

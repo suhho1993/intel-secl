@@ -22,8 +22,10 @@ type FlavorMatchPolicyCollection struct {
 }
 
 type FlavorGroup struct {
-	ID            uuid.UUID           `json:"id,omitempty"`
-	Name          string              `json:"name,omitempty"`
+	// swagger:strfmt uuid
+	ID   uuid.UUID `json:"id,omitempty"`
+	Name string    `json:"name,omitempty"`
+	// swagger:strfmt uuid
 	FlavorIds     []uuid.UUID         `json:"flavorIds,omitempty"`
 	Flavors       []Flavor            `json:"flavors,omitempty"`
 	MatchPolicies FlavorMatchPolicies `json:"flavor_match_policies,omitempty"`
@@ -115,14 +117,14 @@ func (r *FlavorGroup) UnmarshalJSON(b []byte) error {
 // over and over again trying to look for information. Everything is gathered in one fell swoop
 func (r *FlavorGroup) GetMatchPolicyMaps() (
 
-// Map to determine what is the match policy for each individual flavor part
-// eg : map["SOFTWARE"] = MatchPolicy{MatchType: "ANY_OF", Required: "Required_if_defined"}
+	// Map to determine what is the match policy for each individual flavor part
+	// eg : map["SOFTWARE"] = MatchPolicy{MatchType: "ANY_OF", Required: "Required_if_defined"}
 	map[cf.FlavorPart]MatchPolicy,
-// A map for match type to all the flavor part that has the particular match type
-// eg : map["AL_OF"] = []{"SOFTWARE", "PLATFORM"}
+	// A map for match type to all the flavor part that has the particular match type
+	// eg : map["AL_OF"] = []{"SOFTWARE", "PLATFORM"}
 	map[MatchType][]cf.FlavorPart,
-// A map for required/ required if defined policy to all the flavor part
-// eg : map["Required_if_defined"] = {Software}
+	// A map for required/ required if defined policy to all the flavor part
+	// eg : map["Required_if_defined"] = {Software}
 	map[FlavorRequiredPolicy][]cf.FlavorPart) {
 
 	fpMap := make(map[cf.FlavorPart]MatchPolicy)
@@ -139,8 +141,10 @@ func (r *FlavorGroup) GetMatchPolicyMaps() (
 }
 
 type FlavorgroupFlavorLink struct {
+	// swagger:strfmt uuid
 	FlavorGroupID uuid.UUID `json:"flavorgroup_id"`
-	FlavorID      uuid.UUID `json:"flavor_id"`
+	// swagger:strfmt uuid
+	FlavorID uuid.UUID `json:"flavor_id"`
 }
 
 type FlavorgroupFlavorLinkCollection struct {
@@ -149,5 +153,6 @@ type FlavorgroupFlavorLinkCollection struct {
 
 // FlavorgroupFlavorLinkCriteria is used to hold the request details of a Flavor-FlavorGroup Link Request
 type FlavorgroupFlavorLinkCriteria struct {
+	// swagger:strfmt uuid
 	FlavorID uuid.UUID `json:"flavor_id"`
 }

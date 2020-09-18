@@ -211,7 +211,7 @@ type HostFlavorgroupCreateRequest struct {
 //    | flavorgroup_names | List of flavor group names that the created host will be associated. |
 //    | description       | Host description. |
 //
-//   Note: id and hardware_uuid must be provided as valid UUIDv4 strings. It is recommended to not update id field.
+//
 //
 // x-permissions: hosts:store
 // security:
@@ -419,7 +419,7 @@ type HostFlavorgroupCreateRequest struct {
 //    |----------------|-------------|
 //    | flavorgroup_id | Unique ID of the flavorgroup to be linked to host. |
 //
-//   Note: flavorgroup_id must be provided as valid UUIDv4 string.
+//
 //
 // x-permissions: hosts:create
 // security:

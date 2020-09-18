@@ -176,7 +176,7 @@ type TagCertificateCollection struct {
 //    | hardware_uuid     | The hardware UUID of the host to which the tag certificate is associated. |
 //    | selection_content | an array of one or more key-value pairs with the tag selection attributes. |
 //
-//   Note: hardware_uuid must be provided as valid UUIDv4 string.
+//
 //
 // x-permissions: tag_certificates:create
 // security:
@@ -288,7 +288,7 @@ type TagCertificateCollection struct {
 //    |-------------------|-------------|
 //    | certificate_id    | ID of TagCertificate to be deployed. |
 //
-//   Note: certificate_id must be provided as valid UUIDv4 string.
+//
 //
 // x-permissions: tag_certificates:deploy
 // security:

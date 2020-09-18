@@ -12,6 +12,7 @@ type ESXiClusterCollection struct {
 }
 
 type ESXiCluster struct {
+	// swagger:strfmt uuid
 	Id               uuid.UUID `json:"id"`
 	ConnectionString string    `json:"connection_string"`
 	ClusterName      string    `json:"cluster_name"`
@@ -19,6 +20,6 @@ type ESXiCluster struct {
 }
 
 type ESXiClusterCreateRequest struct {
-	ConnectionString string    `json:"connection_string"`
-	ClusterName      string    `json:"cluster_name"`
+	ConnectionString string `json:"connection_string"`
+	ClusterName      string `json:"cluster_name"`
 }

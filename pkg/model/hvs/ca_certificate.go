@@ -11,7 +11,8 @@ type CaCertificateCollection struct {
 
 // CaCertificate is to represent certificate/ca certificate
 type CaCertificate struct {
-	Name        string `json:"name,omitempty"`
-	Type        string `json:"type,omitempty"`
+	Name string `json:"name,omitempty"`
+	Type string `json:"type,omitempty"`
+	// swagger:strfmt base64
 	Certificate []byte `json:"certificate,omitempty"`
 }

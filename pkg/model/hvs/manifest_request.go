@@ -11,6 +11,7 @@ import (
 )
 
 type ManifestRequest struct {
+	// swagger:strfmt uuid
 	HostId           uuid.UUID      `xml:"hostId,omitempty"`
 	ConnectionString string         `xml:"connectionString"`
 	FlavorGroupNames []string       `xml:"flavorgroupNames,omitempty"`

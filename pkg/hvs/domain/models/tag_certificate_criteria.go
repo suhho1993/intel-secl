@@ -12,6 +12,7 @@ import (
 
 // TagCertificateFilterCriteria is passed to the TagCertificates Search API to filter the response
 type TagCertificateFilterCriteria struct {
+	// swagger:strfmt uuid
 	ID              uuid.UUID `json:"id"`
 	SubjectEqualTo  string    `json:"subjectEqualTo"`
 	SubjectContains string    `json:"subjectContains"`
@@ -20,12 +21,14 @@ type TagCertificateFilterCriteria struct {
 	ValidOn         time.Time `json:"validOn"`
 	ValidBefore     time.Time `json:"validBefpre"`
 	ValidAfter      time.Time `json:"validAfter"`
-	HardwareUUID    uuid.UUID `json:"hardwareUuid"`
+	// swagger:strfmt uuid
+	HardwareUUID uuid.UUID `json:"hardwareUuid"`
 }
 
 // TagCertificateCreateCriteria holds the data used to create a TagCertificate
 type TagCertificateCreateCriteria struct {
 	// HardwareUUID The hardware UUID of the host to which the tag certificate is associated.
+	// swagger:strfmt uuid
 	HardwareUUID uuid.UUID `json:"hardware_uuid"`
 	// SelectionContent is an array of one or more key-value pairs with the tag selection attributes.
 	SelectionContent []asset_tag.TagKvAttribute `json:"selection_content,omitempty"`
@@ -33,5 +36,6 @@ type TagCertificateCreateCriteria struct {
 
 // TagCertificateDeployCriteria holds the data used to deploy a TagCertificate onto a host
 type TagCertificateDeployCriteria struct {
+	// swagger:strfmt uuid
 	CertID uuid.UUID `json:"certificate_id,omitempty"`
 }

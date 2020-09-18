@@ -17,28 +17,32 @@ type ReportCollection struct {
 }
 
 type Report struct {
-	ID                uuid.UUID           `json:"id"`
-	TrustInformation  TrustInformation    `json:"trust_information"`
-	HostID            uuid.UUID           `json:"host_id"`
-	TrustReport       TrustReport         `json:"-"`
-	Saml              string              `json:"-"`
-	HostInfo          taModel.HostInfo    `json:"host_info"`
-	CreatedAt         time.Time           `json:"created"`
-	Expiration        time.Time           `json:"expiration"`
+	// swagger:strfmt uuid
+	ID               uuid.UUID        `json:"id"`
+	TrustInformation TrustInformation `json:"trust_information"`
+	// swagger:strfmt uuid
+	HostID      uuid.UUID        `json:"host_id"`
+	TrustReport TrustReport      `json:"-"`
+	Saml        string           `json:"-"`
+	HostInfo    taModel.HostInfo `json:"host_info"`
+	CreatedAt   time.Time        `json:"created"`
+	Expiration  time.Time        `json:"expiration"`
 }
 
 type TrustInformation struct {
-	Overall  bool `json:"OVERALL"`
+	Overall     bool                                    `json:"OVERALL"`
 	FlavorTrust map[common.FlavorPart]FlavorTrustStatus `json:"flavors_trust"`
 }
 
 type FlavorTrustStatus struct {
-	Trust  bool `json:"trust"`
+	Trust                bool         `json:"trust"`
 	RuleResultCollection []RuleResult `json:"rules"`
 }
 
 type ReportCreateRequest struct {
-	HostID	            uuid.UUID   `json:"host_id"`
-	HardwareUUID        uuid.UUID   `json:"hardware_uuid"`
-	HostName            string      `json:"host_name"`
+	// swagger:strfmt uuid
+	HostID uuid.UUID `json:"host_id"`
+	// swagger:strfmt uuid
+	HardwareUUID uuid.UUID `json:"hardware_uuid"`
+	HostName     string    `json:"host_name"`
 }

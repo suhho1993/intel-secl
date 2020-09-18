@@ -8,6 +8,8 @@ package hvs
 import "github.com/google/uuid"
 
 type DeployManifestRequest struct {
-	HostId   uuid.UUID `json:"host_id"`
+	// swagger:strfmt uuid
+	HostId uuid.UUID `json:"host_id"`
+	// swagger:strfmt uuid
 	FlavorId uuid.UUID `json:"flavor_id"`
 }

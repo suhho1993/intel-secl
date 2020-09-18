@@ -14,12 +14,15 @@ import (
 
 // TagCertificate model lays out the attributes required for TagCertificates
 type TagCertificate struct {
-	ID            uuid.UUID `json:"id"`
-	Certificate   []byte    `json:"certificate"`
-	Subject       string    `json:"subject"`
-	Issuer        string    `json:"issuer"`
-	NotBefore     time.Time `json:"not_before"`
-	NotAfter      time.Time `json:"not_after"`
+	// swagger:strfmt uuid
+	ID uuid.UUID `json:"id"`
+	// swagger:strfmt base64
+	Certificate []byte    `json:"certificate"`
+	Subject     string    `json:"subject"`
+	Issuer      string    `json:"issuer"`
+	NotBefore   time.Time `json:"not_before"`
+	NotAfter    time.Time `json:"not_after"`
+	// swagger:strfmt uuid
 	HardwareUUID  uuid.UUID `json:"hardware_uuid"`
 	TagCertDigest string    `json:"asset_tag_digest"`
 }

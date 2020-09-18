@@ -9,7 +9,9 @@ import "github.com/google/uuid"
 
 // TpmEndorsement struct
 type TpmEndorsement struct {
-	ID                uuid.UUID `json:"id,omitempty"`
+	// swagger:strfmt uuid
+	ID uuid.UUID `json:"id,omitempty"`
+	// swagger:strfmt uuid
 	HardwareUUID      uuid.UUID `json:"hardware_uuid"`
 	Issuer            string    `json:"issuer,omitempty"`
 	Revoked           bool      `json:"revoked,omitempty"`

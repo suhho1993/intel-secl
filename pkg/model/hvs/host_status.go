@@ -19,7 +19,9 @@ type HostStatusInformation struct {
 
 // HostStatus contains the response for the Host Status API for an individual host
 type HostStatus struct {
-	ID                    uuid.UUID             `json:"id"`
+	// swagger:strfmt uuid
+	ID uuid.UUID `json:"id"`
+	// swagger:strfmt uuid
 	HostID                uuid.UUID             `json:"host_id"`
 	Created               time.Time             `json:"created"`
 	HostStatusInformation HostStatusInformation `json:"status"`
