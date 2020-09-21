@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
 	"github.com/pkg/errors"
 )
@@ -53,9 +54,9 @@ func (ktps *KeyTransferPolicyStore) Retrieve(id uuid.UUID) (*kbs.KeyTransferPoli
 	bytes, err := ioutil.ReadFile(filepath.Join(ktps.Dir, id.String()))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, errors.New(commErr.RecordNotFound)
 		} else {
-			return nil, errors.Wrapf(err, "directory/key_transfer_policy_store:Retrieve() Unable to read key transfer policy with ID : %s", id.String())
+			return nil, errors.Wrapf(err, "directory/key_transfer_policy_store:Retrieve() Unable to read key transfer policy file : %s", id.String())
 		}
 	}
 
@@ -73,8 +74,13 @@ func (ktps *KeyTransferPolicyStore) Delete(id uuid.UUID) error {
 	defer defaultLog.Trace("directory/key_transfer_policy_store:Delete() Leaving")
 
 	if err := os.Remove(filepath.Join(ktps.Dir, id.String())); err != nil {
-		return err
+		if os.IsNotExist(err) {
+			return errors.New(commErr.RecordNotFound)
+		} else {
+			return errors.Wrapf(err, "directory/key_transfer_policy_store:Delete() Unable to remove key transfer policy file : %s", id.String())
+		}
 	}
+
 	return nil
 }
 
@@ -82,7 +88,7 @@ func (ktps *KeyTransferPolicyStore) Search(criteria *models.KeyTransferPolicyFil
 	defaultLog.Trace("directory/key_transfer_policy_store:Search() Entering")
 	defer defaultLog.Trace("directory/key_transfer_policy_store:Search() Leaving")
 
-	var policies []kbs.KeyTransferPolicyAttributes
+	var policies = []kbs.KeyTransferPolicyAttributes{}
 	policyFiles, err := ioutil.ReadDir(ktps.Dir)
 	if err != nil {
 		return nil, errors.New("directory/key_transfer_policy_store:Search() Unable to read the key transfer policy directory")
@@ -112,13 +118,8 @@ func filterKeyTransferPolicies(policies []kbs.KeyTransferPolicyAttributes, crite
 	defaultLog.Trace("directory/key_transfer_policy_store:filterKeyTransferPolicies() Entering")
 	defer defaultLog.Trace("directory/key_transfer_policy_store:filterKeyTransferPolicies() Leaving")
 
-	if policies == nil {
-		return nil
-	}
-
 	if criteria == nil || reflect.DeepEqual(*criteria, models.KeyTransferPolicyFilterCriteria{}) {
 		return policies
 	}
-
 	return policies
 }

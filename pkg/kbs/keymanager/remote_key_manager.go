@@ -6,6 +6,7 @@ package keymanager
 
 import (
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
@@ -19,6 +20,14 @@ type RemoteManager struct {
 	Store       domain.KeyStore
 	Manager     KeyManager
 	EndpointURL string
+}
+
+func NewRemoteManager(ks domain.KeyStore, km KeyManager, url string) *RemoteManager {
+	return &RemoteManager{
+		Store:       ks,
+		Manager:     km,
+		EndpointURL: url,
+	}
 }
 
 func (rm *RemoteManager) CreateKey(request *kbs.KeyRequest) (*kbs.KeyResponse, error) {
@@ -71,7 +80,7 @@ func (rm *RemoteManager) SearchKeys(criteria *models.KeyFilterCriteria) ([]*kbs.
 		return nil, err
 	}
 
-	var keyResponses []*kbs.KeyResponse
+	var keyResponses = []*kbs.KeyResponse{}
 	for _, keyAttributes := range keyAttributesList {
 		keyResponses = append(keyResponses, keyAttributes.ToKeyResponse())
 	}

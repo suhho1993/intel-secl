@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/pkg/errors"
 )
 
@@ -48,9 +49,9 @@ func (ks *KeyStore) Retrieve(id uuid.UUID) (*models.KeyAttributes, error) {
 	bytes, err := ioutil.ReadFile(filepath.Join(ks.Dir, id.String()))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, errors.New(commErr.RecordNotFound)
 		} else {
-			return nil, errors.Wrapf(err, "directory/key_store:Retrieve() Unable to read key with ID : %s", id.String())
+			return nil, errors.Wrapf(err, "directory/key_store:Retrieve() Unable to read key file : %s", id.String())
 		}
 	}
 
@@ -68,8 +69,13 @@ func (ks *KeyStore) Delete(id uuid.UUID) error {
 	defer defaultLog.Trace("directory/key_store:Delete() Leaving")
 
 	if err := os.Remove(filepath.Join(ks.Dir, id.String())); err != nil {
-		return err
+		if os.IsNotExist(err) {
+			return errors.New(commErr.RecordNotFound)
+		} else {
+			return errors.Wrapf(err, "directory/key_store:Delete() Unable to remove key file : %s", id.String())
+		}
 	}
+
 	return nil
 }
 
@@ -77,7 +83,7 @@ func (ks *KeyStore) Search(criteria *models.KeyFilterCriteria) ([]models.KeyAttr
 	defaultLog.Trace("directory/key_store:Search() Entering")
 	defer defaultLog.Trace("directory/key_store:Search() Leaving")
 
-	var keys []models.KeyAttributes
+	var keys = []models.KeyAttributes{}
 	keyFiles, err := ioutil.ReadDir(ks.Dir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "directory/key_store:Search() Error in reading the keys directory : %s", ks.Dir)
@@ -103,10 +109,6 @@ func (ks *KeyStore) Search(criteria *models.KeyFilterCriteria) ([]models.KeyAttr
 func filterKeys(keys []models.KeyAttributes, criteria *models.KeyFilterCriteria) []models.KeyAttributes {
 	defaultLog.Trace("directory/key_store:filterKeys() Entering")
 	defer defaultLog.Trace("directory/key_store:filterKeys() Leaving")
-
-	if keys == nil {
-		return nil
-	}
 
 	if criteria == nil || reflect.DeepEqual(*criteria, models.KeyFilterCriteria{}) {
 		return keys

@@ -12,6 +12,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
@@ -57,6 +58,7 @@ func (dm *DirectoryManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttri
 	}
 
 	keyAttributes := &models.KeyAttributes{
+		ID:               uuid.New(),
 		Algorithm:        request.KeyInformation.Algorithm,
 		KeyLength:        request.KeyInformation.KeyLength,
 		KeyData:          key,
@@ -64,6 +66,7 @@ func (dm *DirectoryManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttri
 		PublicKey:        publicKey,
 		PrivateKey:       privateKey,
 		TransferPolicyId: request.TransferPolicyID,
+		CreatedAt:        time.Now(),
 		Label:            request.Label,
 		Usage:            request.Usage,
 	}
@@ -114,6 +117,7 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 	}
 
 	keyAttributes := &models.KeyAttributes{
+		ID:               uuid.New(),
 		Algorithm:        request.KeyInformation.Algorithm,
 		KeyLength:        request.KeyInformation.KeyLength,
 		KeyData:          key,
@@ -121,6 +125,7 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 		PublicKey:        publicKey,
 		PrivateKey:       privateKey,
 		TransferPolicyId: request.TransferPolicyID,
+		CreatedAt:        time.Now(),
 		Label:            request.Label,
 		Usage:            request.Usage,
 	}

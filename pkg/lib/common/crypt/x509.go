@@ -12,6 +12,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -207,6 +209,19 @@ func GetPublicKeyFromCertPem(certPem []byte) (crypto.PublicKey, error) {
 		return "", err
 	}
 	return GetPublicKeyFromCert(cert)
+}
+
+// GetPublicKeyFromPem retrieve the public key from a public pem block
+func GetPublicKeyFromPem(keyPem []byte) (crypto.PublicKey, error) {
+	block, _ := pem.Decode(keyPem)
+	if block == nil || block.Type != "PUBLIC KEY"  {
+		return nil, fmt.Errorf("failed to parse public key PEM")
+	}
+	key, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse public key: " + err.Error())
+	}
+	return key, nil
 }
 
 func GetCertFromPem(certPem []byte) (*x509.Certificate, error) {
@@ -475,4 +490,13 @@ func GetCertificate(signingCertPems interface{}) ([][]byte, error) {
 
 	}
 	return certPemSlice, nil
+}
+
+func GetCertExtension(cert *x509.Certificate, oid asn1.ObjectIdentifier) []byte {
+	for _, ext := range cert.Extensions {
+		if reflect.DeepEqual(ext.Id, oid) {
+			return ext.Value
+		}
+	}
+	return nil
 }

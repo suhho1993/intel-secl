@@ -8,7 +8,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/gorilla/mux"
 	stdlog "log"
 	"net/http"
 	"os"
@@ -17,6 +16,10 @@ import (
 	"time"
 
 	"github.com/gorilla/handlers"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/router"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/utils"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
 	"github.com/pkg/errors"
@@ -38,8 +41,14 @@ func (app *App) startServer() error {
 		return err
 	}
 
+	// Initialize KeyControllerConfig
+	kcc, err := initKeyControllerConfig()
+	if err != nil {
+		return err
+	}
+
 	// Initialize routes
-	var routes *mux.Router
+	routes := router.InitRoutes(configuration, kcc)
 
 	defaultLog.Info("kbs/server:startServer() Starting server")
 	tlsConfig := &tls.Config{
@@ -87,4 +96,22 @@ func (app *App) startServer() error {
 	}
 	secLog.Info(commLogMsg.ServiceStop)
 	return nil
+}
+
+func initKeyControllerConfig() (domain.KeyControllerConfig, error) {
+	defaultLog.Trace("server:initKeyControllerConfig() Entering")
+	defer defaultLog.Trace("server:initKeyControllerConfig() Leaving")
+
+	id, err := utils.GetDefaultKeyTransferPolicyId()
+	if err != nil {
+		return domain.KeyControllerConfig{}, err
+	}
+
+	kcc := domain.KeyControllerConfig{
+		SamlCertsDir:            constants.SamlCertsDir,
+		TrustedCaCertsDir:       constants.TrustedCaCertsDir,
+		TpmIdentityCertsDir:     constants.TpmIdentityCertsDir,
+		DefaultTransferPolicyId: id,
+	}
+	return kcc, nil
 }

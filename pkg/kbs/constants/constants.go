@@ -6,8 +6,9 @@ package constants
 
 import "time"
 
+// general KBS constants
 const (
-	ServiceName     = "kbs"
+	ServiceName     = "KBS"
 	ServiceDir      = "kbs/"
 	ApiVersion      = "/v1"
 	ServiceUserName = "kbs"
@@ -63,4 +64,7 @@ const (
 
 	// log constants
 	DefaultLogEntryMaxlength = 1500
+
+	DirectoryKeyManager = "directory"
+	KmipKeyManager      = "kmip"
 )

@@ -41,7 +41,7 @@ type KeyResponse struct {
 // KeyTransferAttributes - Contains all possible key transfer attributes.
 type KeyTransferAttributes struct {
 	KeyId        uuid.UUID `json:"id,omitempty"`
-	KeyData      string    `json:"payload,omitempty"`
+	KeyData      []byte    `json:"payload,omitempty"`
 	KeyAlgorithm string    `json:"algorithm,omitempty"`
 	KeyLength    int       `json:"key_length,omitempty"`
 	Policy       string    `json:"policy,omitempty"`

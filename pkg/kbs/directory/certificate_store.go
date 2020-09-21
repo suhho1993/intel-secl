@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
+	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
 	"github.com/pkg/errors"
@@ -48,7 +49,33 @@ func (cs *CertificateStore) Retrieve(id uuid.UUID) (*kbs.Certificate, error) {
 	defaultLog.Trace("directory/certificate_store:Retrieve() Entering")
 	defer defaultLog.Trace("directory/certificate_store:Retrieve() Leaving")
 
-	return nil, errors.New("retrieve operation is not supported")
+	certPem, err := ioutil.ReadFile(filepath.Join(cs.Dir, id.String()))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errors.New(commErr.RecordNotFound)
+		} else {
+			return nil, errors.Wrapf(err, "directory/certificate_store:Retrieve() Unable to read certificate file : %s", id.String())
+		}
+	}
+
+	cert, err := crypt.GetCertFromPem(certPem)
+	if err != nil {
+		return nil, errors.Wrapf(err, "directory/certificate_store:Retrieve() Error in decoding the certificate")
+	}
+
+	fingerprint := sha512.Sum384(cert.Raw)
+	certificate := &kbs.Certificate{
+		ID:          id,
+		Certificate: certPem,
+		Subject:     cert.Subject.CommonName,
+		Issuer:      cert.Issuer.CommonName,
+		NotBefore:   &cert.NotBefore,
+		NotAfter:    &cert.NotAfter,
+		Revoked:     false,
+		Digest:      hex.EncodeToString(fingerprint[:]),
+	}
+
+	return certificate, nil
 }
 
 func (cs *CertificateStore) Delete(id uuid.UUID) error {
@@ -56,8 +83,13 @@ func (cs *CertificateStore) Delete(id uuid.UUID) error {
 	defer defaultLog.Trace("directory/certificate_store:Delete() Leaving")
 
 	if err := os.Remove(filepath.Join(cs.Dir, id.String())); err != nil {
-		return err
+		if os.IsNotExist(err) {
+			return errors.New(commErr.RecordNotFound)
+		} else {
+			return errors.Wrapf(err, "directory/certificate_store:Delete() Unable to remove certificate file : %s", id.String())
+		}
 	}
+
 	return nil
 }
 
@@ -65,38 +97,19 @@ func (cs *CertificateStore) Search(criteria *models.CertificateFilterCriteria) (
 	defaultLog.Trace("directory/certificate_store:Search() Entering")
 	defer defaultLog.Trace("directory/certificate_store:Search() Leaving")
 
-	var certificates []kbs.Certificate
+	var certificates = []kbs.Certificate{}
 	certFiles, err := ioutil.ReadDir(cs.Dir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "directory/certificate_store:Search() Error in reading the certificates directory : %s", cs.Dir)
 	}
 
 	for _, certFile := range certFiles {
-		filename := cs.Dir + certFile.Name()
-		defaultLog.Debug("directory/certificate_store:Search() Reading the certificate file : %s", filename)
-		certPem, err := ioutil.ReadFile(filename)
+		certificate, err := cs.Retrieve(uuid.MustParse(certFile.Name()))
 		if err != nil {
-			return nil, errors.Wrapf(err, "directory/certificate_store:Search() Error in reading the certificate file : %s", filename)
+			return nil, err
 		}
 
-		cert, err := crypt.GetCertFromPem(certPem)
-		if err != nil {
-			return nil, errors.Wrapf(err, "directory/certificate_store:Search() Error in decoding the certificate")
-		}
-
-		fingerprint := sha512.Sum384(cert.Raw)
-		certificate := kbs.Certificate{
-			ID:          uuid.MustParse(certFile.Name()),
-			Certificate: certPem,
-			Subject:     cert.Subject.CommonName,
-			Issuer:      cert.Issuer.CommonName,
-			NotBefore:   cert.NotBefore,
-			NotAfter:    cert.NotAfter,
-			Revoked:     false,
-			Digest:      hex.EncodeToString(fingerprint[:]),
-		}
-
-		certificates = append(certificates, certificate)
+		certificates = append(certificates, *certificate)
 	}
 
 	if len(certificates) > 0 {
@@ -184,7 +197,6 @@ func filterCertificates(certificates []kbs.Certificate, criteria *models.Certifi
 	// ValidOn filter
 	if !criteria.ValidOn.IsZero() {
 		var filteredCerts []kbs.Certificate
-
 		for _, cert := range certificates {
 			if cert.NotBefore.Before(criteria.ValidOn) && cert.NotAfter.After(criteria.ValidOn) {
 				filteredCerts = append(filteredCerts, cert)
