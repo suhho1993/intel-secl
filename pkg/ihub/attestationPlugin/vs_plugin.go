@@ -92,13 +92,14 @@ func GetHostReports(h string, conf *config.Configuration, certDirectory, samlCer
 	defer log.Trace("attestationPlugin/vs_plugin:GetHostReports() Leaving")
 
 	reportUrl := conf.AttestationService.AttestationURL + "/reports?latestPerHost=true&"
-
+        
+        var filterType string
 	if conf.Endpoint.Type == constants.OpenStackTenant {
-		reportUrl = reportUrl + "hostName=%s"
+		filterType = "hostName"
 	} else {
-		reportUrl = reportUrl + "hostHardwareId=%s"
+		filterType = "hostHardwareId"
 	}
-
+        reportUrl = reportUrl + filterType +"=%s"
 	reportUrl = fmt.Sprintf(reportUrl, strings.ToLower(h))
 
 	log.Debug("attestationPlugin/vs_plugin:GetHostReports() Reports URL : " + reportUrl)
@@ -109,9 +110,13 @@ func GetHostReports(h string, conf *config.Configuration, certDirectory, samlCer
 	}
 
 	samlReportBytes, err := vClient.GetSamlReports(reportUrl)
-	if err != nil {
+        if err != nil {
 		return nil, errors.Wrap(err, "attestationPlugin/vs_plugin:GetHostReports() Error in fetching SAML report")
 	}
+
+        if len(samlReportBytes) == 0{
+                return nil, errors.New("attestationPlugin/vs_plugin:GetHostReports() No reports retrieved from HVS for host with " + filterType + " " + h)
+        }
 
 	var samlReportUnmarshalled *saml.Saml
 	err = xml.Unmarshal(samlReportBytes, &samlReportUnmarshalled)
