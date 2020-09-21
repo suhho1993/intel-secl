@@ -13,7 +13,6 @@ import (
 	"crypto/sha512"
 	"encoding/json"
 	"fmt"
-	"hash"
 	"strings"
 )
 
@@ -47,39 +46,6 @@ func (d DigestAlgorithm) Prefix() string {
 // ZeroHash returns a zero-byte array corresponding to the length of the hash digest
 func (d DigestAlgorithm) ZeroHash() []byte {
 	return bytes.Repeat(nil, d.Algorithm.Size())
-}
-
-// GetHash returns the hash digest of the byte array
-func (d DigestAlgorithm) GetHash(x []byte) []byte {
-	switch d.Algorithm {
-	case crypto.SHA1:
-		return sha1.New().Sum(x)
-	case crypto.SHA256:
-		return sha256.New().Sum(x)
-	case crypto.SHA384:
-		return sha512.New384().Sum(x)
-	case crypto.MD5:
-		return md5.New().Sum(x)
-	}
-	return d.ZeroHash()
-}
-
-// ExtendHash emulates the PCR extension operation by concatenating the contents of 2 byte-arrays
-// and generating the hash digest of the resulting byte array's contents
-func (d DigestAlgorithm) ExtendHash(x []byte, y []byte) []byte {
-	var dhash interface{}
-	switch d {
-	case SHA1():
-		dhash = sha1.New()
-	case SHA256():
-		dhash = sha256.New()
-	case SHA384():
-		dhash = sha512.New384()
-	case SHA512():
-		dhash = sha512.New()
-	}
-	dhash.(hash.Hash).Write(x)
-	return dhash.(hash.Hash).Sum(y)
 }
 
 // newDigestAlgorithm creates a new instance of the DigestAlgorithm

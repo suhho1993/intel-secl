@@ -10,6 +10,7 @@ package types
  */
 
 import (
+	"crypto"
 	"encoding/hex"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
@@ -17,6 +18,7 @@ import (
 	cm "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/model"
 	hcConstants "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/constants"
 	hcTypes "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/util"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	"strings"
@@ -294,9 +296,27 @@ func (esxpf ESXPlatformFlavor) getAssetTagFlavor() ([]cm.Flavor, error) {
 		return nil, errors.Errorf("Tag certificate not specified")
 	}
 
-	// calculate the expected PCR 22 value based on tag certificate hash
-	tagCertificateHash = crypt.SHA1().GetHash(esxpf.TagCertificate.Encoded)
-	expectedPcrValue = hex.EncodeToString(crypt.SHA1().ExtendHash(crypt.SHA1().ZeroHash(), tagCertificateHash))
+	// calculate the expected PCR 22 value based on tag certificate hash event
+	tagCertificateHash, err = crypt.GetHashData(esxpf.TagCertificate.Encoded, crypto.SHA1)
+	if err != nil {
+		return nil, errors.Wrap(err, errorMessage+" Failure in evaluating certificate digest")
+	}
+
+	expectedEventLogEntry := hcTypes.EventLogEntry{
+		PcrIndex: hcTypes.PCR22,
+		PcrBank:  hcTypes.SHA1,
+		EventLogs: []hcTypes.EventLog{
+			{
+				DigestType: util.EVENT_LOG_DIGEST_SHA1,
+				Value:      hex.EncodeToString(tagCertificateHash),
+			},
+		},
+	}
+
+	expectedPcrValue, err = expectedEventLogEntry.Replay()
+	if err != nil {
+		return nil, errors.Wrap(err, errorMessage+" Failure in evaluating PCR22 value")
+	}
 
 	// Add the expected PCR 22 value to respective hash maps
 	var pcr22 = make(map[hcTypes.PcrIndex]cm.PcrEx)
