@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/rules"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
 	fConst "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
@@ -284,7 +285,9 @@ func getHostManifestMap(hostManifest *types.HostManifest, flavorParts []cf.Flavo
 				if hostInfo.BiosVersion != "" {
 					hostInfoValues["bios_version"] = hostInfo.BiosVersion
 				}
-				hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+				if utils.IsLinuxHost(&hostInfo) {
+					hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+				}
 				if !reflect.DeepEqual(hostInfo.HardwareFeatures, taModel.HardwareFeatures{}) {
 					hostHwFeatures := make(map[string]string)
 					if hostInfo.HardwareFeatures.CBNT != nil {
@@ -305,7 +308,9 @@ func getHostManifestMap(hostManifest *types.HostManifest, flavorParts []cf.Flavo
 					hostInfoValues["hardware_features"] = hostHwFeatures
 				}
 			} else if fp == cf.FlavorPartOs {
-				hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+				if utils.IsLinuxHost(&hostInfo) {
+					hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+				}
 				if hostInfo.OSName != "" {
 					hostInfoValues["os_name"] = hostInfo.OSName
 				}
@@ -319,7 +324,9 @@ func getHostManifestMap(hostManifest *types.HostManifest, flavorParts []cf.Flavo
 					hostInfoValues["vmm_name"] = hostInfo.VMMName
 				}
 			} else if fp == cf.FlavorPartHostUnique {
-				hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+				if utils.IsLinuxHost(&hostInfo) {
+					hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+				}
 				if hostInfo.HardwareUUID != "" {
 					hostInfoValues["hardware_uuid"] = strings.ToLower(hostInfo.HardwareUUID)
 				}
