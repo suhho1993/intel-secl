@@ -73,6 +73,7 @@ func (a *App) startServer() error {
 
 	// Initialize Host trust manager
 	hostTrustManager := initHostTrustManager(c, dataStore, certStore, alw)
+	go hostTrustManager.ProcessQueue()
 
 	// create an instance of the HRRS and start it...
 	reportStore := postgres.NewReportStore(dataStore)

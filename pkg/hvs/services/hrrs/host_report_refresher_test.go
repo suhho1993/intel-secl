@@ -102,6 +102,10 @@ func (htm MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, pref
 	return nil, errors.New("VerifyHost is not implemented")
 }
 
+func (htm MockHostTrustManager) ProcessQueue() error {
+	return errors.New("ProcessQueue is not implemented")
+}
+
 func (htm MockHostTrustManager) VerifyHostsAsync(hostIDs []uuid.UUID, fetchHostData, preferHashMatch bool) error {
 
 	for _, hostID := range hostIDs {

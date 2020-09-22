@@ -145,6 +145,60 @@ func (svc *Service) VerifyHost(hostId uuid.UUID, fetchHostData, preferHashMatch 
 	return svc.verifier.Verify(hostId, hostData, fetchHostData)
 }
 
+func (svc *Service) ProcessQueue() error {
+	defaultLog.Trace("hosttrust/manager:ProcessQueue() Entering")
+	defer defaultLog.Trace("hosttrust/manager:ProcessQueue() Leaving")
+
+	records, err := svc.prstStor.Search(nil)
+	if err != nil {
+		return errors.Wrap(err, "An error while searching for records in queue")
+	}
+
+	verifyWithFetchDataHostIds := []uuid.UUID{}
+	verifyHostIds := []uuid.UUID{}
+	if len(records) > 0 {
+		for _, queue := range records {
+			if queue.Params != nil {
+				hostId := uuid.UUID{}
+				fetchHostData := false
+				preferHashMatch := false
+				for key, value := range queue.Params {
+					if key == "host_id" {
+						hostId = uuid.MustParse(value.(string))
+					}
+					if key == "fetch_host_data" {
+						fetchHostData = value.(bool)
+					}
+					if key == "prefer_hash_match" {
+						preferHashMatch = value.(bool)
+					}
+				}
+				if fetchHostData {
+					verifyWithFetchDataHostIds = append(verifyWithFetchDataHostIds, hostId)
+				} else {
+					verifyHostIds = append(verifyHostIds, hostId)
+				}
+				ctx, cancel := context.WithCancel(context.Background())
+				svc.mapmtx.Lock()
+				// the host field is not filled at this stage since it requires a trip to the host store
+				svc.hosts[hostId] = &verifyTrustJob{ctx, cancel, nil, queue.Id,
+					fetchHostData, preferHashMatch}
+				svc.mapmtx.Unlock()
+
+			}
+		}
+	}
+
+	if len(verifyWithFetchDataHostIds) > 0 {
+		svc.wg.Add(1)
+		go svc.submitHostDataFetch(verifyWithFetchDataHostIds)
+	}
+	if len(verifyHostIds) > 0 {
+		go svc.queueFlavorVerify(verifyHostIds)
+	}
+	return nil
+}
+
 func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {
 	defaultLog.Trace("hosttrust/manager:VerifyHostsAsync() Entering")
 	defer defaultLog.Trace("hosttrust/manager:VerifyHostsAsync() Leaving")

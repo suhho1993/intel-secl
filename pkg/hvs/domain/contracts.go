@@ -128,6 +128,9 @@ type (
 		// preferHashMatch - Can attempt to do match a cumulative hash from the Host Manifest/ Data rather than
 		//                   doing a full report.
 		VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error
+
+		//Process all records stuck in queue post service restart
+		ProcessQueue() error
 	}
 
 	HostDataReceiver interface {

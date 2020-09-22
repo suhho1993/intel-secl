@@ -21,3 +21,7 @@ func (mock *MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, pr
 func (mock *MockHostTrustManager) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {
 	return nil
 }
+
+func (mock *MockHostTrustManager) ProcessQueue() error {
+	return nil
+}
