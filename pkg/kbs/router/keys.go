@@ -16,7 +16,7 @@ import (
 )
 
 //setKeyRoutes registers routes to perform Key CRUD Operations
-func setKeyRoutes(router *mux.Router, keyManager keymanager.KeyManager, endpointUrl string, config domain.KeyControllerConfig) *mux.Router {
+func setKeyRoutes(router *mux.Router, endpointUrl string, config domain.KeyControllerConfig, keyManager keymanager.KeyManager) *mux.Router {
 	defaultLog.Trace("router/keys:setKeyRoutes() Entering")
 	defer defaultLog.Trace("router/keys:setKeyRoutes() Leaving")
 

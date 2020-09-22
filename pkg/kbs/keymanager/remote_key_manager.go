@@ -10,23 +10,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
 )
 
-var defaultLog = log.GetDefaultLogger()
-
 type RemoteManager struct {
-	Store       domain.KeyStore
-	Manager     KeyManager
-	EndpointURL string
+	store       domain.KeyStore
+	manager     KeyManager
+	endpointURL string
 }
 
 func NewRemoteManager(ks domain.KeyStore, km KeyManager, url string) *RemoteManager {
 	return &RemoteManager{
-		Store:       ks,
-		Manager:     km,
-		EndpointURL: url,
+		store:       ks,
+		manager:     km,
+		endpointURL: url,
 	}
 }
 
@@ -34,13 +31,13 @@ func (rm *RemoteManager) CreateKey(request *kbs.KeyRequest) (*kbs.KeyResponse, e
 	defaultLog.Trace("keymanager/remote_key_manager:CreateKey() Entering")
 	defer defaultLog.Trace("keymanager/remote_key_manager:CreateKey() Leaving")
 
-	keyAttributes, err := rm.Manager.CreateKey(request)
+	keyAttributes, err := rm.manager.CreateKey(request)
 	if err != nil {
 		return nil, err
 	}
 
 	keyAttributes.TransferLink = rm.getTransferLink(keyAttributes.ID)
-	storedKey, err := rm.Store.Create(keyAttributes)
+	storedKey, err := rm.store.Create(keyAttributes)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +49,7 @@ func (rm *RemoteManager) RetrieveKey(keyId uuid.UUID) (*kbs.KeyResponse, error) 
 	defaultLog.Trace("keymanager/remote_key_manager:RetrieveKey() Entering")
 	defer defaultLog.Trace("keymanager/remote_key_manager:RetrieveKey() Leaving")
 
-	keyAttributes, err := rm.Store.Retrieve(keyId)
+	keyAttributes, err := rm.store.Retrieve(keyId)
 	if err != nil {
 		return nil, err
 	}
@@ -64,18 +61,23 @@ func (rm *RemoteManager) DeleteKey(keyId uuid.UUID) error {
 	defaultLog.Trace("keymanager/remote_key_manager:DeleteKey() Entering")
 	defer defaultLog.Trace("keymanager/remote_key_manager:DeleteKey() Leaving")
 
-	if err := rm.Manager.DeleteKey(keyId); err != nil {
+	keyAttributes, err := rm.store.Retrieve(keyId)
+	if err != nil {
 		return err
 	}
 
-	return rm.Store.Delete(keyId)
+	if err := rm.manager.DeleteKey(keyAttributes); err != nil {
+		return err
+	}
+
+	return rm.store.Delete(keyId)
 }
 
 func (rm *RemoteManager) SearchKeys(criteria *models.KeyFilterCriteria) ([]*kbs.KeyResponse, error) {
 	defaultLog.Trace("keymanager/remote_key_manager:SearchKeys() Entering")
 	defer defaultLog.Trace("keymanager/remote_key_manager:SearchKeys() Leaving")
 
-	keyAttributesList, err := rm.Store.Search(criteria)
+	keyAttributesList, err := rm.store.Search(criteria)
 	if err != nil {
 		return nil, err
 	}
@@ -92,13 +94,13 @@ func (rm *RemoteManager) RegisterKey(request *kbs.KeyRequest) (*kbs.KeyResponse,
 	defaultLog.Trace("keymanager/remote_key_manager:RegisterKey() Entering")
 	defer defaultLog.Trace("keymanager/remote_key_manager:RegisterKey() Leaving")
 
-	keyAttributes, err := rm.Manager.RegisterKey(request)
+	keyAttributes, err := rm.manager.RegisterKey(request)
 	if err != nil {
 		return nil, err
 	}
 
 	keyAttributes.TransferLink = rm.getTransferLink(keyAttributes.ID)
-	storedKey, err := rm.Store.Create(keyAttributes)
+	storedKey, err := rm.store.Create(keyAttributes)
 	if err != nil {
 		return nil, err
 	}
@@ -110,17 +112,17 @@ func (rm *RemoteManager) TransferKey(keyId uuid.UUID) ([]byte, error) {
 	defaultLog.Trace("keymanager/remote_key_manager:TransferKey() Entering")
 	defer defaultLog.Trace("keymanager/remote_key_manager:TransferKey() Leaving")
 
-	keyAttributes, err := rm.Store.Retrieve(keyId)
+	keyAttributes, err := rm.store.Retrieve(keyId)
 	if err != nil {
 		return nil, err
 	}
 
-	return rm.Manager.TransferKey(keyAttributes)
+	return rm.manager.TransferKey(keyAttributes)
 }
 
 func (rm *RemoteManager) getTransferLink(keyId uuid.UUID) string {
 	defaultLog.Trace("keymanager/remote_key_manager:getTransferLink() Entering")
 	defer defaultLog.Trace("keymanager/remote_key_manager:getTransferLink() Leaving")
 
-	return fmt.Sprintf("%s/keys/%s/transfer", rm.EndpointURL, keyId.String())
+	return fmt.Sprintf("%s/keys/%s/transfer", rm.endpointURL, keyId.String())
 }

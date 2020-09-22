@@ -32,7 +32,7 @@ type Router struct {
 }
 
 // InitRoutes registers all routes for the application.
-func InitRoutes(cfg *config.Configuration, keyConfig domain.KeyControllerConfig) *mux.Router {
+func InitRoutes(cfg *config.Configuration, keyConfig domain.KeyControllerConfig, keyManager keymanager.KeyManager) *mux.Router {
 	defaultLog.Trace("router/router:InitRoutes() Entering")
 	defer defaultLog.Trace("router/router:InitRoutes() Leaving")
 
@@ -43,20 +43,17 @@ func InitRoutes(cfg *config.Configuration, keyConfig domain.KeyControllerConfig)
 	router.SkipClean(true)
 
 	// Define sub routes for path /kbs/v1
-	defineSubRoutes(router, "/"+strings.ToLower(constants.ServiceName)+constants.ApiVersion, cfg, keyConfig)
+	defineSubRoutes(router, "/"+strings.ToLower(constants.ServiceName)+constants.ApiVersion, cfg, keyConfig, keyManager)
 
 	// Define sub routes for path /v1
-	defineSubRoutes(router, constants.ApiVersion, cfg, keyConfig)
+	defineSubRoutes(router, constants.ApiVersion, cfg, keyConfig, keyManager)
 
 	return router
 }
 
-func defineSubRoutes(router *mux.Router, serviceApi string, cfg *config.Configuration, keyConfig domain.KeyControllerConfig) {
+func defineSubRoutes(router *mux.Router, serviceApi string, cfg *config.Configuration, keyConfig domain.KeyControllerConfig, keyManager keymanager.KeyManager) {
 	defaultLog.Trace("router/router:defineSubRoutes() Entering")
 	defer defaultLog.Trace("router/router:defineSubRoutes() Leaving")
-
-	kmf := keymanager.NewKeyManagerFactory(cfg)
-	keyManager := kmf.GetKeyManager()
 
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
 	subRouter = setVersionRoutes(subRouter)
@@ -69,7 +66,7 @@ func defineSubRoutes(router *mux.Router, serviceApi string, cfg *config.Configur
 	subRouter.Use(cmw.NewTokenAuth(constants.TrustedJWTSigningCertsDir,
 		constants.TrustedCaCertsDir, cfgRouter.fnGetJwtCerts,
 		cacheTime))
-	subRouter = setKeyRoutes(subRouter, keyManager, cfg.EndpointURL, keyConfig)
+	subRouter = setKeyRoutes(subRouter, cfg.EndpointURL, keyConfig, keyManager)
 	subRouter = setKeyTransferPolicyRoutes(subRouter)
 	subRouter = setSamlCertRoutes(subRouter)
 	subRouter = setTpmIdentityCertRoutes(subRouter)

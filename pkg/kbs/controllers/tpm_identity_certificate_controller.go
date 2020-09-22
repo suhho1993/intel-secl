@@ -17,11 +17,11 @@ import (
 )
 
 type TpmIdentityCertController struct {
-	Store domain.CertificateStore
+	store domain.CertificateStore
 }
 
 func NewTpmIdentityCertController(cs domain.CertificateStore) *TpmIdentityCertController {
-	return &TpmIdentityCertController{Store:cs}
+	return &TpmIdentityCertController{store:cs}
 }
 
 //Import : Function to store the provided tpm-identity certificate in directory
@@ -37,7 +37,7 @@ func (tc TpmIdentityCertController) Import(responseWriter http.ResponseWriter, r
 	cert := &kbs.Certificate{
 		Certificate: certBytes,
 	}
-	createdCert, err := tc.Store.Create(cert)
+	createdCert, err := tc.store.Create(cert)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/tpm_identity_certificate_controller:Create() Certificate save failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to save certificate"}
@@ -53,7 +53,7 @@ func (tc TpmIdentityCertController) Retrieve(responseWriter http.ResponseWriter,
 	defer defaultLog.Trace("controllers/tpm_identity_certificate_controller:Retrieve() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	key, err := tc.Store.Retrieve(id)
+	key, err := tc.store.Retrieve(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/tpm_identity_certificate_controller:Retrieve() Certificate with specified id could not be located")
@@ -74,7 +74,7 @@ func (tc TpmIdentityCertController) Delete(responseWriter http.ResponseWriter, r
 	defer defaultLog.Trace("controllers/tpm_identity_certificate_controller:Delete() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	err := tc.Store.Delete(id)
+	err := tc.store.Delete(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/tpm_identity_certificate_controller:Delete() Certificate with specified id could not be located")
@@ -102,7 +102,7 @@ func (tc TpmIdentityCertController) Search(responseWriter http.ResponseWriter, r
 	}
 
 	// retrieve the certificates which matches with parameters requested
-	certificates, err := tc.Store.Search(criteria)
+	certificates, err := tc.store.Search(criteria)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/tpm_identity_certificate_controller:Search() Certificates search failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to search certificates"}

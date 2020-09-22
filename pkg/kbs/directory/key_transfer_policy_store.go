@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
@@ -21,7 +20,7 @@ import (
 )
 
 type KeyTransferPolicyStore struct {
-	Dir string
+	dir string
 }
 
 func NewKeyTransferPolicyStore(dir string) *KeyTransferPolicyStore {
@@ -39,7 +38,7 @@ func (ktps *KeyTransferPolicyStore) Create(policy *kbs.KeyTransferPolicyAttribut
 		return nil, errors.Wrap(err, "directory/key_transfer_policy_store:Create() Failed to marshal key transfer policy")
 	}
 
-	err = ioutil.WriteFile(filepath.Join(ktps.Dir, policy.ID.String()), bytes, 0600)
+	err = ioutil.WriteFile(filepath.Join(ktps.dir, policy.ID.String()), bytes, 0600)
 	if err != nil {
 		return nil, errors.Wrap(err, "directory/key_transfer_policy_store:Create() Error in saving key transfer policy")
 	}
@@ -51,7 +50,7 @@ func (ktps *KeyTransferPolicyStore) Retrieve(id uuid.UUID) (*kbs.KeyTransferPoli
 	defaultLog.Trace("directory/key_transfer_policy_store:Retrieve() Entering")
 	defer defaultLog.Trace("directory/key_transfer_policy_store:Retrieve() Leaving")
 
-	bytes, err := ioutil.ReadFile(filepath.Join(ktps.Dir, id.String()))
+	bytes, err := ioutil.ReadFile(filepath.Join(ktps.dir, id.String()))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, errors.New(commErr.RecordNotFound)
@@ -73,7 +72,7 @@ func (ktps *KeyTransferPolicyStore) Delete(id uuid.UUID) error {
 	defaultLog.Trace("directory/key_transfer_policy_store:Delete() Entering")
 	defer defaultLog.Trace("directory/key_transfer_policy_store:Delete() Leaving")
 
-	if err := os.Remove(filepath.Join(ktps.Dir, id.String())); err != nil {
+	if err := os.Remove(filepath.Join(ktps.dir, id.String())); err != nil {
 		if os.IsNotExist(err) {
 			return errors.New(commErr.RecordNotFound)
 		} else {
@@ -89,21 +88,18 @@ func (ktps *KeyTransferPolicyStore) Search(criteria *models.KeyTransferPolicyFil
 	defer defaultLog.Trace("directory/key_transfer_policy_store:Search() Leaving")
 
 	var policies = []kbs.KeyTransferPolicyAttributes{}
-	policyFiles, err := ioutil.ReadDir(ktps.Dir)
+	policyFiles, err := ioutil.ReadDir(ktps.dir)
 	if err != nil {
 		return nil, errors.New("directory/key_transfer_policy_store:Search() Unable to read the key transfer policy directory")
 	}
 
 	for _, policyFile := range policyFiles {
-		// Check for default transfer policy and remove.
-		if policyFile.Name() != constants.DefaultTransferPolicyName {
-			policy, err := ktps.Retrieve(uuid.MustParse(policyFile.Name()))
-			if err != nil {
-				return nil, err
-			}
-
-			policies = append(policies, *policy)
+		policy, err := ktps.Retrieve(uuid.MustParse(policyFile.Name()))
+		if err != nil {
+			return nil, err
 		}
+
+		policies = append(policies, *policy)
 	}
 
 	if len(policies) > 0 {

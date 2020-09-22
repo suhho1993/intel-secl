@@ -5,14 +5,13 @@
 package keymanager
 
 import (
-	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain/models"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
 )
 
 type KeyManager interface {
 	CreateKey(*kbs.KeyRequest) (*models.KeyAttributes, error)
-	DeleteKey(uuid.UUID) error
+	DeleteKey(*models.KeyAttributes) error
 	RegisterKey(*kbs.KeyRequest) (*models.KeyAttributes, error)
 	TransferKey(*models.KeyAttributes) ([]byte, error)
 }

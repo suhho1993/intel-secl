@@ -35,15 +35,17 @@ const (
 	DefaultKeyManager         = "Directory"
 	DefaultEndpointUrl        = "http://localhost"
 	DefaultTransferPolicy     = "urn:intel:trustedcomputing:key-transfer-policy:require-trust-or-authorization"
-	DefaultTransferPolicyName = "default_transfer_policy"
-	DefaultTransferPolicyFile = KeysTransferPolicyDir + DefaultTransferPolicyName
+	DefaultTransferPolicyFile = ConfigDir + "default_transfer_policy"
 
 	// default locations for tls certificate and key
 	DefaultTLSCertPath  = ConfigDir + "tls-cert.pem"
 	DefaultTLSKeyPath   = ConfigDir + "tls.key"
 
 	// service remove command
-	ServiceRemoveCmd    = "systemctl disable kbs"
+	ServiceRemoveCmd = "systemctl disable kbs"
+
+	// kmip library ldconfig file
+	LdConfigFile = "/etc/ld.so.conf.d/kmip.conf"
 
 	// tls constants
 	DefaultKbsTlsCn     = "KBS TLS Certificate"
@@ -52,7 +54,7 @@ const (
 	DefaultKeyLength    = 3072
 
 	// jwt constants
-	JWTCertsCacheTime        = "1m"
+	JWTCertsCacheTime = "1m"
 
 	// server constants
 	DefaultReadTimeout       = 30 * time.Second
@@ -65,6 +67,13 @@ const (
 	// log constants
 	DefaultLogEntryMaxlength = 1500
 
+	// keymanager constants
 	DirectoryKeyManager = "directory"
 	KmipKeyManager      = "kmip"
+
+	// kmip constants
+	KMIP_CRYPTOALG_AES   = 0x03
+	KMIP_CRYPTOALG_RSA   = 0x04
+	KMIP_CRYPTOALG_ECDSA = 0x06
+	KMIP_CLIENT_SUCCESS  = 0
 )

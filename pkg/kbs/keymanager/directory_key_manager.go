@@ -74,7 +74,7 @@ func (dm *DirectoryManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttri
 	return keyAttributes, nil
 }
 
-func (dm *DirectoryManager) DeleteKey(keyId uuid.UUID) error {
+func (dm *DirectoryManager) DeleteKey(attributes *models.KeyAttributes) error {
 	defaultLog.Trace("keymanager/directory_key_manager:DeleteKey() Entering")
 	defer defaultLog.Trace("keymanager/directory_key_manager:DeleteKey() Leaving")
 
@@ -189,14 +189,12 @@ func generateECKeyPair(curveType string) ([]byte, []byte, error) {
 	var curve elliptic.Curve
 
 	switch curveType {
-	case "prime256v1", "secp256r1":
-		curve = elliptic.P256()
 	case "secp384r1":
 		curve = elliptic.P384()
 	case "secp521r1":
 		curve = elliptic.P521()
 	default:
-		return nil, nil, errors.New("curve type invalid")
+		return nil, nil, errors.New("unsupported curve type")
 	}
 
 	private, err := ecdsa.GenerateKey(curve, rand.Reader)

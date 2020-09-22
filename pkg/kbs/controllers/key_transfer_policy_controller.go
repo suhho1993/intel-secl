@@ -19,11 +19,11 @@ import (
 )
 
 type KeyTransferPolicyController struct {
-	Store domain.KeyTransferPolicyStore
+	store domain.KeyTransferPolicyStore
 }
 
-func NewKeyTranferPolicyController(ps domain.KeyTransferPolicyStore) *KeyTransferPolicyController {
-	return &KeyTransferPolicyController{Store:ps}
+func NewKeyTransferPolicyController(ps domain.KeyTransferPolicyStore) *KeyTransferPolicyController {
+	return &KeyTransferPolicyController{store:ps}
 }
 
 //Create : Function to create a key transfer policy
@@ -56,7 +56,7 @@ func (ktpc KeyTransferPolicyController) Create(responseWriter http.ResponseWrite
 		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "sgx_enclave_issuer_anyof and sgx_enclave_issuer_product_id_anyof must be specified"}
 	}
 
-	createdPolicy, err := ktpc.Store.Create(&requestPolicy)
+	createdPolicy, err := ktpc.store.Create(&requestPolicy)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/key_transfer_policy_controller:Create() Key transfer policy create failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to create key transfer policy"}
@@ -72,7 +72,7 @@ func (ktpc KeyTransferPolicyController) Retrieve(responseWriter http.ResponseWri
 	defer defaultLog.Trace("controllers/key_transfer_policy_controller:Retrieve() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	transferPolicy, err := ktpc.Store.Retrieve(id)
+	transferPolicy, err := ktpc.store.Retrieve(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Errorf("controllers/key_transfer_policy_controller:Retrieve() Key transfer policy with specified id could not be located")
@@ -93,7 +93,7 @@ func (ktpc KeyTransferPolicyController) Delete(responseWriter http.ResponseWrite
 	defer defaultLog.Trace("controllers/key_transfer_policy_controller:Delete() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	err := ktpc.Store.Delete(id)
+	err := ktpc.store.Delete(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/key_transfer_policy_controller:Delete() Key transfer policy with specified id could not be located")
@@ -114,7 +114,7 @@ func (ktpc KeyTransferPolicyController) Search(responseWriter http.ResponseWrite
 	defer defaultLog.Trace("controllers/key_transfer_policy_controller:Search() Leaving")
 
 	var criteria *models.KeyTransferPolicyFilterCriteria
-	transferPolicies, err := ktpc.Store.Search(criteria)
+	transferPolicies, err := ktpc.store.Search(criteria)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/key_transfer_policy_controller:Search() Key transfer policy search failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to search key transfer policies"}

@@ -7,13 +7,14 @@ BUILDDATE := $(shell TZ=UTC date +%Y-%m-%dT%H:%M:%S%z)
 .PHONY: installer test all clean
 
 kbs:
-	cd cmd/kbs && GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.GitHash=$(GITCOMMIT)" -o kbs
+	cd cmd/kbs && env CGO_CFLAGS_ALLOW="-f.*" GOOS=linux GOSUMDB=off GOPROXY=direct go build -gcflags=all="-N -l" -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/kbs/version.GitHash=$(GITCOMMIT)" -o kbs
 
 kbs-installer: kbs
 	mkdir -p installer
 	cp pkg/kbs/dist/linux/kbs.service installer/kbs.service
 	cp pkg/kbs/dist/linux/install.sh installer/install.sh && chmod +x installer/install.sh
 	cp cmd/kbs/kbs installer/kbs
+	cp /usr/local/lib/libkmip.so.0.2 installer/libkmip.so.0.2
 	makeself installer deployments/installer/kbs-$(VERSION).bin "KBS $(VERSION)" ./install.sh
 	rm -rf installer
 

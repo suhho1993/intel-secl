@@ -40,10 +40,10 @@ type KeyResponse struct {
 
 // KeyTransferAttributes - Contains all possible key transfer attributes.
 type KeyTransferAttributes struct {
-	KeyId        uuid.UUID `json:"id,omitempty"`
-	KeyData      []byte    `json:"payload,omitempty"`
-	KeyAlgorithm string    `json:"algorithm,omitempty"`
-	KeyLength    int       `json:"key_length,omitempty"`
-	Policy       string    `json:"policy,omitempty"`
-	CreatedAt    time.Time `json:"created_at,omitempty"`
+	KeyId        uuid.UUID  `json:"id,omitempty"`
+	KeyData      []byte     `json:"payload,omitempty"`
+	KeyAlgorithm string     `json:"algorithm,omitempty"`
+	KeyLength    int        `json:"key_length,omitempty"`
+	Policy       string     `json:"policy,omitempty"`
+	CreatedAt    *time.Time `json:"created_at,omitempty"`
 }

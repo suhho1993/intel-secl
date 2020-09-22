@@ -84,7 +84,7 @@ func IsTrustedByHvs(saml string, samlReport *samlLib.Saml, config domain.KeyCont
 
 	verified = verifySignature(aikCert, config.TpmIdentityCertsDir)
 	if !verified {
-		defaultLog.Error("keytransfer/transfer_with_saml:IsTrustedByHvs() AIK certificate not verified any trusted authority")
+		defaultLog.Error("keytransfer/transfer_with_saml:IsTrustedByHvs() AIK certificate not verified by any trusted authority")
 		return false, nil
 	}
 

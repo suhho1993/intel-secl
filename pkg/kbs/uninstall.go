@@ -18,7 +18,7 @@ func (app *App) executablePath() string {
 	}
 	exc, err := os.Executable()
 	if err != nil {
-		// If we can't find self-executable path, we're probably in app state that is panic() worthy
+		// If we can't find self-executable path, we're probably in a state that is panic() worthy
 		panic(err)
 	}
 	return exc
@@ -101,6 +101,20 @@ func (app *App) uninstall(purge bool) error {
 	if err != nil {
 		defaultLog.WithError(err).Error("Error removing home dir")
 	}
+	fmt.Println("removing : ", constants.LdConfigFile)
+	if _, err := os.Stat(constants.LdConfigFile); err == nil {
+		err = os.Remove(constants.LdConfigFile)
+		if err != nil {
+			defaultLog.WithError(err).Error("Error removing the ldconfig file")
+		}
+	}
+	// Update ldconfig
+	_, _, err = commExec.RunCommandWithTimeout("ldconfig", 5)
+	if err != nil {
+		fmt.Println("Could not update Linker Runtime")
+		fmt.Println("Error : ", err)
+	}
+
 	fmt.Fprintln(app.consoleWriter(), "KBS Service uninstalled")
 	app.stop()
 	return nil

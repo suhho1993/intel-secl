@@ -38,14 +38,9 @@ func (t *CreateDefaultTransferPolicy) Run() error {
 		return errors.Wrap(err, "tasks/create_default_transfer_policy:Run() Failed to marshal DefaultTransferPolicy")
 	}
 
-	err = ioutil.WriteFile(t.DefaultTransferPolicyFile, bytes, 0644)
+	err = ioutil.WriteFile(t.DefaultTransferPolicyFile, bytes, 0600)
 	if err != nil {
 		return errors.Wrap(err, "tasks/create_default_transfer_policy:Run() Failed to store default key transfer policy in file")
-	}
-
-	err = os.Chmod(t.DefaultTransferPolicyFile, 0644)
-	if err != nil {
-		return errors.Wrap(err, "tasks/create_default_transfer_policy:Run() Failed to set access mode for default key transfer policy file")
 	}
 
 	fmt.Fprintln(t.ConsoleWriter, "Default key transfer policy created")
@@ -61,7 +56,6 @@ func (t *CreateDefaultTransferPolicy) Validate() error {
 }
 
 func (t *CreateDefaultTransferPolicy) PrintHelp(w io.Writer) {
-
 }
 
 func (t *CreateDefaultTransferPolicy) SetName(n, e string) {

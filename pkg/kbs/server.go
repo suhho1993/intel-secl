@@ -18,6 +18,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/domain"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/keymanager"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/router"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/utils"
 	commLog "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log"
@@ -47,8 +48,15 @@ func (app *App) startServer() error {
 		return err
 	}
 
+	// Initialize KeyManagerProvider
+	kmf := keymanager.NewKeyManagerFactory(&configuration.Kmip)
+	km, err := kmf.NewKeyManager(configuration.KeyManager)
+	if err != nil {
+		return err
+	}
+
 	// Initialize routes
-	routes := router.InitRoutes(configuration, kcc)
+	routes := router.InitRoutes(configuration, kcc, km)
 
 	defaultLog.Info("kbs/server:startServer() Starting server")
 	tlsConfig := &tls.Config{

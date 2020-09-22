@@ -4,9 +4,7 @@
  */
 package models
 
-import (
-	"time"
-)
+import "time"
 
 //CertificateFilterCriteria stores the parameters for filtering the certificates
 type CertificateFilterCriteria struct {

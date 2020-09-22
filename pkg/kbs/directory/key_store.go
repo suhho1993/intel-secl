@@ -18,7 +18,7 @@ import (
 )
 
 type KeyStore struct {
-	Dir string
+	dir string
 }
 
 func NewKeyStore(dir string) *KeyStore {
@@ -34,7 +34,7 @@ func (ks *KeyStore) Create(key *models.KeyAttributes) (*models.KeyAttributes, er
 		return nil, errors.Wrap(err, "directory/key_store:Create() Failed to marshal key attributes")
 	}
 
-	err = ioutil.WriteFile(filepath.Join(ks.Dir, key.ID.String()), bytes, 0644)
+	err = ioutil.WriteFile(filepath.Join(ks.dir, key.ID.String()), bytes, 0600)
 	if err != nil {
 		return nil, errors.Wrap(err, "directory/key_store:Create() Failed to store key attributes in file")
 	}
@@ -46,7 +46,7 @@ func (ks *KeyStore) Retrieve(id uuid.UUID) (*models.KeyAttributes, error) {
 	defaultLog.Trace("directory/key_store:Retrieve() Entering")
 	defer defaultLog.Trace("directory/key_store:Retrieve() Leaving")
 
-	bytes, err := ioutil.ReadFile(filepath.Join(ks.Dir, id.String()))
+	bytes, err := ioutil.ReadFile(filepath.Join(ks.dir, id.String()))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, errors.New(commErr.RecordNotFound)
@@ -68,7 +68,7 @@ func (ks *KeyStore) Delete(id uuid.UUID) error {
 	defaultLog.Trace("directory/key_store:Delete() Entering")
 	defer defaultLog.Trace("directory/key_store:Delete() Leaving")
 
-	if err := os.Remove(filepath.Join(ks.Dir, id.String())); err != nil {
+	if err := os.Remove(filepath.Join(ks.dir, id.String())); err != nil {
 		if os.IsNotExist(err) {
 			return errors.New(commErr.RecordNotFound)
 		} else {
@@ -84,9 +84,9 @@ func (ks *KeyStore) Search(criteria *models.KeyFilterCriteria) ([]models.KeyAttr
 	defer defaultLog.Trace("directory/key_store:Search() Leaving")
 
 	var keys = []models.KeyAttributes{}
-	keyFiles, err := ioutil.ReadDir(ks.Dir)
+	keyFiles, err := ioutil.ReadDir(ks.dir)
 	if err != nil {
-		return nil, errors.Wrapf(err, "directory/key_store:Search() Error in reading the keys directory : %s", ks.Dir)
+		return nil, errors.Wrapf(err, "directory/key_store:Search() Error in reading the keys directory : %s", ks.dir)
 	}
 
 	for _, keyFile := range keyFiles {

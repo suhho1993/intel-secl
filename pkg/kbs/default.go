@@ -65,5 +65,12 @@ func defaultConfig() *config.Configuration {
 			IdleTimeout:       viper.GetDuration("server-idle-timeout"),
 			MaxHeaderBytes:    viper.GetInt("server-max-header-bytes"),
 		},
+		Kmip: config.KmipConfig{
+			ServerIP:   viper.GetString("kmip-server-ip"),
+			ServerPort: viper.GetString("kmip-server-port"),
+			ClientCert: viper.GetString("kmip-client-cert-path"),
+			ClientKey:  viper.GetString("kmip-client-key-path"),
+			RootCert:   viper.GetString("kmip-root-cert-path"),
+		},
 	}
 }

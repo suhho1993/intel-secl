@@ -17,11 +17,11 @@ import (
 )
 
 type SamlCertController struct {
-	Store domain.CertificateStore
+	store domain.CertificateStore
 }
 
 func NewSamlCertController(cs domain.CertificateStore) *SamlCertController {
-	return &SamlCertController{Store:cs}
+	return &SamlCertController{store:cs}
 }
 
 //Import : Function to store the provided saml certificate in directory
@@ -37,7 +37,7 @@ func (sc SamlCertController) Import(responseWriter http.ResponseWriter, request 
 	cert := &kbs.Certificate{
 		Certificate: certBytes,
 	}
-	createdCert, err := sc.Store.Create(cert)
+	createdCert, err := sc.store.Create(cert)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/saml_certificate_controller:Create() Certificate save failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to save certificate"}
@@ -53,7 +53,7 @@ func (sc SamlCertController) Retrieve(responseWriter http.ResponseWriter, reques
 	defer defaultLog.Trace("controllers/saml_certificate_controller:Retrieve() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	key, err := sc.Store.Retrieve(id)
+	key, err := sc.store.Retrieve(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/saml_certificate_controller:Retrieve() Certificate with specified id could not be located")
@@ -74,7 +74,7 @@ func (sc SamlCertController) Delete(responseWriter http.ResponseWriter, request 
 	defer defaultLog.Trace("controllers/saml_certificate_controller:Delete() Leaving")
 
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	err := sc.Store.Delete(id)
+	err := sc.store.Delete(id)
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/saml_certificate_controller:Delete() Certificate with specified id could not be located")
@@ -102,7 +102,7 @@ func (sc SamlCertController) Search(responseWriter http.ResponseWriter, request 
 	}
 
 	// retrieve the certificates which matches with parameters requested
-	certificates, err := sc.Store.Search(criteria)
+	certificates, err := sc.store.Search(criteria)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/saml_certificate_controller:Search() Certificates search failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to search certificates"}

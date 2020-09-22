@@ -26,7 +26,6 @@ else
     source $env_file
     env_file_exports=$(cat $env_file | grep -E '^[A-Z0-9_]+\s*=' | cut -d = -f 1)
     if [ -n "$env_file_exports" ]; then eval export $env_file_exports; fi
-
 fi
 
 echo "Setting up KBS Linux User..."
@@ -37,6 +36,7 @@ echo "Installing Key Broker Service..."
 
 PRODUCT_HOME=/opt/$COMPONENT_NAME
 BIN_PATH=$PRODUCT_HOME/bin
+LIB_PATH=$PRODUCT_HOME/lib
 LOG_PATH=/var/log/$COMPONENT_NAME/
 CONFIG_PATH=/etc/$COMPONENT_NAME/
 CERTS_PATH=$CONFIG_PATH/certs
@@ -47,10 +47,10 @@ KEYS_TRANSFER_POLICY_PATH=$PRODUCT_HOME/keys-transfer-policy
 SAML_CERTS_PATH=$CERTS_PATH/saml/
 TPM_IDENTITY_CERTS_PATH=$CERTS_PATH/tpm-identity/
 
-for directory in $BIN_PATH $LOG_PATH $CONFIG_PATH $CERTS_PATH $CERTDIR_TRUSTEDCAS $CERTDIR_TRUSTEDJWTCERTS $KEYS_PATH $KEYS_TRANSFER_POLICY_PATH $SAML_CERTS_PATH $TPM_IDENTITY_CERTS_PATH; do
+for directory in $BIN_PATH $LIB_PATH $LOG_PATH $CONFIG_PATH $CERTS_PATH $CERTDIR_TRUSTEDCAS $CERTDIR_TRUSTEDJWTCERTS $KEYS_PATH $KEYS_TRANSFER_POLICY_PATH $SAML_CERTS_PATH $TPM_IDENTITY_CERTS_PATH; do
     mkdir -p $directory
     if [ $? -ne 0 ]; then
-        echo_failure "Cannot create directory: $directory"
+        echo "Cannot create directory: $directory"
         exit 1
     fi
     chown -R $SERVICE_USERNAME:$SERVICE_USERNAME $directory
@@ -61,6 +61,10 @@ done
 cp $COMPONENT_NAME $BIN_PATH/ && chown $SERVICE_USERNAME:$SERVICE_USERNAME $BIN_PATH/*
 chmod 700 $BIN_PATH/*
 ln -sfT $BIN_PATH/$COMPONENT_NAME /usr/bin/$COMPONENT_NAME
+
+cp libkmip.so.0.2 $LIB_PATH/ && chown $SERVICE_USERNAME:$SERVICE_USERNAME $LIB_PATH/*
+chmod 700 $LIB_PATH/*
+ln -sfT $LIB_PATH/libkmip.so.0.2 $LIB_PATH/libkmip.so
 
 # make log files world readable
 chmod 755 $LOG_PATH
@@ -134,6 +138,10 @@ if [ ! -a /etc/logrotate.d/${COMPONENT_NAME} ]; then
 }" > /etc/logrotate.d/${COMPONENT_NAME}
 fi
 
+echo "Updating ldconfig for kmip library"
+echo "$LIB_PATH" > /etc/ld.so.conf.d/kmip.conf
+ldconfig
+if [ $? -ne 0 ]; then echo "Failed to load ldconfig. Please run command "ldconfig" after installation completes."; fi
 
 # check if KBS_NOSETUP is defined
 if [ "${KBS_NOSETUP,,}" == "true" ]; then

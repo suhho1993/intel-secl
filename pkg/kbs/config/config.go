@@ -25,6 +25,16 @@ type Configuration struct {
 	TLS    commConfig.TLSCertConfig `yaml:"tls" mapstructure:"tls"`
 	Log    commConfig.LogConfig     `yaml:"log" mapstructure:"log"`
 	Server commConfig.ServerConfig  `yaml:"server" mapstructure:"server"`
+
+	Kmip KmipConfig `yaml:"kmip" mapstructure:"kmip"`
+}
+
+type KmipConfig struct {
+	ServerIP   string `yaml:"server-ip" mapstructure:"server-ip"`
+	ServerPort string `yaml:"server-port" mapstructure:"server-port"`
+	ClientCert string `yaml:"client-cert-path" mapstructure:"client-cert-path"`
+	ClientKey  string `yaml:"client-key-path" mapstructure:"client-key-path"`
+	RootCert   string `yaml:"root-cert-path" mapstructure:"root-cert-path"`
 }
 
 // init sets the configuration file name and type

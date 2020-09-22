@@ -77,5 +77,4 @@ Feel free to raise build, deploy or even runtime issues here,
 
 [https://github.com/intel-secl/intel-secl/issues](https://github.com/intel-secl/intel-secl/issues)
 
-
 ***NOTE:** Instructions specific to [build](./Monorepo-Readme.md) components only in monorepo*

@@ -1,5 +1,5 @@
 # Intel<sup>®</sup> SecL-DC
-This repository is planned to be monorepo to hold all services and libraries.__
+This repository is planned to be monorepo to hold all services and libraries.
 
 ### Generation of Binary
 Use command make <component_name> to build component and make <component_name>-installer to generate binary.

@@ -25,7 +25,7 @@ import (
 var defaultLog = log.GetDefaultLogger()
 
 type CertificateStore struct {
-	Dir string
+	dir string
 }
 
 func NewCertificateStore(dir string) *CertificateStore {
@@ -37,7 +37,7 @@ func (cs *CertificateStore) Create(certificate *kbs.Certificate) (*kbs.Certifica
 	defer defaultLog.Trace("directory/certificate_store:Create() Leaving")
 
 	certificate.ID = uuid.New()
-	err := ioutil.WriteFile(filepath.Join(cs.Dir, certificate.ID.String()), certificate.Certificate, 0644)
+	err := ioutil.WriteFile(filepath.Join(cs.dir, certificate.ID.String()), certificate.Certificate, 0644)
 	if err != nil {
 		return nil, errors.Wrap(err, "directory/certificate_store:Create() Failed to store certificate")
 	}
@@ -49,7 +49,7 @@ func (cs *CertificateStore) Retrieve(id uuid.UUID) (*kbs.Certificate, error) {
 	defaultLog.Trace("directory/certificate_store:Retrieve() Entering")
 	defer defaultLog.Trace("directory/certificate_store:Retrieve() Leaving")
 
-	certPem, err := ioutil.ReadFile(filepath.Join(cs.Dir, id.String()))
+	certPem, err := ioutil.ReadFile(filepath.Join(cs.dir, id.String()))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, errors.New(commErr.RecordNotFound)
@@ -82,7 +82,7 @@ func (cs *CertificateStore) Delete(id uuid.UUID) error {
 	defaultLog.Trace("directory/certificate_store:Delete() Entering")
 	defer defaultLog.Trace("directory/certificate_store:Delete() Leaving")
 
-	if err := os.Remove(filepath.Join(cs.Dir, id.String())); err != nil {
+	if err := os.Remove(filepath.Join(cs.dir, id.String())); err != nil {
 		if os.IsNotExist(err) {
 			return errors.New(commErr.RecordNotFound)
 		} else {
@@ -98,9 +98,9 @@ func (cs *CertificateStore) Search(criteria *models.CertificateFilterCriteria) (
 	defer defaultLog.Trace("directory/certificate_store:Search() Leaving")
 
 	var certificates = []kbs.Certificate{}
-	certFiles, err := ioutil.ReadDir(cs.Dir)
+	certFiles, err := ioutil.ReadDir(cs.dir)
 	if err != nil {
-		return nil, errors.Wrapf(err, "directory/certificate_store:Search() Error in reading the certificates directory : %s", cs.Dir)
+		return nil, errors.Wrapf(err, "directory/certificate_store:Search() Error in reading the certificates directory : %s", cs.dir)
 	}
 
 	for _, certFile := range certFiles {

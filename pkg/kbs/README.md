@@ -13,7 +13,8 @@
 ## Software requirements
 - git
 - makeself
-- `go` version >= `go1.12.1` & <= `go1.14.1``
+- libssl-dev
+- `go` version >= `go1.12.1` & <= `go1.14.1`
 
 # Step By Step Build Instructions
 ## Install required shell commands
@@ -24,7 +25,7 @@ export HTTPS_PROXY=https://<proxy>:<port>
 ```
 ### Install tools from `yum`
 ```shell
-$ sudo yum install -y wget git makeself
+$ sudo yum install -y wget git makeself libssl-dev
 ```
 
 ### Install `go` version >= `go1.12.1` & <= `go1.14.1`
@@ -39,10 +40,15 @@ export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 ## Build Key Broker Service
 
+- Git clone the `libkmip`
+- Run scripts to build the `libkmip`
 - Git clone the `Key Broker Service`
 - Run scripts to build the `Key Broker Service`
 
 ```shell
+$ git clone https://github.com/openkmip/libkmip.git
+$ cd libkmip
+$ make && make install
 $ git clone https://github.com/intel-secl/intel-secl.git
 $ cd intel-secl
 $ make kbs-installer
