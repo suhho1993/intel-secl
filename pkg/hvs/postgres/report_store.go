@@ -64,39 +64,18 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		return nil, errors.Wrapf(err, "postgres/report_store:Update() Error while retrieving report for hostId %s", refilter.HostID)
 	}
 
-	if len(hvsReports) == 0 {
-		vsReport, err = r.Create(re)
+	if len(hvsReports) >= 0 {
+		err := r.Delete(re.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
+			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while deleting report")
 		}
-		return vsReport, nil
 	}
 
-	re.ID = hvsReports[0].ID
-	dbReport := report{
-		ID:          re.ID,
-		HostID:      re.HostID,
-		TrustReport: PGTrustReport(re.TrustReport),
-		CreatedAt:   re.CreatedAt,
-		Expiration:  re.Expiration,
-		Saml:        re.Saml,
+	vsReport, err = r.Create(re)
+	if err != nil {
+		return nil, errors.Wrap(err, "postgres/report_store:Update() Error while creating report")
 	}
-
-	if db := r.Store.Db.Model(&dbReport).Updates(&dbReport); db.Error != nil || db.RowsAffected != 1 {
-		if db.Error != nil {
-			return nil, errors.Wrap(db.Error, "postgres/report_store:Update() failed to update HVSReport  "+dbReport.ID.String())
-		} else {
-			return nil, errors.New("postgres/report_store:Update() - rows affected with Id = %s" + dbReport.ID.String())
-		}
-	}
-	// log to audit log
-	if r.AuditLogWriter != nil {
-		auditEntry, err := r.AuditLogWriter.CreateEntry("update", &hvsReports[0], re)
-		if err == nil {
-			r.AuditLogWriter.Log(auditEntry)
-		}
-	}
-	return re, nil
+	return vsReport, nil
 }
 
 // Create method creates a new record in report table
