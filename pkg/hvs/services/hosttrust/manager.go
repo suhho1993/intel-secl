@@ -151,7 +151,7 @@ func (svc *Service) ProcessQueue() error {
 
 	records, err := svc.prstStor.Search(nil)
 	if err != nil {
-		return errors.Wrap(err, "An error while searching for records in queue")
+		return errors.Wrap(err, "An error occurred while searching for records in queue")
 	}
 
 	verifyWithFetchDataHostIds := []uuid.UUID{}
