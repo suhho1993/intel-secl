@@ -37,7 +37,7 @@ func validateKeyTransferRequest(header http.Header) error {
 	defaultLog.Trace("controllers/dhsm2_controller:validateKeyTransferRequest() Entering")
 	defer defaultLog.Trace("controllers/dhsm2_controller:validateKeyTransferRequest() Leaving")
 
-	acceptChallenge := header.Values("Accept-Challenge")
+	acceptChallenge := header["Accept-Challenge"]
 	if acceptChallenge == nil {
 		return errors.New("Accept-Challenge header is missing in request")
 	}
@@ -46,7 +46,7 @@ func validateKeyTransferRequest(header http.Header) error {
 		return errors.New("Accept-Challenge cannot be empty")
 	}
 
-	sessionID := header.Values("Session-ID")
+	sessionID := header["Session-ID"]
 	if sessionID != nil && len(sessionID) == 0 {
 		return errors.New("Session-ID cannot be empty")
 	}

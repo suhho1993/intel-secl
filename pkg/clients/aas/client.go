@@ -42,6 +42,10 @@ var (
 	ErrHTTPGetRoles = &clients.HTTPClientErr{
 		ErrMessage: "Failed to get roles",
 	}
+	ErrHTTPGetPermissionsForUser = &clients.HTTPClientErr{
+		ErrMessage: "Failed to get permissions for user",
+	}
+
 )
 
 func (c *Client) prepReqHeader(req *http.Request) {
@@ -209,6 +213,37 @@ func (c *Client) GetRoles(service, name, context, contextContains string, allCon
 	}
 	return roles, nil
 }
+
+func (c *Client) GetPermissionsForUser(userID string) ([]types.PermissionInfo, error) {
+
+	userRoleURL := clients.ResolvePath(c.BaseURL, "users/"+userID+"/permissions")
+
+	req, err := http.NewRequest(http.MethodGet, userRoleURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	c.prepReqHeader(req)
+
+	if c.HTTPClient == nil {
+		return nil, errors.New("aaClient.GetPermissionsForUser: HTTPClient should not be null")
+	}
+	rsp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if rsp.StatusCode != http.StatusOK {
+		ErrHTTPGetPermissionsForUser.RetCode = rsp.StatusCode
+		return nil, ErrHTTPGetPermissionsForUser
+	}
+
+	var permissions []types.PermissionInfo
+	err = json.NewDecoder(rsp.Body).Decode(&permissions)
+	if err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
 
 func (c *Client) UpdateUser(userID string, user types.UserCreate) error {
 

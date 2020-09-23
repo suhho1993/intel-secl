@@ -46,6 +46,10 @@ func defaultConfig() *config.Configuration {
 		EndpointURL: viper.GetString("endpoint-url"),
 		KeyManager:  viper.GetString("key-manager"),
 
+		KBS: config.KBSConfig{
+			UserName: viper.GetString("kbs-service-username"),
+			Password: viper.GetString("kbs-service-password"),
+		},
 		TLS: commConfig.TLSCertConfig{
 			CertFile:   viper.GetString("tls-cert-file"),
 			KeyFile:    viper.GetString("tls-key-file"),

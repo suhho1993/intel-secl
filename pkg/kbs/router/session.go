@@ -6,20 +6,21 @@ package router
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/controllers"
 )
 
 //setSessionRoutes registers routes to perform session management operations
-func setSessionRoutes(router *mux.Router) *mux.Router {
+func setSessionRoutes(router *mux.Router, aasAPIUrl string, kbsConfig config.KBSConfig) *mux.Router {
 	defaultLog.Trace("router/keys:setSessionRoutes() Entering")
 	defer defaultLog.Trace("router/keys:setSessionRoutes() Leaving")
 
 	sessionController := controllers.NewSessionController()
 
 	router.Handle("/session",
-		ErrorHandler(permissionsHandler(JsonResponseHandler(sessionController.Create),
-			[]string{constants.SessionCreate}))).Methods("POST")
+		ErrorHandler(permissionsHandlerUsingTLSMAuth(JsonResponseHandler(sessionController.Create),
+			[]string{constants.SessionCreate},aasAPIUrl, kbsConfig))).Methods("POST")
 
 	return router
 }

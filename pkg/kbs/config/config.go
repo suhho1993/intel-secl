@@ -19,6 +19,8 @@ type Configuration struct {
 	CMSBaseURL       string `yaml:"cms-base-url" mapstructure:"cms-base-url"`
 	CmsTlsCertDigest string `yaml:"cms-tls-cert-sha384" mapstructure:"cms-tls-cert-sha384"`
 
+	KBS KBSConfig `yaml:"kbs" mapstructure:"kbs"`
+
 	EndpointURL string `yaml:"endpoint-url" mapstructure:"endpoint-url"`
 	KeyManager  string `yaml:"key-manager" mapstructure:"key-manager"`
 
@@ -27,6 +29,11 @@ type Configuration struct {
 	Server commConfig.ServerConfig  `yaml:"server" mapstructure:"server"`
 
 	Kmip KmipConfig `yaml:"kmip" mapstructure:"kmip"`
+}
+
+type KBSConfig struct {
+	UserName string `yaml:"service-username" mapstructure:"service-username"`
+	Password string `yaml:"service-password" mapstructure:"service-password"`
 }
 
 type KmipConfig struct {

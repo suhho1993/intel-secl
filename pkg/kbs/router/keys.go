@@ -6,6 +6,7 @@ package router
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/intel-secl/intel-secl/v3/pkg/kbs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/controllers"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/directory"
@@ -68,7 +69,7 @@ func setKeyTransferRoutes(router *mux.Router, endpointUrl string, config domain.
 }
 
 //setDhsm2KeyTransferRoutes registers routes to perform Dhsm2 Transfer operations
-func setDhsm2KeyTransferRoutes(router *mux.Router) *mux.Router {
+func setDhsm2KeyTransferRoutes(router *mux.Router, aasAPIUrl string, kbsConfig config.KBSConfig) *mux.Router {
 	defaultLog.Trace("router/keys:setDhsm2KeyTransferRoutes() Entering")
 	defer defaultLog.Trace("router/keys:setDhsm2KeyTransferRoutes() Leaving")
 
@@ -76,8 +77,8 @@ func setDhsm2KeyTransferRoutes(router *mux.Router) *mux.Router {
 	keyIdExpr := "/keys/" + validation.IdReg
 
 	router.Handle(keyIdExpr+"/dhsm2-transfer",
-		ErrorHandler(permissionsHandler(JsonResponseHandler(dhsm2Controller.TransferApplicationKey),
-			[]string{constants.KeyTransfer}))).Methods("GET")
+		ErrorHandler(permissionsHandlerUsingTLSMAuth(JsonResponseHandler(dhsm2Controller.TransferApplicationKey),
+			[]string{constants.KeyTransfer}, aasAPIUrl, kbsConfig))).Methods("GET")
 
 	return router
 }
