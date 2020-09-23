@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
+	"path"
 )
 
 
@@ -40,11 +41,7 @@ func (client flavorsClientImpl)GetImageFlavorKey(imageUUID, hardwareUUID string)
 	if err != nil {
 		return flavorKeyInfo, errors.New("wlsclient/flavors_client:GetImageFlavorKey() error retrieving WLS API URL")
 	}
-
-	requestURL, err = url.Parse(requestURL.String() + "images/" + imageUUID + "/flavor-key?hardware_uuid=" + hardwareUUID)
-	if err != nil {
-		return flavorKeyInfo, errors.New("wlsclient/flavors_client:GetImageFlavorKey() error forming GET flavor-key for image API URL")
-	}
+	requestURL.Path = path.Join(requestURL.Path, "images/" + imageUUID + "/flavor-key?hardware_uuid=" + hardwareUUID)
 
 	httpRequest, err := http.NewRequest("GET", requestURL.String(), nil)
 	if err != nil {
@@ -83,10 +80,7 @@ func (client flavorsClientImpl) GetImageFlavor(imageID, flavorPart string) (wlsM
 		return flavor, errors.New("wlsclient/flavors_client:GetImageFlavor() error retrieving WLS API URL")
 	}
 
-	requestURL, err = url.Parse(requestURL.String() + "images/" + imageID + "/flavors?flavor_part=" + flavorPart)
-	if err != nil {
-		return flavor, errors.New("wlsclient/flavors_client:GetImageFlavor() error forming GET flavors for image API URL")
-	}
+	requestURL.Path = path.Join(requestURL.Path, "images/" + imageID + "/flavors?flavor_part=" + flavorPart)
 
 	httpRequest, err := http.NewRequest("GET", requestURL.String(), nil)
 	if err != nil {

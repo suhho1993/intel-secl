@@ -10,6 +10,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/util"
 	"net/http"
 	"net/url"
+	"path"
 
 	"github.com/pkg/errors"
 )
@@ -35,10 +36,7 @@ func (client reportsClientImpl) PostVMReport(report []byte) error {
 		return errors.New("wlsclient/reports_client:PostVMReport() error retrieving WLS API URL")
 	}
 
-	requestURL, err = url.Parse(requestURL.String() + "reports")
-	if err != nil {
-		return errors.New("wlsclient/reports_client:PostVMReport() error forming reports POST API URL")
-	}
+	requestURL.Path = path.Join(requestURL.Path, "reports")
 
 	log.Debugf("wlsclient/reports_client:PostVMReport() WLS VM reports POST Request URL: %s", requestURL.String())
 

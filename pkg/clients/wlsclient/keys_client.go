@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
+	"path"
 )
 
 type KeysClient interface {
@@ -37,10 +38,7 @@ func (client keysClientImpl) GetKeyWithURL(keyUrl string, hardwareUUID string) (
 		return retKey, errors.New("wlsclient/keys_client:GetKeyWithURL() error retrieving WLS API URL")
 	}
 
-	requestURL, err = url.Parse(requestURL.String() + "keys")
-	if err != nil {
-		return retKey, errors.New("wlsclient/keys_client:GetKeyWithURL() error forming GET key API URL")
-	}
+	requestURL.Path = path.Join(requestURL.Path,  "keys")
 
 	var rBody = wlsModel.RequestKey{
 		HwId:   hardwareUUID,
