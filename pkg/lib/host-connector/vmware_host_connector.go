@@ -272,13 +272,13 @@ func getEventLogInfo(parsedEventLogEntry types.TpmEvent) types.EventLog {
 		eventLog.Info["EventType"] = TPM_SOFTWARE_COMPONENT_EVENT_TYPE
 		eventLog.Info["ComponentName"] = COMPONENT_PREFIX + *parsedEventLogEntry.EventDetails.ComponentName
 		eventLog.Info["EventName"] = VIM_API_PREFIX + TPM_SOFTWARE_COMPONENT_EVENT_TYPE + DETAILS_SUFFIX
-		if *parsedEventLogEntry.EventDetails.VibName != "" {
+		if parsedEventLogEntry.EventDetails.VibName != nil {
 			eventLog.Info["PackageName"] = *parsedEventLogEntry.EventDetails.VibName
 		}
-		if *parsedEventLogEntry.EventDetails.VibVendor != "" {
+		if parsedEventLogEntry.EventDetails.VibVendor != nil {
 			eventLog.Info["PackageVendor"] = *parsedEventLogEntry.EventDetails.VibVendor
 		}
-		if *parsedEventLogEntry.EventDetails.VibVersion != "" {
+		if parsedEventLogEntry.EventDetails.VibVersion != nil {
 			eventLog.Info["PackageVersion"] = *parsedEventLogEntry.EventDetails.VibVersion
 		}
 
