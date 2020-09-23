@@ -64,8 +64,9 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 		return nil, errors.Wrapf(err, "postgres/report_store:Update() Error while retrieving report for hostId %s", refilter.HostID)
 	}
 
-	if len(hvsReports) > 0 {
-		err := r.Delete(re.ID)
+	// length of hvsReports will always be 1 for a given host ID
+	if len(hvsReports) == 1 {
+		err := r.Delete(hvsReports[0].ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "postgres/report_store:Update() Error while deleting report")
 		}
