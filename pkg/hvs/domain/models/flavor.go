@@ -33,8 +33,13 @@ type FlavorFilterCriteria struct {
 
 type FlavorVerificationFC struct {
 	FlavorFC              FlavorFilterCriteria
-	FlavorMeta            map[cf.FlavorPart]map[string]interface{}
+	FlavorMeta            map[cf.FlavorPart][]FlavorMetaKv
 	FlavorPartsWithLatest map[cf.FlavorPart]bool
+}
+
+type FlavorMetaKv struct {
+	Key   string
+	Value interface{}
 }
 
 func (fcr FlavorCreateRequest) MarshalJSON() ([]byte, error) {

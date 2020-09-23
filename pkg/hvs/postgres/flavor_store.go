@@ -5,14 +5,13 @@
 package postgres
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
 	fc "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
-	fConst "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -70,7 +69,7 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]hvs.S
 	}
 	// build partial query with the given key-value pair from falvor description
 	if flavorFilter.FlavorFC.Key != "" && flavorFilter.FlavorFC.Value != "" {
-		tx = tx.Where("f.content -> 'meta' -> 'description' ->> ? = ?", flavorFilter.FlavorFC.Key, flavorFilter.FlavorFC.Value)
+		tx = tx.Where(convertToPgJsonqueryString("f.content", "meta.description."+flavorFilter.FlavorFC.Key) + " = ?", flavorFilter.FlavorFC.Value)
 	}
 	if flavorFilter.FlavorFC.FlavorgroupID.String() != "" ||
 		len(flavorFilter.FlavorFC.FlavorParts) >= 1 || len(flavorFilter.FlavorPartsWithLatest) >= 1 || flavorFilter.FlavorMeta != nil || len(flavorFilter.FlavorMeta) >= 1 {
@@ -104,7 +103,7 @@ func (f *FlavorStore) Search(flavorFilter *models.FlavorVerificationFC) ([]hvs.S
 	return signedFlavors, nil
 }
 
-func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaMap map[fc.FlavorPart]map[string]interface{}, flavorPartsWithLatest map[fc.FlavorPart]bool) *gorm.DB {
+func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.UUID, flavorMetaInfo map[fc.FlavorPart][]models.FlavorMetaKv, flavorPartsWithLatest map[fc.FlavorPart]bool) *gorm.DB {
 	defaultLog.Trace("postgres/flavor_store:buildMultipleFlavorPartQueryString() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:buildMultipleFlavorPartQueryString() Leaving")
 
@@ -120,32 +119,12 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 			case fc.FlavorPartPlatform:
 				biosQuery = f.Store.Db
 				biosQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartPlatform.String(), fgId.String(), biosQuery)
-				// build biosQuery
-				if len(flavorMetaMap) >= 1 && len(flavorMetaMap[fc.FlavorPartPlatform]) >= 1 {
-					platformFlavorMetaInfo := flavorMetaMap[fc.FlavorPartPlatform]
-					// check if tboot_installed exists in the map
-					if _, ok := platformFlavorMetaInfo["tboot_installed"]; ok {
-						biosQuery = biosQuery.Where("f.content -> 'meta' -> 'description' ->> 'tboot_installed' = ?", strconv.FormatBool(platformFlavorMetaInfo["tboot_installed"].(bool)))
-					}
-					if _, ok := platformFlavorMetaInfo["bios_name"]; ok {
-						biosQuery = biosQuery.Where("f.content -> 'bios' ->> 'bios_name' = ?", platformFlavorMetaInfo["bios_name"])
-					}
-					if _, ok := platformFlavorMetaInfo["bios_version"]; ok {
-						biosQuery = biosQuery.Where("f.content -> 'bios' ->> 'bios_version' = ?", platformFlavorMetaInfo["bios_version"])
-					}
-					if _, ok := platformFlavorMetaInfo["hardware_features"]; ok {
-						platformHwFeaturesMap := platformFlavorMetaInfo["hardware_features"]
-						hwFeatureMap := platformHwFeaturesMap.(map[string]string)
-						for feature, value := range hwFeatureMap {
-							if feature != fConst.Cbnt+"-profile" {
-								biosQuery = biosQuery.Where("f.content -> 'hardware' -> 'feature' -> ? ->> 'enabled' = ?", feature, value)
-								if feature == fConst.Cbnt {
-									biosQuery = biosQuery.Where("f.content -> 'hardware' -> 'feature' -> ? ->> 'profile' = ?", feature, hwFeatureMap[fConst.Cbnt+"-profile"])
-								}
-							}
-						}
-					}
+				// build biosQuery with all the platform flavor query attributes from host manifest
+				pfQueryAttributes := flavorMetaInfo[fc.FlavorPartPlatform]
+				for _, pfQueryAttribute := range pfQueryAttributes {
+					biosQuery = biosQuery.Where(convertToPgJsonqueryString("f.content", pfQueryAttribute.Key) + " = ?", pfQueryAttribute.Value)
 				}
+				// apply limit if latest
 				if flavorPartsWithLatest[fc.FlavorPartPlatform] {
 					biosQuery = biosQuery.Order("f.created_at desc").Limit(1)
 				}
@@ -153,47 +132,27 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 			case fc.FlavorPartOs:
 				osQuery = f.Store.Db
 				osQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartOs.String(), fgId.String(), osQuery)
-				// build biosQuery
-				if len(flavorMetaMap) >= 1 && len(flavorMetaMap[fc.FlavorPartOs]) >= 1 {
-					osFlavorMetaInfo := flavorMetaMap[fc.FlavorPartOs]
-					// check if tboot_installed exists in the map
-					if _, ok := osFlavorMetaInfo["tboot_installed"]; ok {
-						osQuery = osQuery.Where("f.content -> 'meta' -> 'description' ->> 'tboot_installed' = ?", strconv.FormatBool(osFlavorMetaInfo["tboot_installed"].(bool)))
-					}
-					if _, ok := osFlavorMetaInfo["os_name"]; ok {
-						osQuery = osQuery.Where("f.content -> 'meta' -> 'description'->> 'os_name' = ?", osFlavorMetaInfo["os_name"])
-
-					}
-					if _, ok := osFlavorMetaInfo["os_version"]; ok {
-						osQuery = osQuery.Where("f.content -> 'meta' -> 'description'->> 'os_version' = ?", osFlavorMetaInfo["os_version"])
-
-					}
-					if _, ok := osFlavorMetaInfo["vmm_name"]; ok {
-						osQuery = osQuery.Where("f.content -> 'meta' -> 'description'->> 'vmm_name' = ?", osFlavorMetaInfo["vmm_name"])
-
-					}
-					if _, ok := osFlavorMetaInfo["vmm_version"]; ok {
-						osQuery = osQuery.Where("f.content -> 'meta' -> 'description'->> 'vmm_version' = ?", osFlavorMetaInfo["vmm_version"])
-
-					}
+				// build osQuery with all the OS flavor query attributes from host manifest
+				osfQueryAttributes := flavorMetaInfo[fc.FlavorPartOs]
+				for _, osfQueryAttribute := range osfQueryAttributes {
+					osQuery = osQuery.Where(convertToPgJsonqueryString("f.content", osfQueryAttribute.Key) + " = ?", osfQueryAttribute.Value)
 				}
+				// apply limit if latest
 				if flavorPartsWithLatest[fc.FlavorPartOs] {
 					osQuery = osQuery.Order("f.created_at desc").Limit(1)
 				}
 
 			case fc.FlavorPartHostUnique:
 				hostUniqueQuery = f.Store.Db
-				hostUniqueFlavorMetaInfo := flavorMetaMap[fc.FlavorPartHostUnique]
 				hostUniqueQuery = hostUniqueQuery.Table("flavor f")
 				hostUniqueQuery = hostUniqueQuery.Select("f.id")
-				hostUniqueQuery = hostUniqueQuery.Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", fc.FlavorPartHostUnique.String())
-				if _, ok := hostUniqueFlavorMetaInfo["tboot_installed"]; ok {
-					hostUniqueQuery = hostUniqueQuery.Where("f.content -> 'meta' -> 'description' ->> 'tboot_installed' = ?", strconv.FormatBool(hostUniqueFlavorMetaInfo["tboot_installed"].(bool)))
+				hostUniqueQuery = hostUniqueQuery.Where(convertToPgJsonqueryString("f.content", "meta.description.flavor_part") + " = ?", fc.FlavorPartHostUnique.String())
+				// build host unique Query with all the host unique flavor query attributes from host manifest
+				hufQueryAttributes := flavorMetaInfo[fc.FlavorPartHostUnique]
+				for _, hufQueryAttribute := range hufQueryAttributes {
+					hostUniqueQuery = hostUniqueQuery.Where(convertToPgJsonqueryString("f.content", hufQueryAttribute.Key) + " = ?", hufQueryAttribute.Value)
 				}
-				if _, ok := hostUniqueFlavorMetaInfo["hardware_uuid"]; ok {
-					hostUniqueQuery = hostUniqueQuery.Where("f.content -> 'meta' -> 'description' ->> 'hardware_uuid' = ?", strings.ToLower(hostUniqueFlavorMetaInfo["hardware_uuid"].(string)))
-				}
-
+				// apply limit if latest
 				if flavorPartsWithLatest[fc.FlavorPartHostUnique] {
 					hostUniqueQuery = hostUniqueQuery.Order("f.created_at desc").Limit(1)
 				}
@@ -201,21 +160,26 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 			case fc.FlavorPartSoftware:
 				softwareQuery = f.Store.Db
 				softwareQuery = buildFlavorPartQueryStringWithFlavorParts(fc.FlavorPartSoftware.String(), fgId.String(), softwareQuery)
-				softwareFlavorMetaInfo := flavorMetaMap[fc.FlavorPartSoftware]
-				if _, ok := softwareFlavorMetaInfo["measurementXML_labels"]; ok {
-					softwareQuery = softwareQuery.Where("f.label IN (?)", softwareFlavorMetaInfo["measurementXML_labels"])
+				sfQueryAttributes := flavorMetaInfo[fc.FlavorPartSoftware]
+				// build software Query with all the software flavor query attributes from host manifest
+				for _, sfQueryAttribute := range sfQueryAttributes {
+					softwareQuery = softwareQuery.Where("f.label IN (?)", sfQueryAttribute.Value.([]string))
 				}
+				// apply limit if latest
 				if flavorPartsWithLatest[fc.FlavorPartSoftware] {
 					softwareQuery = softwareQuery.Order("f.created_at desc").Limit(1)
 				}
 
 			case fc.FlavorPartAssetTag:
 				aTagQuery = f.Store.Db
-				aTagQuery = aTagQuery.Table("flavor f").Select("f.id").Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", fc.FlavorPartAssetTag)
-				aTagFlavorMetaInfo := flavorMetaMap[fc.FlavorPartAssetTag]
-				if _, ok := aTagFlavorMetaInfo["hardware_uuid"]; ok {
-					aTagQuery = aTagQuery.Where("f.content -> 'meta' -> 'description' ->> 'hardware_uuid' = ?", aTagFlavorMetaInfo["hardware_uuid"])
+				aTagQuery = aTagQuery.Table("flavor f").Select("f.id")
+				aTagQuery = aTagQuery.Where(convertToPgJsonqueryString("f.content", "meta.description.flavor_part") + " = ?", fc.FlavorPartAssetTag)
+				// build assetTag Query with all the assetTag flavor query attributes from host manifest
+				atfQueryAttributes := flavorMetaInfo[fc.FlavorPartAssetTag]
+				for _, atfQueryAttribute := range atfQueryAttributes {
+					aTagQuery = aTagQuery.Where(convertToPgJsonqueryString("f.content", atfQueryAttribute.Key) + " = ?", atfQueryAttribute.Value)
 				}
+				// apply limit if latest
 				if flavorPartsWithLatest[fc.FlavorPartAssetTag] {
 					aTagQuery = aTagQuery.Order("f.created_at desc").Limit(1)
 				}
@@ -279,17 +243,27 @@ func (f *FlavorStore) buildMultipleFlavorPartQueryString(tx *gorm.DB, fgId uuid.
 	return tx
 }
 
+func convertToPgJsonqueryString(queryHead string, jsonKeyPath string) string {
+	jsonQueryStr := queryHead
+	flavorMetaPath := strings.Split(jsonKeyPath, ".")
+	for i := 0; i < len(flavorMetaPath)-1; i++ {
+		jsonQueryStr = fmt.Sprintf("%s -> '%s'", jsonQueryStr, flavorMetaPath[i])
+	}
+	jsonQueryStr = fmt.Sprintf("%s ->> '%s'", jsonQueryStr, flavorMetaPath[len(flavorMetaPath)-1])
+	return jsonQueryStr
+}
+
 func buildFlavorPartQueryStringWithFlavorParts(flavorpart, flavorgroupId string, tx *gorm.DB) *gorm.DB {
 	defaultLog.Trace("postgres/flavor_store:buildFlavorPartQueryStringWithFlavorParts() Entering")
 	defer defaultLog.Trace("postgres/flavor_store:buildFlavorPartQueryStringWithFlavorParts() Leaving")
 
 	if flavorgroupId != "" && uuid.MustParse(flavorgroupId) != uuid.Nil {
 		subQuery := buildFlavorPartQueryStringWithFlavorgroup(flavorgroupId, tx)
-		tx = subQuery.Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorpart)
+		tx = subQuery.Where(convertToPgJsonqueryString("f.content", "meta.description.flavor_part") + " = ?", flavorpart)
 	} else {
 		tx = tx.Table("flavor f").Select("f.id").Joins("INNER JOIN flavorgroup_flavor fgf ON f.id = fgf.flavor_id")
 		tx = tx.Joins("INNER JOIN flavor_group fg ON fgf.flavorgroup_id = fg.id")
-		tx = tx.Where("f.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorpart)
+		tx = tx.Where(convertToPgJsonqueryString("f.content", "meta.description.flavor_part") + " = ?", flavorpart)
 	}
 	return tx
 }
@@ -409,7 +383,7 @@ func (f *FlavorStore) isHostHavingFlavorType(hwId, flavorType string) (bool, err
 	tx = f.Store.Db.Model(&flavor{}).Joins("INNER JOIN flavorgroup_flavor as l ON flavor.id = l.flavor_id").
 		Joins("INNER JOIN flavor_group as fg ON l.flavorgroup_id = fg.id").
 		Where("fg.name = 'host_unique'").
-		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorType).
+		Where(convertToPgJsonqueryString("flavor.content", "meta.description.flavor_part") + " = ?", flavorType).
 		Where("LOWER(flavor.content -> 'meta' -> 'description' ->> 'hardware_uuid') = ?", strings.ToLower(hwId))
 
 	if err := tx.Count(&count).Error; err != nil {
@@ -433,7 +407,7 @@ func (f *FlavorStore) flavorgroupContainsFlavorType(fgId, flavorPart string) (bo
 		Where("fg.id = ?", fgId).
 		Where("fg.name != ?", models.FlavorGroupsHostUnique.String()).
 		Where("policies ->> 'flavor_part' = ?", flavorPart).
-		Where("flavor.content -> 'meta' -> 'description' ->> 'flavor_part' = ?", flavorPart)
+		Where(convertToPgJsonqueryString("flavor.content", "meta.description.flavor_part") + " = ?", flavorPart)
 	if err := tx.Count(&count).Error; err != nil {
 		return false, errors.Wrap(err, "postgres/flavor_store:flavorgroupContainsFlavorType() failed to execute query")
 	}

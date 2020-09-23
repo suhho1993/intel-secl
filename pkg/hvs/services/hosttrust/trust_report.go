@@ -12,14 +12,12 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hosttrust/rules"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/utils"
 	cf "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
-	fConst "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"reflect"
-	"strconv"
 	"strings"
 )
 
@@ -249,7 +247,7 @@ func (v *Verifier) verifyFlavors(hostID uuid.UUID, flavors []hvs.SignedFlavor, h
 
 // FlavorVerify.java: 684
 //TODO find flavors by required key value
-func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool, hostManifestMap map[cf.FlavorPart]map[string]interface{}) ([]hvs.SignedFlavor, error) {
+func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTypes map[cf.FlavorPart]bool, hostManifestMap map[cf.FlavorPart][]models.FlavorMetaKv) ([]hvs.SignedFlavor, error) {
 	defaultLog.Trace("hosttrust/trust_report:findFlavors() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:findFlavors() Leaving")
 
@@ -269,86 +267,143 @@ func (v *Verifier) findFlavors(flavorGroupID uuid.UUID, latestReqAndDefFlavorTyp
 	return signedFlavors, nil
 }
 
-func getHostManifestMap(hostManifest *types.HostManifest, flavorParts []cf.FlavorPart) (map[cf.FlavorPart]map[string]interface{}, error) {
+func getHostManifestMap(hostManifest *types.HostManifest, flavorParts []cf.FlavorPart) (map[cf.FlavorPart][]models.FlavorMetaKv, error) {
 	defaultLog.Trace("hosttrust/trust_report:getHostManifestMap() Entering")
 	defer defaultLog.Trace("hosttrust/trust_report:getHostManifestMap() Leaving")
 
-	hostInfoMap := make(map[cf.FlavorPart]map[string]interface{})
 	hostInfo := hostManifest.HostInfo
+	hostInfoValues := make(map[cf.FlavorPart][]models.FlavorMetaKv)
 	if len(flavorParts) > 0 {
 		for _, fp := range flavorParts {
-			hostInfoValues := make(map[string]interface{})
 			if fp == cf.FlavorPartPlatform {
+				var pfQueryAttrs []models.FlavorMetaKv
 				if hostInfo.BiosName != "" {
-					hostInfoValues["bios_name"] = hostInfo.BiosName
+					pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+						Key:   "bios.bios_name",
+						Value: hostInfo.BiosName,
+					})
 				}
 				if hostInfo.BiosVersion != "" {
-					hostInfoValues["bios_version"] = hostInfo.BiosVersion
+					pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+						Key:   "bios.bios_version",
+						Value: hostInfo.BiosVersion,
+					})
 				}
 				if utils.IsLinuxHost(&hostInfo) {
-					hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+					pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.tboot_installed",
+						Value: hostInfo.TbootInstalled,
+					})
 				}
 				if !reflect.DeepEqual(hostInfo.HardwareFeatures, taModel.HardwareFeatures{}) {
-					hostHwFeatures := make(map[string]string)
 					if hostInfo.HardwareFeatures.CBNT != nil {
-						hostHwFeatures[strings.ToUpper(fConst.Cbnt)] = strconv.FormatBool(hostInfo.HardwareFeatures.CBNT.Enabled)
+						pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+							Key:   "hardware.feature.CBNT.enabled",
+							Value: hostInfo.HardwareFeatures.CBNT.Enabled,
+						})
 						if hostInfo.HardwareFeatures.CBNT.Enabled {
-							hostHwFeatures[strings.ToUpper(fConst.Cbnt)+"-profile"] = hostInfo.HardwareFeatures.CBNT.Meta.Profile
+							pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+								Key:   "hardware.feature.CBNT.profile",
+								Value: hostInfo.HardwareFeatures.CBNT.Meta.Profile,
+							})
 						}
 					}
 					if hostInfo.HardwareFeatures.SUEFI != nil {
-						hostHwFeatures[strings.ToUpper(fConst.Suefi)] = strconv.FormatBool(hostInfo.HardwareFeatures.SUEFI.Enabled)
+						pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+							Key:   "hardware.feature.SUEFI.enabled",
+							Value: hostInfo.HardwareFeatures.SUEFI.Enabled,
+						})
 					}
 					if hostInfo.HardwareFeatures.TPM.Enabled {
-						hostHwFeatures[strings.ToUpper(fConst.Tpm)] = strconv.FormatBool(hostInfo.HardwareFeatures.TPM.Enabled)
+						pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+							Key:   "hardware.feature.TPM.enabled",
+							Value: hostInfo.HardwareFeatures.TPM.Enabled,
+						})
 					}
 					if hostInfo.HardwareFeatures.TXT != nil {
-						hostHwFeatures[strings.ToUpper(fConst.Txt)] = strconv.FormatBool(hostInfo.HardwareFeatures.TXT.Enabled)
+						pfQueryAttrs = append(pfQueryAttrs, models.FlavorMetaKv{
+							Key:   "hardware.feature.TXT.enabled",
+							Value: hostInfo.HardwareFeatures.TXT.Enabled,
+						})
 					}
-					hostInfoValues["hardware_features"] = hostHwFeatures
 				}
+				hostInfoValues[cf.FlavorPartPlatform] = pfQueryAttrs
 			} else if fp == cf.FlavorPartOs {
+				var osfQueryAttrs []models.FlavorMetaKv
 				if utils.IsLinuxHost(&hostInfo) {
-					hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+					osfQueryAttrs = append(osfQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.tboot_installed",
+						Value: hostInfo.TbootInstalled,
+					})
 				}
 				if hostInfo.OSName != "" {
-					hostInfoValues["os_name"] = hostInfo.OSName
+					osfQueryAttrs = append(osfQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.os_name",
+						Value: hostInfo.OSName,
+					})
 				}
 				if hostInfo.OSVersion != "" {
-					hostInfoValues["os_version"] = hostInfo.OSVersion
+					osfQueryAttrs = append(osfQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.os_version",
+						Value: hostInfo.OSVersion,
+					})
 				}
 				if hostInfo.VMMVersion != "" {
-					hostInfoValues["vmm_version"] = hostInfo.VMMVersion
+					osfQueryAttrs = append(osfQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.vmm_version",
+						Value: hostInfo.VMMVersion,
+					})
 				}
 				if hostInfo.VMMName != "" {
-					hostInfoValues["vmm_name"] = hostInfo.VMMName
+					osfQueryAttrs = append(osfQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.vmm_name",
+						Value: hostInfo.VMMName,
+					})
 				}
+				hostInfoValues[cf.FlavorPartOs] = osfQueryAttrs
 			} else if fp == cf.FlavorPartHostUnique {
+				var hufQueryAttrs []models.FlavorMetaKv
 				if utils.IsLinuxHost(&hostInfo) {
-					hostInfoValues["tboot_installed"] = hostInfo.TbootInstalled
+					hufQueryAttrs = append(hufQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.tboot_installed",
+						Value: hostInfo.TbootInstalled,
+					})
 				}
 				if hostInfo.HardwareUUID != "" {
-					hostInfoValues["hardware_uuid"] = strings.ToLower(hostInfo.HardwareUUID)
+					hufQueryAttrs = append(hufQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.hardware_uuid",
+						Value: strings.ToLower(hostInfo.HardwareUUID),
+					})
 				}
+				hostInfoValues[cf.FlavorPartHostUnique] = hufQueryAttrs
 			} else if fp == cf.FlavorPartAssetTag {
+				var atfQueryAttrs []models.FlavorMetaKv
 				if hostInfo.HardwareUUID != "" {
-					hostInfoValues["hardware_uuid"] = strings.ToLower(hostInfo.HardwareUUID)
+					atfQueryAttrs = append(atfQueryAttrs, models.FlavorMetaKv{
+						Key:   "meta.description.hardware_uuid",
+						Value: strings.ToLower(hostInfo.HardwareUUID),
+					})
 				}
+				hostInfoValues[cf.FlavorPartAssetTag] = atfQueryAttrs
 			} else if fp == cf.FlavorPartSoftware {
+				var sfQueryAttrs []models.FlavorMetaKv
 				if !reflect.DeepEqual(&hostManifest.PcrManifest, types.PcrManifest{}) && len(hostManifest.MeasurementXmls) >= 1 {
 					measurementLabels, err := getMeasurementLabels(hostManifest)
 					if err != nil {
-						return hostInfoMap, errors.Wrap(err, "error while getting labels from measurement XML")
+						return hostInfoValues, errors.Wrap(err, "error while getting labels from measurement XML")
 					}
-					hostInfoValues["measurementXML_labels"] = measurementLabels
+					sfQueryAttrs = append(sfQueryAttrs, models.FlavorMetaKv{
+						Key:   "SoftwareLabels",
+						Value: measurementLabels,
+					})
 				}
+				hostInfoValues[cf.FlavorPartSoftware] = sfQueryAttrs
 			} else {
 				return nil, errors.New("Invalid flavor part - " + fp.String())
 			}
-			hostInfoMap[fp] = hostInfoValues
 		}
 	}
-	return hostInfoMap, nil
+	return hostInfoValues, nil
 }
 
 // get software labels from the host manifest
