@@ -157,6 +157,7 @@ func (svc *Service) ProcessQueue() error {
 	verifyWithFetchDataHostIds := []uuid.UUID{}
 	verifyHostIds := []uuid.UUID{}
 	if len(records) > 0 {
+		svc.mapmtx.Lock()
 		for _, queue := range records {
 			if queue.Params != nil {
 				hostId := uuid.UUID{}
@@ -179,14 +180,13 @@ func (svc *Service) ProcessQueue() error {
 					verifyHostIds = append(verifyHostIds, hostId)
 				}
 				ctx, cancel := context.WithCancel(context.Background())
-				svc.mapmtx.Lock()
+
 				// the host field is not filled at this stage since it requires a trip to the host store
 				svc.hosts[hostId] = &verifyTrustJob{ctx, cancel, nil, queue.Id,
 					fetchHostData, preferHashMatch}
-				svc.mapmtx.Unlock()
-
 			}
 		}
+		svc.mapmtx.Unlock()
 	}
 
 	if len(verifyWithFetchDataHostIds) > 0 {
