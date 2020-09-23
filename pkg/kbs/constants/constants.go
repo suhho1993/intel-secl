@@ -56,7 +56,7 @@ const (
 	// server constants
 	DefaultReadTimeout       = 30 * time.Second
 	DefaultReadHeaderTimeout = 10 * time.Second
-	DefaultWriteTimeout      = 600 * time.Second
+	DefaultWriteTimeout      = 30 * time.Second
 	DefaultIdleTimeout       = 10 * time.Second
 	DefaultMaxHeaderBytes    = 1 << 20
 	DefaultKBSListenerPort   = 9443

@@ -87,7 +87,6 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 	defer defaultLog.Trace("keymanager/directory_key_manager:RegisterKey() Leaving")
 
 	var key, publicKey, privateKey string
-
 	if request.KeyInformation.Algorithm == constants.CRYPTOALG_AES {
 		key = request.KeyInformation.KeyString
 	} else {
@@ -101,18 +100,18 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not parse RSA private key")
 			}
-			public = private.PublicKey
+			public = &private.PublicKey
 		} else {
 			private, err := x509.ParseECPrivateKey(privateKeyBytes)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not parse EC private key")
 			}
-			public = private.PublicKey
+			public = &private.PublicKey
 		}
 
 		publicKeyBytes, err := x509.MarshalPKIXPublicKey(public)
 		if err != nil {
-			return nil, errors.Wrap(err, "")
+			return nil, errors.Wrap(err, "failed to marshal public key")
 		}
 		publicKey = base64.StdEncoding.EncodeToString(publicKeyBytes)
 	}
@@ -164,16 +163,13 @@ func generateRSAKeyPair(length int) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrap(err, "Could not create RSA keypair")
 	}
 
-	public := private.PublicKey
+	public := &private.PublicKey
 
 	if bits := private.N.BitLen(); bits != length {
 		return nil, nil, errors.Errorf("key too short (%d vs %d)", bits, length)
 	}
 
-	privateBytes, err := x509.MarshalPKCS8PrivateKey(private)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to marshal private key")
-	}
+	privateBytes := x509.MarshalPKCS1PrivateKey(private)
 
 	publicBytes, err := x509.MarshalPKIXPublicKey(public)
 	if err != nil {
@@ -190,6 +186,8 @@ func generateECKeyPair(curveType string) ([]byte, []byte, error) {
 	var curve elliptic.Curve
 
 	switch curveType {
+	case "prime256v1", "secp256r1":
+		curve = elliptic.P256()
 	case "secp384r1":
 		curve = elliptic.P384()
 	case "secp521r1":
@@ -203,7 +201,7 @@ func generateECKeyPair(curveType string) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrap(err, "Could not generate EC keypair")
 	}
 
-	public := private.PublicKey
+	public := &private.PublicKey
 
 	if !curve.IsOnCurve(public.X, public.Y) {
 		return nil, nil, errors.New("public key invalid")

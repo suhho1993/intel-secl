@@ -322,8 +322,8 @@ func validateKeyCreateRequest(requestKey kbs.KeyRequest) error {
 	defer defaultLog.Trace("controllers/key_controller:validateKeyCreateRequest() Leaving")
 
 	allowedAlgorithms := map[string]bool{"AES": true, "RSA": true, "EC": true, "aes": true, "rsa": true, "ec": true}
-	allowedCurveTypes := map[string]bool{"secp384r1": true, "secp521r1": true}
-	allowedKeyLengths := map[int]bool{256: true, 3072: true, 4096: true, 7680: true}
+	allowedCurveTypes := map[string]bool{"secp256r1": true, "secp384r1": true, "secp521r1": true, "prime256v1": true}
+	allowedKeyLengths := map[int]bool{128: true, 192: true, 256: true, 2048: true, 3072: true, 4096: true, 7680: true, 15360: true}
 
 	algorithm := requestKey.KeyInformation.Algorithm
 	if algorithm == "" {
