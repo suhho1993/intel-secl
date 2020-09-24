@@ -16,7 +16,7 @@ import (
 )
 
 type KmipManager struct {
-	client *kmipclient.KmipClient
+	client kmipclient.KmipClient
 }
 
 func (km *KmipManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttributes, error) {
