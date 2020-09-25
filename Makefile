@@ -51,9 +51,14 @@ hvs-docker: hvs
 	docker build . -f build/image/Dockerfile-hvs -t isecl/hvs:$(VERSION)
 	docker save isecl/hvs:$(VERSION) > deployments/docker/docker-hvs-$(VERSION)-$(GITCOMMIT).tar
 
+kbs-swagger:
+	mkdir -p docs/swagger
+	swagger generate spec -w ./docs/shared/kbs -o ./docs/swagger/kbs-openapi.yml
+	swagger validate ./docs/swagger/kbs-openapi.yml
+
 hvs-swagger:
 	mkdir -p docs/swagger
-	swagger generate spec -c docs\/shared\/hvs -o ./docs/swagger/hvs-openapi.yml --scan-models
+	swagger generate spec -w ./docs/shared/hvs -o ./docs/swagger/hvs-openapi.yml
 	swagger validate ./docs/swagger/hvs-openapi.yml
 
 test:

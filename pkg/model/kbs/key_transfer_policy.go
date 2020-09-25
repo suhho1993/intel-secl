@@ -12,6 +12,7 @@ import (
 
 // KeyTransferPolicyAttributes - used in key transfer policy create request and response.
 type KeyTransferPolicyAttributes struct {
+	// swagger:strfmt uuid
 	ID                                     uuid.UUID `json:"id,omitempty"`
 	CreatedAt                              time.Time `json:"created_at,omitempty"`
 	SGXEnclaveIssuerAnyof                  []string  `json:"sgx_enclave_issuer_anyof"`

@@ -12,6 +12,7 @@ import (
 
 // KeyInformation - Contains required key related attributes for key create or register request.
 type KeyInformation struct {
+	// swagger:strfmt uuid
 	ID        uuid.UUID `json:"id,omitempty"`
 	Algorithm string    `json:"algorithm"`
 	KeyLength int       `json:"key_length,omitempty"`
@@ -23,6 +24,7 @@ type KeyInformation struct {
 // KeyRequest - All required attributes for key create or register request.
 type KeyRequest struct {
 	KeyInformation   *KeyInformation `json:"key_information"`
+	// swagger:strfmt uuid
 	TransferPolicyID uuid.UUID       `json:"transfer_policy_id,omitempty"`
 	Label            string          `json:"label,omitempty"`
 	Usage            string          `json:"usage,omitempty"`
@@ -31,6 +33,7 @@ type KeyRequest struct {
 // KeyResponse - key attributes from key create or register response.
 type KeyResponse struct {
 	KeyInformation   *KeyInformation `json:"key_information"`
+	// swagger:strfmt uuid
 	TransferPolicyID uuid.UUID       `json:"transfer_policy_id"`
 	TransferLink     string          `json:"transfer_link"`
 	CreatedAt        time.Time       `json:"created_at"`
@@ -40,7 +43,9 @@ type KeyResponse struct {
 
 // KeyTransferAttributes - Contains all possible key transfer attributes.
 type KeyTransferAttributes struct {
+	// swagger:strfmt uuid
 	KeyId        uuid.UUID  `json:"id,omitempty"`
+	// swagger:strfmt base64
 	KeyData      []byte     `json:"payload,omitempty"`
 	KeyAlgorithm string     `json:"algorithm,omitempty"`
 	KeyLength    int        `json:"key_length,omitempty"`
