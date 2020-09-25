@@ -235,7 +235,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 		},
 		RetryTimeMinutes: 5,
 		HostStatusStore:  hss,
-		HostStore:  hs,
+		HostStore:        hs,
 	}
 	_, hf, err := hostfetcher.NewService(c, cfg.FVS.NumberOfDataFetchers)
 	if err != nil {

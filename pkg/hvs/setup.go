@@ -96,7 +96,6 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 	if a.configuration() == nil {
 		a.Config = defaultConfig()
 	}
-
 	a.setupHRRSConfig()
 
 	runner := setup.NewRunner()
@@ -114,15 +113,21 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 			MaxHeaderBytes:    viper.GetInt("server-max-header-bytes"),
 		},
 		ConsoleWriter: a.consoleWriter(),
-		DefaultPort: constants.DefaultHVSListenerPort,
+		DefaultPort:   constants.DefaultHVSListenerPort,
 	})
 	runner.AddTask("service", "", &tasks.ServiceSetup{
-		SvcConfigPtr: &a.Config.HVS,
+		SvcConfigPtr:        &a.Config.HVS,
+		AASApiUrlPtr:        &a.Config.AASApiUrl,
+		CMSBaseURLPtr:       &a.Config.CMSBaseURL,
+		CmsTlsCertDigestPtr: &a.Config.CmsTlsCertDigest,
 		HVSConfig: config.HVSConfig{
 			Username: viper.GetString("hvs-service-username"),
 			Password: viper.GetString("hvs-service-password"),
 		},
-		ConsoleWriter: a.consoleWriter(),
+		AASApiUrl:        viper.GetString("aas-base-url"),
+		CMSBaseURL:       viper.GetString("cms-base-url"),
+		CmsTlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
+		ConsoleWriter:    a.consoleWriter(),
 	})
 	dbConf := commConfig.DBConfig{
 		Vendor:   viper.GetString("db-vendor"),
