@@ -17,12 +17,11 @@ const (
 	RunDirPath      = "/run/" + ServiceDir
 	ExecLinkPath    = "/usr/bin/" + ServiceUserName
 	LogDir          = "/var/log/" + ServiceDir
+	ConfigDir       = "/etc/" + ServiceDir
+	ConfigFile      = "config"
 
-	ConfigDir             = "/etc/" + ServiceDir
-	ConfigFile            = "config"
-
-	KeysDir               = HomeDir + "keys/"
-	KeysTransferPolicyDir = HomeDir + "keys-transfer-policy/"
+	KeysDir                   = HomeDir + "keys/"
+	KeysTransferPolicyDir     = HomeDir + "keys-transfer-policy/"
 
 	// certificates' path
 	TrustedJWTSigningCertsDir = ConfigDir + "certs/trustedjwt/"
@@ -38,11 +37,11 @@ const (
 	DefaultTransferPolicyFile = ConfigDir + "default_transfer_policy"
 
 	// default locations for tls certificate and key
-	DefaultTLSCertPath = ConfigDir + "tls-cert.pem"
-	DefaultTLSKeyPath  = ConfigDir + "tls.key"
+	DefaultTLSCertPath        = ConfigDir + "tls-cert.pem"
+	DefaultTLSKeyPath         = ConfigDir + "tls.key"
 
 	// service remove command
-	ServiceRemoveCmd   = "systemctl disable kbs"
+	ServiceRemoveCmd    = "systemctl disable kbs"
 
 	// tls constants
 	DefaultKbsTlsCn     = "KBS TLS Certificate"
@@ -53,6 +52,10 @@ const (
 	// jwt constants
 	JWTCertsCacheTime   = "1m"
 
+	// log constants
+	DefaultLogLevel     = "info"
+	DefaultLogMaxlength = 1500
+
 	// server constants
 	DefaultReadTimeout       = 30 * time.Second
 	DefaultReadHeaderTimeout = 10 * time.Second
@@ -60,9 +63,6 @@ const (
 	DefaultIdleTimeout       = 10 * time.Second
 	DefaultMaxHeaderBytes    = 1 << 20
 	DefaultKBSListenerPort   = 9443
-
-	// log constants
-	DefaultLogEntryMaxlength = 1500
 
 	// keymanager constants
 	DirectoryKeyManager = "directory"
@@ -78,7 +78,4 @@ const (
 	KMIP_CRYPTOALG_RSA  = 0x04
 	KMIP_CRYPTOALG_EC   = 0x06
 	KMIP_CLIENT_SUCCESS = 0x00
-
-	// kmip library ldconfig file
-	LdConfigFile  = "/etc/ld.so.conf.d/kmip.conf"
 )

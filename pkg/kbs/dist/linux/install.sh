@@ -65,6 +65,7 @@ ln -sfT $BIN_PATH/$COMPONENT_NAME /usr/bin/$COMPONENT_NAME
 cp libkmip.so.0.2 $LIB_PATH/ && chown $SERVICE_USERNAME:$SERVICE_USERNAME $LIB_PATH/*
 chmod 700 $LIB_PATH/*
 ln -sfT $LIB_PATH/libkmip.so.0.2 $LIB_PATH/libkmip.so
+ln -sfT $LIB_PATH/libkmip.so.0.2 $LIB_PATH/libkmip.so.0
 
 # make log files world readable
 chmod 755 $LOG_PATH
@@ -137,11 +138,6 @@ if [ ! -a /etc/logrotate.d/${COMPONENT_NAME} ]; then
         $LOG_COPYTRUNCATE
 }" > /etc/logrotate.d/${COMPONENT_NAME}
 fi
-
-echo "Updating ldconfig for kmip library"
-echo "$LIB_PATH" > /etc/ld.so.conf.d/kmip.conf
-ldconfig
-if [ $? -ne 0 ]; then echo "Failed to load ldconfig. Please run command "ldconfig" after installation completes."; fi
 
 # check if KBS_NOSETUP is defined
 if [ "${KBS_NOSETUP,,}" == "true" ]; then

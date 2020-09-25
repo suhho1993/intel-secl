@@ -23,9 +23,9 @@ func init() {
 	viper.SetDefault("tls-san-list", constants.DefaultKbsTlsSan)
 
 	// Set default values for log
-	viper.SetDefault("log-max-length", constants.DefaultLogEntryMaxlength)
+	viper.SetDefault("log-max-length", constants.DefaultLogMaxlength)
 	viper.SetDefault("log-enable-stdout", true)
-	viper.SetDefault("log-level", "info")
+	viper.SetDefault("log-level", constants.DefaultLogLevel)
 
 	// Set default values for server
 	viper.SetDefault("server-port", constants.DefaultKBSListenerPort)

@@ -6,7 +6,7 @@ package kmipclient
 
 // //The following CFLAGS require 'export CGO_CFLAGS_ALLOW="-f.*"' in the executable that uses kmip-client (i.e. kbs).
 // #cgo CFLAGS: -fno-strict-overflow -fno-delete-null-pointer-checks -fwrapv -fstack-protector-strong
-// #cgo LDFLAGS: -lssl -lcrypto -lkmip
+// #cgo LDFLAGS: -lssl -lcrypto -lkmip -Wl,-rpath=\$ORIGIN/../lib
 // #include <stdlib.h>
 // #include "kmipclient.h"
 import "C"
