@@ -206,11 +206,10 @@ func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferH
 	adds := make([]uuid.UUID, 0, len(hostIds))
 	updates := []uuid.UUID{}
 
+	svc.mapmtx.RLock()
 	// iterate through the hosts and check if there is an existing entry
 	for _, hid := range hostIds {
-		svc.mapmtx.RLock()
 		vtj, found := svc.hosts[hid]
-		svc.mapmtx.RUnlock()
 		if found {
 			prevJobStage, _ := taskstage.FromContext(vtj.ctx)
 			if shouldCancelPrevJob(fetchHostData, vtj.getNewHostData, prevJobStage) {
@@ -223,6 +222,7 @@ func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferH
 			adds = append(adds, hid)
 		}
 	}
+	svc.mapmtx.RUnlock()
 	if err := svc.persistToStore(adds, updates, fetchHostData, preferHashMatch); err != nil {
 		return errors.Wrap(err, "hosttrust/manager:VerifyHostsAsync() persistRequest - error in Persisting to Store")
 	}
@@ -291,39 +291,75 @@ func (svc *Service) persistToStore(additions, updates []uuid.UUID, fetchHostData
 	defaultLog.Trace("hosttrust/manager:persistToStore() Entering")
 	defer defaultLog.Trace("hosttrust/manager:persistToStore() Leaving")
 
-	strRec := &models.Queue{Action: "flavor-verify",
-		Params: map[string]interface{}{"host_id": uuid.UUID{}, "fetch_host_data": fetchHostData, "prefer_hash_match": preferHashMatch},
-		State:  models.QueueStatePending,
-	}
-
 	persistRecords := func(lst []uuid.UUID, create bool) error {
+		strRec := &models.Queue{Action: "flavor-verify",
+			Params: map[string]interface{}{"host_id": uuid.Nil, "fetch_host_data": fetchHostData, "prefer_hash_match": preferHashMatch},
+			State:  models.QueueStatePending,
+		}
+
 		for _, hid := range lst {
 			var err error
+
+			mapNeedsUpdate := false
+
+			// if record does not exist in map
 			if create {
-				strRec.Id = uuid.UUID{}
+				existingHTVJob, htvJobExists := svc.hosts[hid]
+				// check if the record is the same as the one we trying to put in
+				if htvJobExists && existingHTVJob.getNewHostData == fetchHostData && existingHTVJob.preferHashMatch == preferHashMatch {
+					defaultLog.Infof("hosttrust/manager:persistToStore() DEBUG - Skipping adding to queue as it already exists in table %s | %v", hid.String(), strRec)
+					// if yes, then skip
+					continue
+				}
 				strRec.Params["host_id"] = hid
+				defaultLog.Debugf("hosttrust/manager:persistToStore() DEBUG - Creating FVQueue entry for host %s | %v", hid.String(), strRec)
 				if strRec, err = svc.prstStor.Create(strRec); err != nil {
-					return errors.Wrap(err, "hosttrust/manager:persistToStore() - Could not create record")
+					return errors.Wrapf(err, "hosttrust/manager:persistToStore() - Could not create queue record for host %s", hid.String())
+				}
+				// update record in map
+				mapNeedsUpdate = true
+			} else {
+				// check if the map entry still exists
+				if _, ok := svc.hosts[hid]; !ok {
+					return errors.Errorf("hosttrust/manager:persistToStore() - Update record failed - Host %s map entry does not exist!", hid.String())
+				}
+				// check if the map entry points to a valid queue record
+				if hidMapEntry, ok := svc.hosts[hid]; ok && hidMapEntry.storPersistId == uuid.Nil {
+					return errors.Errorf("hosttrust/manager:persistToStore() - Update record failed - Host %s map entry does not point to a valid queue record!", hid.String())
 				}
 
-			} else {
-				svc.mapmtx.RLock()
 				strRec.Id = svc.hosts[hid].storPersistId
+				if strRec.Id == uuid.Nil {
+					return errors.Errorf("hosttrust/manager:persistToStore() - Update record failed as the ")
+				}
 				strRec.Params["host_id"] = hid
-				svc.mapmtx.RUnlock()
+				defaultLog.Debugf("hosttrust/manager:persistToStore() DEBUG - Updating FVQueue entry for host %s | %v", hid.String(), strRec)
 				if err = svc.prstStor.Update(strRec); err != nil {
 					return errors.Wrap(err, "hosttrust/manager:persistToStore() - Could not update record")
 				}
+				// update record in map
+				mapNeedsUpdate = true
 			}
-			ctx, cancel := context.WithCancel(context.Background())
-			svc.mapmtx.Lock()
-			// the host field is not filled at this stage since it requires a trip to the host store
-			svc.hosts[hid] = &verifyTrustJob{ctx, cancel, nil, strRec.Id,
-				fetchHostData, preferHashMatch}
-			svc.mapmtx.Unlock()
+			// update map ONLY if CRUD operation on queue store
+			if mapNeedsUpdate {
+				ctx, cancel := context.WithCancel(context.Background())
+
+				// check if existing map has fetchHostData == true - then force update to true
+				if !create && svc.hosts[hid].getNewHostData && !fetchHostData {
+					// the host field is not filled at this stage since it requires a trip to the host store
+					svc.hosts[hid] = &verifyTrustJob{ctx, cancel, nil, strRec.Id,
+						true, preferHashMatch}
+				} else {
+					// the host field is not filled at this stage since it requires a trip to the host store
+					svc.hosts[hid] = &verifyTrustJob{ctx, cancel, nil, strRec.Id,
+						fetchHostData, preferHashMatch}
+				}
+			}
 		}
 		return nil
 	}
+	svc.mapmtx.Lock()
+	defer svc.mapmtx.Unlock()
 	if err := persistRecords(additions, true); err != nil {
 		return errors.Wrap(err, "hosttrust/manager:persistToStore() - persistRecords additions error")
 	}
@@ -397,7 +433,13 @@ func (svc *Service) verifyHostData(hostId uuid.UUID, data *types.HostManifest, n
 
 	//check if the job has not already been cancelled
 	svc.mapmtx.Lock()
-	vtj := svc.hosts[hostId]
+	vtj, jobFound := svc.hosts[hostId]
+	// if job is not found in work map nothing more to do here
+	if !jobFound {
+		defaultLog.Info("Host ", hostId, " removed from hosts work map")
+		svc.mapmtx.Unlock()
+		return
+	}
 	select {
 	// remove the requests that have already been cancelled.
 	case <-vtj.ctx.Done():
@@ -444,6 +486,9 @@ func (svc *Service) ProcessHostData(ctx context.Context, host hvs.Host, data *ty
 }
 
 func shouldCancelPrevJob(newJobNeedFreshHostData, prevJobNeededFreshData bool, prevJobStage taskstage.Stage) bool {
+	defaultLog.Trace("hosttrust/manager:shouldCancelPrevJob() Entering")
+	defer defaultLog.Trace("hosttrust/manager:shouldCancelPrevJob() Leaving")
+
 	// if the old job needs data and the new job doesn't then DON'T cancel old job
 	if prevJobNeededFreshData && !newJobNeedFreshHostData {
 		return false
@@ -454,6 +499,8 @@ func shouldCancelPrevJob(newJobNeedFreshHostData, prevJobNeededFreshData bool, p
 }
 
 func (svc *Service) deleteEntry(hostId uuid.UUID) {
+	defaultLog.Trace("hosttrust/manager:deleteEntry() Entering")
+	defer defaultLog.Trace("hosttrust/manager:deleteEntry() Leaving")
 
 	var strRecId uuid.UUID
 	svc.mapmtx.Lock()
