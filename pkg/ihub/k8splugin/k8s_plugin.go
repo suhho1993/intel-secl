@@ -259,35 +259,10 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 
 		log.Debug("k8splugin/k8s_plugin:UpdateCRD() PUT Call to be made")
 
-		k8hostList := crdResponse.Spec.HostList
-		for key := range k8sDetails.HostDetailsMap {
-			reportHostDetails := k8sDetails.HostDetailsMap[key]
-			for n, k8HostDetails := range k8hostList {
-				if k8HostDetails.HostName == reportHostDetails.hostName {
-					if config.AttestationService.AttestationType == "HVS" {
-						k8hostList[n].AssetTags = reportHostDetails.AssetTags
-						k8hostList[n].HardwareFeatures = reportHostDetails.HardwareFeatures
-						k8hostList[n].Trust = reportHostDetails.Trust
-						k8hostList[n].Trusted = reportHostDetails.trusted
-						// ensure the labels get updated by sending the latest timestamp
-						t := time.Now().UTC()
-						k8hostList[n].Updated = &t
-					} else if config.AttestationService.AttestationType == "SGX" {
-						k8hostList[n].EpcSize = strings.Replace(reportHostDetails.EpcSize, " ", "", -1)
-						k8hostList[n].FlcEnabled = strconv.FormatBool(reportHostDetails.FlcEnabled)
-						k8hostList[n].SgxEnabled = strconv.FormatBool(reportHostDetails.SgxEnabled)
-						k8hostList[n].SgxSupported = strconv.FormatBool(reportHostDetails.SgxSupported)
-						k8hostList[n].TcbUpToDate = strconv.FormatBool(reportHostDetails.TcbUpToDate)
-					}
-					k8hostList[n].ValidTo = reportHostDetails.ValidTo
-					k8hostList[n].SignedTrustReport, err = GetSignedTrustReport(k8hostList[n], k8sDetails)
-					if err != nil {
-						return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in getting the signed trust report")
-					}
-				}
-			}
+		crdResponse.Spec.HostList, err = populateHostDetailsInCRD(k8sDetails)
+		if err != nil {
+			return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error populating crd")
 		}
-		crdResponse.Spec.HostList = k8hostList
 		err = PutCRD(k8sDetails, &crdResponse)
 		if err != nil {
 			return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in Updating CRD")
@@ -299,41 +274,11 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 		crdResponse.Kind = constants.KubernetesCRDKind
 		crdResponse.Metadata.Name = crdName
 		crdResponse.Metadata.Namespace = constants.KubernetesMetaDataNameSpace
-		var hostList []model.Host
-
-		for key := range k8sDetails.HostDetailsMap {
-
-			reportHostDetails := k8sDetails.HostDetailsMap[key]
-			var host model.Host
-
-			host.HostName = reportHostDetails.hostName
-			if config.AttestationService.AttestationType == "HVS" {
-				host.AssetTags = reportHostDetails.AssetTags
-				host.HardwareFeatures = reportHostDetails.HardwareFeatures
-				host.Trust = reportHostDetails.Trust
-				host.Trusted = reportHostDetails.trusted
-				host.Updated = nil
-			} else if config.AttestationService.AttestationType == "SGX" {
-				host.EpcSize = strings.Replace(reportHostDetails.EpcSize, " ", "", -1)
-				host.FlcEnabled = strconv.FormatBool(reportHostDetails.FlcEnabled)
-				host.SgxEnabled = strconv.FormatBool(reportHostDetails.SgxEnabled)
-				host.SgxSupported = strconv.FormatBool(reportHostDetails.SgxSupported)
-				host.TcbUpToDate = strconv.FormatBool(reportHostDetails.TcbUpToDate)
-			}
-
-			host.ValidTo = reportHostDetails.ValidTo
-			signedtrustReport, err := GetSignedTrustReport(host, k8sDetails)
-			if err != nil {
-				return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in Getting SignedTrustReport")
-			}
-			host.SignedTrustReport = signedtrustReport
-
-			hostList = append(hostList, host)
+		crdResponse.Spec.HostList, err = populateHostDetailsInCRD(k8sDetails)
+		if err != nil {
+			return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error populating crd")
 		}
-
-		crdResponse.Spec.HostList = hostList
-
-		log.Debug("k8splugin/k8s_plugin:UpdateCRD() Printing the spec hostList : ", hostList)
+		log.Debug("k8splugin/k8s_plugin:UpdateCRD() Printing the spec hostList : ", crdResponse.Spec.HostList)
 		err := PostCRD(k8sDetails, &crdResponse)
 		if err != nil {
 			return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in posting CRD")
@@ -341,6 +286,41 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 
 	}
 	return nil
+}
+
+func populateHostDetailsInCRD(k8sDetails *KubernetesDetails) ([]model.Host, error) {
+	config := k8sDetails.Config
+	var hostList []model.Host
+
+	for key := range k8sDetails.HostDetailsMap {
+
+		reportHostDetails := k8sDetails.HostDetailsMap[key]
+		var host model.Host
+
+		host.HostName = reportHostDetails.hostName
+		if config.AttestationService.AttestationType == "HVS" {
+			host.AssetTags = reportHostDetails.AssetTags
+			host.HardwareFeatures = reportHostDetails.HardwareFeatures
+			host.Trust = reportHostDetails.Trust
+			host.Trusted = reportHostDetails.trusted
+			t := time.Now().UTC()
+			host.Updated = &t
+		} else if config.AttestationService.AttestationType == "SGX" {
+			host.EpcSize = strings.Replace(reportHostDetails.EpcSize, " ", "", -1)
+			host.FlcEnabled = strconv.FormatBool(reportHostDetails.FlcEnabled)
+			host.SgxEnabled = strconv.FormatBool(reportHostDetails.SgxEnabled)
+			host.SgxSupported = strconv.FormatBool(reportHostDetails.SgxSupported)
+			host.TcbUpToDate = strconv.FormatBool(reportHostDetails.TcbUpToDate)
+		}
+		signedtrustReport, err := GetSignedTrustReport(host, k8sDetails)
+		if err != nil {
+			return nil, errors.Wrap(err, "k8splugin/k8s_plugin:populateHostDetailsInCRD() : Error in Getting SignedTrustReport")
+		}
+		host.SignedTrustReport = signedtrustReport
+
+		hostList = append(hostList, host)
+	}
+	return hostList, nil
 }
 
 //PutCRD PUT request call to update existing CRD
