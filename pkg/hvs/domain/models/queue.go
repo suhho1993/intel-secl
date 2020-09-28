@@ -20,6 +20,7 @@ type QueueFilterCriteria struct {
 	ParamValue  string
 	ParamMap    map[string]string
 	QueueStates []QueueState
+	Limit       int
 }
 
 type QueueState int

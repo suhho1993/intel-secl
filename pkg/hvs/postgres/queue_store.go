@@ -7,6 +7,7 @@ package postgres
 import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
@@ -31,10 +32,11 @@ func (qr *QueueStore) Create(q *models.Queue) (*models.Queue, error) {
 	}
 
 	dbq := queue{Id: uuid.New(),
-		Action:  q.Action,
-		State:   q.State,
-		Message: q.Message,
-		Params:  PGJsonStrMap(q.Params),
+		Action:    q.Action,
+		State:     q.State,
+		Message:   q.Message,
+		Params:    PGJsonStrMap(q.Params),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	if err := qr.store.Db.Create(&dbq).Error; err != nil {
@@ -95,9 +97,11 @@ func (qr *QueueStore) Update(q *models.Queue) error {
 	}
 
 	dbq := queue{Id: q.Id,
-		Action:  q.Action,
-		State:   q.State,
-		Message: q.Message,
+		Action:    q.Action,
+		State:     q.State,
+		Message:   q.Message,
+		CreatedAt: q.Created,
+		UpdatedAt: time.Now().UTC(),
 	}
 	if q.Params != nil {
 		dbq.Params = PGJsonStrMap(q.Params)
@@ -155,5 +159,11 @@ func buildQueueSearchQuery(tx *gorm.DB, qf *models.QueueFilterCriteria) *gorm.DB
 	if len(qf.QueueStates) > 0 {
 		tx = tx.Where("state in (?)", qf.QueueStates)
 	}
+
+	// apply limit
+	if qf.Limit > 0 {
+		tx = tx.Limit(qf.Limit)
+	}
+
 	return tx
 }

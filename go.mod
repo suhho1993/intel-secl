@@ -16,7 +16,6 @@ require (
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/sirupsen/logrus v1.4.0
 	github.com/spf13/viper v1.7.0
-	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/vmware/govmomi v0.22.2
 	gopkg.in/yaml.v2 v2.3.0
@@ -24,4 +23,3 @@ require (
 
 replace github.com/vmware/govmomi => github.com/arijit8972/govmomi fix-tpm-attestation-output
 
-go 1.13
