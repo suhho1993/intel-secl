@@ -82,16 +82,21 @@ func (attestationService AttestationServiceConnection) Validate() error {
 //validateService Validates the attestation service connection is successful or not by hitting the service url's
 func (attestationService AttestationServiceConnection) validateService() error {
 
-	if attestationService.AttestationConfig.AttestationType == "HVS" {
-		conf := config.Configuration{
-			AAS:                *attestationService.AASConfig,
-			AttestationService: *attestationService.AttestationConfig,
-			IHUB:               *attestationService.IHUBConfig,
-		}
+	conf := config.Configuration{
+		AAS:                *attestationService.AASConfig,
+		AttestationService: *attestationService.AttestationConfig,
+		IHUB:               *attestationService.IHUBConfig,
+	}
 
+	if attestationService.AttestationConfig.AttestationType == "HVS" {
 		_, err := vsPlugin.GetCaCerts("saml", &conf, "")
 		if err != nil {
 			return errors.Wrap(err, "tasks/attestation_service_connection:validateService() Error while getting response from attestation service")
+		}
+	} else if attestationService.AttestationConfig.AttestationType == "SGX" {
+		_, err := vsPlugin.GetSHVSVersion(&conf, "")
+		if err != nil {
+			return errors.Wrap(err, "tasks/attestation_service_connection:validateService() Error while getting response from SGX attestation service")
 		}
 	} else {
 		return errors.New("tasks/attestation_service_connection:validateService() Attestation type is not supported")

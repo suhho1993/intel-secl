@@ -60,8 +60,14 @@ type Host struct {
 	Trust             map[string]string `json:"trust,omitempty"`
 	HostName          string            `json:"hostName"`
 	SignedTrustReport string            `json:"signedTrustReport,omitempty"`
-	Trusted           bool              `json:"trusted"`
+	Trusted           bool              `json:"trusted,omitempty"`
 	ValidTo           time.Time         `json:"validTo,omitempty"`
+	HostID            string            `json:"host-id,omitempty"`
+	SgxSupported      string            `json:"sgx-supported,omitempty"`
+	SgxEnabled        string            `json:"sgx-enabled,omitempty"`
+	FlcEnabled        string            `json:"flc-enabled,omitempty"`
+	EpcSize           string            `json:"epc-size,omitempty"`
+	TcbUpToDate       string            `json:"tcbUpToDate,omitempty"`
 	jwt.StandardClaims
 }
 

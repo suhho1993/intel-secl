@@ -39,20 +39,11 @@ var SampleSamlCertPath = "../test/resources/saml_certificate.pem"
 //SampleSamlReportPath  sample Report Path
 var SampleSamlReportPath = "../test/resources/saml_report.xml"
 
-//InvalidSampleSamlReportPath  sample Report Path
-var InvalidSampleSamlReportPath = "../test/resources/invalid_saml_report.xml"
-
 //SampleListOfNodesFilePath sample json for K8s Nodes
 var SampleListOfNodesFilePath = "../test/resources/list_of_nodes.json"
 
 //CustomCRDFilePath sample json for custom CRD
 var CustomCRDFilePath = "../test/resources/custom_crd.json"
-
-//PrivateKeyFilePath sample for privake key file
-var PrivateKeyFilePath = "../test/resources/private_key.pem"
-
-//PublicKeyFilePath sample for pubic key file
-var PublicKeyFilePath = "../test/resources/public_key.pem"
 
 //K8scertFilePath sample for k8sCertFilePath
 var K8scertFilePath = "../test/resources/k8scert.pem"
@@ -68,6 +59,9 @@ var ResourceTraitsFilePath = "../test/resources/resource_traits.json"
 
 //OpenstackResourcesFilePath sample Resources json
 var OpenstackResourcesFilePath = "../test/resources/openstack_resources.json"
+
+//SGXPlatformDataFilePath sample json
+var SGXPlatformDataFilePath = "../../ihub/test/resources/sgx_platform_data.json"
 
 //OpenstackUserName Sample Openstack UserName
 var OpenstackUserName = "admin"
@@ -114,7 +108,7 @@ func MockServer(t *testing.T) (*http.Server, string) {
 		if err != nil {
 			t.Log("test/test_utility:mockServer(): Unable to read file", err)
 		}
-		w.Write([]byte(samlCertificate))
+		w.Write(samlCertificate)
 	}).Methods("GET")
 
 	//K8s URLs
@@ -125,7 +119,15 @@ func MockServer(t *testing.T) (*http.Server, string) {
 		if err != nil {
 			t.Log("mockServer() : Unable to read file", err)
 		}
-		w.Write([]byte(customCRD))
+		w.Write(customCRD)
+	}).Methods("GET")
+
+	//K8s URLs
+	r.HandleFunc("/apis/crd.isecl.intel.com/v1beta1/namespaces/default/hostattributes/custom-isecl-not-found", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(""))
 	}).Methods("GET")
 
 	r.HandleFunc("/apis/crd.isecl.intel.com/v1beta1/namespaces/default/hostattributes/custom-isecl", func(w http.ResponseWriter, r *http.Request) {
@@ -145,7 +147,7 @@ func MockServer(t *testing.T) (*http.Server, string) {
 		if err != nil {
 			t.Log("mockServer() : Unable to read file", err)
 		}
-		w.Write([]byte(listOfNodes))
+		w.Write(listOfNodes)
 	}).Methods("GET")
 
 	r.HandleFunc("/apis", func(w http.ResponseWriter, r *http.Request) {
@@ -170,7 +172,7 @@ func MockServer(t *testing.T) (*http.Server, string) {
 			if err != nil {
 				t.Log("mockServer() : Unable to read file", err)
 			}
-			w.Write([]byte(authenticationResponse))
+			w.Write(authenticationResponse)
 			w.WriteHeader(201)
 		} else {
 			w.Header().Set("X-Subject-Token", "")
@@ -187,7 +189,7 @@ func MockServer(t *testing.T) (*http.Server, string) {
 			if err != nil {
 				t.Log("mockServer() : Unable to read file", err)
 			}
-			w.Write([]byte(openstackResources))
+			w.Write(openstackResources)
 			w.WriteHeader(200)
 		} else {
 			w.WriteHeader(401)
@@ -202,7 +204,7 @@ func MockServer(t *testing.T) (*http.Server, string) {
 			if err != nil {
 				t.Log("mockServer() : Unable to read file", err)
 			}
-			w.Write([]byte(resourceTraits))
+			w.Write(resourceTraits)
 			w.WriteHeader(200)
 		} else {
 			w.WriteHeader(401)
@@ -217,7 +219,7 @@ func MockServer(t *testing.T) (*http.Server, string) {
 			if err != nil {
 				t.Log("mockServer() : Unable to read file", err)
 			}
-			w.Write([]byte(resourceTraits))
+			w.Write(resourceTraits)
 			w.WriteHeader(200)
 		} else {
 			w.WriteHeader(401)
@@ -232,11 +234,38 @@ func MockServer(t *testing.T) (*http.Server, string) {
 			if err != nil {
 				t.Log("mockServer() : Unable to read file", err)
 			}
-			w.Write([]byte(allTraits))
+			w.Write(allTraits)
 			w.WriteHeader(200)
 		} else {
 			w.WriteHeader(401)
 		}
+	}).Methods("GET")
+
+	r.HandleFunc("/sgx-hvs/v1/platform-data", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+
+		SGXPlatformData, err := ioutil.ReadFile(SGXPlatformDataFilePath)
+		if err != nil {
+			t.Log("test/test_utility:mockServer(): Unable to read file", err)
+		}
+		w.Write(SGXPlatformData)
+	}).Methods("GET")
+
+	r.HandleFunc("/sgx-hvs/v1/platform-data?HostName=worker-node1", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+
+		SGXPlatformData, err := ioutil.ReadFile(SGXPlatformDataFilePath)
+		if err != nil {
+			t.Log("test/test_utility:mockServer(): Unable to read file", err)
+		}
+		w.Write(SGXPlatformData)
+	}).Methods("GET")
+
+	r.HandleFunc("/sgx-hvs/v1/noauth/version", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
 	}).Methods("GET")
 
 	return ServeController(t, r)

@@ -29,9 +29,9 @@ var k8scertFilePath = "../test/resources/k8scert.pem"
 func setupMockValues(t *testing.T, portString string) (*KubernetesDetails, *HostDetails) {
 	c := testutility.SetupMockK8sConfiguration(t, portString)
 	hID := uuid.MustParse("42193CDA-7620-2540-C526-9B2F6936AECA")
-	hostdetails := HostDetails{
+	hostDetails := HostDetails{
 		hostID:   hID,
-		hostName: "host1",
+		hostName: "worker-node1",
 		hostIP:   "localhost",
 		trusted:  true,
 		AssetTags: map[string]string{
@@ -40,14 +40,19 @@ func setupMockValues(t *testing.T, portString string) (*KubernetesDetails, *Host
 		Trust: map[string]string{
 			"TRUST_HOST_UNIQUE": "true",
 		},
+		SgxSupported: true,
+		SgxEnabled:   true,
+		FlcEnabled:   true,
+		EpcSize:      "2.0GB",
+		TcbUpToDate:  true,
 	}
 
 	kubernetes := KubernetesDetails{
 		Config:         c,
-		HostDetailsMap: map[string]HostDetails{hostdetails.hostName: hostdetails},
+		HostDetailsMap: map[string]HostDetails{hostDetails.hostName: hostDetails},
 	}
 
-	return &kubernetes, &hostdetails
+	return &kubernetes, &hostDetails
 }
 
 func TestGetHostsFromKubernetes(t *testing.T) {
@@ -167,7 +172,9 @@ func TestUpdateCRD(t *testing.T) {
 	k1.K8sClient = k8sClient
 
 	type args struct {
-		k *KubernetesDetails
+		k                *KubernetesDetails
+		isSGXAttestation bool
+		httpMethodType   string //should be set to either POST/PUT
 	}
 	tests := []struct {
 		name    string
@@ -175,13 +182,41 @@ func TestUpdateCRD(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "update-crd valid test 1",
+			name: "update-crd valid test using PUT method",
 			args: args{
 				k: k1,
+				isSGXAttestation: false,
+				httpMethodType: "PUT",
 			},
 			wantErr: false,
 		},
-
+		{
+			name: "update-crd valid test for SGX using PUT method",
+			args: args{
+				k: k1,
+				isSGXAttestation: true,
+				httpMethodType: "PUT",
+			},
+			wantErr: false,
+		},
+		{
+			name: "update-crd valid test using POST method",
+			args: args{
+				k: k1,
+				isSGXAttestation: false,
+				httpMethodType: "POST",
+			},
+			wantErr: false,
+		},
+		{
+			name: "update-crd valid test for SGX using POST method ",
+			args: args{
+				k: k1,
+				isSGXAttestation: true,
+				httpMethodType: "POST",
+			},
+			wantErr: false,
+		},
 		{
 			name: "update-crd negative test 1",
 			args: args{
@@ -212,6 +247,19 @@ func TestUpdateCRD(t *testing.T) {
 	for _, tt := range tests {
 
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.isSGXAttestation {
+				tt.args.k.Config.AttestationService.AttestationType = "SGX"
+			} else {
+				tt.args.k.Config.AttestationService.AttestationType = "HVS"
+			}
+
+			if tt.args.httpMethodType == "POST" {
+				tt.args.k.Config.Endpoint.CRDName = "custom-isecl-not-found"
+			} else if tt.args.httpMethodType == "PUT" {
+				tt.args.k.Config.Endpoint.CRDName = "custom-isecl2"
+			}
+
+			log.Info(tt.args.k.Config.Endpoint.CRDName)
 			err := UpdateCRD(tt.args.k)
 
 			if (err != nil) != tt.wantErr {
@@ -229,6 +277,7 @@ func TestKubePluginInit(t *testing.T) {
 
 	type args struct {
 		configuration      *config.Configuration
+		isSGXAttestation   bool
 		PrivateKeyLocation string
 		PublicKeyLocation  string
 	}
@@ -247,7 +296,15 @@ func TestKubePluginInit(t *testing.T) {
 			},
 			wantErr: false,
 		},
-
+		{
+			name: "k8-plugin-init valid test for SGX",
+			args: args{
+				configuration:      c,
+				PrivateKeyLocation: "privateKey.pem",
+				PublicKeyLocation:  "publicKey.pem",
+			},
+			wantErr: false,
+		},
 		{
 			name: "k8-plugin-init negative test",
 			args: args{
@@ -296,9 +353,15 @@ func TestKubePluginInit(t *testing.T) {
 			}
 			kPlugin.K8sClient = k8sClient
 
-			err = SendDataToEndPoint(kPlugin)
+			if tt.args.isSGXAttestation {
+				tt.args.configuration.AttestationService.AttestationType = "SGX"
+			} else {
+				tt.args.configuration.AttestationService.AttestationType = "HVS"
+			}
 
-			if (err != nil) != tt.wantErr {
+			err = SendDataToEndPoint(kPlugin, sampleRootCertDirPath, sampleSamlCertPath)
+
+			if err != nil && tt.wantErr == false {
 				t.Errorf("k8splugin/k8s_plugin_test:TestKubePluginInit(): error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}

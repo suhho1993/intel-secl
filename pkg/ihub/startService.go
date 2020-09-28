@@ -147,7 +147,7 @@ func (app *App) kickOffPlugins(k k8splugin.KubernetesDetails, o openstackplugin.
 			log.WithError(err).Error("startService:kickOffPlugins() Error in pushing OpenStack traits")
 		}
 	} else {
-		err := k8splugin.SendDataToEndPoint(k)
+		err := k8splugin.SendDataToEndPoint(k, constants.TrustedCAsStoreDir, constants.SamlCertFilePath)
 		if err != nil {
 			log.WithError(err).Error("startService:kickOffPlugins() : Error in pushing Kubernetes CRDs")
 		}

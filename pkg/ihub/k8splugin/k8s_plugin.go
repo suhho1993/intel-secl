@@ -54,6 +54,22 @@ type HostDetails struct {
 	SignedTrustReport string
 	ValidTo           time.Time
 	ReportVerified    bool
+	SgxSupported      bool
+	SgxEnabled        bool
+	FlcEnabled        bool
+	EpcSize           string
+	TcbUpToDate       bool
+}
+
+//platformDataSGX platform data for SGX
+type platformDataSGX []struct {
+	HostID       string    `json:"host_id"`
+	SgxSupported bool      `json:"sgx_supported"`
+	SgxEnabled   bool      `json:"sgx_enabled"`
+	FlcEnabled   bool      `json:"flc_enabled"`
+	EpcSize      string    `json:"epc_size"`
+	TcbUpToDate  bool      `json:"tcb_upToDate"`
+	ValidTo      time.Time `json:"validTo"`
 }
 
 var log = commonLog.GetDefaultLogger()
@@ -124,10 +140,7 @@ func GetHosts(k8sDetails *KubernetesDetails) error {
 		}
 
 	}
-
 	k8sDetails.HostDetailsMap = hostDetailMap
-	log.Info("k8splugin/k8s_plugin:GetHosts() List of Host Details : ", k8sDetails.HostDetailsMap)
-
 	return nil
 }
 
@@ -191,6 +204,11 @@ func GetSignedTrustReport(hostList model.Host, k8sDetails *KubernetesDetails) (s
 		Trust:            hostList.Trust,
 		ValidTo:          hostList.ValidTo,
 		Trusted:          hostList.Trusted,
+		SgxSupported:     hostList.SgxSupported,
+		SgxEnabled:       hostList.SgxEnabled,
+		FlcEnabled:       hostList.FlcEnabled,
+		EpcSize:          hostList.EpcSize,
+		TcbUpToDate:      hostList.TcbUpToDate,
 	})
 
 	token.Header["kid"] = sha1Hash
@@ -228,7 +246,6 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 	}
 	var crdResponse model.CRD
 	if res.StatusCode == http.StatusOK {
-
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
@@ -243,30 +260,34 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 		log.Debug("k8splugin/k8s_plugin:UpdateCRD() PUT Call to be made")
 
 		k8hostList := crdResponse.Spec.HostList
-
 		for key := range k8sDetails.HostDetailsMap {
 			reportHostDetails := k8sDetails.HostDetailsMap[key]
 			for n, k8HostDetails := range k8hostList {
-
 				if k8HostDetails.HostName == reportHostDetails.hostName {
-					k8hostList[n].AssetTags = reportHostDetails.AssetTags
-					k8hostList[n].HardwareFeatures = reportHostDetails.HardwareFeatures
-					k8hostList[n].Trust = reportHostDetails.Trust
-					k8hostList[n].Trusted = reportHostDetails.trusted
+					if config.AttestationService.AttestationType == "HVS" {
+						k8hostList[n].AssetTags = reportHostDetails.AssetTags
+						k8hostList[n].HardwareFeatures = reportHostDetails.HardwareFeatures
+						k8hostList[n].Trust = reportHostDetails.Trust
+						k8hostList[n].Trusted = reportHostDetails.trusted
+						// ensure the labels get updated by sending the latest timestamp
+						t := time.Now().UTC()
+						k8hostList[n].Updated = &t
+					} else if config.AttestationService.AttestationType == "SGX" {
+						k8hostList[n].EpcSize = strings.Replace(reportHostDetails.EpcSize, " ", "", -1)
+						k8hostList[n].FlcEnabled = strconv.FormatBool(reportHostDetails.FlcEnabled)
+						k8hostList[n].SgxEnabled = strconv.FormatBool(reportHostDetails.SgxEnabled)
+						k8hostList[n].SgxSupported = strconv.FormatBool(reportHostDetails.SgxSupported)
+						k8hostList[n].TcbUpToDate = strconv.FormatBool(reportHostDetails.TcbUpToDate)
+					}
 					k8hostList[n].ValidTo = reportHostDetails.ValidTo
 					k8hostList[n].SignedTrustReport, err = GetSignedTrustReport(k8hostList[n], k8sDetails)
 					if err != nil {
 						return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in getting the signed trust report")
 					}
-					// ensure the labels get updated by sending the latest timestamp
-					t := time.Now().UTC()
-					k8hostList[n].Updated = &t
 				}
 			}
 		}
-
 		crdResponse.Spec.HostList = k8hostList
-
 		err = PutCRD(k8sDetails, &crdResponse)
 		if err != nil {
 			return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in Updating CRD")
@@ -286,12 +307,21 @@ func UpdateCRD(k8sDetails *KubernetesDetails) error {
 			var host model.Host
 
 			host.HostName = reportHostDetails.hostName
-			host.AssetTags = reportHostDetails.AssetTags
-			host.HardwareFeatures = reportHostDetails.HardwareFeatures
-			host.Trust = reportHostDetails.Trust
-			host.Trusted = reportHostDetails.trusted
+			if config.AttestationService.AttestationType == "HVS" {
+				host.AssetTags = reportHostDetails.AssetTags
+				host.HardwareFeatures = reportHostDetails.HardwareFeatures
+				host.Trust = reportHostDetails.Trust
+				host.Trusted = reportHostDetails.trusted
+				host.Updated = nil
+			} else if config.AttestationService.AttestationType == "SGX" {
+				host.EpcSize = strings.Replace(reportHostDetails.EpcSize, " ", "", -1)
+				host.FlcEnabled = strconv.FormatBool(reportHostDetails.FlcEnabled)
+				host.SgxEnabled = strconv.FormatBool(reportHostDetails.SgxEnabled)
+				host.SgxSupported = strconv.FormatBool(reportHostDetails.SgxSupported)
+				host.TcbUpToDate = strconv.FormatBool(reportHostDetails.TcbUpToDate)
+			}
+
 			host.ValidTo = reportHostDetails.ValidTo
-			host.Updated = nil
 			signedtrustReport, err := GetSignedTrustReport(host, k8sDetails)
 			if err != nil {
 				return errors.Wrap(err, "k8splugin/k8s_plugin:UpdateCRD() : Error in Getting SignedTrustReport")
@@ -386,23 +416,50 @@ func PostCRD(k8sDetails *KubernetesDetails, crd *model.CRD) error {
 }
 
 //SendDataToEndPoint pushes host trust data to Kubernetes
-func SendDataToEndPoint(kubernetes KubernetesDetails) error {
+func SendDataToEndPoint(kubernetes KubernetesDetails, trustedCACertDir, samlCertFilePath string) error {
 
 	log.Trace("k8splugin/k8s_plugin:SendDataToEndPoint() Entering")
 	defer log.Trace("k8splugin/k8s_plugin:SendDataToEndPoint() Leaving")
+
+	var sgxData platformDataSGX
 
 	err := GetHosts(&kubernetes)
 	if err != nil {
 		return errors.Wrap(err, "k8splugin/k8s_plugin:SendDataToEndPoint() Error in getting the Hosts from kubernetes")
 	}
 
-	for key := range kubernetes.HostDetailsMap {
-		hostDetails := kubernetes.HostDetailsMap[key]
-		err := FilterHostReports(&kubernetes, &hostDetails, constants.TrustedCAsStoreDir, constants.SamlCertFilePath)
-		if err != nil {
-			log.WithError(err).Error("k8splugin/k8s_plugin:SendDataToEndPoint() Error in Filtering Report for Hosts")
+	if kubernetes.Config.AttestationService.AttestationType == "HVS" {
+		for key := range kubernetes.HostDetailsMap {
+			hostDetails := kubernetes.HostDetailsMap[key]
+			err := FilterHostReports(&kubernetes, &hostDetails, trustedCACertDir, samlCertFilePath)
+			if err != nil {
+				log.WithError(err).Error("k8splugin/k8s_plugin:SendDataToEndPoint() Error in Filtering Report for Hosts")
+			}
+			kubernetes.HostDetailsMap[key] = hostDetails
 		}
-		kubernetes.HostDetailsMap[key] = hostDetails
+	} else if kubernetes.Config.AttestationService.AttestationType == "SGX" {
+		for key := range kubernetes.HostDetailsMap {
+			hostDetails := kubernetes.HostDetailsMap[key]
+			platformData, err := vsPlugin.GetHostPlatformData(hostDetails.hostName, kubernetes.Config, trustedCACertDir)
+			if err == nil {
+				err = json.Unmarshal(platformData, &sgxData)
+				if err == nil {
+					hostDetails.EpcSize = sgxData[0].EpcSize
+					hostDetails.FlcEnabled = sgxData[0].FlcEnabled
+					hostDetails.SgxEnabled = sgxData[0].SgxEnabled
+					hostDetails.SgxSupported = sgxData[0].SgxSupported
+					hostDetails.TcbUpToDate = sgxData[0].TcbUpToDate
+					evaluateValidTo(sgxData[0].ValidTo, kubernetes.Config.IHUB.PollIntervalMinutes)
+					hostDetails.ValidTo = sgxData[0].ValidTo
+					kubernetes.HostDetailsMap[key] = hostDetails
+				}
+			} else {
+				///host dont exist remove from the map
+				delete(kubernetes.HostDetailsMap, key)
+			}
+		}
+	} else {
+		return errors.New("k8splugin/k8s_plugin:SendDataToEndPoint() Given Attestation type is invalid")
 	}
 
 	err = UpdateCRD(&kubernetes)
@@ -411,4 +468,15 @@ func SendDataToEndPoint(kubernetes KubernetesDetails) error {
 	}
 
 	return nil
+}
+
+func evaluateValidTo(validTo time.Time, minutes int) time.Time {
+	twiceSchedulerTime := (minutes * 2)
+	updatedTime := time.Now().UTC().Add(time.Minute * time.Duration(twiceSchedulerTime))
+
+	if validTo.After(updatedTime) {
+		return validTo
+	} else {
+		return updatedTime
+	}
 }

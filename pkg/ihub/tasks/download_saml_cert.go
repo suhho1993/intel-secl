@@ -25,6 +25,12 @@ type DownloadSamlCert struct {
 
 //Run Runs the setup Task
 func (samlCert DownloadSamlCert) Run() error {
+
+	if samlCert.Config.AttestationService.AttestationType == "SGX" {
+		fmt.Println("Skipping Download SAML Cert Task for attestation type SGX")
+		return nil
+	}
+
 	caCerts, err := vsPlugin.GetCaCerts("saml", samlCert.Config, "")
 	if err != nil {
 		return errors.Wrap(err, "tasks/download_saml_cert:Run() Failed to get SAML ca-certificates from HVS")
@@ -45,6 +51,12 @@ func (samlCert DownloadSamlCert) Run() error {
 
 //Validate validates the downloaded certificate
 func (samlCert DownloadSamlCert) Validate() error {
+
+	if samlCert.Config.AttestationService.AttestationType == "SGX" {
+		fmt.Println("tasks/download_saml_cert:Validate() Skipping download of SAML Cert task for SGX attestation")
+		return nil
+	}
+
 	if _, err := os.Stat(samlCert.SamlCertPath); os.IsNotExist(err) {
 		return errors.Wrap(err, "tasks/download_saml_cert:Validate() saml certificate does not exist")
 	}
