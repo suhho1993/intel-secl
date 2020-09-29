@@ -22,4 +22,3 @@ require (
 )
 
 replace github.com/vmware/govmomi => github.com/arijit8972/govmomi fix-tpm-attestation-output
-

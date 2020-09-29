@@ -121,3 +121,41 @@ func SendRequest(req *http.Request, aasURL, serviceUsername, servicePassword str
 	log.Debug("clients/send_http_request.go:SendRequest() Received the response successfully")
 	return body, nil
 }
+
+//SendNoAuthRequest method is used to create an http client object and send the request to the server
+func SendNoAuthRequest(req *http.Request, trustedCaCerts []x509.Certificate) ([]byte, error) {
+	log.Trace("clients/send_http_request:SendNoAuthRequest() Entering")
+	defer log.Trace("clients/send_http_request:SendNoAuthRequest() Leaving")
+
+	var err error
+	var client *http.Client
+	//This has to be done for dynamic loading or unloading of certificates
+	if len(trustedCaCerts) == 0 {
+		client = clients.HTTPClientTLSNoVerify()
+	} else {
+		client, err = clients.HTTPClientWithCA(trustedCaCerts)
+		if err != nil {
+			return nil, errors.Wrap(err, "clients/send_http_request.go:SendNoAuthRequest() Failed to create http client")
+		}
+	}
+
+	log.Debug("clients/send_http_request:SendNoAuthRequest() HTTP client successfully created")
+
+	response, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "clients/send_http_request.go:SendNoAuthRequest() Error from response")
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated && response.StatusCode != http.StatusNoContent{
+		return nil, errors.Wrap(errors.New("HTTP Status :"+strconv.Itoa(response.StatusCode)),
+			"clients/send_http_request.go:SendNoAuthRequest() Error from response")
+	}
+
+	//create byte array of HTTP response body
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "clients/send_http_request.go:SendNoAuthRequest() Error from response")
+	}
+	log.Debug("clients/send_http_request.go:SendNoAuthRequest() Received the response successfully")
+	return body, nil
+}
