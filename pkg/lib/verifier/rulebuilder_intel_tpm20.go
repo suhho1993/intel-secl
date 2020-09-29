@@ -313,7 +313,7 @@ func (builder *ruleBuilderIntelTpm20) getPlatformPcrsFromHardwareMeta() ([]types
 
 	if feature.CBNT != nil {
 		if feature.CBNT.Enabled {
-			if feature.CBNT.Profile == "" {
+			if feature.CBNT.Profile == "BTGP5" {
 				pcrs = append(pcrs, types.PCR7)
 			}
 		}
