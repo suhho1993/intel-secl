@@ -6,6 +6,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
@@ -37,6 +38,7 @@ type Configuration struct {
 	DB     commConfig.DBConfig     `yaml:"db" mapstructure:"db"`
 	HRRS   hrrs.HRRSConfig         `yaml:"hrrs" mapstructure:"hrrs"`
 	FVS    FVSConfig               `yaml:"fvs" mapstructure:"fvs"`
+	VCSS   VCSSConfig              `yaml:"vcss" mapstructure:"vcss"`
 }
 
 type HVSConfig struct {
@@ -61,6 +63,11 @@ type AuditLogConfig struct {
 	MaxRowCount int `yaml:"max-row-count" mapstructure:"max-row-count"`
 	NumRotated  int `yaml:"number-rotated" mapstructure:"number-rotated"`
 	BufferSize  int `yaml:"buffer-size" mapstructure:"buffer-size"`
+}
+
+type VCSSConfig struct {
+	// RefreshPeriod determines how frequently the VCSS checks the vCenter cluster for updated hosts
+	RefreshPeriod time.Duration `yaml:"refresh-period" mapstructure:"refresh-period"`
 }
 
 // this function sets the configure file name and type

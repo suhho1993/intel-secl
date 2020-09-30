@@ -92,6 +92,16 @@ func (hs *HostStore) Delete(id uuid.UUID) error {
 	return nil
 }
 
+func (hs *HostStore) DeleteByHostName(hostName string) error {
+	defaultLog.Trace("postgres/host_store:DeleteByHostName() Entering")
+	defer defaultLog.Trace("postgres/host_store:DeleteByHostName() Leaving")
+
+	if err := hs.Store.Db.Where("name=?", hostName).Delete(&host{}).Error; err != nil {
+		return errors.Wrap(err, "postgres/host_store:DeleteByHostName() failed to delete Host")
+	}
+	return nil
+}
+
 func (hs *HostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, error) {
 	defaultLog.Trace("postgres/host_store:Search() Entering")
 	defer defaultLog.Trace("postgres/host_store:Search() Leaving")

@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/vcss"
 	"net/http"
 	"os"
 	"os/signal"
@@ -87,6 +88,14 @@ func (a *App) startServer() error {
 
 	// Initialize Host controller config
 	hostControllerConfig := initHostControllerConfig(c, certStore)
+
+	//Create an instance of VCSS and start the service
+	vcenterClusterSyncer, err := vcss.NewVCenterClusterSyncer(c.VCSS, hostControllerConfig, dataStore, hostTrustManager)
+	if err != nil {
+		return errors.Wrap(err, "An error occurred while initializing VCSS")
+	}
+
+	vcenterClusterSyncer.Run()
 
 	// Initialize routes
 	routes := router.InitRoutes(c, dataStore, certStore, hostTrustManager, hostControllerConfig)

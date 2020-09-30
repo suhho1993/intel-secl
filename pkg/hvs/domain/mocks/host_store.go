@@ -58,6 +58,15 @@ func (store *MockHostStore) Delete(id uuid.UUID) error {
 	return errors.New(commErr.RecordNotFound)
 }
 
+func (store *MockHostStore) DeleteByHostName(hostName string) error {
+	for i, h := range store.hostStore {
+		if h.HostName == hostName {
+			store.hostStore[i] = &hvs.Host{}
+			return nil
+		}
+	}
+	return errors.New(commErr.RecordNotFound)
+}
 // Search returns a collection of Hosts filtered as per HostFilterCriteria
 func (store *MockHostStore) Search(criteria *models.HostFilterCriteria) ([]*hvs.Host, error) {
 	if criteria == nil || reflect.DeepEqual(*criteria, models.HostFilterCriteria{}) {

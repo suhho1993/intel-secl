@@ -33,6 +33,7 @@ type (
 		Retrieve(uuid.UUID) (*hvs.Host, error)
 		Update(*hvs.Host) error
 		Delete(uuid.UUID) error
+		DeleteByHostName(string) error
 		Search(*models.HostFilterCriteria) ([]*hvs.Host, error)
 		AddFlavorgroups(uuid.UUID, []uuid.UUID) error
 		RetrieveFlavorgroup(uuid.UUID, uuid.UUID) (*hvs.HostFlavorgroup, error)

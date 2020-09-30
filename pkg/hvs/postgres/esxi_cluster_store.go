@@ -166,7 +166,7 @@ func (e *ESXiClusterStore) SearchHosts(ecId uuid.UUID) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var hostNames []string
+	hostNames := []string{}
 	var name string
 	for rows.Next() {
 		if err := rows.Scan(&name); err != nil {

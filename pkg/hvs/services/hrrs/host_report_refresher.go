@@ -39,7 +39,6 @@ func NewHostReportRefresher(cfg HRRSConfig, reportStore domain.ReportStore, host
 
 var (
 	defaultLog = commLog.GetDefaultLogger()
-	secLog     = commLog.GetSecurityLogger()
 )
 
 type hostReportRefresherImpl struct {

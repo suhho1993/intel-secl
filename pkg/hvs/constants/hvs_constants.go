@@ -113,7 +113,7 @@ const (
 	DefaultTagCertValiditySeconds = 60 * 60 * 24 * 365
 )
 
-// server costants
+// server constants
 const (
 	DefaultHVSListenerPort   = 8443
 	DefaultReadTimeout       = 30 * time.Second
@@ -154,6 +154,11 @@ const (
 	DefaultFvsNumberOfVerifiers            = 20
 	DefaultFvsNumberOfDataFetchers         = 20
 	DefaultSkipFlavorSignatureVerification = false
+)
+
+//VCSS constants
+const(
+	DefaultVcssRefreshPeriod = time.Duration(2) * time.Minute
 )
 
 // audit log constants

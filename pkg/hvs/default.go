@@ -5,13 +5,12 @@
 package hvs
 
 import (
-	"os"
-
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/config"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/services/hrrs"
 	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	"github.com/spf13/viper"
+	"os"
 )
 
 const (
@@ -19,6 +18,7 @@ const (
 	fvsNumberOfDataFetchers            = "fvs-number-of-data-fetchers"
 	fvsSkipFlavorSignatureVerification = "fvs-skip-flavor-signature-verification"
 	hrrsRefreshPeriod                  = "hrrs-refresh-period"
+	vcssRefreshPeriod                  = "vcss-refresh-period"
 )
 
 // this func sets the default values for viper keys
@@ -99,6 +99,8 @@ func init() {
 	viper.SetDefault(fvsSkipFlavorSignatureVerification, constants.DefaultSkipFlavorSignatureVerification)
 
 	viper.SetDefault(hrrsRefreshPeriod, hrrs.DefaultRefreshPeriod)
+
+	viper.SetDefault(vcssRefreshPeriod, constants.DefaultVcssRefreshPeriod)
 }
 
 func defaultConfig() *config.Configuration {
@@ -167,6 +169,9 @@ func defaultConfig() *config.Configuration {
 		},
 		HRRS: hrrs.HRRSConfig{
 			RefreshPeriod: viper.GetDuration(hrrsRefreshPeriod),
+		},
+		VCSS: config.VCSSConfig{
+			RefreshPeriod: viper.GetDuration(vcssRefreshPeriod),
 		},
 		FVS: config.FVSConfig{
 			NumberOfVerifiers:               viper.GetInt(fvsNumberOfVerifiers),
