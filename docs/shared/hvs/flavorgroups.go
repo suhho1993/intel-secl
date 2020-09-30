@@ -117,12 +117,6 @@ type FlavorgroupFlavorLinkCollection struct {
 //   in: query
 //   type: string
 //   required: false
-// - name: hostId
-//   description: Host ID.
-//   in: query
-//   type: string
-//   format: uuid
-//   required: false
 // - name: includeFlavorContent
 //   description: Boolean value to indicate whether the content of the flavors contained within the <br> specified flavor group should be included in the response body. Default value is false.
 //   in: query
