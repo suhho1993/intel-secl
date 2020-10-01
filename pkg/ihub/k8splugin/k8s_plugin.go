@@ -311,7 +311,9 @@ func populateHostDetailsInCRD(k8sDetails *KubernetesDetails) ([]model.Host, erro
 			host.SgxEnabled = strconv.FormatBool(reportHostDetails.SgxEnabled)
 			host.SgxSupported = strconv.FormatBool(reportHostDetails.SgxSupported)
 			host.TcbUpToDate = strconv.FormatBool(reportHostDetails.TcbUpToDate)
-		}
+		}  
+
+		host.ValidTo = reportHostDetails.ValidTo
 		signedtrustReport, err := GetSignedTrustReport(host, k8sDetails)
 		if err != nil {
 			return nil, errors.Wrap(err, "k8splugin/k8s_plugin:populateHostDetailsInCRD() : Error in Getting SignedTrustReport")
