@@ -302,7 +302,7 @@ func populateHostDetailsInCRD(k8sDetails *KubernetesDetails) ([]model.Host, erro
 			host.AssetTags = reportHostDetails.AssetTags
 			host.HardwareFeatures = reportHostDetails.HardwareFeatures
 			host.Trust = reportHostDetails.Trust
-			host.Trusted = reportHostDetails.trusted
+			host.Trusted = &reportHostDetails.trusted
 			t := time.Now().UTC()
 			host.Updated = &t
 		} else if config.AttestationService.AttestationType == "SGX" {
