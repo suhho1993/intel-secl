@@ -393,7 +393,8 @@ func TestPostCRD(t *testing.T) {
 	host.Trust = map[string]string{
 		"TRUST_HOST_UNIQUE": "true",
 	}
-	host.Trusted = true
+	trustStatus := true
+	host.Trusted = &trustStatus
 	host.ValidTo = time.Now().Add(time.Hour * 24)
 	hostList = append(hostList, host)
 	crdResponse.Spec.HostList = hostList
@@ -489,9 +490,10 @@ func TestPostCRD(t *testing.T) {
 }
 
 func TestGetSignedTrustReport(t *testing.T) {
+	trustStatus := true
 	h1 := model.Host{
 		HostName: "host1",
-		Trusted:  true,
+		Trusted:  &trustStatus,
 		AssetTags: map[string]string{
 			"TAG_COUNTRY": "USA",
 		},
