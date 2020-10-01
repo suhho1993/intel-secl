@@ -44,7 +44,7 @@ func (tc TpmIdentityCertController) Import(responseWriter http.ResponseWriter, r
 	}
 
 	secLog.WithField("Id", createdCert.ID).Infof("controllers/tpm_identity_certificate_controller:Import() %s: Tpm-Identity Certificate imported by: %s", commLogMsg.PrivilegeModified, request.RemoteAddr)
-	return createdCert, http.StatusOK, nil
+	return createdCert, http.StatusCreated, nil
 }
 
 //Retrieve : Function to retrieve tpm-identity certificate

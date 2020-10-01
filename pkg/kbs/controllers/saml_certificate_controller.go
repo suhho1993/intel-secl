@@ -44,7 +44,7 @@ func (sc SamlCertController) Import(responseWriter http.ResponseWriter, request 
 	}
 
 	secLog.WithField("Id", createdCert.ID).Infof("controllers/saml_certificate_controller:Import() %s: Saml Certificate imported by: %s", commLogMsg.PrivilegeModified, request.RemoteAddr)
-	return createdCert, http.StatusOK, nil
+	return createdCert, http.StatusCreated, nil
 }
 
 //Retrieve : Function to retrieve saml certificate
