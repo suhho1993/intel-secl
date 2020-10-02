@@ -161,5 +161,10 @@ func (a *App) eraseData() error {
 	if err := t.Validate(); err != nil {
 		return errors.Wrap(err, "Failed to validate setup task CreateDefaultFlavor")
 	}
+
+	err = a.configDBRotation()
+	if err != nil {
+		return errors.Wrap(err, "Failed to configure database rotation")
+	}
 	return nil
 }
