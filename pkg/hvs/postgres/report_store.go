@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +23,7 @@ import (
 type ReportStore struct {
 	Store          *DataStore
 	AuditLogWriter domain.AuditLogWriter
+	dbLock sync.Mutex
 }
 
 func NewReportStore(store *DataStore) *ReportStore {
@@ -59,6 +61,8 @@ func (r *ReportStore) Update(re *models.HVSReport) (*models.HVSReport, error) {
 	}
 
 	var vsReport *models.HVSReport
+	r.dbLock.Lock()
+	defer r.dbLock.Unlock()
 	hvsReports, err := r.Search(&refilter)
 	if err != nil {
 		return nil, errors.Wrapf(err, "postgres/report_store:Update() Error while retrieving report for hostId %s", refilter.HostID)
