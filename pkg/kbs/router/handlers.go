@@ -6,7 +6,6 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	consts "github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
@@ -34,7 +33,7 @@ func ResponseHandler(h func(http.ResponseWriter, *http.Request) (interface{}, in
 		}
 		w.WriteHeader(status)
 		if data != nil {
-			w.Write([]byte(fmt.Sprintf("%v", data)))
+			w.Write(data.([]byte))
 		}
 		return nil
 	}

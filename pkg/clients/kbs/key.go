@@ -32,7 +32,7 @@ func (k *kbsClient) CreateKey(keyRequest *kbs.KeyRequest) (*kbs.KeyResponse, err
 	reqURL := k.BaseURL.ResolveReference(keysURL)
 	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(reqBytes))
 	if err != nil {
-		return nil, errors.Wrap(err, "Error creating key creation request")
+		return nil, errors.Wrap(err, "Error initializing key creation request")
 	}
 
 	// Set the request headers
@@ -66,7 +66,7 @@ func (k *kbsClient) TransferKey(keyId, pubKey string) (*kbs.KeyTransferAttribute
 	reqURL := k.BaseURL.ResolveReference(keyXferURL)
 	req, err := http.NewRequest("POST", reqURL.String(), strings.NewReader(pubKey))
 	if err != nil {
-		return nil, errors.Wrap(err, "Error creating key transfer request")
+		return nil, errors.Wrap(err, "Error initializing key transfer request")
 	}
 
 	// Set the request headers
@@ -100,7 +100,7 @@ func (k *kbsClient) TransferKeyWithSaml(keyId, saml string) ([]byte, error) {
 	reqURL := k.BaseURL.ResolveReference(keyXferURL)
 	req, err := http.NewRequest("POST", reqURL.String(), strings.NewReader(saml))
 	if err != nil {
-		return nil, errors.Wrap(err, "Error creating key transfer request")
+		return nil, errors.Wrap(err, "Error initializing key transfer request")
 	}
 
 	// Set the request headers

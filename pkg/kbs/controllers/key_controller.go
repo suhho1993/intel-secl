@@ -7,9 +7,11 @@ package controllers
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/json"
 	"encoding/xml"
+	"hash"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -230,7 +232,7 @@ func (kc KeyController) Transfer(responseWriter http.ResponseWriter, request *ht
 
 	// Wrap key with public key
 	id := uuid.MustParse(mux.Vars(request)["id"])
-	wrappedKey, status, err := kc.wrapSecretKey(id, envelopeKey)
+	wrappedKey, status, err := kc.wrapSecretKey(id, envelopeKey, sha512.New384(), nil)
 	if err != nil {
 		return nil, status, err
 	}
@@ -283,7 +285,7 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 	envelopeKey := bindingCert.PublicKey.(*rsa.PublicKey)
 
 	// Wrap key with binding key
-	wrappedKey, status, err := kc.wrapSecretKey(id, envelopeKey)
+	wrappedKey, status, err := kc.wrapSecretKey(id, envelopeKey, sha256.New(), []byte("TPM2\000"))
 	if err != nil {
 		return nil, status, err
 	}
@@ -292,7 +294,7 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 	return wrappedKey, http.StatusOK, nil
 }
 
-func (kc *KeyController) wrapSecretKey(id uuid.UUID, publicKey *rsa.PublicKey) (interface{}, int, error){
+func (kc *KeyController) wrapSecretKey(id uuid.UUID, publicKey *rsa.PublicKey, hash hash.Hash, label []byte) (interface{}, int, error){
 	defaultLog.Trace("controllers/key_controller:wrapSecretKey() Entering")
 	defer defaultLog.Trace("controllers/key_controller:wrapSecretKey() Leaving")
 
@@ -308,7 +310,7 @@ func (kc *KeyController) wrapSecretKey(id uuid.UUID, publicKey *rsa.PublicKey) (
 	}
 
 	// Wrap secret key with public key
-	wrappedKey, err := rsa.EncryptOAEP(sha512.New384(), rand.Reader, publicKey, secretKey, nil)
+	wrappedKey, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, secretKey, label)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/key_controller:wrapSecretKey() Wrap key failed")
 		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to wrap key"}
@@ -358,13 +360,13 @@ func validateKeyCreateRequest(requestKey kbs.KeyRequest) error {
 	}
 
 	if requestKey.Label != "" {
-		if err := validation.ValidateStrings([]string{requestKey.Label}); err != nil {
+		if err := validation.ValidateTextString(requestKey.Label); err != nil {
 			return errors.New("valid contents for label must be specified")
 		}
 	}
 
 	if requestKey.Usage != "" {
-		if err := validation.ValidateStrings([]string{requestKey.Usage}); err != nil {
+		if err := validation.ValidateTextString(requestKey.Usage); err != nil {
 			return errors.New("valid contents for usage must be specified")
 		}
 	}

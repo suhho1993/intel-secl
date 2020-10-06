@@ -15,6 +15,7 @@ import (
 
 const (
 	UUIDReg = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}"
+	MaxLen  = 256
 )
 
 var (
@@ -36,7 +37,7 @@ var (
 	uuidReg             = regexp.MustCompile("^" + UUIDReg + "$")
 	IdReg               = fmt.Sprintf("{id:%s}", UUIDReg)
 	portReg             = regexp.MustCompile("(?:([0-9]{1,5}))")
-	defaultReg          = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")
+	textReg             = regexp.MustCompile("(?:[a-zA-Z0-9\\[\\]$@(){}_\\.\\, |:-]+)")
 	passwordReg         = regexp.MustCompile("(?:([a-zA-Z0-9_\\\\.\\\\, @!#$%^+=>?:{}()\\[\\]\\\"|;~`'*-/]+))")
 	connectionStringReg = regexp.MustCompile("^(((vmware)|(microsoft)|(intel))\\:)?https\\:\\/\\/.+[\\:\\d+]?(\\/sdk)?((;h=.+;u=.+;p=.+)|(;u=.+;p=.+))?$")
 	jwtReg              = regexp.MustCompile("^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.?[A-Za-z0-9-_.+/=]*")
@@ -96,7 +97,8 @@ func ValidateAccount(uname string, pwd string) error {
 // ValidateNameString validate user primarily forbidding any quotation marks in the input
 // as well as restricting the length.
 func ValidateNameString(name string) error {
-	if len(name) < 256 && nameReg.MatchString(name) {
+
+	if len(name) < MaxLen && nameReg.MatchString(name) {
 		return nil
 	}
 	return errors.New("Invalid input for name")
@@ -106,7 +108,7 @@ func ValidateNameString(name string) error {
 // as well as restricting the length. The username can be in the form of an email address
 func ValidateUserNameString(uname string) error {
 
-	if len(uname) < 256 && userorEmailReg.MatchString(uname) {
+	if len(uname) < MaxLen && userorEmailReg.MatchString(uname) {
 		return nil
 	}
 	return errors.New("Invalid input for username")
@@ -115,7 +117,7 @@ func ValidateUserNameString(uname string) error {
 // ValidateEmailString validates if user has provided valid email address
 func ValidateEmailString(email string) error {
 
-	if len(email) < 256 && emailReg.MatchString(email) {
+	if len(email) < MaxLen && emailReg.MatchString(email) {
 		return nil
 	}
 	return errors.New("Invalid input for email")
@@ -124,17 +126,25 @@ func ValidateEmailString(email string) error {
 // ValidatePasswordString method is used to validate the password string.
 func ValidatePasswordString(pwd string) error {
 
-	if len(pwd) < 256 && passwordReg.MatchString(pwd) {
+	if len(pwd) < MaxLen && passwordReg.MatchString(pwd) {
 		return nil
 	}
 	return errors.New("Invalid input for password")
 }
 
+// ValidateTextString method is used to validate the text string.
+func ValidateTextString(text string) error {
+
+	if len(text) < MaxLen && textReg.MatchString(text) {
+		return nil
+	}
+	return errors.New("Invalid input for text")
+}
+
 // ValidateHostname method is used to validate the hostname string
 func ValidateHostname(hostname string) error {
 
-	if len(hostname) < 254 &&
-		(hostnameReg.MatchString(hostname) || ipReg.MatchString(hostname)) {
+	if len(hostname) < 254 && (hostnameReg.MatchString(hostname) || ipReg.MatchString(hostname)) {
 		return nil
 	}
 	return errors.New("Invalid hostname or ip")
