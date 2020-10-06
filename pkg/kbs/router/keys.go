@@ -78,7 +78,7 @@ func setDhsm2KeyTransferRoutes(router *mux.Router, aasAPIUrl string, kbsConfig c
 
 	router.Handle(keyIdExpr+"/dhsm2-transfer",
 		ErrorHandler(permissionsHandlerUsingTLSMAuth(JsonResponseHandler(dhsm2Controller.TransferApplicationKey),
-			[]string{constants.KeyTransfer}, aasAPIUrl, kbsConfig))).Methods("GET")
+			aasAPIUrl, kbsConfig))).Methods("GET")
 
 	return router
 }

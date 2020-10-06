@@ -19,7 +19,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
-	commType "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	"github.com/pkg/errors"
 )
@@ -125,7 +124,7 @@ func permissionsHandler(eh endpointHandler, permissionNames []string) endpointHa
 	}
 }
 
-func permissionsHandlerUsingTLSMAuth(eh endpointHandler, permissionNames []string, aasAPIUrl string, kbsConfig config.KBSConfig) endpointHandler {
+func permissionsHandlerUsingTLSMAuth(eh endpointHandler, aasAPIUrl string, kbsConfig config.KBSConfig) endpointHandler {
 	defaultLog.Trace("router/handlers:permissionsHandlerUsingTLSMAuth() Entering")
 	defer defaultLog.Trace("router/handlers:permissionsHandlerUsingTLSMAuth() Leaving")
 
@@ -159,8 +158,6 @@ func permissionsHandlerUsingTLSMAuth(eh endpointHandler, permissionNames []strin
 
 		client, err := clients.HTTPClientWithCA(caCerts)
 
-		reqPermissions := commType.PermissionInfo{Service: consts.ServiceName, Rules: permissionNames}
-
 		jwtcl := aasClient.NewJWTClient(aasAPIUrl)
 		jwtcl.HTTPClient = client
 		jwtcl.AddUser(kbsConfig.UserName, kbsConfig.Password)
@@ -181,20 +178,26 @@ func permissionsHandlerUsingTLSMAuth(eh endpointHandler, permissionNames []strin
 			return errors.New("Error while getting user details from AAS")
 		}
 
-		userPermissions, err := aasClient.GetPermissionsForUser(userDetails[0].ID)
+		userRoles, err := aasClient.GetRolesForUser(userDetails[0].ID)
 		if err != nil {
 			defaultLog.WithError(err).Errorf("router/handlers:permissionsHandlerUsingTLSMAuth() Error while getting permission details from AAS")
 			return errors.New("Error while getting permission details from AAS")
 		}
 
-		_, foundMatchingPermission := auth.ValidatePermissionAndGetPermissionsContext(userPermissions, reqPermissions,
-			true)
+		roleFound := false
+		for _, roles := range userRoles {
+			if roles.Service == "KBS" && roles.Name == "KeyTransfer" {
+				roleFound = true
+				break
+			}
+		}
 
-		if !foundMatchingPermission {
+		if !roleFound {
 			responseWriter.WriteHeader(http.StatusUnauthorized)
 			secLog.Errorf("router/handlers:permissionsHandlerUsingTLSMAuth() %s Insufficient privileges to access %s", commLogMsg.UnauthorizedAccess, request.RequestURI)
 			return &privilegeError{Message: "Insufficient privileges to access " + request.RequestURI, StatusCode: http.StatusUnauthorized}
 		}
+
 		secLog.Infof("router/handlers:permissionsHandlerUsingTLSMAuth() %s - %s", commLogMsg.AuthorizedAccess, request.RequestURI)
 		return eh(responseWriter, request)
 	}

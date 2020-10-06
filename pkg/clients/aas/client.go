@@ -45,6 +45,9 @@ var (
 	ErrHTTPGetPermissionsForUser = &clients.HTTPClientErr{
 		ErrMessage: "Failed to get permissions for user",
 	}
+	ErrHTTPGetRolesForUser = &clients.HTTPClientErr{
+		ErrMessage: "Failed to get roles for user",
+	}
 
 )
 
@@ -225,7 +228,7 @@ func (c *Client) GetPermissionsForUser(userID string) ([]types.PermissionInfo, e
 	c.prepReqHeader(req)
 
 	if c.HTTPClient == nil {
-		return nil, errors.New("aaClient.GetPermissionsForUser: HTTPClient should not be null")
+		return nil, errors.New("aasClient.GetPermissionsForUser: HTTPClient should not be null")
 	}
 	rsp, err := c.HTTPClient.Do(req)
 	if err != nil {
@@ -242,6 +245,36 @@ func (c *Client) GetPermissionsForUser(userID string) ([]types.PermissionInfo, e
 		return nil, err
 	}
 	return permissions, nil
+}
+
+func (c *Client) GetRolesForUser(userID string) ([]types.RoleInfo, error) {
+
+	userRoleURL := clients.ResolvePath(c.BaseURL, "users/"+userID+"/roles")
+
+	req, err := http.NewRequest(http.MethodGet, userRoleURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	c.prepReqHeader(req)
+
+	if c.HTTPClient == nil {
+		return nil, errors.New("aasClient.GetRolesForUser: HTTPClient should not be null")
+	}
+	rsp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if rsp.StatusCode != http.StatusOK {
+		ErrHTTPGetRolesForUser.RetCode = rsp.StatusCode
+		return nil, ErrHTTPGetRolesForUser
+	}
+
+	var roles []types.RoleInfo
+	err = json.NewDecoder(rsp.Body).Decode(&roles)
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
 }
 
 

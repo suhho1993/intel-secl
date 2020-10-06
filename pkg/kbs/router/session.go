@@ -7,7 +7,6 @@ package router
 import (
 	"github.com/gorilla/mux"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/config"
-	"github.com/intel-secl/intel-secl/v3/pkg/kbs/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/kbs/controllers"
 )
 
@@ -20,7 +19,7 @@ func setSessionRoutes(router *mux.Router, aasAPIUrl string, kbsConfig config.KBS
 
 	router.Handle("/session",
 		ErrorHandler(permissionsHandlerUsingTLSMAuth(JsonResponseHandler(sessionController.Create),
-			[]string{constants.SessionCreate},aasAPIUrl, kbsConfig))).Methods("POST")
+			aasAPIUrl, kbsConfig))).Methods("POST")
 
 	return router
 }
