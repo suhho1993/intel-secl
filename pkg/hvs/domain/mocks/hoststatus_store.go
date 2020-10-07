@@ -201,7 +201,7 @@ func (store *MockHostStatusStore) FindHostIdsByKeyValue(key, value string) ([]uu
 	return store.HostStatusStore.FindHostIdsByKeyValue(key, value)
 }
 
-// NewFakeHostStatusStore initializes the mock datastore and prepares the MockHostStatusStore
+// NewMockHostStatusStore initializes the mock datastore and prepares the MockHostStatusStore
 func NewMockHostStatusStore() *MockHostStatusStore {
 	datastore, mock := postgres.NewSQLMockDataStore()
 

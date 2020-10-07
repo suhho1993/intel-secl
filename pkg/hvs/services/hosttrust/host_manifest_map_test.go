@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Intel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package hosttrust
 
 import (
@@ -20,7 +24,7 @@ func TestGetHostManifestMap(t *testing.T) {
 	flavorParts := []cf.FlavorPart{cf.FlavorPartHostUnique, cf.FlavorPartPlatform, cf.FlavorPartOs, cf.FlavorPartAssetTag, cf.FlavorPartSoftware}
 	hostManifestMap, err := getHostManifestMap(hm, flavorParts)
 	assert.NoError(t, err)
-	assert.NotNil(t,hostManifestMap)
+	assert.NotNil(t, hostManifestMap)
 }
 
 func TestGetMeasurementLabels(t *testing.T) {
@@ -32,5 +36,5 @@ func TestGetMeasurementLabels(t *testing.T) {
 	assert.NoError(t, err)
 	softwareLabels, err := getMeasurementLabels(hm)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"ISecL_Default_Application_Flavor_v2.1_TPM2.0", "ISecL_Default_Workload_Flavor_v2.1"},softwareLabels)
+	assert.Equal(t, []string{"ISecL_Default_Application_Flavor_v2.1_TPM2.0", "ISecL_Default_Workload_Flavor_v2.1"}, softwareLabels)
 }

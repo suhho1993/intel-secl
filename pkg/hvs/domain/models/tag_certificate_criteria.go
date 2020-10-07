@@ -19,7 +19,7 @@ type TagCertificateFilterCriteria struct {
 	IssuerEqualTo   string    `json:"issuerEqualTo"`
 	IssuerContains  string    `json:"issuerContains"`
 	ValidOn         time.Time `json:"validOn"`
-	ValidBefore     time.Time `json:"validBefpre"`
+	ValidBefore     time.Time `json:"validBefore"`
 	ValidAfter      time.Time `json:"validAfter"`
 	// swagger:strfmt uuid
 	HardwareUUID uuid.UUID `json:"hardwareUuid"`
