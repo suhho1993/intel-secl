@@ -130,7 +130,7 @@ func buildTagCertificateSearchQuery(tx *gorm.DB, tcFilter *models.TagCertificate
 
 	// SubjectContains
 	if tcFilter.SubjectContains != "" {
-		tx = tx.Where("lower(subject) like ? ", "%"+strings.ToLower(tcFilter.SubjectContains)+"%")
+		tx = tx.Where("lower(subject) like ?", "%"+strings.ToLower(tcFilter.SubjectContains)+"%")
 	}
 
 	// IssuerEqualTo
@@ -140,7 +140,7 @@ func buildTagCertificateSearchQuery(tx *gorm.DB, tcFilter *models.TagCertificate
 
 	// IssuerContains
 	if tcFilter.IssuerContains != "" {
-		tx = tx.Where("lower(issuer) like ? ", "%"+strings.ToLower(tcFilter.IssuerContains)+"%")
+		tx = tx.Where("lower(issuer) like ?", "%"+strings.ToLower(tcFilter.IssuerContains)+"%")
 	}
 
 	// hardware_uuid
@@ -164,7 +164,7 @@ func buildTagCertificateSearchQuery(tx *gorm.DB, tcFilter *models.TagCertificate
 	}
 
 	// ORDER BY
-	tx.Order("subject")
+	tx = tx.Order("subject")
 
 	return tx
 }

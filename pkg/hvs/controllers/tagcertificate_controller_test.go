@@ -94,7 +94,7 @@ var _ = Describe("TagCertificateController", func() {
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		tagCertStore = mocks2.NewFakeTagCertificateStore()
+		tagCertStore = mocks2.NewMockTagCertificateStore()
 		hostStore = mocks2.NewMockHostStore()
 		flavorStore = mocks2.NewMockFlavorStore()
 		flavorGroupStore = mocks2.NewFakeFlavorgroupStore()
@@ -136,7 +136,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Create))).Methods("POST")
 
 				// Create Request body
-				createTcReq := `{ "hardware_uuid" : "56dffe6f-57f8-4f4c-9c98-7c6ef9cc0c8c", "selection_content" : [ { "name" : "Location", "value" : "SantaClara" }, { "name" : "Company", "value" : "IntelCorporation" } ] }`
+				createTcReq := `{ "hardware_uuid" : "fda6105d-a340-42da-bc35-0555e7a5e360", "selection_content" : [ { "name" : "Location", "value" : "SantaClara" }, { "name" : "Company", "value" : "IntelCorporation" } ] }`
 
 				req, err := http.NewRequest(
 					"POST",
@@ -178,7 +178,7 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Create))).Methods("POST")
 
 				// Create Request body
-				createTcReq := `{ "hardware_uuid" : "56dffe6f-57f8-4f4c-9c98-7c6ef9cc0c8c"}`
+				createTcReq := `{ "hardware_uuid" : "fda6105d-a340-42da-bc35-0555e7a5e360"}`
 
 				req, err := http.NewRequest(
 					"POST",
@@ -256,7 +256,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(tcCollection.TagCertificates).To(BeNil())
+				Expect(tcCollection.TagCertificates).To(BeEmpty())
 			})
 		})
 
@@ -291,7 +291,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(tcCollection.TagCertificates)).To(Equal(2))
+				Expect(len(tcCollection.TagCertificates)).To(Equal(1))
 			})
 		})
 
@@ -308,7 +308,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(tcCollection.TagCertificates).To(BeNil())
+				Expect(tcCollection.TagCertificates).To(BeEmpty())
 			})
 		})
 
@@ -342,7 +342,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(tcCollection.TagCertificates)).To(Equal(1))
+				Expect(len(tcCollection.TagCertificates)).To(Equal(2))
 			})
 		})
 
@@ -359,7 +359,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(tcCollection.TagCertificates).To(BeNil())
+				Expect(tcCollection.TagCertificates).To(BeEmpty())
 			})
 		})
 
@@ -376,11 +376,11 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(tcCollection.TagCertificates)).To(Equal(1))
+				Expect(len(tcCollection.TagCertificates)).To(Equal(2))
 			})
 		})
 
-		Context("When filtered by a non-existent SubjectEqualTo", func() {
+		Context("When filtered by a non-existent SubjectContains", func() {
 			It("Should get an empty list of TagCertificates and a 200 response Code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
 				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?subjectContains=7a466a5beff9", nil)
@@ -393,7 +393,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(tcCollection.TagCertificates).To(BeNil())
+				Expect(tcCollection.TagCertificates).To(BeEmpty())
 			})
 		})
 
@@ -427,7 +427,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(tcCollection.TagCertificates).To(BeNil())
+				Expect(tcCollection.TagCertificates).To(BeEmpty())
 			})
 		})
 
@@ -461,14 +461,14 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(tcCollection.TagCertificates).To(BeNil())
+				Expect(tcCollection.TagCertificates).To(BeEmpty())
 			})
 		})
 
 		Context("Search TagCertificates from data store with valid ValidOn date", func() {
 			It("Should return a list of TagCertificates valid on the ValidOn date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn="+time.Now().Add(-mocks2.TimeDuration12Hrs).Format(consts.ParamDateTimeFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validOn=2016-09-28T09:08:33.913Z", nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -478,14 +478,14 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(tcCollection).ToNot(BeNil())
+				Expect(tcCollection.TagCertificates).ToNot(BeEmpty())
 			})
 		})
 
 		Context("Search TagCertificates from data store with valid ValidBefore date", func() {
 			It("Should return a list of TagCertificates which are valid before the ValidBefore date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore="+time.Now().AddDate(-1, 0, 0).Format(consts.ParamDateTimeFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validBefore=2016-09-28T09:08:33.913Z", nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -502,7 +502,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Search TagCertificates from data store with valid ValidAfter", func() {
 			It("Should return a list of TagCertificates which are valid after the ValidAfter date and a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath, hvsRoutes.ErrorHandler(hvsRoutes.JsonResponseHandler(tagCertController.Search))).Methods("GET")
-				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter="+time.Now().AddDate(1, 0, 0).Format(consts.ParamDateTimeFormat), nil)
+				req, err := http.NewRequest("GET", hvsRoutes.TagCertificateEndpointPath+"?validAfter=2040-09-28T09:08:33.913Z", nil)
 				Expect(err).ToNot(HaveOccurred())
 				req.Header.Set("Accept", constants.HTTPMediaTypeJson)
 				w = httptest.NewRecorder()
@@ -512,7 +512,7 @@ var _ = Describe("TagCertificateController", func() {
 				var tcCollection *hvs.TagCertificateCollection
 				err = json.Unmarshal(w.Body.Bytes(), &tcCollection)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(tcCollection.TagCertificates).To(BeEmpty())
+				Expect(len(tcCollection.TagCertificates)).To(Equal(1))
 			})
 		})
 
@@ -574,7 +574,7 @@ var _ = Describe("TagCertificateController", func() {
 		Context("Delete TagCertificate by ID from data store", func() {
 			It("Should delete TagCertificate and return a 200 response code", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Delete))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE", hvsRoutes.TagCertificateEndpointPath+"/fda6105d-a340-42da-bc35-0555e7a5e360", nil)
+				req, err := http.NewRequest("DELETE", hvsRoutes.TagCertificateEndpointPath+"/cf197a51-8362-465f-9ec1-d88ad0023a27", nil)
 				Expect(err).NotTo(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -586,16 +586,6 @@ var _ = Describe("TagCertificateController", func() {
 				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", hvsRoutes.TagCertificateEndpointPath+"/c00135a8-f5e9-4860-ae6c-4acce525d340", nil)
 				Expect(err).NotTo(HaveOccurred())
-				w = httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				Expect(w.Code).To(Equal(http.StatusNotFound))
-			})
-		})
-		Context("Delete TagCertificate by invalid ID from data store", func() {
-			It("Should fail to delete TagCertificate and return a 400 response code", func() {
-				router.Handle(hvsRoutes.TagCertificateEndpointPath+"/{id}", hvsRoutes.ErrorHandler(hvsRoutes.ResponseHandler(tagCertController.Delete))).Methods("DELETE")
-				req, err := http.NewRequest("DELETE", hvsRoutes.TagCertificateEndpointPath+"/73755fda-c910-46be-821f-xyxyz", nil)
-				Expect(err).ToNot(HaveOccurred())
 				w = httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusNotFound))
@@ -793,14 +783,14 @@ func TestNewTagCertificateController(t *testing.T) {
 			name: "CertStore missing TagCA to NewTagCertificateController",
 			args: args{
 				certStore: certStoreMissingTagCA,
-				tcs:       mocks2.NewFakeTagCertificateStore(),
+				tcs:       mocks2.NewMockTagCertificateStore(),
 			},
 		},
 		{
 			name: "CertStore missing Flavor Signing CA to NewTagCertificateController",
 			args: args{
 				certStore: certStoreMissingFSCA,
-				tcs:       mocks2.NewFakeTagCertificateStore(),
+				tcs:       mocks2.NewMockTagCertificateStore(),
 			},
 		},
 	}
