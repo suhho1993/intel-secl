@@ -10,6 +10,10 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
+	"net/http"
+	"reflect"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	consts "github.com/intel-secl/intel-secl/v3/pkg/hvs/constants"
@@ -32,9 +36,6 @@ import (
 	hcType "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
-	"net/http"
-	"reflect"
-	"strings"
 )
 
 type FlavorController struct {
@@ -132,7 +133,13 @@ func (fcon *FlavorController) Create(w http.ResponseWriter, r *http.Request) (in
 		if strings.Contains(err.Error(), "duplicate key") {
 			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Flavor with same id/label already exists"}
 		}
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating flavors"}
+		if strings.Contains(err.Error(), "401") {
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Authentication with trust agent failed"}
+		}
+		if strings.Contains(err.Error(), "403") {
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Authorization with trust agent failed"}
+		}
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Error creating flavors, error connecting to trust agent"}
 	}
 
 	signedFlavorCollection := hvs.SignedFlavorCollection{
