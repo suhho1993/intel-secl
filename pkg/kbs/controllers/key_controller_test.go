@@ -43,7 +43,7 @@ var _ = Describe("KeyController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
 	var keyStore *mocks.MockKeyStore
-	//var policyStore *mocks.MockKeyTransferPolicyStore
+	var policyStore *mocks.MockKeyTransferPolicyStore
 	var remoteManager *keymanager.RemoteManager
 	var keyController *controllers.KeyController
 	var keyControllerConfig domain.KeyControllerConfig
@@ -63,7 +63,7 @@ var _ = Describe("KeyController", func() {
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		keyStore = mocks.NewFakeKeyStore()
-		//policyStore = mocks.NewFakeKeyTransferPolicyStore()
+		policyStore = mocks.NewFakeKeyTransferPolicyStore()
 		keyControllerConfig = domain.KeyControllerConfig{
 			SamlCertsDir:            samlCertsDir,
 			TrustedCaCertsDir:       trustedCaCertsDir,
@@ -74,7 +74,7 @@ var _ = Describe("KeyController", func() {
 		keyManager := &keymanager.DirectoryManager{}
 		endpointUrl := "https://localhost:9443/kbs/v1"
 		remoteManager = keymanager.NewRemoteManager(keyStore, keyManager, endpointUrl)
-		keyController = controllers.NewKeyController(remoteManager/*, policyStore*/, keyControllerConfig)
+		keyController = controllers.NewKeyController(remoteManager, policyStore, keyControllerConfig)
 	})
 
 	// Specs for HTTP Post to "/keys"
@@ -109,7 +109,7 @@ var _ = Describe("KeyController", func() {
 				Expect(w.Code).To(Equal(http.StatusCreated))
 			})
 		})
-		/*Context("Provide a Create request that contains non-existent key-transfer-policy", func() {
+		Context("Provide a Create request that contains non-existent key-transfer-policy", func() {
 			It("Should fail to create new Key", func() {
 				router.Handle("/keys", kbsRoutes.ErrorHandler(kbsRoutes.JsonResponseHandler(keyController.Create))).Methods("POST")
 				keyJson := `{
@@ -132,7 +132,7 @@ var _ = Describe("KeyController", func() {
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
-		})*/
+		})
 		Context("Provide a Create request without algorithm", func() {
 			It("Should fail to create new Key", func() {
 				router.Handle("/keys", kbsRoutes.ErrorHandler(kbsRoutes.JsonResponseHandler(keyController.Create))).Methods("POST")
@@ -612,8 +612,8 @@ var _ = Describe("KeyController", func() {
 
 				var keyResponses []kbs.KeyResponse
 				json.Unmarshal(w.Body.Bytes(), &keyResponses)
-				// Verifying mocked data of 1 key
-				Expect(len(keyResponses)).To(Equal(1))
+				// Verifying mocked data of 2 keys
+				Expect(len(keyResponses)).To(Equal(2))
 			})
 		})
 		Context("Get all the Keys with invalid transferPolicyId param", func() {

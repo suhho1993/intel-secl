@@ -23,15 +23,15 @@ import (
 var _ = Describe("KeyTransferPolicyController", func() {
 	var router *mux.Router
 	var w *httptest.ResponseRecorder
-	//var keyStore *mocks.MockKeyStore
+	var keyStore *mocks.MockKeyStore
 	var policyStore *mocks.MockKeyTransferPolicyStore
 	var keyTransferPolicyController *controllers.KeyTransferPolicyController
 	BeforeEach(func() {
 		router = mux.NewRouter()
-		//keyStore = mocks.NewFakeKeyStore()
+		keyStore = mocks.NewFakeKeyStore()
 		policyStore = mocks.NewFakeKeyTransferPolicyStore()
 
-		keyTransferPolicyController = controllers.NewKeyTransferPolicyController(policyStore/*, keyStore*/)
+		keyTransferPolicyController = controllers.NewKeyTransferPolicyController(policyStore, keyStore)
 	})
 
 	// Specs for HTTP Post to "/key-transfer-policies"
@@ -147,7 +147,7 @@ var _ = Describe("KeyTransferPolicyController", func() {
 				Expect(w.Code).To(Equal(http.StatusNotFound))
 			})
 		})
-		/*Context("Delete Key Transfer Policy associated with Key", func() {
+		Context("Delete Key Transfer Policy associated with Key", func() {
 			It("Should fail to delete Key Transfer Policy", func() {
 				router.Handle("/key-transfer-policies/{id}", kbsRoutes.ErrorHandler(kbsRoutes.ResponseHandler(keyTransferPolicyController.Delete))).Methods("DELETE")
 				req, err := http.NewRequest("DELETE", "/key-transfer-policies/ee37c360-7eae-4250-a677-6ee12adce8e2", nil)
@@ -156,7 +156,7 @@ var _ = Describe("KeyTransferPolicyController", func() {
 				router.ServeHTTP(w, req)
 				Expect(w.Code).To(Equal(http.StatusBadRequest))
 			})
-		})*/
+		})
 	})
 
 	// Specs for HTTP Get to "/key-transfer-policies"

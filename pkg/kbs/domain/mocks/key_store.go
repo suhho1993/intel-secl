@@ -103,7 +103,7 @@ func NewFakeKeyStore() *MockKeyStore {
 		KeyLength:        256,
 		KeyData:          "",
 		KmipKeyID:        "1",
-		TransferPolicyId: uuid.MustParse("e57e5ea0-d465-461e-882d-1600090caa0d"),
+		TransferPolicyId: uuid.MustParse("ee37c360-7eae-4250-a677-6ee12adce8e2"),
 		TransferLink:     "https://localhost:9443/kbs/v1/keys/ee37c360-7eae-4250-a677-6ee12adce8e2/transfer",
 		CreatedAt:        time.Now().UTC(),
 	})
