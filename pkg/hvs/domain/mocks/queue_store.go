@@ -23,7 +23,7 @@ func NewQueueStore() domain.QueueStore {
 }
 
 func (qs *qStore) Search(criteria *models.QueueFilterCriteria) ([]*models.Queue, error) {
-	if criteria.Id == uuid.Nil {
+	if criteria == nil || criteria.Id == uuid.Nil {
 		rslt := make([]*models.Queue, 0, len(qs.m))
 		for _, v := range qs.m {
 			rslt = append(rslt, &v)

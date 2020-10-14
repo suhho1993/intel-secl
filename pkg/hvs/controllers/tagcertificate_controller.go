@@ -47,7 +47,7 @@ type TagCertificateController struct {
 	// FlavorController holds a reference to the FlavorController, needed to create AssetTag Flavor
 	// and assign to the appropriate FlavorGroup
 	FlavorController FlavorController
-	// HostConnectorFactory is required for providing a HostConnector for connecting to the host during the Deploy Tag Certificate workflow
+	// HostConnectorProvider is required for providing a HostConnector for connecting to the host during the Deploy Tag Certificate workflow
 	HostConnectorProvider hostConnector.HostConnectorProvider
 }
 

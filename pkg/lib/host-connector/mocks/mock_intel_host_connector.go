@@ -7,11 +7,13 @@ package mocks
 //go:generate mockgen -destination=mock_intel_host_connector.go -package=host_connector github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector MockIntelConnector
 
 import (
+	"encoding/json"
 	"github.com/intel-secl/intel-secl/v3/pkg/clients/ta"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
 	taModel "github.com/intel-secl/intel-secl/v3/pkg/model/ta"
 	"github.com/stretchr/testify/mock"
 	"github.com/vmware/govmomi/vim25/mo"
+	"io/ioutil"
 )
 
 type MockIntelConnector struct {
@@ -26,7 +28,16 @@ func (ihc *MockIntelConnector) GetHostDetails() (taModel.HostInfo, error) {
 
 func (ihc *MockIntelConnector) GetHostManifest() (types.HostManifest, error) {
 	args := ihc.Called()
-	return args.Get(0).(types.HostManifest), args.Error(1)
+	var hostManifest types.HostManifest
+	// this is required for any test case that requires a good HostManifest
+	manifestJSON, _ := ioutil.ReadFile("../../../lib/verifier/test_data/intel20/host_manifest.json")
+	err := json.Unmarshal(manifestJSON, &hostManifest)
+	// handle any tests that do not consider the quality of the HostManifest
+	if err != nil {
+		return args.Get(0).(types.HostManifest), args.Error(1)
+	} else {
+		return hostManifest, nil
+	}
 }
 
 func (ihc *MockIntelConnector) DeployAssetTag(hardwareUUID, tag string) error {

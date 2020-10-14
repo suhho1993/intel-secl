@@ -236,7 +236,7 @@ func initHostTrustManager(cfg *config.Configuration, dataStore *postgres.DataSto
 	htcFactory := hostconnector.NewHostConnectorFactory(cfg.AASApiUrl, rootCAs.Certificates)
 
 	c := domain.HostDataFetcherConfig{
-		HostConnectorFactory: *htcFactory,
+		HostConnectorProvider: htcFactory,
 		HostConnectionConfig: domain.HostConnectionConfig{
 			HCStore:         hc,
 			ServiceUsername: cfg.HVS.Username,

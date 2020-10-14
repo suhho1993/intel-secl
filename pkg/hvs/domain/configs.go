@@ -33,11 +33,11 @@ type HostTrustMgrConfig struct {
 }
 
 type HostDataFetcherConfig struct {
-	HostConnectorFactory host_connector.HostConnectorFactory
-	HostConnectionConfig HostConnectionConfig
-	RetryTimeMinutes     int
-	HostStatusStore      HostStatusStore
-	HostStore            HostStore
+	HostConnectorProvider host_connector.HostConnectorProvider
+	HostConnectionConfig  HostConnectionConfig
+	RetryTimeMinutes      int
+	HostStatusStore       HostStatusStore
+	HostStore             HostStore
 }
 
 type HostControllerConfig struct {

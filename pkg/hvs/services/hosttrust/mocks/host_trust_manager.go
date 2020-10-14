@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/mocks"
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/domain/models"
+	"time"
 )
 
 type MockHostTrustManager struct{}
@@ -19,6 +20,8 @@ func (mock *MockHostTrustManager) VerifyHost(hostId uuid.UUID, fetchHostData, pr
 }
 
 func (mock *MockHostTrustManager) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {
+	// put in a small delay
+	time.Sleep(time.Duration(250 * time.Millisecond))
 	return nil
 }
 

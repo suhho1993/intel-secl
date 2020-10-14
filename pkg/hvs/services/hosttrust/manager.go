@@ -160,12 +160,12 @@ func (svc *Service) ProcessQueue() error {
 		svc.mapmtx.Lock()
 		for _, queue := range records {
 			if queue.Params != nil {
-				hostId := uuid.UUID{}
+				var hostId uuid.UUID
 				fetchHostData := false
 				preferHashMatch := false
 				for key, value := range queue.Params {
 					if key == "host_id" {
-						hostId = uuid.MustParse(value.(string))
+						hostId = value.(uuid.UUID)
 					}
 					if key == "fetch_host_data" {
 						fetchHostData = value.(bool)
@@ -202,6 +202,11 @@ func (svc *Service) ProcessQueue() error {
 func (svc *Service) VerifyHostsAsync(hostIds []uuid.UUID, fetchHostData, preferHashMatch bool) error {
 	defaultLog.Trace("hosttrust/manager:VerifyHostsAsync() Entering")
 	defer defaultLog.Trace("hosttrust/manager:VerifyHostsAsync() Leaving")
+
+	// check if the service has already been shutdown
+	if svc.serviceDone {
+		return errors.New("hosttrust/manager:VerifyHostsAsync() Service already shutdown")
+	}
 
 	adds := make([]uuid.UUID, 0, len(hostIds))
 	updates := []uuid.UUID{}

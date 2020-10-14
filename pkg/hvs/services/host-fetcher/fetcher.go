@@ -68,7 +68,7 @@ type Service struct {
 	serviceDone       bool
 	retryIntervalMins int
 	hcCfg             domain.HostConnectionConfig
-	hcf               hc.HostConnectorFactory
+	hcf               hc.HostConnectorProvider
 	hss               domain.HostStatusStore
 	hs                domain.HostStore
 }
@@ -81,7 +81,7 @@ func NewService(cfg domain.HostDataFetcherConfig, workers int) (*Service, domain
 	// this way, go routine can start work as soon as a current work is done
 	svc := &Service{workMap: make(map[uuid.UUID][]*fetchRequest),
 		quit:              make(chan struct{}),
-		hcf:               cfg.HostConnectorFactory,
+		hcf:               cfg.HostConnectorProvider,
 		retryIntervalMins: cfg.RetryTimeMinutes,
 		hss:               cfg.HostStatusStore,
 		hcCfg:             cfg.HostConnectionConfig,
