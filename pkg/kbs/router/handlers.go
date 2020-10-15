@@ -7,6 +7,7 @@ package router
 import (
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/clients"

@@ -211,6 +211,19 @@ func GetPublicKeyFromCertPem(certPem []byte) (crypto.PublicKey, error) {
 	return GetPublicKeyFromCert(cert)
 }
 
+// GetPrivateKeyFromPem retrieve the private key from a private pem block
+func GetPrivateKeyFromPem(keyPem []byte) (crypto.PrivateKey, error) {
+	block, _ := pem.Decode(keyPem)
+	if block == nil || block.Type != "PRIVATE KEY"  {
+		return nil, fmt.Errorf("failed to parse private key PEM")
+	}
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse private key: " + err.Error())
+	}
+	return key, nil
+}
+
 // GetPublicKeyFromPem retrieve the public key from a public pem block
 func GetPublicKeyFromPem(keyPem []byte) (crypto.PublicKey, error) {
 	block, _ := pem.Decode(keyPem)

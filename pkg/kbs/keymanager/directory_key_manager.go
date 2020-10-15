@@ -31,31 +31,40 @@ func (dm *DirectoryManager) CreateKey(request *kbs.KeyRequest) (*models.KeyAttri
 
 	var err error
 	var key, publicKey, privateKey string
-
 	if request.KeyInformation.Algorithm == constants.CRYPTOALG_AES {
 		keyBytes, err := generateAESKey(request.KeyInformation.KeyLength)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Could not generate AES key")
 		}
 
 		key = base64.StdEncoding.EncodeToString(keyBytes)
 	} else {
 
-		var publicKeyBytes, privateKeyBytes []byte
+		var public crypto.PublicKey
+		var private crypto.PrivateKey
 		if request.KeyInformation.Algorithm == constants.CRYPTOALG_RSA {
-			privateKeyBytes, publicKeyBytes, err = generateRSAKeyPair(request.KeyInformation.KeyLength)
+			private, public, err = generateRSAKeyPair(request.KeyInformation.KeyLength)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Could not generate RSA keypair")
 			}
 		} else {
-			privateKeyBytes, publicKeyBytes, err = generateECKeyPair(request.KeyInformation.CurveType)
+			private, public, err = generateECKeyPair(request.KeyInformation.CurveType)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Could not generate EC keypair")
 			}
 		}
 
-		publicKey = base64.StdEncoding.EncodeToString(publicKeyBytes)
+		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(private)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal private key")
+		}
 		privateKey = base64.StdEncoding.EncodeToString(privateKeyBytes)
+
+		publicKeyBytes, err := x509.MarshalPKIXPublicKey(public)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal public key")
+		}
+		publicKey = base64.StdEncoding.EncodeToString(publicKeyBytes)
 	}
 
 	keyAttributes := &models.KeyAttributes{
@@ -92,22 +101,33 @@ func (dm *DirectoryManager) RegisterKey(request *kbs.KeyRequest) (*models.KeyAtt
 	} else {
 
 		var public crypto.PublicKey
-		privateKey = request.KeyInformation.KeyString
-		privateKeyBytes, _ := base64.StdEncoding.DecodeString(privateKey)
+		var private crypto.PrivateKey
+		private, err := crypt.GetPrivateKeyFromPem([]byte(request.KeyInformation.KeyString))
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to decode private key")
+		}
 
 		if request.KeyInformation.Algorithm == constants.CRYPTOALG_RSA {
-			private, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
-			if err != nil {
-				return nil, errors.Wrap(err, "Could not parse RSA private key")
+			rsaKey, ok := private.(*rsa.PrivateKey)
+			if !ok {
+				return nil, errors.Wrap(err, "Private key in request is not RSA key")
 			}
-			public = &private.PublicKey
+
+			public = &rsaKey.PublicKey
 		} else {
-			private, err := x509.ParseECPrivateKey(privateKeyBytes)
-			if err != nil {
-				return nil, errors.Wrap(err, "Could not parse EC private key")
+			ecKey, ok := private.(*ecdsa.PrivateKey)
+			if !ok {
+				return nil, errors.Wrap(err, "Private key in request is not EC key")
 			}
-			public = &private.PublicKey
+
+			public = &ecKey.PublicKey
 		}
+
+		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(private)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal private key")
+		}
+		privateKey = base64.StdEncoding.EncodeToString(privateKeyBytes)
 
 		publicKeyBytes, err := x509.MarshalPKIXPublicKey(public)
 		if err != nil {
@@ -154,37 +174,28 @@ func generateAESKey(length int) ([]byte, error) {
 	return crypt.GetRandomBytes(length/8)
 }
 
-func generateRSAKeyPair(length int) ([]byte, []byte, error) {
+func generateRSAKeyPair(length int) (crypto.PrivateKey, crypto.PublicKey, error) {
 	defaultLog.Trace("keymanager/directory_key_manager:generateRSAKeyPair() Entering")
 	defer defaultLog.Trace("keymanager/directory_key_manager:generateRSAKeyPair() Leaving")
 
 	private, err := rsa.GenerateKey(rand.Reader, length)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "Could not create RSA keypair")
+		return nil, nil, err
 	}
 
 	public := &private.PublicKey
-
 	if bits := private.N.BitLen(); bits != length {
 		return nil, nil, errors.Errorf("key too short (%d vs %d)", bits, length)
 	}
 
-	privateBytes := x509.MarshalPKCS1PrivateKey(private)
-
-	publicBytes, err := x509.MarshalPKIXPublicKey(public)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to marshal public key")
-	}
-
-	return privateBytes, publicBytes, nil
+	return private, public, nil
 }
 
-func generateECKeyPair(curveType string) ([]byte, []byte, error) {
+func generateECKeyPair(curveType string) (crypto.PrivateKey, crypto.PublicKey, error) {
 	defaultLog.Trace("keymanager/directory_key_manager:generateECKeyPair() Entering")
 	defer defaultLog.Trace("keymanager/directory_key_manager:generateECKeyPair() Leaving")
 
 	var curve elliptic.Curve
-
 	switch curveType {
 	case "prime256v1", "secp256r1":
 		curve = elliptic.P256()
@@ -198,24 +209,13 @@ func generateECKeyPair(curveType string) ([]byte, []byte, error) {
 
 	private, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "Could not generate EC keypair")
+		return nil, nil, err
 	}
 
 	public := &private.PublicKey
-
 	if !curve.IsOnCurve(public.X, public.Y) {
 		return nil, nil, errors.New("public key invalid")
 	}
 
-	privateBytes, err := x509.MarshalECPrivateKey(private)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to marshal private key")
-	}
-
-	publicBytes, err := x509.MarshalPKIXPublicKey(public)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to marshal public key")
-	}
-
-	return privateBytes, publicBytes, nil
+	return private, public, nil
 }

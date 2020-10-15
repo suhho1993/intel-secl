@@ -362,8 +362,8 @@ func validateKeyCreateRequest(requestKey kbs.KeyRequest) error {
 				return errors.New("key_length is not supported")
 			}
 		}
-	} else if err := validation.ValidateBase64String(keyString); err != nil {
-			return errors.New("key_string must be base64 encoded")
+	} else if err := validation.ValidatePemEncodedKey(keyString); err != nil {
+			return errors.New("key_string must be PEM formatted")
 	}
 
 	if requestKey.KeyInformation.KmipKeyID != "" {

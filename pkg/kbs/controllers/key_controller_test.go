@@ -307,7 +307,7 @@ var _ = Describe("KeyController", func() {
 				keyJson := `{
 								"key_information": {
 									"algorithm": "AES",
-									"key_string": "key"
+									"key_string": "k@y"
 								}
 							}`
 
