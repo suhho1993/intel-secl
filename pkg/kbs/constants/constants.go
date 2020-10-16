@@ -13,15 +13,15 @@ const (
 	ApiVersion      = "/v1"
 	ServiceUserName = "kbs"
 
-	HomeDir         = "/opt/" + ServiceDir
-	RunDirPath      = "/run/" + ServiceDir
-	ExecLinkPath    = "/usr/bin/" + ServiceUserName
-	LogDir          = "/var/log/" + ServiceDir
-	ConfigDir       = "/etc/" + ServiceDir
-	ConfigFile      = "config"
+	HomeDir      = "/opt/" + ServiceDir
+	RunDirPath   = "/run/" + ServiceDir
+	ExecLinkPath = "/usr/bin/" + ServiceUserName
+	LogDir       = "/var/log/" + ServiceDir
+	ConfigDir    = "/etc/" + ServiceDir
+	ConfigFile   = "config"
 
-	KeysDir                   = HomeDir + "keys/"
-	KeysTransferPolicyDir     = HomeDir + "keys-transfer-policy/"
+	KeysDir               = HomeDir + "keys/"
+	KeysTransferPolicyDir = HomeDir + "keys-transfer-policy/"
 
 	// certificates' path
 	TrustedJWTSigningCertsDir = ConfigDir + "certs/trustedjwt/"
@@ -37,11 +37,11 @@ const (
 	DefaultTransferPolicyFile = ConfigDir + "default_transfer_policy"
 
 	// default locations for tls certificate and key
-	DefaultTLSCertPath        = ConfigDir + "tls-cert.pem"
-	DefaultTLSKeyPath         = ConfigDir + "tls.key"
+	DefaultTLSCertPath = ConfigDir + "tls-cert.pem"
+	DefaultTLSKeyPath  = ConfigDir + "tls.key"
 
 	// service remove command
-	ServiceRemoveCmd    = "systemctl disable kbs"
+	ServiceRemoveCmd = "systemctl disable kbs"
 
 	// tls constants
 	DefaultKbsTlsCn     = "KBS TLS Certificate"
@@ -50,7 +50,7 @@ const (
 	DefaultKeyLength    = 3072
 
 	// jwt constants
-	JWTCertsCacheTime   = "1m"
+	JWTCertsCacheTime = "1m"
 
 	// log constants
 	DefaultLogLevel     = "info"
@@ -78,4 +78,20 @@ const (
 	KMIP_CRYPTOALG_RSA  = 0x04
 	KMIP_CRYPTOALG_EC   = 0x06
 	KMIP_CLIENT_SUCCESS = 0x00
+)
+
+///SKC Specific constants
+const (
+	DefaultSWLabel          = "SW"
+	DefaultSGXLabel         = "SGX"
+	VerifyQuote             = "/verifyQuote"
+	KeyTransferOpertaion    = "transfer key"
+	SessionOperation        = "establish session key"
+	SuccessStatus           = "success"
+	FailureStatus           = "failure"
+	SGXAlgorithmType        = "AES256-GCM"
+	SWAlgorithmType         = "AES256-WRAP"
+	TransferRoleType        = "KeyTransfer"
+	ContextPermissionsRegex = "^(permissions=)(.*)$"
+	TCBLevelOutOfDate       = "OutOfDate"
 )

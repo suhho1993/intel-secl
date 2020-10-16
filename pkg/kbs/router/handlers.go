@@ -187,7 +187,7 @@ func permissionsHandlerUsingTLSMAuth(eh endpointHandler, aasAPIUrl string, kbsCo
 
 		roleFound := false
 		for _, roles := range userRoles {
-			if roles.Service == "KBS" && roles.Name == "KeyTransfer" {
+			if roles.Service == consts.ServiceName && roles.Name == consts.TransferRoleType {
 				roleFound = true
 				break
 			}

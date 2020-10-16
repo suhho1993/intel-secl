@@ -93,12 +93,12 @@ func (kc KeyController) Create(responseWriter http.ResponseWriter, request *http
 		transferPolicy, err := kc.policyStore.Retrieve(requestKey.TransferPolicyID)
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/key_controller:Create() Key transfer policy retrieve failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to retrieve key transfer policy"}
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve key transfer policy"}
 		}
 
 		if transferPolicy == nil {
 			defaultLog.Errorf("controllers/key_controller:Create() Key transfer policy with specified id could not be located")
-			return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Key transfer policy with specified id does not exist"}
+			return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Key transfer policy with specified id does not exist"}
 		}
 	}
 
@@ -120,7 +120,7 @@ func (kc KeyController) Create(responseWriter http.ResponseWriter, request *http
 		createdKey, err = kc.remoteManager.CreateKey(&requestKey)
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/key_controller:Create() Key create failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to create key"}
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to create key"}
 		}
 
 		secLog.WithField("Id", createdKey.KeyInformation.ID).Infof("controllers/key_controller:Create() %s: Key created by: %s", commLogMsg.PrivilegeModified, request.RemoteAddr)
@@ -135,7 +135,7 @@ func (kc KeyController) Create(responseWriter http.ResponseWriter, request *http
 		createdKey, err = kc.remoteManager.RegisterKey(&requestKey)
 		if err != nil {
 			defaultLog.WithError(err).Error("controllers/key_controller:Create() Key register failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to register key"}
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to register key"}
 		}
 
 		secLog.WithField("Id", createdKey.KeyInformation.ID).Infof("controllers/key_controller:Create() %s: Key registered by: %s", commLogMsg.PrivilegeModified, request.RemoteAddr)
@@ -154,10 +154,10 @@ func (kc KeyController) Retrieve(responseWriter http.ResponseWriter, request *ht
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/key_controller:Retrieve() Key with specified id could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Key with specified id does not exist"}
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Key with specified id does not exist"}
 		} else {
 			defaultLog.WithError(err).Error("controllers/key_controller:Retrieve() Key retrieve failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to retrieve key"}
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to retrieve key"}
 		}
 	}
 
@@ -175,10 +175,10 @@ func (kc KeyController) Delete(responseWriter http.ResponseWriter, request *http
 	if err != nil {
 		if err.Error() == commErr.RecordNotFound {
 			defaultLog.Error("controllers/key_controller:Delete() Key with specified id could not be located")
-			return nil, http.StatusNotFound, &commErr.ResourceError{Message:"Key with specified id does not exist"}
+			return nil, http.StatusNotFound, &commErr.ResourceError{Message: "Key with specified id does not exist"}
 		} else {
 			defaultLog.WithError(err).Error("controllers/key_controller:Delete() Key delete failed")
-			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to delete key"}
+			return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to delete key"}
 		}
 	}
 
@@ -207,7 +207,7 @@ func (kc KeyController) Search(responseWriter http.ResponseWriter, request *http
 	keys, err := kc.remoteManager.SearchKeys(criteria)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/key_controller:Search() Key search failed")
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to search keys"}
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to search keys"}
 	}
 
 	secLog.Infof("controllers/key_controller:Search() %s: Keys searched by: %s", commLogMsg.AuthorizedAccess, request.RemoteAddr)
@@ -239,7 +239,7 @@ func (kc KeyController) Transfer(responseWriter http.ResponseWriter, request *ht
 	key, err := crypt.GetPublicKeyFromPem(bytes)
 	if err != nil {
 		secLog.WithError(err).Errorf("controllers/key_controller:Transfer() %s : Public key decode failed", commLogMsg.InvalidInputBadParam)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Failed to decode public key"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Failed to decode public key"}
 	}
 	envelopeKey := key.(*rsa.PublicKey)
 
@@ -251,8 +251,8 @@ func (kc KeyController) Transfer(responseWriter http.ResponseWriter, request *ht
 	}
 
 	transferKeyResponse := kbs.KeyTransferAttributes{
-		KeyId:        id,
-		KeyData:      wrappedKey.([]byte),
+		KeyId:   id,
+		KeyData: string(wrappedKey.([]byte)),
 	}
 
 	secLog.WithField("Id", id).Infof("controllers/key_controller:Transfer() %s: Key transferred using Envelope key by: %s", commLogMsg.PrivilegeModified, request.RemoteAddr)
@@ -285,7 +285,7 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 	err = xml.Unmarshal(bytes, &samlReport)
 	if err != nil {
 		secLog.WithError(err).Errorf("controllers/key_controller:TransferWithSaml() %s : Saml report unmarshal failed", commLogMsg.InvalidInputBadParam)
-		return nil, http.StatusBadRequest, &commErr.ResourceError{Message:"Failed to unmarshal saml report"}
+		return nil, http.StatusBadRequest, &commErr.ResourceError{Message: "Failed to unmarshal saml report"}
 	}
 
 	// Validate saml report in request
@@ -293,7 +293,7 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 	trusted, bindingCert := keytransfer.IsTrustedByHvs(string(bytes), samlReport, id, kc.config, kc.remoteManager)
 	if !trusted {
 		secLog.Error("controllers/key_controller:TransferWithSaml() Saml report is not trusted")
-		return nil, http.StatusUnauthorized, &commErr.ResourceError{Message:"Client not trusted by Hvs"}
+		return nil, http.StatusUnauthorized, &commErr.ResourceError{Message: "Client not trusted by Hvs"}
 	}
 	envelopeKey := bindingCert.PublicKey.(*rsa.PublicKey)
 
@@ -307,7 +307,7 @@ func (kc KeyController) TransferWithSaml(responseWriter http.ResponseWriter, req
 	return wrappedKey, http.StatusOK, nil
 }
 
-func (kc *KeyController) wrapSecretKey(id uuid.UUID, publicKey *rsa.PublicKey, hash hash.Hash, label []byte) (interface{}, int, error){
+func (kc *KeyController) wrapSecretKey(id uuid.UUID, publicKey *rsa.PublicKey, hash hash.Hash, label []byte) (interface{}, int, error) {
 	defaultLog.Trace("controllers/key_controller:wrapSecretKey() Entering")
 	defer defaultLog.Trace("controllers/key_controller:wrapSecretKey() Leaving")
 
@@ -326,7 +326,7 @@ func (kc *KeyController) wrapSecretKey(id uuid.UUID, publicKey *rsa.PublicKey, h
 	wrappedKey, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, secretKey, label)
 	if err != nil {
 		defaultLog.WithError(err).Error("controllers/key_controller:wrapSecretKey() Wrap key failed")
-		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message:"Failed to wrap key"}
+		return nil, http.StatusInternalServerError, &commErr.ResourceError{Message: "Failed to wrap key"}
 	}
 
 	return wrappedKey, http.StatusOK, nil
@@ -351,19 +351,19 @@ func validateKeyCreateRequest(requestKey kbs.KeyRequest) error {
 	if keyString == "" {
 		if strings.ToUpper(algorithm) == consts.CRYPTOALG_EC {
 			if requestKey.KeyInformation.CurveType == "" {
-					return errors.New("either curve_type or key_string must be specified")
+				return errors.New("either curve_type or key_string must be specified")
 			} else if !allowedCurveTypes[requestKey.KeyInformation.CurveType] {
 				return errors.New("curve_type is not supported")
 			}
 		} else {
 			if requestKey.KeyInformation.KeyLength == 0 {
-					return errors.New("either key_length or key_string must be specified")
+				return errors.New("either key_length or key_string must be specified")
 			} else if !allowedKeyLengths[requestKey.KeyInformation.KeyLength] {
 				return errors.New("key_length is not supported")
 			}
 		}
 	} else if err := validation.ValidatePemEncodedKey(keyString); err != nil {
-			return errors.New("key_string must be PEM formatted")
+		return errors.New("key_string must be PEM formatted")
 	}
 
 	if requestKey.KeyInformation.KmipKeyID != "" {

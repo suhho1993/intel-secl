@@ -23,32 +23,43 @@ type KeyInformation struct {
 
 // KeyRequest - All required attributes for key create or register request.
 type KeyRequest struct {
-	KeyInformation   *KeyInformation `json:"key_information"`
+	KeyInformation *KeyInformation `json:"key_information"`
 	// swagger:strfmt uuid
-	TransferPolicyID uuid.UUID       `json:"transfer_policy_id,omitempty"`
-	Label            string          `json:"label,omitempty"`
-	Usage            string          `json:"usage,omitempty"`
+	TransferPolicyID uuid.UUID `json:"transfer_policy_id,omitempty"`
+	Label            string    `json:"label,omitempty"`
+	Usage            string    `json:"usage,omitempty"`
 }
 
 // KeyResponse - key attributes from key create or register response.
 type KeyResponse struct {
-	KeyInformation   *KeyInformation `json:"key_information"`
+	KeyInformation *KeyInformation `json:"key_information"`
 	// swagger:strfmt uuid
-	TransferPolicyID uuid.UUID       `json:"transfer_policy_id"`
-	TransferLink     string          `json:"transfer_link"`
-	CreatedAt        time.Time       `json:"created_at"`
-	Label            string          `json:"label,omitempty"`
-	Usage            string          `json:"usage,omitempty"`
+	TransferPolicyID uuid.UUID `json:"transfer_policy_id"`
+	TransferLink     string    `json:"transfer_link"`
+	CreatedAt        time.Time `json:"created_at"`
+	Label            string    `json:"label,omitempty"`
+	Usage            string    `json:"usage,omitempty"`
 }
 
 // KeyTransferAttributes - Contains all possible key transfer attributes.
 type KeyTransferAttributes struct {
 	// swagger:strfmt uuid
-	KeyId        uuid.UUID  `json:"id,omitempty"`
+	KeyId uuid.UUID `json:"id,omitempty"`
 	// swagger:strfmt base64
-	KeyData      []byte     `json:"payload,omitempty"`
+	KeyData      string     `json:"payload,omitempty"`
 	KeyAlgorithm string     `json:"algorithm,omitempty"`
 	KeyLength    int        `json:"key_length,omitempty"`
-	Policy       string     `json:"policy,omitempty"`
 	CreatedAt    *time.Time `json:"created_at,omitempty"`
+	Policy       struct {
+		Link struct {
+			KeyTransfer struct {
+				Href   string `json:"href"`
+				Method string `json:"method"`
+			} `json:"key-transfer"`
+			KeyUsage struct {
+				Href   string `json:"href"`
+				Method string `json:"method"`
+			} `json:"key-usage"`
+		} `json:"link"`
+	} `json:"policy"`
 }

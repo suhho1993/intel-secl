@@ -58,9 +58,8 @@ func defineSubRoutes(router *mux.Router, serviceApi string, cfg *config.Configur
 	subRouter := router.PathPrefix(serviceApi).Subrouter()
 	subRouter = setVersionRoutes(subRouter)
 	subRouter = setKeyTransferRoutes(subRouter, cfg.EndpointURL, keyConfig, keyManager)
-	subRouter = setDhsm2KeyTransferRoutes(subRouter, cfg.AASApiUrl, cfg.KBS)
-	subRouter = setSessionRoutes(subRouter, cfg.AASApiUrl, cfg.KBS)
-
+	subRouter = setSKCKeyTransferRoutes(subRouter, cfg, keyManager)
+	subRouter = setSessionRoutes(subRouter, cfg)
 	subRouter = router.PathPrefix(serviceApi).Subrouter()
 	cfgRouter := Router{cfg: cfg}
 	var cacheTime, _ = time.ParseDuration(constants.JWTCertsCacheTime)

@@ -76,5 +76,9 @@ func defaultConfig() *config.Configuration {
 			ClientKey:  viper.GetString("kmip-client-key-path"),
 			RootCert:   viper.GetString("kmip-root-cert-path"),
 		},
+		Skc: config.SKCConfig{
+			StmLabel: viper.GetString("skc-challenge-type"),
+			SQVSUrl:  viper.GetString("sqvs-url"),
+		},
 	}
 }

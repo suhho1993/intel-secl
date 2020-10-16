@@ -62,23 +62,25 @@ func setKeyTransferRoutes(router *mux.Router, endpointUrl string, config domain.
 	keyIdExpr := "/keys/" + validation.IdReg
 
 	router.Handle(keyIdExpr+"/transfer",
-		ErrorHandler(ResponseHandler(keyController.TransferWithSaml),
-		)).Methods("POST").Headers("Accept", consts.HTTPMediaTypeOctetStream)
+		ErrorHandler(ResponseHandler(keyController.TransferWithSaml))).Methods("POST").Headers("Accept", consts.HTTPMediaTypeOctetStream)
 
 	return router
 }
 
-//setDhsm2KeyTransferRoutes registers routes to perform Dhsm2 Transfer operations
-func setDhsm2KeyTransferRoutes(router *mux.Router, aasAPIUrl string, kbsConfig config.KBSConfig) *mux.Router {
-	defaultLog.Trace("router/keys:setDhsm2KeyTransferRoutes() Entering")
-	defer defaultLog.Trace("router/keys:setDhsm2KeyTransferRoutes() Leaving")
+//setSKCKeyTransferRoutes registers routes to perform SKC Transfer operations
+func setSKCKeyTransferRoutes(router *mux.Router, kbsConfig *config.Configuration, keyManager keymanager.KeyManager) *mux.Router {
+	defaultLog.Trace("router/keys:setSKCKeyTransferRoutes() Entering")
+	defer defaultLog.Trace("router/keys:setSKCKeyTransferRoutes() Leaving")
 
-	dhsm2Controller := controllers.NewDhsm2Controller()
+	keyStore := directory.NewKeyStore(constants.KeysDir)
+	policyStore := directory.NewKeyTransferPolicyStore(constants.KeysTransferPolicyDir)
+	remoteManager := keymanager.NewRemoteManager(keyStore, keyManager, kbsConfig.EndpointURL)
+	skcController := controllers.NewSKCController(remoteManager, policyStore, kbsConfig, constants.TrustedCaCertsDir)
 	keyIdExpr := "/keys/" + validation.IdReg
 
 	router.Handle(keyIdExpr+"/dhsm2-transfer",
-		ErrorHandler(permissionsHandlerUsingTLSMAuth(JsonResponseHandler(dhsm2Controller.TransferApplicationKey),
-			aasAPIUrl, kbsConfig))).Methods("GET")
+		ErrorHandler(permissionsHandlerUsingTLSMAuth(JsonResponseHandler(skcController.TransferApplicationKey),
+			kbsConfig.AASApiUrl, kbsConfig.KBS))).Methods("GET")
 
 	return router
 }

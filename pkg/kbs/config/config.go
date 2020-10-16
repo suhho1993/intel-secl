@@ -29,6 +29,7 @@ type Configuration struct {
 	Server commConfig.ServerConfig  `yaml:"server" mapstructure:"server"`
 
 	Kmip KmipConfig `yaml:"kmip" mapstructure:"kmip"`
+	Skc  SKCConfig  `yaml:"skc" mapstructure:"skc"`
 }
 
 type KBSConfig struct {
@@ -42,6 +43,11 @@ type KmipConfig struct {
 	ClientCert string `yaml:"client-cert-path" mapstructure:"client-cert-path"`
 	ClientKey  string `yaml:"client-key-path" mapstructure:"client-key-path"`
 	RootCert   string `yaml:"root-cert-path" mapstructure:"root-cert-path"`
+}
+
+type SKCConfig struct {
+	StmLabel string `yaml:"challenge-type" mapstructure:"challenge-type"`
+	SQVSUrl  string `yaml:"sqvs-url" mapstructure:"sqvs-url"`
 }
 
 // init sets the configuration file name and type

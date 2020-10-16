@@ -171,7 +171,7 @@ func generateAESKey(length int) ([]byte, error) {
 	defaultLog.Trace("keymanager/directory_key_manager:generateAESKey() Entering")
 	defer defaultLog.Trace("keymanager/directory_key_manager:generateAESKey() Leaving")
 
-	return crypt.GetRandomBytes(length/8)
+	return crypt.GetRandomBytes(length / 8)
 }
 
 func generateRSAKeyPair(length int) (crypto.PrivateKey, crypto.PublicKey, error) {
