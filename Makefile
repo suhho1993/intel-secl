@@ -51,6 +51,11 @@ hvs-docker: hvs
 	docker build . -f build/image/Dockerfile-hvs -t isecl/hvs:$(VERSION)
 	docker save isecl/hvs:$(VERSION) > deployments/docker/docker-hvs-$(VERSION)-$(GITCOMMIT).tar
 
+kbs-docker: kbs
+	cp /usr/local/lib/libkmip.so.0.2 build/image/
+	docker build . -f build/image/Dockerfile-kbs -t isecl/kbs:$(VERSION)
+	docker save isecl/kbs:$(VERSION) > deployments/docker/docker-kbs-$(VERSION)-$(GITCOMMIT).tar
+
 kbs-swagger:
 	mkdir -p docs/swagger
 	swagger generate spec -w ./docs/shared/kbs -o ./docs/swagger/kbs-openapi.yml
