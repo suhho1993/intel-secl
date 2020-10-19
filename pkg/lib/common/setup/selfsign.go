@@ -145,7 +145,7 @@ func (t *SelfSignedCert) PrintHelp(w io.Writer) {}
 
 func (t *SelfSignedCert) SetName(n, e string) {
 	t.commandName = n
-	t.envPrefix = prefixUnderscroll(e)
+	t.envPrefix = PrefixUnderscroll(e)
 }
 
 func (t *SelfSignedCert) testArgs() error {

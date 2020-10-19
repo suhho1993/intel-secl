@@ -15,15 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func executablePath() string {
-	exc, err := os.Executable()
-	if err != nil {
-		// if we can't find self-executable path, we're probably in a state that is panic() worthy
-		panic(err)
-	}
-	return exc
-}
-
 func (a *App) executablePath() string {
 	if a.ExecutablePath != "" {
 		return a.ExecutablePath

@@ -64,5 +64,5 @@ func (t *ServerSetup) PrintHelp(w io.Writer) {
 
 func (t *ServerSetup) SetName(n, e string) {
 	t.commandName = n
-	t.envPrefix = prefixUnderscroll(e)
+	t.envPrefix = PrefixUnderscroll(e)
 }

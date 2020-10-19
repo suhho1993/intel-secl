@@ -127,7 +127,7 @@ func (t *DownloadCert) PrintHelp(w io.Writer) {
 
 func (t *DownloadCert) SetName(n, e string) {
 	t.commandName = n
-	t.envPrefix = prefixUnderscroll(e)
+	t.envPrefix = PrefixUnderscroll(e)
 }
 
 func getCertificateFromCMS(certType string, keyAlg string, keyLen int, cmsBaseUrl string, subject pkix.Name, hosts string, CaCertDirPath string, bearerToken string) (key []byte, cert []byte, err error) {

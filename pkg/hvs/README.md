@@ -15,7 +15,7 @@
 ## Software requirements
 - git
 - makeself
-- `go` version >= `go1.12.1` & <= `go1.14.1``
+- `go` version >= `go1.13.0` & <= `go1.14.4``
 
 # Step By Step Build Instructions
 ## Install required shell commands
@@ -29,11 +29,11 @@ export HTTPS_PROXY=https://<proxy>:<port>
 $ sudo yum install -y wget git makeself
 ```
 
-### Install `go` version >= `go1.12.1` & <= `go1.14.1`
-The `HVS` requires Go version 1.12.1 that has support for `go modules`. The build was validated with the latest version go1.14.1 of `go`. It is recommended that you use go1.14.1 version of `go`. You can use the following to install `go`.
+### Install `go` version >= `go1.13.0` & <= `go1.14.4`
+The `HVS` requires Go version  > 1.12.1 that has support for `go modules`. The build was validated with the latest version go1.14.4 of `go`. It is recommended that you use go1.14.4 version of `go`. You can use the following to install `go`.
 ```shell
-wget https://dl.google.com/go/go1.14.1.linux-amd64.tar.gz
-tar -xzf go1.14.1.linux-amd64.tar.gz
+wget https://dl.google.com/go/go1.14.4.linux-amd64.tar.gz
+tar -xzf go1.14.4.linux-amd64.tar.gz
 sudo mv go /usr/local
 export GOROOT=/usr/local/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH

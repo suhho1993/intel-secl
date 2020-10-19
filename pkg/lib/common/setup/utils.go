@@ -94,7 +94,7 @@ func printToWriter(w io.Writer, cmdName, msg string) {
 	}
 }
 
-func prefixUnderscroll(e string) string {
+func PrefixUnderscroll(e string) string {
 	if e != "" {
 		e = strings.ToUpper(e)
 		e = strings.ReplaceAll(e, "-", "_")
