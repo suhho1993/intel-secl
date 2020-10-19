@@ -4,8 +4,8 @@ RUN useradd -u 1001 --comment "Integration Hub" --home /opt/ihub  --shell /bin/f
 
 COPY cmd/ihub/ihub /usr/bin/ihub
 
-COPY build/image/entrypoint-ihub.sh /entrypoint-ihub.sh
+COPY build/image/entrypoint-ihub.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint-ihub.sh
+RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint-ihub.sh"]
+ENTRYPOINT ["/entrypoint.sh"]

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net/http"
 
-	types "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
+	types "github.com/intel-secl/intel-secl/v3/pkg/model/aas"
 )
 
 type httpContextKey string
@@ -29,13 +29,6 @@ func SetUserPermissions(r *http.Request, val []types.PermissionInfo) *http.Reque
 	return r.WithContext(ctx)
 }
 
-/*
- func SetUserRoles(r *http.Request, val types.Roles) *http.Request {
-
-	 ctx := context.WithValue(r.Context(), userRoleKey, val)
-	 return r.WithContext(ctx)
- }
-*/
 func GetUserRoles(r *http.Request) ([]types.RoleInfo, error) {
 	if rv := r.Context().Value("userroles"); rv != nil {
 		if ur, ok := rv.([]types.RoleInfo); ok {

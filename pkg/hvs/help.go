@@ -13,7 +13,7 @@ import (
 const helpStr = `Usage:
 	hvs <command> [arguments]
 	
-Avaliable Commands:
+Available Commands:
 	help|-h|--help         Show this help message
 	version|-v|--version   Show the version of current hvs build
 	setup <task>           Run setup task

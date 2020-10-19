@@ -8,7 +8,7 @@ package config
 type DBConfig struct {
 	Vendor   string `yaml:"vendor" mapstructure:"vendor"`
 	Host     string `yaml:"host" mapstructure:"host"`
-	Port     string `yaml:"port" mapstructure:"port"`
+	Port     int    `yaml:"port" mapstructure:"port"`
 	DBName   string `yaml:"name" mapstructure:"name"`
 	Username string `yaml:"username" mapstructure:"username"`
 	Password string `yaml:"password" mapstructure:"password"`

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	jwtauth "github.com/intel-secl/intel-secl/v3/pkg/lib/common/jwt"
 	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
-	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
+	ct "github.com/intel-secl/intel-secl/v3/pkg/model/aas"
 	"net/http"
 
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"

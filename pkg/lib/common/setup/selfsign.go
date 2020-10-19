@@ -11,6 +11,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"fmt"
 	"io"
 	"math/big"
 	"net"
@@ -83,11 +84,11 @@ func (t *SelfSignedCert) Run() error {
 	if t.PrivateKey == nil ||
 		t.PublicKey == nil {
 		key, err := rsa.GenerateKey(rand.Reader, defaultRSAKeylength)
-		t.PrivateKey = key
-		t.PublicKey = &key.PublicKey
 		if err != nil {
 			return errors.Wrap(err, "Failed to generate RSA private key")
 		}
+		t.PrivateKey = key
+		t.PublicKey = &key.PublicKey
 	}
 	// generate template
 	t.template = &x509.Certificate{
@@ -141,7 +142,10 @@ func (t *SelfSignedCert) Run() error {
 }
 
 // nothing to print for this task
-func (t *SelfSignedCert) PrintHelp(w io.Writer) {}
+func (t *SelfSignedCert) PrintHelp(w io.Writer) {
+	PrintEnvHelp(w, selfSignEnvHelpPrompt + t.commandName, "", selfSignEnvHelp)
+	fmt.Fprintln(w, "")
+}
 
 func (t *SelfSignedCert) SetName(n, e string) {
 	t.commandName = n

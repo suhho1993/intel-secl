@@ -25,7 +25,6 @@ import (
 	comctx "github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
-	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/flavor"
 	fc "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/common"
@@ -34,6 +33,7 @@ import (
 	fType "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/types"
 	fu "github.com/intel-secl/intel-secl/v3/pkg/lib/flavor/util"
 	hcType "github.com/intel-secl/intel-secl/v3/pkg/lib/host-connector/types"
+	ct "github.com/intel-secl/intel-secl/v3/pkg/model/aas"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/hvs"
 	"github.com/pkg/errors"
 )

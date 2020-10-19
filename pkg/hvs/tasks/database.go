@@ -1,11 +1,12 @@
 /*
- * Copyright (C) 2020 Intel Corporation
- * SPDX-License-Identifier: BSD-3-Clause
+ *  Copyright (C) 2020 Intel Corporation
+ *  SPDX-License-Identifier: BSD-3-Clause
  */
 package tasks
 
 import (
 	"fmt"
+	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"io"
 	"os"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/hvs/postgres"
 	commConfig "github.com/intel-secl/intel-secl/v3/pkg/lib/common/config"
 	cos "github.com/intel-secl/intel-secl/v3/pkg/lib/common/os"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 
 	"github.com/pkg/errors"
@@ -36,9 +36,9 @@ type DBSetup struct {
 // this is only used here, better don't put in constants package
 const defaultSSLCertFilePath = constants.ConfigDir + "hvsdbsslcert.pem"
 
-const dbEnvHelpPrompt = "Following environment variables are required for Database related setups:"
+const DbEnvHelpPrompt = "Following environment variables are required for Database related setups:"
 
-var dbEnvHelp = map[string]string{
+var DbEnvHelp = map[string]string{
 	"DB_VENDOR":              "Vendor of database, or use HVS_DB_VENDOR alternatively",
 	"DB_HOST":                "Database host name, or use HVS_DB_HOSTNAME alternatively",
 	"DB_PORT":                "Database port, or use HVS_DB_PORT alternatively",
@@ -63,7 +63,7 @@ func (t *DBSetup) Run() error {
 	if t.Host == "" {
 		return errors.New("DB_HOST is not set, or use HVS_DB_HOSTNAME alternatively")
 	}
-	if t.Port == "" {
+	if t.Port == 0 {
 		return errors.New("DB_PORT is not set, or use HVS_DB_PORT alternatively")
 	}
 	if t.DBName == "" {
@@ -136,7 +136,7 @@ func (t *DBSetup) Validate() error {
 	// check everything set
 	if t.DBConfigPtr.Vendor == "" ||
 		t.DBConfigPtr.Host == "" ||
-		t.DBConfigPtr.Port == "" ||
+		t.DBConfigPtr.Port == 0 ||
 		t.DBConfigPtr.DBName == "" ||
 		t.DBConfigPtr.Username == "" ||
 		t.DBConfigPtr.Password == "" ||
@@ -159,13 +159,13 @@ func (t *DBSetup) Validate() error {
 }
 
 func (t *DBSetup) PrintHelp(w io.Writer) {
-	setup.PrintEnvHelp(w, dbEnvHelpPrompt, t.envPrefix, dbEnvHelp)
+	setup.PrintEnvHelp(w, DbEnvHelpPrompt, t.envPrefix, DbEnvHelp)
 	fmt.Fprintln(w, "")
 }
 
 func (t *DBSetup) SetName(n, e string) {
 	t.commandName = n
-	t.envPrefix = prefixUnderscroll(e)
+	t.envPrefix = setup.PrefixUnderscroll(e)
 }
 
 func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, error) {
@@ -207,14 +207,6 @@ func configureDBSSLParams(sslMode, sslCertSrc, sslCert string) (string, string, 
 		}
 	}
 	return sslMode, sslCert, nil
-}
-
-func prefixUnderscroll(e string) string {
-	if e != "" &&
-		!strings.HasSuffix(e, "_") {
-		e += "_"
-	}
-	return e
 }
 
 func pgConfig(t *commConfig.DBConfig) *postgres.Config {

@@ -52,7 +52,33 @@ hvs-installer: hvs
 	makeself installer deployments/installer/hvs-$(VERSION).bin "HVS $(VERSION)" ./install.sh
 	rm -rf installer
 
-installer: cms-installer hvs-installer ihub-installer kbs-installer
+aas:
+	cd cmd/authservice && env GOOS=linux GOSUMDB=off GOPROXY=direct go build -ldflags "-X github.com/intel-secl/intel-secl/v3/pkg/authservice/version.BuildDate=$(BUILDDATE) -X github.com/intel-secl/intel-secl/v3/pkg/authservice/version.Version=$(VERSION) -X github.com/intel-secl/intel-secl/v3/pkg/authservice/version.GitHash=$(GITCOMMIT)" -o authservice
+
+aas-manager:
+	cd build/linux/aas/aas-manager && env GOOS=linux GOSUMDB=off GOPROXY=direct go build -o populate-users
+
+aas-installer: aas aas-manager
+	mkdir -p installer
+	cp build/linux/aas/authservice.service installer/authservice.service
+	cp build/linux/aas/install.sh installer/install.sh && chmod +x installer/install.sh
+	cp build/linux/aas/db_rotation.sql installer/db_rotation.sql
+	cp cmd/authservice/authservice installer/authservice
+	makeself installer deployments/installer/authservice-$(VERSION).bin "AAS $(VERSION)" ./install.sh
+	cp build/linux/aas/install_pgdb.sh deployments/installer/install_pgdb.sh && chmod +x deployments/installer/install_pgdb.sh
+	cp build/linux/aas/create_db.sh deployments/installer/create_db.sh && chmod +x deployments/installer/create_db.sh
+	mv build/linux/aas/aas-manager/populate-users deployments/installer/populate-users.sh && chmod +x deployments/installer/populate-users.sh
+	rm -rf installer
+
+installer: cms-installer aas-installer hvs-installer ihub-installer kbs-installer
+
+aas-docker: aas
+	mkdir -p out
+	cp cmd/authservice/authservice out/
+	cp build/image/entrypoint-aas.sh out/entrypoint.sh && chmod +x out/entrypoint.sh
+	docker build -t isecl/authservice:$(VERSION) --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} -f build/image/Dockerfile-aas ./out
+	docker save isecl/authservice:$(VERSION) > deployments/docker/docker-authservice-$(VERSION)-$(GITCOMMIT).tar
+	rm -rf out
 
 ihub-docker: ihub
 	docker build . -f build/image/Dockerfile-ihub -t isecl/ihub:$(VERSION)
@@ -89,6 +115,11 @@ hvs-swagger:
 	mkdir -p docs/swagger
 	swagger generate spec -w ./docs/shared/hvs -o ./docs/swagger/hvs-openapi.yml
 	swagger validate ./docs/swagger/hvs-openapi.yml
+
+aas-swagger:
+	mkdir -p docs/swagger
+	swagger generate spec -w ./docs/shared/aas -o ./docs/swagger/aas-openapi.yml
+	swagger validate ./docs/swagger/aas-openapi.yml
 
 cms-swagger:
 	mkdir -p docs/swagger

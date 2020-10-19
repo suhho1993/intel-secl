@@ -4,10 +4,10 @@ RUN useradd -u 1001 --comment "Host Verification Service" --home /opt/hvs  --she
 
 COPY cmd/hvs/hvs /usr/bin/hvs
 
-COPY build/linux/EndorsementCA-external.pem /opt/hvs/EndorsementCA-external.pem
+COPY build/linux/hvs/EndorsementCA-external.pem /opt/hvs/EndorsementCA-external.pem
 
-COPY build/image/entrypoint-hvs.sh /entrypoint-hvs.sh
+COPY build/image/entrypoint-hvs.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint-hvs.sh
+RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint-hvs.sh"]
+ENTRYPOINT ["/entrypoint.sh"]

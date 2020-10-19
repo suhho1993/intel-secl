@@ -25,7 +25,7 @@ import (
 	kbsRoutes "github.com/intel-secl/intel-secl/v3/pkg/kbs/router"
 	consts "github.com/intel-secl/intel-secl/v3/pkg/lib/common/constants"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/context"
-	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
+	"github.com/intel-secl/intel-secl/v3/pkg/model/aas"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

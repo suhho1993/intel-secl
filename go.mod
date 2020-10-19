@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
 	github.com/jinzhu/gorm v1.9.12
+	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.1.1
 	github.com/onsi/ginkgo v1.13.0
 	github.com/onsi/gomega v1.10.1
@@ -18,7 +19,8 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.3.0
 	github.com/vmware/govmomi v0.22.2
+	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-replace github.com/vmware/govmomi => github.com/arijit8972/govmomi fix-tpm-attestation-output
+replace github.com/vmware/govmomi => github.com/arijit8972/govmomi v0.22.2-0.20200607061538-3311e9e4cdb1

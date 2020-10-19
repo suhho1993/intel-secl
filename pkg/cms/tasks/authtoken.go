@@ -11,7 +11,7 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	jwtauth "github.com/intel-secl/intel-secl/v3/pkg/lib/common/jwt"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/setup"
-	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
+	ct "github.com/intel-secl/intel-secl/v3/pkg/model/aas"
 	"github.com/pkg/errors"
 	"io"
 	"os"

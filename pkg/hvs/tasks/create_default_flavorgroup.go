@@ -67,7 +67,7 @@ func (t *CreateDefaultFlavor) Validate() error {
 }
 
 func (t *CreateDefaultFlavor) PrintHelp(w io.Writer) {
-	setup.PrintEnvHelp(w, dbEnvHelpPrompt, "", dbEnvHelp)
+	setup.PrintEnvHelp(w, DbEnvHelpPrompt, "", DbEnvHelp)
 	fmt.Fprintln(w, "")
 }
 

@@ -132,7 +132,7 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 	dbConf := commConfig.DBConfig{
 		Vendor:   viper.GetString("db-vendor"),
 		Host:     viper.GetString("db-host"),
-		Port:     viper.GetString("db-port"),
+		Port:     viper.GetInt("db-port"),
 		DBName:   viper.GetString("db-name"),
 		Username: viper.GetString("db-username"),
 		Password: viper.GetString("db-password"),

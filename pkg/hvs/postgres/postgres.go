@@ -26,8 +26,8 @@ var defaultLog = commLog.GetDefaultLogger()
 var secLog = commLog.GetSecurityLogger()
 
 type Config struct {
-	Vendor, Host, Port, Dbname, User, Password, SslMode, SslCert string
-	ConnRetryAttempts, ConnRetryTime                             int
+	Vendor, Host, Dbname, User, Password, SslMode, SslCert string
+	Port, ConnRetryAttempts, ConnRetryTime                 int
 }
 
 func NewDatabaseConfig(vendor string, dbConfig *commConfig.DBConfig) *Config {
@@ -56,12 +56,16 @@ func New(cfg *Config) (*DataStore, error) {
 
 	var store DataStore
 
-	if cfg.Host == "" || cfg.Port == "" || cfg.User == "" ||
+	if cfg.Host == "" || cfg.Port == 0 || cfg.User == "" ||
 		cfg.Password == "" || cfg.Dbname == "" {
 		err := errors.Errorf("postgres/postgres:New() All fields must be set (%s)", spew.Sdump(cfg))
 		defaultLog.Error(err)
 		secLog.Warningf("%s: Failed to connect to db, missing configuration - %s", commLogMsg.BadConnection, err)
 		return nil, err
+	}
+
+	if cfg.Port > 65535 || cfg.Port <= 1024 {
+		return nil, errors.New("Invalid or reserved port")
 	}
 
 	cfg.SslMode = strings.TrimSpace(strings.ToLower(cfg.SslMode))
@@ -78,12 +82,12 @@ func New(cfg *Config) (*DataStore, error) {
 	var db *gorm.DB
 	var dbErr error
 	numAttempts := cfg.ConnRetryAttempts
-	if numAttempts < 0 || numAttempts > 100{
+	if numAttempts < 0 || numAttempts > 100 {
 		numAttempts = constants.DefaultDbConnRetryAttempts
 	}
 	for i := 0; i < numAttempts; i = i + 1 {
 		retryTime := time.Duration(cfg.ConnRetryTime)
-		db, dbErr = gorm.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s cfg.SslMode=%s%s",
+		db, dbErr = gorm.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s cfg.SslMode=%s%s",
 			cfg.Host, cfg.Port, cfg.User, cfg.Dbname, cfg.Password, cfg.SslMode, sslCertParams))
 		if dbErr != nil {
 			defaultLog.WithError(dbErr).Infof("postgres/postgres:New() Failed to connect to DB, retrying attempt %d/%d", i, numAttempts)

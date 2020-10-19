@@ -32,9 +32,9 @@ import (
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/crypt"
 	commErr "github.com/intel-secl/intel-secl/v3/pkg/lib/common/err"
 	commLogMsg "github.com/intel-secl/intel-secl/v3/pkg/lib/common/log/message"
-	ct "github.com/intel-secl/intel-secl/v3/pkg/lib/common/types/aas"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/common/validation"
 	"github.com/intel-secl/intel-secl/v3/pkg/lib/saml"
+	ct "github.com/intel-secl/intel-secl/v3/pkg/model/aas"
 	"github.com/intel-secl/intel-secl/v3/pkg/model/kbs"
 	"github.com/pkg/errors"
 )
