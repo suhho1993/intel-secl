@@ -27,21 +27,20 @@ The below diagram depicts the high level architecture of the Intel<sup>®</sup>S
 
 | Component | Abbreviation | Github Repository URL |
 |-----------|--------------|-----------------------|
-| Certificate Management Service           | CMS         | [https://github.com/intel-secl/certificate-management-service](https://github.com/intel-secl/certificate-management-service) |
-| Authentication and Authorization Service | AAS         | [https://github.com/intel-secl/authservice](https://github.com/intel-secl/authservice) |
+| Certificate Management Service           | CMS         | [https://github.com/intel-secl/intel-secl/tree/master/pkg/cms](https://github.com/intel-secl/intel-secl/tree/master/pkg/cms) |
+| Authentication and Authorization Service | AAS         | [https://github.com/intel-secl/intel-secl/tree/master/pkg/aas](https://github.com/intel-secl/intel-secl/tree/master/pkg/aas) |
 | Workload Policy Management               | WPM         | [https://github.com/intel-secl/workload-policy-manager](https://github.com/intel-secl/workload-policy-manager) |
-| Key Broker Service                       | KBS         | [https://github.com/intel-secl/key-broker-service](https://github.com/intel-secl/key-broker-service) |
+| Key Broker Service                       | KBS         | [https://github.com/intel-secl/tree/master/pkg/kbs](https://github.com/intel-secl/tree/master/pkg/kbs) |
 | Trust Agent                              | TA          | [https://github.com/intel-secl/go-trustagent](https://github.com/intel-secl/go-trustagent) |
 | Application Agent                        | AA          | [https://github.com/intel-secl/go-trustagent/tree/master/tboot-xm](https://github.com/intel-secl/go-trustagent/tree/master/tboot-xm) |
 | Workload Agent                           | WLA         | [https://github.com/intel-secl/workload-agent](https://github.com/intel-secl/workload-agent) |
 | Host Verification Service                | HVS         | [https://github.com/intel-secl/intel-secl/tree/master/pkg/hvs](https://github.com/intel-secl/intel-secl/tree/master/pkg/hvs) |
 | Integration Hub                          | iHUB        | [https://github.com/intel-secl/intel-secl/tree/master/pkg/ihub](https://github.com/intel-secl/intel-secl/tree/master/pkg/ihub) |
 | Workload Service                         | WLS         | [https://github.com/intel-secl/workload-service](https://github.com/intel-secl/workload-service) |
-| Isecl k8s extensions                     | --          | [https://github.com/intel-secl/k8s-extensions](https://github.com/intel-secl/k8s-extensions) |
+| ISecl K8s Extensions                     | --          | [https://github.com/intel-secl/k8s-extensions](https://github.com/intel-secl/k8s-extensions) |
 | SGX Caching Service                      | SCS         | [https://github.com/intel-secl/sgx-caching-service](https://github.com/intel-secl/sgx-caching-service) |
 | SGX Quote Verification Service           | SQVS        | [https://github.com/intel-secl/sgx-verification-service](https://github.com/intel-secl/sgx-verification-service) |
 | SGX Host Verification Service            | SHVS        | [https://github.com/intel-secl/sgx-hvs](https://github.com/intel-secl/sgx-hvs) |
-| SGX Hub                                  | sHUB        | [https://github.com/intel-secl/sgx-ah](https://github.com/intel-secl/sgx-ah) |
 | SGX Agent                                | AGENT       | [https://github.com/intel-secl/sgx_agent](https://github.com/intel-secl/sgx_agent) |
 | SKC Client/Library                       | SKC Library | [https://github.com/intel-secl/skc_library](https://github.com/intel-secl/skc_library) |
 
