@@ -26,6 +26,7 @@ type DownloadCMSCert struct {
 
 	CmsBaseURL    string
 	TlsCertDigest string
+	BearerToken   string
 
 	ConsoleWriter io.Writer
 

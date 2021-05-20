@@ -70,9 +70,11 @@ var downloadCAEnvHelp2 = map[string]string{
 
 func (dc *DownloadCert) Run() error {
 	if dc.CmsBaseURL == "" {
+		printToWriter(dc.ConsoleWriter, dc.commandName, "Failed to download certificate_CMSBASE_URL_NOTSET")
 		return errors.New("CMS_BASE_URL is not set")
 	}
 	if dc.BearerToken == "" {
+		printToWriter(dc.ConsoleWriter, dc.commandName, "Failed to download certificate_BEARER_TOK_NOTSET")
 		return errors.New("BEARER_TOKEN is not set")
 	}
 	// validate host names

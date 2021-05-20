@@ -147,26 +147,27 @@ func (a *App) setupTaskRunner() (*setup.Runner, error) {
 		DekStore: &a.Config.Dek,
 	})
 	runner.AddTask("download-ca-cert", "", &setup.DownloadCMSCert{
-		CaCertDirPath: constants.TrustedRootCACertsDir,
-		ConsoleWriter: a.consoleWriter(),
-		CmsBaseURL:    viper.GetString("cms-base-url"),
-		TlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
-	})
-	runner.AddTask("download-cert-tls", "tls", &setup.DownloadCert{
-		KeyFile:      viper.GetString("tls-key-file"),
-		CertFile:     viper.GetString("tls-cert-file"),
-		KeyAlgorithm: constants.DefaultKeyAlgorithm,
-		KeyLength:    constants.DefaultKeyLength,
-		Subject: pkix.Name{
-			CommonName: viper.GetString("tls-common-name"),
-		},
-		SanList:       viper.GetString("tls-san-list"),
-		CertType:      "tls",
 		CaCertDirPath: constants.TrustedCaCertsDir,
 		ConsoleWriter: a.consoleWriter(),
 		CmsBaseURL:    viper.GetString("cms-base-url"),
+		TlsCertDigest: viper.GetString("cms-tls-cert-sha384"),
 		BearerToken:   viper.GetString("bearer-token"),
 	})
+	runner.AddTask("download-cert-tls", "tls", &setup.DownloadCert{
+                KeyFile:      viper.GetString("tls-key-file"),
+                CertFile:     viper.GetString("tls-cert-file"),
+                KeyAlgorithm: constants.DefaultKeyAlgorithm,
+                KeyLength:    constants.DefaultKeyLength,
+                Subject: pkix.Name{
+                        CommonName: viper.GetString("tls-common-name"),
+                },
+                SanList:       viper.GetString("tls-san-list"),
+                CertType:      "tls",
+                CaCertDirPath: constants.TrustedCaCertsDir,
+                ConsoleWriter: a.consoleWriter(),
+                CmsBaseURL:    viper.GetString("cms-base-url"),
+                BearerToken:   viper.GetString("bearer-token"),
+        })
 	runner.AddTask("update-service-config", "", &tasks.UpdateServiceConfig{
 		ServiceConfig: commConfig.ServiceConfig{
 			Username: viper.GetString("hvs-service-username"),

@@ -79,7 +79,7 @@ const (
 
 // tls constants
 const (
-	DefaultHvsTlsCn     = "HVS TLS Certificate"
+	DefaultHvsTlsCn     = "AAS TLS Certificate"
 	DefaultHvsTlsSan    = "127.0.0.1,localhost"
 	DefaultKeyAlgorithm = "rsa"
 	DefaultKeyLength    = 3072
@@ -96,20 +96,26 @@ const (
 
 // general constants for certificates
 const (
-	DefaultSAMLCN           = "HVS SAML Certificate"
+	DefaultSAMLCN           = "AAS TLS Certificate"
+//"AAS SAML Certificate"
 	DefaultSAMLCertIssuer   = "AttestationService"
 	DefaultSAMLCertValidity = 86400
 
-	DefaultFlavorSigningCN = "HVS Flavor Signing Certificate"
-	DefaultPrivacyCACN     = "HVS Privacy Certificate"
-	DefaultEndorsementCACN = "HVS Endorsement Certificate"
-	DefaultTagCACN         = "HVS Tag Certificate"
+	DefaultFlavorSigningCN = "AAS TLS Certificate"
+	//"AAS Flavor Signing Certificate"
+	DefaultPrivacyCACN     = "AAS TLS Certificate"
+//"AAS Privacy Certificate"
+	DefaultEndorsementCACN = "AAS TLS Certificate"
+//"AAS Endorsement Certificate"
+	DefaultTagCACN         = "AAS TLS Certificate"
+//"AAS Tag Certificate"
 
 	DefaultSelfSignedCertIssuer        = "intel-secl"
 	DefaultSelfSignedCertValidityYears = 5
 
 	DefaultCertIssuer = "HVS Default Issuer"
-	DefaultCN         = "HVS Default Common Name"
+	DefaultCN         = "AAS TLS Certificate"
+//"HVS Default Common Name"
 
 	DefaultTagCertValiditySeconds = 60 * 60 * 24 * 365
 )

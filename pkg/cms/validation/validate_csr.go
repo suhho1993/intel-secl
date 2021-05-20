@@ -25,7 +25,9 @@ var slog = clog.GetSecurityLogger()
 //ValidateCertificateRequest is used to validate the Certificate Signing Request
 func ValidateCertificateRequest(conf *config.Configuration, csr *x509.CertificateRequest, certType string,
 	ctxMap *map[string]types.RoleInfo) error {
-	log.Trace("validation/validate_CSR:ValidateCertificateRequest() Entering")
+		log.Infof("SUHHO:Cert type is %s", certType)
+		log.Infof("SUHHO:CTXMAP CONTXT %v", ctxMap)
+	log.Infof("validation/validate_CSR:ValidateCertificateRequest() Entering")
 	defer log.Trace("validation/validate_CSR:ValidateCertificateRequest() Leaving")
 
 	// TODO: We should be able to support other signature algorithms... such as ECDSA with SHA384
@@ -41,17 +43,26 @@ func ValidateCertificateRequest(conf *config.Configuration, csr *x509.Certificat
 	isCnPresentInToken := false
 
 	for k, _ := range *ctxMap {
+		log.Infof("SUHHO:in the ctxmap forloop")
 		params := strings.Split(k, ";")
 		// Check if Subject matches with CN
+		if len(params) > 0{
+			log.Infof("SUHHO: WHAT is PARAM: %v",params)
+			log.Infof("SUHHO: subjectFromCsr is %v",subjectFromCsr)
+		}
+
 		if len(params) > 0 && (strings.EqualFold(params[0], subjectFromCsr) || search.WildcardMatched(params[0], subjectFromCsr)) {
 			isCnPresentInToken = true
-			log.Debugf("validation/validate_CSR:ValidateCertificateRequest() Token contains required Common Name : %v ", subjectFromCsr)
+			log.Infof("validation/validate_CSR:ValidateCertificateRequest() Token contains required Common Name : %v ", subjectFromCsr)
 			if len(params) > 2 {
 				if strings.EqualFold(params[2], "CERTTYPE="+certType) { // Check if cert type matches
 					sanListsFromToken = append(sanListsFromToken, params[1])
 				}
 			}
+		}else{
+			log.Infof("SUHHO: validation/validate_CSR:ValidateCertificateRequest() Token doesnot contains required Common Name :")
 		}
+
 	}
 
 	if !isCnPresentInToken {

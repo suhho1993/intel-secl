@@ -54,6 +54,7 @@ echo "Installing postgres database version 11"
 cd /tmp
 log_file=/dev/null
 if [ -z $SAVE_DB_INSTALL_LOG ] ; then
+echo log_save
 	log_file=~/isecl_pgdb_install.log
 fi
 
